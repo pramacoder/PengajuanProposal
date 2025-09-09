@@ -9,14 +9,13 @@ return new class extends Migration
     public function up()
     {
         Schema::create('pts', function (Blueprint $table) {
-            $table->bigIncrements('id_pt')->primary();
+            $table->bigIncrements('id_pt');
             $table->string('nama_pt');
             $table->string('no_hp_pt', 15);
             $table->string('email_pt')->unique();
             $table->string('password');
             $table->enum('role', ['operator'])->default('operator');
             $table->boolean('is_active')->default(true);
-            $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
         });
     }

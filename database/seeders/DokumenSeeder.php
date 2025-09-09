@@ -16,30 +16,23 @@ class DokumenSeeder extends Seeder
         // Get all proposals
         $proposals = Proposal::all();
         
+        $this->command->info('Memulai seeding dokumen...');
+        $this->command->info('Total proposal: ' . $proposals->count());
+        
         foreach ($proposals as $proposal) {
-            // Each proposal should have at least one document
+            // Setiap proposal hanya memiliki 1 dokumen utama
             Dokumen::factory()->create([
                 'id_proposal' => $proposal->id_proposal,
                 'skim' => $proposal->skim, // Match the skim with proposal
+                'path_file' => 'uploads/documents/proposal_' . $proposal->id_proposal . '.pdf',
+                'file_proposal' => 'proposal_' . $proposal->id_proposal . '.pdf',
             ]);
             
-            // Some proposals might have additional documents (30% chance)
-            if (fake()->boolean(30)) {
-                Dokumen::factory()->create([
-                    'id_proposal' => $proposal->id_proposal,
-                    'skim' => $proposal->skim,
-                    'path_file' => 'uploads/documents/' . fake()->slug() . '_lampiran.pdf',
-                ]);
-            }
-            
-            // Few proposals might have supplementary documents (10% chance)
-            if (fake()->boolean(10)) {
-                Dokumen::factory()->create([
-                    'id_proposal' => $proposal->id_proposal,
-                    'skim' => $proposal->skim,
-                    'path_file' => 'uploads/documents/' . fake()->slug() . '_budget.xlsx',
-                ]);
-            }
+            $this->command->info('Dokumen dibuat untuk proposal ID: ' . $proposal->id_proposal);
         }
+        
+        $this->command->info('DokumenSeeder berhasil dijalankan!');
+        $this->command->info('Total dokumen yang dibuat: ' . Dokumen::count());
+        $this->command->info('Rasio dokumen:proposal = ' . Dokumen::count() . ':' . $proposals->count());
     }
 }

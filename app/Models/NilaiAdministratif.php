@@ -9,22 +9,30 @@ class NilaiAdministratif extends Model
 {
     use HasFactory;
 
+    protected $table = 'nilai_administratifs';
+    protected $primaryKey = 'id';
+    public $timestamps = true;
+
     protected $fillable = [
-        'note_administratif', 'checklist', 'id_proposal', 'id_reviewer'
+        'note_administratif',
+        'checklist',
+        'id_proposal',
+        'id_reviewer'
     ];
+
     protected $casts = [
-        'checklist' => 'array', 
+        'checklist' => 'array'
     ];
-    // Relasi One-to-One ke Proposal
+
+    // Relationships
     public function proposal()
     {
-        return $this->belongsTo(Proposal::class, 'id_proposal');
+        return $this->belongsTo(Proposal::class, 'id_proposal', 'id_proposal');
     }
 
-    // Relasi One-to-One ke Reviewer
     public function reviewer()
     {
-        return $this->belongsTo(Reviewer::class, 'id_reviewer');
+        return $this->belongsTo(Reviewer::class, 'id_reviewer', 'id_reviewer');
     }
 }
 

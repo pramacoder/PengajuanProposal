@@ -32,7 +32,15 @@ class NilaiAdministratifSeeder extends Seeder
             NilaiAdministratif::factory()->create([
                 'id_proposal' => $proposal->id_proposal,
                 'id_reviewer' => fake()->randomElement($reviewerIds),
-                'checklist' => json_encode([
+                'note_administratif' => fake()->randomElement([
+                    'Format penulisan sudah sesuai dengan template yang diberikan.',
+                    'Beberapa bagian perlu diperbaiki dari segi struktur penulisan.',
+                    'Lampiran kurang lengkap, harap dilengkapi.',
+                    'Secara keseluruhan proposal sudah memenuhi syarat administratif.',
+                    'Format bibliography perlu diperbaiki sesuai dengan standar IEEE.',
+                    'Ukuran font dan spacing perlu disesuaikan dengan ketentuan.',
+                ]),
+                'checklist' => [
                     'format_penulisan' => fake()->boolean(85),
                     'kelengkapan_identitas' => fake()->boolean(90),
                     'struktur_proposal' => fake()->boolean(80),
@@ -43,7 +51,7 @@ class NilaiAdministratifSeeder extends Seeder
                     'jumlah_halaman_sesuai' => fake()->boolean(85),
                     'margin_sesuai' => fake()->boolean(90),
                     'font_sesuai' => fake()->boolean(88),
-                ])
+                ],
             ]);
         }
 

@@ -85,6 +85,121 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.5rem 1rem;
 }
 
+/* PDF Viewer Styles */
+.pdf-container {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+}
+
+.pdf-container iframe {
+    transition: var(--transition);
+    background: white;
+}
+
+.pdf-container iframe:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.pdf-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background: white;
+}
+
+.pdf-container.fullscreen iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+}
+
+/* PDF Error State */
+.pdf-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: var(--border-radius);
+}
+
+.pdf-error i {
+    color: #f39c12;
+    margin-bottom: 1rem;
+}
+
+/* PDF Loading State */
+.pdf-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: white;
+    border-radius: var(--border-radius);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.25em;
+}
+
+/* PDF Controls */
+.pdf-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.pdf-controls .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* PDF Zoom Controls */
+.pdf-zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.pdf-zoom-controls .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: 40px;
+}
+
+/* Responsive PDF */
+@media (max-width: 768px) {
+    .pdf-container iframe {
+        height: 400px !important;
+    }
+    
+    .pdf-container .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .pdf-container .d-flex {
+        flex-direction: column;
+    }
+}
+
 .btn-primary-custom {
     background-color: var(--primary-color);
     border-color: var(--primary-color);

@@ -9,20 +9,25 @@ class NilaiSubstantif extends Model
 {
     use HasFactory;
 
+    protected $table = 'nilai_substantifs';
+    protected $primaryKey = 'id';
+    public $timestamps = true;
+
     protected $fillable = [
-        'hasil_substantif', 'note_substantif', 'id_proposal', 'id_reviewer'
+        'note_substantif',
+        'id_proposal',
+        'id_reviewer'
     ];
 
-    // Relasi One-to-Many ke Proposal
+    // Relationships
     public function proposal()
     {
-        return $this->belongsTo(Proposal::class, 'id_proposal');
+        return $this->belongsTo(Proposal::class, 'id_proposal', 'id_proposal');
     }
 
-    // Relasi One-to-Many ke Reviewer
     public function reviewer()
     {
-        return $this->belongsTo(Reviewer::class, 'id_reviewer');
+        return $this->belongsTo(Reviewer::class, 'id_reviewer', 'id_reviewer');
     }
 }
 

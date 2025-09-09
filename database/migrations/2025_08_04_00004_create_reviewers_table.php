@@ -9,7 +9,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('reviewers', function (Blueprint $table) {
-            $table->bigIncrements('id_reviewer')->primary();
+            $table->bigIncrements('id_reviewer');
             $table->string('nama_reviewer');
             $table->string('no_hp_reviewer', 15);
             $table->string('email_reviewer')->unique();

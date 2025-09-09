@@ -11,27 +11,13 @@ class PtFactory extends Factory
 
     public function definition(): array
     {
-        $universities = [
-            'Universitas Gadjah Mada',
-            'Institut Teknologi Bandung',
-            'Universitas Indonesia',
-            'Institut Pertanian Bogor',
-            'Universitas Airlangga',
-            'Universitas Brawijaya',
-            'Universitas Diponegoro',
-            'Universitas Sebelas Maret',
-            'Institut Teknologi Sepuluh Nopember',
-            'Universitas Padjadjaran'
-        ];
-
         return [
-            'nama_pt' => $this->faker->randomElement($universities),
+            'nama_pt' => $this->faker->name(),
             'no_hp_pt' => '0' . $this->faker->numerify('####-######'),
-            'email_pt' => $this->faker->unique()->companyEmail(),
+            'email_pt' => $this->faker->unique()->safeEmail(),
             'password' => bcrypt('password123'),
             'role' => 'operator',
             'is_active' => true,
-            'email_verified_at' => now(),
         ];
     }
 }

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('dosens', function (Blueprint $table) {
-            $table->bigIncrements('id_dosen')->primary(); 
+            $table->bigIncrements('id_dosen');
             $table->string('nuptk', 20)->unique();
             $table->string('nama_dosen');
             $table->string('gelar_depan')->nullable();

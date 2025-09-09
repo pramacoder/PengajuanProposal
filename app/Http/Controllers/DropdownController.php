@@ -16,9 +16,24 @@ class DropdownController extends Controller
 
     public function getProdi($id_fakultas)
     {
-        $prodis = Prodi::where('id_fakultas', $id_fakultas)
-                      ->orderBy('nama_prodi')
-                      ->get();
+        // Check if parameter is ID or nama_fakultas
+        if (is_numeric($id_fakultas)) {
+            // If numeric, treat as ID
+            $prodis = Prodi::where('id_fakultas', $id_fakultas)
+                          ->orderBy('nama_prodi')
+                          ->get();
+        } else {
+            // If not numeric, treat as nama_fakultas
+            $fakultas = Fakultas::where('nama_fakultas', $id_fakultas)->first();
+            if ($fakultas) {
+                $prodis = Prodi::where('id_fakultas', $fakultas->id_fakultas)
+                              ->orderBy('nama_prodi')
+                              ->get();
+            } else {
+                $prodis = collect();
+            }
+        }
+        
         return response()->json($prodis);
     }
 }

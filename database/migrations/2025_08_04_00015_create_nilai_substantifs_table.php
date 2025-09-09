@@ -11,9 +11,8 @@ return new class extends Migration
     {
         Schema::create('nilai_substantifs', function (Blueprint $table) {
             $table->id();
-            $table->text('hasil_substantif');
-            $table->text('note_substantif')->nullable(); 
-                        $table->foreignId('id_proposal')->constrained('proposals', 'id_proposal')->onDelete('cascade');
+            $table->text('note_substantif')->nullable();
+            $table->foreignId('id_proposal')->constrained('proposals', 'id_proposal')->onDelete('cascade');
             $table->foreignId('id_reviewer')->constrained('reviewers', 'id_reviewer')->onDelete('cascade'); 
             $table->timestamps();
         });

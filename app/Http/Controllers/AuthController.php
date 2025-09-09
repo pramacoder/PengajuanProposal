@@ -20,58 +20,163 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
+    public function showForgotPasswordForm()
+    {
+        return view('auth.forgot-password');
+    }
+
+    public function sendPasswordReset(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'nim' => 'required|string',
+            'gmail' => 'required|email'
+        ]);
+
+        // Cari user berdasarkan email dan NIM
+        $user = null;
+        $userType = null;
+
+        // Cek di tabel mahasiswa
+        $mahasiswa = Mahasiswa::where('email_mhs', $request->email)
+                             ->where('nim', $request->nim)
+                             ->first();
+        if ($mahasiswa) {
+            $user = $mahasiswa;
+            $userType = 'mahasiswa';
+        }
+
+        // Cek di tabel dosen
+        if (!$user) {
+            $dosen = Dosen::where('email_dosen', $request->email)
+                         ->where('nuptk', $request->nim)
+                         ->first();
+            if ($dosen) {
+                $user = $dosen;
+                $userType = 'dosen';
+            }
+        }
+
+        // Cek di tabel reviewer
+        if (!$user) {
+            $reviewer = Reviewer::where('email_reviewer', $request->email)
+                               ->where('nip_reviewer', $request->nim)
+                               ->first();
+            if ($reviewer) {
+                $user = $reviewer;
+                $userType = 'reviewer';
+            }
+        }
+
+        // Cek di tabel operator
+        if (!$user) {
+            $operator = PT::where('email_pt', $request->email)
+                         ->where('kode_pt', $request->nim)
+                         ->first();
+            if ($operator) {
+                $user = $operator;
+                $userType = 'operator';
+            }
+        }
+
+        if (!$user) {
+            return back()->withErrors([
+                'email' => 'Email atau NIM tidak ditemukan dalam sistem.',
+            ])->withInput();
+        }
+
+        // Generate password baru
+        $newPassword = strtoupper(substr(md5(uniqid()), 0, 8));
+        
+        // Update password
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        // Kirim email (implementasi sederhana - bisa dikembangkan dengan Mail class)
+        // Untuk sementara, kita simpan data di session untuk ditampilkan
+        $request->session()->put('reset_data', [
+            'user_type' => $userType,
+            'name' => $user->nama_mhs ?? $user->nama_dosen ?? $user->nama_reviewer ?? $user->nama_pt,
+            'email' => $request->gmail,
+            'new_password' => $newPassword
+        ]);
+
+        return redirect()->route('password.forgot')->with('success', 
+            'Password berhasil direset! Password baru telah dikirim ke ' . $request->gmail . 
+            '. Silakan cek email Anda dan gunakan password baru untuk login.');
+    }
+
+
     public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required',
-            'user_type' => 'required|in:mahasiswa,dosen,reviewer,operator'
+            'password' => 'required'
         ]);
 
-        $credentials = [
-            'password' => $request->password,
-            'is_active' => true
+        $email = $request->email;
+        $password = $request->password;
+
+        // Coba login ke semua guard secara berurutan
+        $guards = [
+            'mahasiswa' => ['email_mhs', 'mahasiswa'],
+            'dosen' => ['email_dosen', 'dosen'],
+            'reviewer' => ['email_reviewer', 'reviewer'],
+            'operator' => ['email_pt', 'operator']
         ];
 
-        // Set email field berdasarkan user type
-        switch ($request->user_type) {
-            case 'mahasiswa':
-                $credentials['email_mhs'] = $request->email;
-                $guard = 'mahasiswa';
-                break;
-            case 'dosen':
-                $credentials['email_dosen'] = $request->email;
-                $guard = 'dosen';
-                break;
-            case 'reviewer':
-                $credentials['email_reviewer'] = $request->email;
-                $guard = 'reviewer';
-                break;
-            case 'operator':
-                $credentials['email_pt'] = $request->email;
-                $guard = 'operator';
-                break;
-        }
-
-        if (Auth::guard($guard)->attempt($credentials)) {
-            $request->session()->regenerate();
+        foreach ($guards as $guardName => $config) {
+            $emailField = $config[0];
+            $guard = $config[1];
             
-            // Redirect berdasarkan user type
-            switch ($request->user_type) {
-                case 'mahasiswa':
-                    return redirect()->intended('/mahasiswa/dashboard');
-                case 'dosen':
-                    return redirect()->intended('/dosen/dashboard');
-                case 'reviewer':
-                    return redirect()->intended('/reviewer/dashboard');
-                case 'operator':
-                    return redirect()->intended('/operator/dashboard');
+            $credentials = [
+                $emailField => $email,
+                'password' => $password,
+                'is_active' => true
+            ];
+
+            // Debug: cek credentials
+            \Log::info('Login attempt', [
+                'guard' => $guard,
+                'email' => $email,
+                'email_field' => $emailField,
+                'credentials' => $credentials
+            ]);
+
+            if (Auth::guard($guard)->attempt($credentials)) {
+                $request->session()->regenerate();
+                
+                // Debug: cek user yang berhasil login
+                $user = Auth::guard($guard)->user();
+                \Log::info('Login successful', [
+                    'user_id' => $user->id ?? 'unknown',
+                    'guard' => $guard,
+                    'email' => $email
+                ]);
+                
+                // Redirect berdasarkan guard yang berhasil
+                switch ($guard) {
+                    case 'mahasiswa':
+                        return redirect()->intended('/mahasiswa/dashboard');
+                    case 'dosen':
+                        return redirect()->intended('/dosen/dashboard');
+                    case 'reviewer':
+                        return redirect()->intended('/reviewer/dashboard');
+                    case 'operator':
+                        return redirect()->intended('/operator/dashboard');
+                }
             }
         }
 
+        // Debug: cek jika login gagal
+        \Log::warning('Login failed', [
+            'email' => $email,
+            'message' => 'No matching user found in any guard'
+        ]);
+
         return back()->withErrors([
             'email' => 'Email atau password salah.',
-        ])->withInput($request->only('email', 'user_type'));
+        ])->withInput($request->only('email'));
     }
 
     public function logout(Request $request)
@@ -98,8 +203,8 @@ class AuthController extends Controller
             $user = Auth::guard('dosen')->user();
             return view('dosen.dashboard', compact('user'));
         } elseif (Auth::guard('reviewer')->check()) {
-            $user = Auth::guard('reviewer')->user();
-            return view('reviewer.dashboard', compact('user'));
+            // Redirect ke ReviewerController dashboard
+            return redirect()->route('reviewer.dashboard');
         } elseif (Auth::guard('operator')->check()) {
             $user = Auth::guard('operator')->user();
             return view('operator.dashboard', compact('user'));
@@ -270,6 +375,116 @@ class AuthController extends Controller
         return view('auth.register', compact('userType'));
     }
 
+    public function showDosenRegistration()
+    {
+        return view('auth.register_dosen');
+    }
+
+    public function showReviewerRegistration()
+    {
+        return view('auth.register_reviewer');
+    }
+
+    public function showOperatorRegistration()
+    {
+        return view('auth.register_operator');
+    }
+
+    public function registerDosen(Request $request)
+    {
+        $request->validate([
+            'nama_dosen' => 'required|string|max:255',
+            'nuptk' => 'required|string|max:20|unique:dosens,nuptk',
+            'gelar_depan' => 'nullable|string|max:50',
+            'gelar_belakang' => 'nullable|string|max:50',
+            'email_dosen' => 'required|email|max:255|unique:dosens,email_dosen',
+            'no_hp_dosen' => 'required|string|max:15',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        // Cek apakah email sudah terdaftar
+        $existingDosen = Dosen::where('email_dosen', $request->email_dosen)->first();
+        if ($existingDosen) {
+            return back()->withErrors(['email_dosen' => 'Email sudah terdaftar.'])->withInput();
+        }
+
+        // Cek apakah NUPTK sudah terdaftar
+        $existingNUPTK = Dosen::where('nuptk', $request->nuptk)->first();
+        if ($existingNUPTK) {
+            return back()->withErrors(['nuptk' => 'NUPTK sudah terdaftar.'])->withInput();
+        }
+        
+        // Buat dosen baru
+        $dosen = new Dosen();
+        $dosen->nama_dosen = $request->nama_dosen;
+        $dosen->nuptk = $request->nuptk;
+        $dosen->gelar_depan = $request->gelar_depan;
+        $dosen->gelar_belakang = $request->gelar_belakang;
+        $dosen->email_dosen = $request->email_dosen;
+        $dosen->no_hp_dosen = $request->no_hp_dosen;
+        $dosen->password = Hash::make($request->password);
+        $dosen->is_active = true;
+        $dosen->save();
+
+        return redirect()->route('login.dosen')->with('success', 'Registrasi berhasil! Silakan login sebagai Dosen.');
+    }
+
+    public function registerReviewer(Request $request)
+    {
+        $request->validate([
+            'nama_reviewer' => 'required|string|max:255',
+            'email_reviewer' => 'required|email|max:255|unique:reviewers,email_reviewer',
+            'no_hp_reviewer' => 'required|string|max:15',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        // Cek apakah email sudah terdaftar
+        $existingReviewer = Reviewer::where('email_reviewer', $request->email_reviewer)->first();
+        if ($existingReviewer) {
+            return back()->withErrors(['email_reviewer' => 'Email sudah terdaftar.'])->withInput();
+        }
+        
+        // Buat reviewer baru
+        $reviewer = new Reviewer();
+        $reviewer->nama_reviewer = $request->nama_reviewer;
+        $reviewer->email_reviewer = $request->email_reviewer;
+        $reviewer->no_hp_reviewer = $request->no_hp_reviewer;
+        $reviewer->password = Hash::make($request->password);
+        $reviewer->role = 'reviewer';
+        $reviewer->is_active = true;
+        $reviewer->save();
+
+        return redirect()->route('login.reviewer')->with('success', 'Registrasi berhasil! Silakan login sebagai Reviewer.');
+    }
+
+    public function registerOperator(Request $request)
+    {
+        $request->validate([
+            'nama_pt' => 'required|string|max:255',
+            'email_pt' => 'required|email|max:255|unique:pts,email_pt',
+            'no_hp_pt' => 'required|string|max:15',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        // Cek apakah email sudah terdaftar
+        $existingPT = PT::where('email_pt', $request->email_pt)->first();
+        if ($existingPT) {
+            return back()->withErrors(['email_pt' => 'Email sudah terdaftar.'])->withInput();
+        }
+        
+        // Buat operator baru
+        $pt = new PT();
+        $pt->nama_pt = $request->nama_pt;
+        $pt->email_pt = $request->email_pt;
+        $pt->no_hp_pt = $request->no_hp_pt;
+        $pt->password = Hash::make($request->password);
+        $pt->role = 'operator';
+        $pt->is_active = true;
+        $pt->save();
+
+        return redirect()->route('login.operator')->with('success', 'Registrasi berhasil! Silakan login sebagai Operator.');
+    }
+
     public function register(Request $request)
     {
         $userType = $request->input('user_type', 'mahasiswa');
@@ -278,19 +493,19 @@ class AuthController extends Controller
         switch ($userType) {
             case 'mahasiswa':
                 $request->validate([
-                    'nama_mhs' => 'required|string|max:255',
+                    'nama' => 'required|string|max:255',
                     'nim' => 'required|string|max:20|unique:mahasiswas,nim',
-                    'email_mhs' => 'required|email|max:255|unique:mahasiswas,email_mhs',
-                    'no_hp_mhs' => 'required|string|max:15',
+                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs',
+                    'no_hp' => 'required|string|max:15',
                     'prodi' => 'required|exists:prodis,id_prodi',
                     'fakultas' => 'required|exists:fakultas,id_fakultas',
                     'password' => 'required|string|min:8|confirmed',
                 ]);
 
                 // Cek apakah email sudah terdaftar
-                $existingMahasiswa = Mahasiswa::where('email_mhs', $request->email_mhs)->first();
+                $existingMahasiswa = Mahasiswa::where('email_mhs', $request->email)->first();
                 if ($existingMahasiswa) {
-                    return back()->withErrors(['email_mhs' => 'Email sudah terdaftar.'])->withInput();
+                    return back()->withErrors(['email' => 'Email sudah terdaftar.'])->withInput();
                 }
 
                 // Cek apakah NIM sudah terdaftar
@@ -305,17 +520,105 @@ class AuthController extends Controller
                 
                 // Buat mahasiswa baru
                 $mahasiswa = new Mahasiswa();
-                $mahasiswa->nama_mhs = $request->nama_mhs;
+                $mahasiswa->nama_mhs = $request->nama;
                 $mahasiswa->nim = $request->nim;
-                $mahasiswa->email_mhs = $request->email_mhs;
-                $mahasiswa->no_hp_mhs = $request->no_hp_mhs;
+                $mahasiswa->email_mhs = $request->email;
+                $mahasiswa->no_hp_mhs = $request->no_hp;
                 $mahasiswa->prodi_mhs = $prodi->nama_prodi;
                 $mahasiswa->fakultas_mhs = $fakultas->nama_fakultas;
                 $mahasiswa->password = Hash::make($request->password);
                 $mahasiswa->is_active = true;
                 $mahasiswa->save();
 
-                return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login.');
+                return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login sebagai Mahasiswa.');
+                break;
+
+            case 'dosen':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'nuptk' => 'required|string|max:20|unique:dosens,nuptk',
+                    'email' => 'required|email|max:255|unique:dosens,email_dosen',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+
+                // Cek apakah email sudah terdaftar
+                $existingDosen = Dosen::where('email_dosen', $request->email)->first();
+                if ($existingDosen) {
+                    return back()->withErrors(['email' => 'Email sudah terdaftar.'])->withInput();
+                }
+
+                // Cek apakah NUPTK sudah terdaftar
+                $existingNUPTK = Dosen::where('nuptk', $request->nuptk)->first();
+                if ($existingNUPTK) {
+                    return back()->withErrors(['nuptk' => 'NUPTK sudah terdaftar.'])->withInput();
+                }
+                
+                // Buat dosen baru
+                $dosen = new Dosen();
+                $dosen->nama_dosen = $request->nama;
+                $dosen->nuptk = $request->nuptk;
+                $dosen->email_dosen = $request->email;
+                $dosen->no_hp_dosen = $request->no_hp;
+                $dosen->password = Hash::make($request->password);
+                $dosen->is_active = true;
+                $dosen->save();
+
+                return redirect()->route('login.dosen')->with('success', 'Registrasi berhasil! Silakan login sebagai Dosen.');
+                break;
+
+            case 'reviewer':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+
+                // Cek apakah email sudah terdaftar
+                $existingReviewer = Reviewer::where('email_reviewer', $request->email)->first();
+                if ($existingReviewer) {
+                    return back()->withErrors(['email' => 'Email sudah terdaftar.'])->withInput();
+                }
+                
+                // Buat reviewer baru
+                $reviewer = new Reviewer();
+                $reviewer->nama_reviewer = $request->nama;
+                $reviewer->email_reviewer = $request->email;
+                $reviewer->no_hp_reviewer = $request->no_hp;
+                $reviewer->password = Hash::make($request->password);
+                $reviewer->role = 'reviewer';
+                $reviewer->is_active = true;
+                $reviewer->save();
+
+                return redirect()->route('login.reviewer')->with('success', 'Registrasi berhasil! Silakan login sebagai Reviewer.');
+                break;
+
+            case 'operator':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'email' => 'required|email|max:255|unique:pts,email_pt',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+
+                // Cek apakah email sudah terdaftar
+                $existingPT = PT::where('email_pt', $request->email)->first();
+                if ($existingPT) {
+                    return back()->withErrors(['email' => 'Email sudah terdaftar.'])->withInput();
+                }
+                
+                // Buat operator baru
+                $pt = new PT();
+                $pt->nama_pt = $request->nama;
+                $pt->email_pt = $request->email;
+                $pt->no_hp_pt = $request->no_hp;
+                $pt->password = Hash::make($request->password);
+                $pt->role = 'operator';
+                $pt->is_active = true;
+                $pt->save();
+
+                return redirect()->route('login.operator')->with('success', 'Registrasi berhasil! Silakan login sebagai Operator.');
                 break;
 
             default:

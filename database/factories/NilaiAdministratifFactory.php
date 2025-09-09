@@ -35,9 +35,31 @@ class NilaiAdministratifFactory extends Factory
 
         return [
             'note_administratif' => $this->faker->randomElement($notes),
-            'checklist' => json_encode($checklist_items),
+            'checklist' => $checklist_items,
             'id_proposal' => Proposal::factory(),
             'id_reviewer' => Reviewer::factory(),
         ];
+    }
+
+    // State untuk review yang sudah selesai
+    public function completed()
+    {
+        return $this->state([
+            'note_administratif' => $this->faker->randomElement([
+                'Proposal sudah memenuhi semua syarat administratif dengan baik.',
+                'Format dan struktur proposal sudah sesuai standar yang ditetapkan.',
+                'Kelengkapan dokumen dan lampiran sudah memadai.',
+                'Proposal siap untuk tahap review substantif.',
+                'Tidak ada kesalahan administratif yang signifikan.'
+            ]),
+        ]);
+    }
+
+    // State untuk review yang masih pending
+    public function pending()
+    {
+        return $this->state([
+            'note_administratif' => 'Review administratif dimulai',
+        ]);
     }
 }

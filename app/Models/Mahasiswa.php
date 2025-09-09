@@ -20,7 +20,6 @@ class Mahasiswa extends Authenticatable
 
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
     protected $casts = [
@@ -34,6 +33,56 @@ class Mahasiswa extends Authenticatable
     {
         return $this->hasOne(Proposal::class, 'id_mahasiswa');
     }
+
+    // Relasi ke Prodi berdasarkan nama_prodi
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'prodi_mhs', 'nama_prodi');
+    }
+
+    // Relasi ke Fakultas berdasarkan nama_fakultas
+    public function fakultas()
+    {
+        return $this->belongsTo(Fakultas::class, 'fakultas_mhs', 'nama_fakultas');
+    }
+
+    // Accessor untuk nama_mahasiswa (kompatibilitas dengan view)
+    public function getNamaMahasiswaAttribute()
+    {
+        return $this->nama_mhs;
+    }
+
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'id_mahasiswa';
+    }
+
+    /**
+     * Get the unique identifier for the user.
+     *
+     * @return mixed
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->getAttribute($this->getAuthIdentifierName());
+    }
+
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->password;
+    }
+
+
 }
 
 

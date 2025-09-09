@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->text('note_administratif')->nullable();
             $table->json('checklist')->nullable(); 
-                        $table->foreignId('id_proposal')->constrained('proposals', 'id_proposal')->onDelete('cascade');
+            $table->foreignId('id_proposal')->constrained('proposals', 'id_proposal')->onDelete('cascade');
             $table->foreignId('id_reviewer')->constrained('reviewers', 'id_reviewer')->onDelete('cascade'); 
             $table->timestamps();
         });

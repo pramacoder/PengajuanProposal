@@ -16,7 +16,7 @@ class PT extends Authenticatable
 
     protected $fillable = [
         'nama_pt', 'no_hp_pt', 'email_pt',
-        'password', 'role', 'is_active', 'email_verified_at'
+        'password', 'role', 'is_active'
     ];
 
     protected $hidden = [
@@ -25,15 +25,14 @@ class PT extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_active' => 'boolean',
     ];
 
-    // Relasi Many-to-One ke RuangKontrol
+    // Relasi One-to-Many ke RuangKontrol
     public function ruangKontrol()
     {
-        return $this->belongsTo(RuangKontrol::class, 'id_ruang_kontrol');
+        return $this->hasMany(RuangKontrol::class, 'id_pt');
     }
 }
 

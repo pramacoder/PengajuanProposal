@@ -12,9 +12,7 @@ class ReviewerSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create 15 reviewers
-        Reviewer::factory()->count(15)->create();
-        
+
         // Create specific reviewers for testing
         Reviewer::factory()->create([
             'nama_reviewer' => 'Prof. Dr. Maria Sari, M.Sc',

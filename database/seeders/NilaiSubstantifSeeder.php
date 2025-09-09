@@ -33,7 +33,7 @@ class NilaiSubstantifSeeder extends Seeder
             NilaiSubstantif::factory()->create([
                 'id_proposal' => $proposal->id_proposal,
                 'id_reviewer' => fake()->randomElement($reviewerIds),
-                'hasil_substantif' => $this->generateDetailedResult(),
+                'note_substantif' => $this->generateDetailedResult(),
             ]);
             
             // Second reviewer (different from first)
@@ -42,7 +42,7 @@ class NilaiSubstantifSeeder extends Seeder
             NilaiSubstantif::factory()->create([
                 'id_proposal' => $proposal->id_proposal,
                 'id_reviewer' => fake()->randomElement($availableReviewers),
-                'hasil_substantif' => $this->generateDetailedResult(),
+                'note_substantif' => $this->generateDetailedResult(),
             ]);
         }
 

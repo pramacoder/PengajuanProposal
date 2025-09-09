@@ -12,44 +12,255 @@ class Proposal extends Model
     protected $primaryKey = 'id_proposal';
 
     protected $fillable = [
-        'judul_proposal', 'tanggal_pengajuan', 'skim', 'status_validasi',
-        'status_final', 'catatan', 'id_mahasiswa', 'id_dosen'
+        'judul_proposal', 'judul', 'tanggal_pengajuan', 'skim', 'status_validasi',
+        'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen',
+        'dosen_pembimbing', 'dana_diajukan', 'tahun_ajaran', 'tanggal_validasi',
+        'id_reviewer_administratif', 'id_reviewer_substantif_1', 'id_reviewer_substantif_2',
+        
+        // Data ketua tim
+        'ketua_nama', 'ketua_nim', 'ketua_prodi', 'ketua_fakultas', 'ketua_email', 'ketua_no_hp',
+        
+        // Data anggota 1
+        'anggota1_nama', 'anggota1_nim', 'anggota1_prodi', 'anggota1_fakultas', 'anggota1_email', 'anggota1_no_hp',
+        
+        // Data anggota 2
+        'anggota2_nama', 'anggota2_nim', 'anggota2_prodi', 'anggota2_fakultas', 'anggota2_email', 'anggota2_no_hp',
+        
+        // Data anggota 3
+        'anggota3_nama', 'anggota3_nim', 'anggota3_prodi', 'anggota3_fakultas', 'anggota3_email', 'anggota3_no_hp',
+        
+        // Data anggota 4
+        'anggota4_nama', 'anggota4_nim', 'anggota4_prodi', 'anggota4_fakultas', 'anggota4_email', 'anggota4_no_hp'
     ];
 
-    // Relasi One-to-One ke Mahasiswa
+    // Relasi One-to-One ke Mahasiswa (pengaju proposal)
     public function mahasiswa()
     {
-        return $this->belongsTo(Mahasiswa::class, 'id_mahasiswa');
+        return $this->belongsTo(Mahasiswa::class, 'id_mahasiswa', 'id_mahasiswa');
     }
 
     // Relasi One-to-Many ke Dosen (Relasi Dosen Pembimbing)
     public function dosen()
     {
-        return $this->belongsTo(Dosen::class, 'id_dosen');
+        return $this->belongsTo(Dosen::class, 'id_dosen', 'id_dosen');
+    }
+
+    // Relasi ke Reviewer Administratif
+    public function reviewerAdministratif()
+    {
+        return $this->belongsTo(Reviewer::class, 'id_reviewer_administratif', 'id_reviewer');
+    }
+
+    // Relasi ke Reviewer Substantif 1
+    public function reviewerSubstantif1()
+    {
+        return $this->belongsTo(Reviewer::class, 'id_reviewer_substantif_1', 'id_reviewer');
+    }
+
+    // Relasi ke Reviewer Substantif 2
+    public function reviewerSubstantif2()
+    {
+        return $this->belongsTo(Reviewer::class, 'id_reviewer_substantif_2', 'id_reviewer');
+    }
+
+    /**
+     * Relasi ke anggota tim (1 proposal memiliki banyak anggota tim)
+     */
+    public function teams()
+    {
+        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal');
     }
 
     // Relasi One-to-One ke Dokumen
     public function dokumen()
     {
-        return $this->hasOne(Dokumen::class, 'id_proposal');
+        return $this->hasOne(Dokumen::class, 'id_proposal', 'id_proposal');
     }
 
-    // Relasi One-to-One ke NilaiAdministratif
+    // Relasi One-to-Many ke NilaiAdministratif
     public function nilaiAdministratif()
     {
-        return $this->hasOne(NilaiAdministratif::class, 'id_proposal');
+        return $this->hasMany(NilaiAdministratif::class, 'id_proposal', 'id_proposal');
     }
 
     // Relasi One-to-Many ke NilaiSubstantif
     public function nilaiSubstantif()
     {
-        return $this->hasMany(NilaiSubstantif::class, 'id_proposal');
+        return $this->hasMany(NilaiSubstantif::class, 'id_proposal', 'id_proposal');
     }
 
     // Relasi One-to-One ke HasilFinal
     public function hasilFinal()
     {
-        return $this->hasOne(HasilFinal::class, 'id_proposal');
+        return $this->hasOne(HasilFinal::class, 'id_proposal', 'id_proposal');
+    }
+
+    // Relasi One-to-Many ke ProposalRevisi
+    public function proposalRevisi()
+    {
+        return $this->hasMany(ProposalRevisi::class, 'id_proposal', 'id_proposal');
+    }
+
+    /**
+     * Relasi ke ketua tim (1 proposal memiliki 1 ketua)
+     */
+    public function ketua()
+    {
+        return $this->hasOne(Team::class, 'id_proposal', 'id_proposal')
+                    ->where('role', 'ketua');
+    }
+
+    /**
+     * Relasi ke anggota tim (1 proposal memiliki banyak anggota non-ketua)
+     */
+    public function anggota()
+    {
+        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal')
+                    ->where('role', '!=', 'ketua')
+                    ->orderBy('role');
+    }
+
+    /**
+     * Relasi ke semua anggota tim termasuk ketua
+     */
+    public function allMembers()
+    {
+        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal')
+                    ->orderByRaw("CASE WHEN role = 'ketua' THEN 1 ELSE 2 END")
+                    ->orderBy('role');
+    }
+
+    /**
+     * Accessor untuk mendapatkan jumlah anggota tim
+     */
+    public function getTeamSizeAttribute()
+    {
+        return $this->teams()->where('status', 'active')->count();
+    }
+
+    /**
+     * Cek apakah tim sudah lengkap (minimal 3 anggota)
+     */
+    public function isTeamComplete()
+    {
+        return $this->team_size >= 3;
+    }
+
+    /**
+     * Cek apakah tim sudah penuh (maksimal 5 anggota)
+     */
+    public function isTeamFull()
+    {
+        return $this->team_size >= 5;
+    }
+
+    // Method untuk mendapatkan status label
+    public function getStatusLabelAttribute()
+    {
+        $labels = [
+            'pending' => 'Menunggu',
+            'valid' => 'Valid',
+            'tidak_valid' => 'Tidak Valid',
+            'submitted' => 'Telah Diajukan',
+            'review_administratif' => 'Review Administratif',
+            'review_substantif' => 'Review Substantif',
+            'revisi' => 'Revisi',
+            'lolos' => 'Lolos',
+            'tidak_lolos' => 'Tidak Lolos'
+        ];
+
+        return $labels[$this->status] ?? $this->status;
+    }
+
+    // Method untuk mendapatkan skim label
+    public function getSkimLabelAttribute()
+    {
+        $labels = [
+            'RE' => 'PKM-RE (Riset Eksak)',
+            'RSH' => 'PKM-RSH (Riset Sosial Humaniora)',
+            'KC' => 'PKM-KC (Karsa Cipta)',
+            'PM' => 'PKM-PM (Pengabdian Masyarakat)',
+            'PI' => 'PKM-PI (Penerapan Iptek)',
+            'K' => 'PKM-K (Kewirausahaan)',
+            'KI' => 'PKM-KI (Karsa Cipta)',
+            'VGK' => 'PKM-VGK (Video Gagasan Konstruktif)',
+            'AI' => 'PKM-AI (Artikel Ilmiah)',
+            'GFT' => 'PKM-GFT (Gagasan Futuristik Tertulis)'
+        ];
+
+        return $labels[$this->skim] ?? $this->skim;
+    }
+
+    // Method untuk format dana
+    public function getDanaFormattedAttribute()
+    {
+        return 'Rp ' . number_format($this->dana_diajukan, 0, ',', '.');
+    }
+
+    // Method untuk cek apakah proposal bisa diedit
+    public function canBeEdited()
+    {
+        return in_array($this->status, ['draft', 'pending']);
+    }
+
+    // Method untuk cek apakah proposal bisa dihapus
+    public function canBeDeleted()
+    {
+        return $this->status === 'draft';
+    }
+
+    /**
+     * Dapatkan anggota berdasarkan role
+     */
+    public function getMemberByRole($role)
+    {
+        return $this->teams()->where('role', $role)->first();
+    }
+
+    /**
+     * Dapatkan ketua tim
+     */
+    public function getKetua()
+    {
+        return $this->teams()->where('role', 'ketua')->first();
+    }
+
+    /**
+     * Dapatkan anggota wajib (anggota1 dan anggota2)
+     */
+    public function getAnggotaWajib()
+    {
+        return $this->teams()
+                    ->whereIn('role', ['anggota1', 'anggota2'])
+                    ->orderBy('role')
+                    ->get();
+    }
+
+    /**
+     * Dapatkan anggota opsional (anggota3 dan anggota4)
+     */
+    public function getAnggotaOpsional()
+    {
+        return $this->teams()
+                    ->whereIn('role', ['anggota3', 'anggota4'])
+                    ->orderBy('role')
+                    ->get();
+    }
+
+    /**
+     * Cek apakah NIM adalah anggota tim ini
+     */
+    public function isMember($nim)
+    {
+        return $this->teams()->where('nim', $nim)->exists();
+    }
+
+    /**
+     * Cek apakah NIM adalah ketua tim ini
+     */
+    public function isKetua($nim)
+    {
+        return $this->teams()->where('nim', $nim)->where('role', 'ketua')->exists();
     }
 }
 
