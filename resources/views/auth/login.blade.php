@@ -42,7 +42,11 @@
                 #7a1f1f 100%);
             background-size: 400% 400%;
             animation: gradientShift 15s ease infinite;
+            height: 100vh;
+            overflow: hidden;
         }
+
+        html, body { height: 100%; }
         
         @keyframes gradientShift {
             0% {
@@ -54,6 +58,12 @@
             100% {
                 background-position: 0% 50%;
             }
+        }
+
+        /* Global page scale to 80% */
+        .page-zoom {
+            transform: scale(0.8);
+            transform-origin: top center;
         }
         
         /* Overlay untuk efek yang lebih halus */
@@ -166,7 +176,7 @@
     </style>
 </head>
 <body class="min-h-screen">
-    <div class="min-h-screen flex">
+    <div class="min-h-screen flex page-zoom">
         <!-- Left Side - Information Panel -->
         <div class="hidden lg:flex lg:w-1/2">
             

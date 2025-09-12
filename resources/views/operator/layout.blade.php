@@ -320,6 +320,9 @@
                     <li><a href="{{ route('operator.hasil.final') }}" class="@if(request()->routeIs('operator.hasil.final')) active @endif">
                         <i class="fas fa-trophy me-2"></i>Hasil Final
                     </a></li>
+                    <li><a href="{{ route('operator.manage.accounts') }}" class="@if(request()->routeIs('operator.manage.accounts')) active @endif">
+                        <i class="fas fa-id-card me-2"></i>Manajemen Akun
+                    </a></li>
                 </ul>
             </li>
         </ul>

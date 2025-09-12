@@ -21,17 +21,15 @@ Route::post('/forgot-password', [AuthController::class, 'sendPasswordReset'])->n
 // Route untuk logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Route untuk registrasi
-Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
-
-// Route untuk registrasi khusus berdasarkan role
-Route::get('/register/dosen', [AuthController::class, 'showDosenRegistration'])->name('register.dosen');
-Route::post('/register/dosen', [AuthController::class, 'registerDosen']);
-Route::get('/register/reviewer', [AuthController::class, 'showReviewerRegistration'])->name('register.reviewer');
-Route::post('/register/reviewer', [AuthController::class, 'registerReviewer']);
-Route::get('/register/operator', [AuthController::class, 'showOperatorRegistration'])->name('register.operator');
-Route::post('/register/operator', [AuthController::class, 'registerOperator']);
+// Registrasi publik dinonaktifkan (semua pembuatan akun lewat operator)
+// Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+// Route::post('/register', [AuthController::class, 'register']);
+// Route::get('/register/dosen', [AuthController::class, 'showDosenRegistration'])->name('register.dosen');
+// Route::post('/register/dosen', [AuthController::class, 'registerDosen']);
+// Route::get('/register/reviewer', [AuthController::class, 'showReviewerRegistration'])->name('register.reviewer');
+// Route::post('/register/reviewer', [AuthController::class, 'registerReviewer']);
+// Route::get('/register/operator', [AuthController::class, 'showOperatorRegistration'])->name('register.operator');
+// Route::post('/register/operator', [AuthController::class, 'registerOperator']);
 
 // Route untuk dropdown
 Route::get('/get-fakultas', [DropdownController::class, 'getFakultas'])->name('get.fakultas');
@@ -162,6 +160,12 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::post('/operator/update-hasil-final', [OperatorController::class, 'updateHasilFinal'])->name('operator.update.hasil.final');
     Route::get('/operator/revisi/{id}/download', [OperatorController::class, 'downloadRevisi'])->name('operator.revisi.download');
     Route::get('/operator/detail-hasil-final/{id}', [OperatorController::class, 'detailHasilFinal'])->name('operator.detail.hasil.final');
+    
+    // Manajemen Akun (Mahasiswa, Dosen, Reviewer, Operator)
+    Route::get('/operator/akun', [OperatorController::class, 'manageAccounts'])->name('operator.manage.accounts');
+    Route::post('/operator/akun/{type}', [OperatorController::class, 'storeAccount'])->name('operator.accounts.store');
+    Route::put('/operator/akun/{type}/{id}', [OperatorController::class, 'updateAccount'])->name('operator.accounts.update');
+    Route::delete('/operator/akun/{type}/{id}', [OperatorController::class, 'deleteAccount'])->name('operator.accounts.delete');
     
     // Route untuk notifikasi operator
     Route::get('/operator/notifications', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('operator.notifications.get');

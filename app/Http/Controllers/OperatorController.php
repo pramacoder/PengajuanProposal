@@ -17,6 +17,9 @@ use App\Models\Fakultas;
 use App\Models\Prodi;
 use App\Models\ProposalRevisi;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Mahasiswa;
+use App\Models\User;
 
 class OperatorController extends Controller
 {
@@ -550,6 +553,201 @@ class OperatorController extends Controller
         ])->findOrFail($id);
 
         return view('operator.detail_hasil_final', compact('proposal'));
+    }
+
+    // Manajemen Akun
+    public function manageAccounts()
+    {
+        $mahasiswas = Mahasiswa::orderBy('created_at', 'desc')->limit(100)->get();
+        $dosens = Dosen::orderBy('created_at', 'desc')->limit(100)->get();
+        $reviewers = Reviewer::orderBy('created_at', 'desc')->limit(100)->get();
+        $operators = PT::orderBy('created_at', 'desc')->limit(100)->get();
+        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
+        $prodis = Prodi::orderBy('nama_prodi')->get();
+        return view('operator.manajemen_akun', compact('mahasiswas', 'dosens', 'reviewers', 'operators', 'fakultas', 'prodis'));
+    }
+
+    public function storeAccount(Request $request, $type)
+    {
+        switch ($type) {
+            case 'mahasiswa':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'nim' => 'required|string|max:20|unique:mahasiswas,nim',
+                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs',
+                    'no_hp' => 'required|string|max:15',
+                    'prodi' => 'required|exists:prodis,id_prodi',
+                    'fakultas' => 'required|exists:fakultas,id_fakultas',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+                $prodi = Prodi::find($request->prodi);
+                $fakultas = Fakultas::find($request->fakultas);
+                Mahasiswa::create([
+                    'nama_mhs' => $request->nama,
+                    'nim' => $request->nim,
+                    'email_mhs' => $request->email,
+                    'no_hp_mhs' => $request->no_hp,
+                    'prodi_mhs' => $prodi->nama_prodi,
+                    'fakultas_mhs' => $fakultas->nama_fakultas,
+                    'password' => Hash::make($request->password),
+                    'is_active' => true,
+                ]);
+                break;
+            case 'dosen':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'nuptk' => 'required|string|max:20|unique:dosens,nuptk',
+                    'email' => 'required|email|max:255|unique:dosens,email_dosen',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+                Dosen::create([
+                    'nama_dosen' => $request->nama,
+                    'nuptk' => $request->nuptk,
+                    'email_dosen' => $request->email,
+                    'no_hp_dosen' => $request->no_hp,
+                    'password' => Hash::make($request->password),
+                    'is_active' => true,
+                ]);
+                break;
+            case 'reviewer':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+                Reviewer::create([
+                    'nama_reviewer' => $request->nama,
+                    'email_reviewer' => $request->email,
+                    'no_hp_reviewer' => $request->no_hp,
+                    'password' => Hash::make($request->password),
+                    'role' => 'reviewer',
+                    'is_active' => true,
+                ]);
+                break;
+            case 'operator':
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'email' => 'required|email|max:255|unique:pts,email_pt',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'required|string|min:8|confirmed',
+                ]);
+                PT::create([
+                    'nama_pt' => $request->nama,
+                    'email_pt' => $request->email,
+                    'no_hp_pt' => $request->no_hp,
+                    'password' => Hash::make($request->password),
+                    'role' => 'operator',
+                    'is_active' => true,
+                ]);
+                break;
+            default:
+                return back()->with('error', 'Tipe akun tidak dikenal.');
+        }
+        return redirect()->route('operator.manage.accounts')->with('success', 'Akun berhasil dibuat.');
+    }
+
+    public function updateAccount(Request $request, $type, $id)
+    {
+        switch ($type) {
+            case 'mahasiswa':
+                $mahasiswa = Mahasiswa::findOrFail($id);
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'nim' => 'required|string|max:20|unique:mahasiswas,nim,' . $mahasiswa->id_mahasiswa . ',id_mahasiswa',
+                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs,' . $mahasiswa->id_mahasiswa . ',id_mahasiswa',
+                    'no_hp' => 'required|string|max:15',
+                    'prodi' => 'nullable|exists:prodis,id_prodi',
+                    'fakultas' => 'nullable|exists:fakultas,id_fakultas',
+                    'password' => 'nullable|string|min:8|confirmed',
+                    'is_active' => 'nullable|boolean',
+                ]);
+                $mahasiswa->nama_mhs = $request->nama;
+                $mahasiswa->nim = $request->nim;
+                $mahasiswa->email_mhs = $request->email;
+                $mahasiswa->no_hp_mhs = $request->no_hp;
+                if ($request->filled('prodi')) { $mahasiswa->prodi_mhs = Prodi::find($request->prodi)->nama_prodi; }
+                if ($request->filled('fakultas')) { $mahasiswa->fakultas_mhs = Fakultas::find($request->fakultas)->nama_fakultas; }
+                if ($request->filled('password')) { $mahasiswa->password = Hash::make($request->password); }
+                if ($request->has('is_active')) { $mahasiswa->is_active = (bool)$request->is_active; }
+                $mahasiswa->save();
+                break;
+            case 'dosen':
+                $dosen = Dosen::findOrFail($id);
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'nuptk' => 'required|string|max:20|unique:dosens,nuptk,' . $dosen->id_dosen . ',id_dosen',
+                    'email' => 'required|email|max:255|unique:dosens,email_dosen,' . $dosen->id_dosen . ',id_dosen',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'nullable|string|min:8|confirmed',
+                    'is_active' => 'nullable|boolean',
+                ]);
+                $dosen->nama_dosen = $request->nama;
+                $dosen->nuptk = $request->nuptk;
+                $dosen->email_dosen = $request->email;
+                $dosen->no_hp_dosen = $request->no_hp;
+                if ($request->filled('password')) { $dosen->password = Hash::make($request->password); }
+                if ($request->has('is_active')) { $dosen->is_active = (bool)$request->is_active; }
+                $dosen->save();
+                break;
+            case 'reviewer':
+                $reviewer = Reviewer::findOrFail($id);
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer,' . $reviewer->id_reviewer . ',id_reviewer',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'nullable|string|min:8|confirmed',
+                    'is_active' => 'nullable|boolean',
+                ]);
+                $reviewer->nama_reviewer = $request->nama;
+                $reviewer->email_reviewer = $request->email;
+                $reviewer->no_hp_reviewer = $request->no_hp;
+                if ($request->filled('password')) { $reviewer->password = Hash::make($request->password); }
+                if ($request->has('is_active')) { $reviewer->is_active = (bool)$request->is_active; }
+                $reviewer->save();
+                break;
+            case 'operator':
+                $operator = PT::findOrFail($id);
+                $request->validate([
+                    'nama' => 'required|string|max:255',
+                    'email' => 'required|email|max:255|unique:pts,email_pt,' . $operator->id_pt . ',id_pt',
+                    'no_hp' => 'required|string|max:15',
+                    'password' => 'nullable|string|min:8|confirmed',
+                    'is_active' => 'nullable|boolean',
+                ]);
+                $operator->nama_pt = $request->nama;
+                $operator->email_pt = $request->email;
+                $operator->no_hp_pt = $request->no_hp;
+                if ($request->filled('password')) { $operator->password = Hash::make($request->password); }
+                if ($request->has('is_active')) { $operator->is_active = (bool)$request->is_active; }
+                $operator->save();
+                break;
+            default:
+                return back()->with('error', 'Tipe akun tidak dikenal.');
+        }
+        return redirect()->route('operator.manage.accounts')->with('success', 'Akun berhasil diperbarui.');
+    }
+
+    public function deleteAccount($type, $id)
+    {
+        switch ($type) {
+            case 'mahasiswa':
+                Mahasiswa::where('id_mahasiswa', $id)->delete();
+                break;
+            case 'dosen':
+                Dosen::where('id_dosen', $id)->delete();
+                break;
+            case 'reviewer':
+                Reviewer::where('id_reviewer', $id)->delete();
+                break;
+            case 'operator':
+                PT::where('id_pt', $id)->delete();
+                break;
+            default:
+                return back()->with('error', 'Tipe akun tidak dikenal.');
+        }
+        return redirect()->route('operator.manage.accounts')->with('success', 'Akun berhasil dihapus.');
     }
 
     private function getPKM8BidangData($tahun)
