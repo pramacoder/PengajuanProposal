@@ -1568,11 +1568,27 @@
                         <strong>Hasil Final</strong>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-${statusClass}">
-                            <h5 class="alert-heading">
-                                <i class="fas fa-${statusIcon} me-2"></i>
-                                Status: ${statusText}
-                            </h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="alert alert-${statusClass}">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-${statusIcon} me-2"></i>
+                                        Status: ${statusText}
+                                    </h5>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-primary">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-star me-2"></i>
+                                        Nilai: ${finalResult.nilai ? parseFloat(finalResult.nilai).toFixed(2) : 'N/A'}
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6><i class="fas fa-comment me-2"></i>Catatan Final:</h6>
                             <p class="mb-0">
                                 ${finalResult.catatan_final || 'Tidak ada catatan final.'}
                             </p>

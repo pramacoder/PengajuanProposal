@@ -21,25 +21,54 @@
         </div>
     </div>
     
+    <!-- Workflow Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Informasi Workflow Sistem
+                </h6>
+                <p class="mb-2">Sistem pengajuan proposal berjalan dalam 2 fase yang saling eksklusif:</p>
+                <ul class="mb-0">
+                    <li><strong>Fase 1 - Pengajuan Proposal:</strong> Mahasiswa mengajukan proposal, dosen memvalidasi</li>
+                    <li><strong>Fase 2 - Perbaikan Proposal:</strong> Review proposal, perbaikan, dan penilaian akhir</li>
+                </ul>
+                <small class="text-muted">Hanya satu fase yang dapat aktif pada satu waktu.</small>
+            </div>
+        </div>
+    </div>
+
     <!-- Control Sections -->
     <div class="row">
         <!-- Pendaftaran PKM Section -->
         <div class="col-md-6 mb-4">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
+            <div class="card card-custom {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'border-success' : '' }}">
+                <div class="card-header card-header-custom {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'bg-success' : '' }}">
                     <h5 class="mb-0">
                         <i class="fas fa-edit me-2"></i>
-                        Pendaftaran PKM
+                        Fase 1: Pengajuan Proposal
+                        @if($ruangKontrol->status_pendaftaran == 'terbuka')
+                            <span class="badge bg-light text-success ms-2">AKTIF</span>
+                        @endif
                     </h5>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Mahasiswa dapat mengajukan proposal baru dan dosen dapat memvalidasi
+                        </small>
+                    </div>
+                    
                     <form id="pendaftaranForm">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Tanggal Mulai</label>
                                 <div class="input-group">
                                     <input type="date" class="form-control" id="pendaftaranMulai" 
-                                           value="{{ $ruangKontrol->tanggal_pendaftaran_mulai ?? '' }}">
+                                           value="{{ $ruangKontrol->tanggal_pendaftaran_mulai ?? '' }}"
+                                           {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'disabled' : '' }}>
                                     <span class="input-group-text">
                                         <i class="fas fa-calendar"></i>
                                     </span>
@@ -49,7 +78,8 @@
                                 <label class="form-label">Tanggal Selesai</label>
                                 <div class="input-group">
                                     <input type="date" class="form-control" id="pendaftaranSelesai" 
-                                           value="{{ $ruangKontrol->tanggal_pendaftaran_selesai ?? '' }}">
+                                           value="{{ $ruangKontrol->tanggal_pendaftaran_selesai ?? '' }}"
+                                           {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'disabled' : '' }}>
                                     <span class="input-group-text">
                                         <i class="fas fa-calendar"></i>
                                     </span>
@@ -58,15 +88,25 @@
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-success flex-fill" id="openPendaftaran">
+                            <button type="button" class="btn btn-success flex-fill" id="openPendaftaran"
+                                    {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'disabled' : '' }}>
                                 <i class="fas fa-unlock me-2"></i>
-                                OPEN
+                                BUKA FASE INI
                             </button>
                             <button type="button" class="btn btn-danger flex-fill" id="closePendaftaran">
                                 <i class="fas fa-lock me-2"></i>
-                                CLOSE
+                                TUTUP FASE INI
                             </button>
                         </div>
+                        
+                        @if($ruangKontrol->status_perbaikan == 'terbuka')
+                            <div class="mt-2">
+                                <small class="text-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Tidak dapat membuka fase ini karena Fase 2 sedang aktif
+                                </small>
+                            </div>
+                        @endif
                         
                         <div class="mt-3">
                             <small class="text-muted">
@@ -96,21 +136,32 @@
         
         <!-- Perbaikan Proposal Section -->
         <div class="col-md-6 mb-4">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
+            <div class="card card-custom {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'border-warning' : '' }}">
+                <div class="card-header card-header-custom {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'bg-warning' : '' }}">
                     <h5 class="mb-0">
                         <i class="fas fa-tools me-2"></i>
-                        Perbaikan Proposal
+                        Fase 2: Perbaikan Proposal
+                        @if($ruangKontrol->status_perbaikan == 'terbuka')
+                            <span class="badge bg-light text-warning ms-2">AKTIF</span>
+                        @endif
                     </h5>
                 </div>
                 <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Review proposal, perbaikan, dan penilaian akhir
+                        </small>
+                    </div>
+                    
                     <form id="perbaikanForm">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Tanggal Mulai</label>
                                 <div class="input-group">
                                     <input type="date" class="form-control" id="perbaikanMulai" 
-                                           value="{{ $ruangKontrol->tanggal_perbaikan_mulai ?? '' }}">
+                                           value="{{ $ruangKontrol->tanggal_perbaikan_mulai ?? '' }}"
+                                           {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'disabled' : '' }}>
                                     <span class="input-group-text">
                                         <i class="fas fa-calendar"></i>
                                     </span>
@@ -120,7 +171,8 @@
                                 <label class="form-label">Tanggal Selesai</label>
                                 <div class="input-group">
                                     <input type="date" class="form-control" id="perbaikanSelesai" 
-                                           value="{{ $ruangKontrol->tanggal_perbaikan_selesai ?? '' }}">
+                                           value="{{ $ruangKontrol->tanggal_perbaikan_selesai ?? '' }}"
+                                           {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'disabled' : '' }}>
                                     <span class="input-group-text">
                                         <i class="fas fa-calendar"></i>
                                     </span>
@@ -129,20 +181,30 @@
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-success flex-fill" id="openPerbaikan">
+                            <button type="button" class="btn btn-warning flex-fill" id="openPerbaikan"
+                                    {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'disabled' : '' }}>
                                 <i class="fas fa-unlock me-2"></i>
-                                OPEN
+                                BUKA FASE INI
                             </button>
                             <button type="button" class="btn btn-danger flex-fill" id="closePerbaikan">
                                 <i class="fas fa-lock me-2"></i>
-                                CLOSE
+                                TUTUP FASE INI
                             </button>
                         </div>
+                        
+                        @if($ruangKontrol->status_pendaftaran == 'terbuka')
+                            <div class="mt-2">
+                                <small class="text-warning">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Tidak dapat membuka fase ini karena Fase 1 sedang aktif
+                                </small>
+                            </div>
+                        @endif
                         
                         <div class="mt-3">
                             <small class="text-muted">
                                 Status: 
-                                <span class="badge bg-{{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'success' : 'danger' }}" id="statusPerbaikan">
+                                <span class="badge bg-{{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'warning' : 'danger' }}" id="statusPerbaikan">
                                     {{ ucfirst($ruangKontrol->status_perbaikan ?? 'tertutup') }}
                                 </span>
                             </small>
@@ -181,10 +243,15 @@
                         <div class="col-md-6">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="me-3">
-                                    <i class="fas fa-edit fa-2x text-primary"></i>
+                                    <i class="fas fa-edit fa-2x {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'text-success' : 'text-muted' }}"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-1">Pendaftaran PKM</h6>
+                                    <h6 class="mb-1">
+                                        Fase 1: Pengajuan Proposal
+                                        @if($ruangKontrol->status_pendaftaran == 'terbuka')
+                                            <span class="badge bg-success ms-2">AKTIF</span>
+                                        @endif
+                                    </h6>
                                     <p class="mb-0">
                                         <span class="badge bg-{{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'success' : 'danger' }} me-2">
                                             {{ ucfirst($ruangKontrol->status_pendaftaran ?? 'tertutup') }}
@@ -202,12 +269,17 @@
                         <div class="col-md-6">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="me-3">
-                                    <i class="fas fa-tools fa-2x text-warning"></i>
+                                    <i class="fas fa-tools fa-2x {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'text-warning' : 'text-muted' }}"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-1">Perbaikan Proposal</h6>
+                                    <h6 class="mb-1">
+                                        Fase 2: Perbaikan Proposal
+                                        @if($ruangKontrol->status_perbaikan == 'terbuka')
+                                            <span class="badge bg-warning ms-2">AKTIF</span>
+                                        @endif
+                                    </h6>
                                     <p class="mb-0">
-                                        <span class="badge bg-{{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'success' : 'danger' }} me-2">
+                                        <span class="badge bg-{{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'warning' : 'danger' }} me-2">
                                             {{ ucfirst($ruangKontrol->status_perbaikan ?? 'tertutup') }}
                                         </span>
                                         @if($ruangKontrol->tanggal_perbaikan_mulai && $ruangKontrol->tanggal_perbaikan_selesai)
@@ -217,6 +289,38 @@
                                             </small>
                                         @endif
                                     </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Workflow Status Indicator -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'alert-success' : ($ruangKontrol->status_perbaikan == 'terbuka' ? 'alert-warning' : 'alert-secondary') }}">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-{{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'play-circle' : ($ruangKontrol->status_perbaikan == 'terbuka' ? 'cog' : 'pause-circle') }} me-2"></i>
+                                    <div>
+                                        <strong>
+                                            @if($ruangKontrol->status_pendaftaran == 'terbuka')
+                                                Fase 1 Sedang Berjalan
+                                            @elseif($ruangKontrol->status_perbaikan == 'terbuka')
+                                                Fase 2 Sedang Berjalan
+                                            @else
+                                                Sistem Dalam Mode Standby
+                                            @endif
+                                        </strong>
+                                        <br>
+                                        <small>
+                                            @if($ruangKontrol->status_pendaftaran == 'terbuka')
+                                                Mahasiswa dapat mengajukan proposal baru dan dosen dapat memvalidasi
+                                            @elseif($ruangKontrol->status_perbaikan == 'terbuka')
+                                                Review proposal, perbaikan, dan penilaian akhir sedang berlangsung
+                                            @else
+                                                Tidak ada fase yang aktif. Silakan buka salah satu fase untuk memulai proses
+                                            @endif
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -250,8 +354,18 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('perbaikanSelesai').value = nextMonth.toISOString().split('T')[0];
     }
     
+    // Initialize button states
+    updateButtonStates();
+    
     // Event listeners for pendaftaran buttons
     document.getElementById('openPendaftaran').addEventListener('click', function() {
+        // Check if perbaikan is currently open
+        const perbaikanStatus = document.getElementById('statusPerbaikan').textContent.toLowerCase();
+        if (perbaikanStatus === 'terbuka') {
+            if (!confirm('Membuka Fase 1 akan menutup Fase 2 yang sedang aktif. Apakah Anda yakin?')) {
+                return;
+            }
+        }
         updateRuangKontrol('pendaftaran', 'terbuka');
     });
     
@@ -261,6 +375,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listeners for perbaikan buttons
     document.getElementById('openPerbaikan').addEventListener('click', function() {
+        // Check if pendaftaran is currently open
+        const pendaftaranStatus = document.getElementById('statusPendaftaran').textContent.toLowerCase();
+        if (pendaftaranStatus === 'terbuka') {
+            if (!confirm('Membuka Fase 2 akan menutup Fase 1 yang sedang aktif. Apakah Anda yakin?')) {
+                return;
+            }
+        }
         updateRuangKontrol('perbaikan', 'terbuka');
     });
     
@@ -291,9 +412,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateRuangKontrol(type, status) {
+    // Implement mutual exclusive logic
+    let statusPendaftaran, statusPerbaikan;
+    
+    if (type === 'pendaftaran') {
+        statusPendaftaran = status;
+        // If opening pendaftaran, close perbaikan
+        statusPerbaikan = status === 'terbuka' ? 'tertutup' : getCurrentStatus('perbaikan');
+    } else if (type === 'perbaikan') {
+        statusPerbaikan = status;
+        // If opening perbaikan, close pendaftaran
+        statusPendaftaran = status === 'terbuka' ? 'tertutup' : getCurrentStatus('pendaftaran');
+    }
+    
     const data = {
-        status_pendaftaran: type === 'pendaftaran' ? status : getCurrentStatus('pendaftaran'),
-        status_perbaikan: type === 'perbaikan' ? status : getCurrentStatus('perbaikan'),
+        status_pendaftaran: statusPendaftaran,
+        status_perbaikan: statusPerbaikan,
         tanggal_pendaftaran_mulai: document.getElementById('pendaftaranMulai').value,
         tanggal_pendaftaran_selesai: document.getElementById('pendaftaranSelesai').value,
         tanggal_perbaikan_mulai: document.getElementById('perbaikanMulai').value,
@@ -362,24 +496,87 @@ function getCurrentStatus(type) {
 }
 
 function updateStatusDisplay(type, status) {
-    // Update badge status
+    // Update badge status for the specific type
     const statusElement = document.querySelector(`#status${type.charAt(0).toUpperCase() + type.slice(1)}`);
     if (statusElement) {
         statusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-        statusElement.className = `badge bg-${status === 'terbuka' ? 'success' : 'danger'}`;
+        if (type === 'perbaikan') {
+            statusElement.className = `badge bg-${status === 'terbuka' ? 'warning' : 'danger'}`;
+        } else {
+            statusElement.className = `badge bg-${status === 'terbuka' ? 'success' : 'danger'}`;
+        }
     }
     
-    // Update status overview section
-    const overviewStatusElement = document.querySelector(`.card-body .badge.bg-${status === 'terbuka' ? 'success' : 'danger'}`);
-    if (overviewStatusElement) {
-        overviewStatusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    // Update the other phase status (mutual exclusive)
+    const otherType = type === 'pendaftaran' ? 'perbaikan' : 'pendaftaran';
+    const otherStatus = status === 'terbuka' ? 'tertutup' : getCurrentStatus(otherType);
+    const otherStatusElement = document.querySelector(`#status${otherType.charAt(0).toUpperCase() + otherType.slice(1)}`);
+    if (otherStatusElement) {
+        otherStatusElement.textContent = otherStatus.charAt(0).toUpperCase() + otherStatus.slice(1);
+        if (otherType === 'perbaikan') {
+            otherStatusElement.className = `badge bg-${otherStatus === 'terbuka' ? 'warning' : 'danger'}`;
+        } else {
+            otherStatusElement.className = `badge bg-${otherStatus === 'terbuka' ? 'success' : 'danger'}`;
+        }
     }
     
-    // Update form badge
-    const formStatusElement = document.querySelector(`#${type}Form .badge`);
-    if (formStatusElement) {
-        formStatusElement.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-        formStatusElement.className = `badge bg-${status === 'terbuka' ? 'success' : 'danger'}`;
+    // Update card headers and borders
+    updateCardAppearance(type, status);
+    updateCardAppearance(otherType, otherStatus);
+    
+    // Update button states
+    updateButtonStates();
+}
+
+function updateCardAppearance(type, status) {
+    const card = document.querySelector(`#${type}Form`).closest('.card');
+    const header = card.querySelector('.card-header');
+    
+    if (type === 'pendaftaran') {
+        if (status === 'terbuka') {
+            card.classList.add('border-success');
+            header.classList.add('bg-success');
+        } else {
+            card.classList.remove('border-success');
+            header.classList.remove('bg-success');
+        }
+    } else if (type === 'perbaikan') {
+        if (status === 'terbuka') {
+            card.classList.add('border-warning');
+            header.classList.add('bg-warning');
+        } else {
+            card.classList.remove('border-warning');
+            header.classList.remove('bg-warning');
+        }
+    }
+}
+
+function updateButtonStates() {
+    const pendaftaranStatus = getCurrentStatus('pendaftaran');
+    const perbaikanStatus = getCurrentStatus('perbaikan');
+    
+    // Update pendaftaran buttons
+    const openPendaftaran = document.getElementById('openPendaftaran');
+    const closePendaftaran = document.getElementById('closePendaftaran');
+    
+    if (perbaikanStatus === 'terbuka') {
+        openPendaftaran.disabled = true;
+        openPendaftaran.title = 'Tidak dapat membuka karena Fase 2 sedang aktif';
+    } else {
+        openPendaftaran.disabled = false;
+        openPendaftaran.title = '';
+    }
+    
+    // Update perbaikan buttons
+    const openPerbaikan = document.getElementById('openPerbaikan');
+    const closePerbaikan = document.getElementById('closePerbaikan');
+    
+    if (pendaftaranStatus === 'terbuka') {
+        openPerbaikan.disabled = true;
+        openPerbaikan.title = 'Tidak dapat membuka karena Fase 1 sedang aktif';
+    } else {
+        openPerbaikan.disabled = false;
+        openPerbaikan.title = '';
     }
 }
 

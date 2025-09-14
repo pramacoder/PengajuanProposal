@@ -51,6 +51,14 @@
                                     @endif
                                 </td>
                             </tr>
+                            @if($proposal->hasilFinal)
+                            <tr>
+                                <td><strong>Nilai Final:</strong></td>
+                                <td>
+                                    <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                </td>
+                            </tr>
+                            @endif
                         </table>
                     </div>
                     <div class="col-md-6">
@@ -167,32 +175,63 @@
                             <i class="fas fa-trophy me-2"></i>
                             Hasil Final
                         </h6>
-                        @if($proposal->status_final === 'lolos')
-                            <div class="alert alert-success">
-                                <i class="fas fa-check-circle me-2"></i>
-                                <strong>Selamat! Proposal LOLOS</strong><br>
-                                Proposal ini telah lolos seleksi dan akan dikirim ke tingkat nasional. 
-                                Tim mahasiswa dapat melanjutkan ke tahap implementasi sesuai dengan rencana yang telah dibuat.
-                            </div>
-                            <div class="card bg-success text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-trophy fa-3x mb-3"></i>
-                                    <h4>PROPOSAL LOLOS</h4>
-                                    <p class="mb-0">Proposal akan dikirim ke tingkat nasional untuk seleksi selanjutnya.</p>
+                        @if($proposal->hasilFinal)
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="alert alert-{{ $proposal->status_final === 'lolos' ? 'success' : 'danger' }}">
+                                        <i class="fas fa-{{ $proposal->status_final === 'lolos' ? 'check-circle' : 'times-circle' }} me-2"></i>
+                                        <strong>Status: {{ $proposal->status_final === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS' }}</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-primary">
+                                        <i class="fas fa-star me-2"></i>
+                                        <strong>Nilai: {{ number_format($proposal->hasilFinal->nilai, 2) }}</strong>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            @if($proposal->hasilFinal->catatan_final)
+                            <div class="alert alert-info">
+                                <i class="fas fa-comment me-2"></i>
+                                <strong>Catatan Final:</strong><br>
+                                {{ $proposal->hasilFinal->catatan_final }}
+                            </div>
+                            @endif
+                            
+                            @if($proposal->status_final === 'lolos')
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Selamat! Proposal LOLOS</strong><br>
+                                    Proposal ini telah lolos seleksi dan akan dikirim ke tingkat nasional. 
+                                    Tim mahasiswa dapat melanjutkan ke tahap implementasi sesuai dengan rencana yang telah dibuat.
+                                </div>
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-trophy fa-3x mb-3"></i>
+                                        <h4>PROPOSAL LOLOS</h4>
+                                        <p class="mb-0">Proposal akan dikirim ke tingkat nasional untuk seleksi selanjutnya.</p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-times-circle me-2"></i>
+                                    <strong>Proposal TIDAK LOLOS</strong><br>
+                                    Proposal ini tidak lolos seleksi. Tim mahasiswa dapat melakukan perbaikan dan mengajukan kembali pada periode berikutnya.
+                                </div>
+                                <div class="card bg-danger text-white">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-times-circle fa-3x mb-3"></i>
+                                        <h4>PROPOSAL TIDAK LOLOS</h4>
+                                        <p class="mb-0">Proposal tidak lolos seleksi. Silakan lakukan perbaikan untuk pengajuan selanjutnya.</p>
+                                    </div>
+                                </div>
+                            @endif
                         @else
-                            <div class="alert alert-danger">
-                                <i class="fas fa-times-circle me-2"></i>
-                                <strong>Proposal TIDAK LOLOS</strong><br>
-                                Proposal ini tidak lolos seleksi. Tim mahasiswa dapat melakukan perbaikan dan mengajukan kembali pada periode berikutnya.
-                            </div>
-                            <div class="card bg-danger text-white">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-times-circle fa-3x mb-3"></i>
-                                    <h4>PROPOSAL TIDAK LOLOS</h4>
-                                    <p class="mb-0">Proposal tidak lolos seleksi. Silakan lakukan perbaikan untuk pengajuan selanjutnya.</p>
-                                </div>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Belum ada hasil final</strong><br>
+                                Hasil final akan muncul di sini setelah operator menentukan penilaian final.
                             </div>
                         @endif
                     </div>

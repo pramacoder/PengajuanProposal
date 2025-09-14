@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ruang_kontrols', function (Blueprint $table) {
-            //
+        Schema::table('hasil_finals', function (Blueprint $table) {
+            $table->decimal('nilai', 5, 2)->nullable()->after('catatan_final');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ruang_kontrols', function (Blueprint $table) {
-            //
+        Schema::table('hasil_finals', function (Blueprint $table) {
+            $table->dropColumn('nilai');
         });
     }
 };

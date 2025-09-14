@@ -302,6 +302,52 @@ class NotificationService
     }
 
     /**
+     * Notifikasi hasil final proposal
+     */
+    public function notifyHasilFinal(Proposal $proposal, string $statusFinal, float $nilai, string $catatanFinal = null): void
+    {
+        $type = $statusFinal === 'lolos' ? 'success' : 'danger';
+        $title = $statusFinal === 'lolos' ? 'Proposal Lolos Final' : 'Proposal Tidak Lolos Final';
+        $message = $statusFinal === 'lolos' 
+            ? "Selamat! Proposal '{$proposal->judul_proposal}' telah lolos penilaian final dengan nilai {$nilai}."
+            : "Mohon maaf, proposal '{$proposal->judul_proposal}' tidak lolos penilaian final dengan nilai {$nilai}.";
+
+        if ($catatanFinal) {
+            $message .= " Catatan: {$catatanFinal}";
+        }
+
+        // Notifikasi ke mahasiswa
+        $this->notifyMahasiswa(
+            $proposal,
+            $type,
+            $title,
+            $message,
+            [
+                'status_final' => $statusFinal,
+                'nilai' => $nilai,
+                'catatan_final' => $catatanFinal,
+                'hasil_final_time' => now()->toISOString()
+            ]
+        );
+
+        // Notifikasi ke dosen pembimbing
+        $this->notifyDosen(
+            $proposal,
+            $type,
+            $title,
+            $message,
+            [
+                'status_final' => $statusFinal,
+                'nilai' => $nilai,
+                'catatan_final' => $catatanFinal,
+                'hasil_final_time' => now()->toISOString()
+            ]
+        );
+
+        Log::info("Notifikasi hasil final berhasil dikirim untuk proposal {$proposal->id_proposal}");
+    }
+
+    /**
      * Dapatkan jumlah notifikasi yang belum dibaca untuk user tertentu
      */
     public function getUnreadCount(string $userIdentifier, string $userType): int

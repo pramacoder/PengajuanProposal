@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'csrf' => \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
             'ruang.kontrol' => \App\Http\Middleware\CheckRuangKontrol::class,
+            'check.phase' => \App\Http\Middleware\CheckActivePhase::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

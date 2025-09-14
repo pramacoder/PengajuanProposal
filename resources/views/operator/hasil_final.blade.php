@@ -73,6 +73,7 @@
                             <th>Status Revisi</th>
                             <th>Tanggal Revisi</th>
                             <th>Hasil Final</th>
+                            <th>Nilai</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -124,6 +125,13 @@
                                 @endif
                             </td>
                             <td>
+                                @if($proposal->hasilFinal)
+                                    <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td>
                                 @if(!$proposal->hasilFinal)
                                     <a href="{{ route('operator.detail.hasil.final', $proposal->id_proposal) }}" 
                                        class="btn btn-sm btn-primary" 
@@ -141,7 +149,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4">
+                            <td colspan="9" class="text-center py-4">
                                 <div class="text-muted">
                                     <i class="fas fa-inbox fa-3x mb-3"></i>
                                     <p>Tidak ada proposal yang perlu dinilai final</p>

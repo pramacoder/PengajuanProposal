@@ -74,6 +74,12 @@
                                                             </span>
                                                         @endif
                                                     </p>
+                                                    @if($proposal->hasilFinal)
+                                                    <p class="mb-1">
+                                                        <strong>Nilai:</strong> 
+                                                        <span class="badge bg-primary">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                                    </p>
+                                                    @endif
                                                     <p class="mb-1">
                                                         <strong>Skim:</strong> {{ $proposal->skim }}
                                                     </p>

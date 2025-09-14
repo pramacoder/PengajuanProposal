@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Mahasiswa;
 use App\Models\User;
+use App\Services\NotificationService;
 
 class OperatorController extends Controller
 {
@@ -38,7 +39,13 @@ class OperatorController extends Controller
         $totalKeseluruhan = $pkm8Bidang->sum('jumlah');
         $totalInsentif = $pkmInsentif->sum('jumlah');
         
-        return view('operator.dashboard', compact('pkm8Bidang', 'pkmInsentif', 'totalKeseluruhan', 'totalInsentif', 'tahun'));
+        // Data untuk grafik
+        $chartData = $this->getChartData($tahun);
+        
+        // Data perangkingan proposal terbaik
+        $topProposals = $this->getTopProposals($tahun);
+        
+        return view('operator.dashboard', compact('pkm8Bidang', 'pkmInsentif', 'totalKeseluruhan', 'totalInsentif', 'tahun', 'chartData', 'topProposals'));
     }
 
     public function pilihReviewer()
@@ -326,6 +333,37 @@ class OperatorController extends Controller
         return view('operator.ruang_kontrol', compact('ruangKontrol'));
     }
 
+    /**
+     * Get current active phase status
+     */
+    public function getActivePhase()
+    {
+        $ruangKontrol = RuangKontrol::first();
+        
+        if (!$ruangKontrol) {
+            return response()->json([
+                'success' => true,
+                'active_phase' => null,
+                'status_pendaftaran' => 'tertutup',
+                'status_perbaikan' => 'tertutup'
+            ]);
+        }
+        
+        $activePhase = null;
+        if ($ruangKontrol->status_pendaftaran === 'terbuka') {
+            $activePhase = 'pendaftaran';
+        } elseif ($ruangKontrol->status_perbaikan === 'terbuka') {
+            $activePhase = 'perbaikan';
+        }
+        
+        return response()->json([
+            'success' => true,
+            'active_phase' => $activePhase,
+            'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
+            'status_perbaikan' => $ruangKontrol->status_perbaikan
+        ]);
+    }
+
     public function updateRuangKontrol(Request $request)
     {
         // Log request untuk debugging
@@ -343,14 +381,26 @@ class OperatorController extends Controller
             'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai'
         ]);
 
+        // Implement mutual exclusive logic
+        $statusPendaftaran = $request->status_pendaftaran;
+        $statusPerbaikan = $request->status_perbaikan;
+        
+        // If both phases are set to 'terbuka', this is invalid
+        if ($statusPendaftaran === 'terbuka' && $statusPerbaikan === 'terbuka') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat membuka kedua fase secara bersamaan. Hanya satu fase yang dapat aktif pada satu waktu.'
+            ], 422);
+        }
+
         try {
             $ruangKontrol = RuangKontrol::first();
             
             if (!$ruangKontrol) {
                 // Buat record baru jika belum ada
                 $ruangKontrol = RuangKontrol::create([
-                    'status_pendaftaran' => $request->status_pendaftaran,
-                    'status_perbaikan' => $request->status_perbaikan,
+                    'status_pendaftaran' => $statusPendaftaran,
+                    'status_perbaikan' => $statusPerbaikan,
                     'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
                     'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
                     'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
@@ -360,8 +410,8 @@ class OperatorController extends Controller
             } else {
                 // Update record yang sudah ada
                 $ruangKontrol->update([
-                    'status_pendaftaran' => $request->status_pendaftaran,
-                    'status_perbaikan' => $request->status_perbaikan,
+                    'status_pendaftaran' => $statusPendaftaran,
+                    'status_perbaikan' => $statusPerbaikan,
                     'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
                     'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
                     'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
@@ -373,12 +423,28 @@ class OperatorController extends Controller
             \Log::info('Ruang Kontrol Updated Successfully', [
                 'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
                 'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
-                'status_perbaikan' => $ruangKontrol->status_perbaikan
+                'status_perbaikan' => $ruangKontrol->status_perbaikan,
+                'mutual_exclusive_applied' => true
             ]);
+            
+            // Determine which phase is active for response message
+            $activePhase = '';
+            if ($statusPendaftaran === 'terbuka') {
+                $activePhase = 'Fase 1 (Pengajuan Proposal)';
+            } elseif ($statusPerbaikan === 'terbuka') {
+                $activePhase = 'Fase 2 (Perbaikan Proposal)';
+            } else {
+                $activePhase = 'Tidak ada fase aktif';
+            }
             
             return response()->json([
                 'success' => true,
-                'message' => 'Pengaturan ruang kontrol berhasil diperbarui'
+                'message' => "Pengaturan ruang kontrol berhasil diperbarui. Status aktif: {$activePhase}",
+                'data' => [
+                    'status_pendaftaran' => $statusPendaftaran,
+                    'status_perbaikan' => $statusPerbaikan,
+                    'active_phase' => $activePhase
+                ]
             ]);
             
         } catch (\Exception $e) {
@@ -474,7 +540,8 @@ class OperatorController extends Controller
         $request->validate([
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_final' => 'required|in:lolos,tidak_lolos',
-            'catatan_final' => 'nullable|string'
+            'catatan_final' => 'nullable|string',
+            'nilai' => 'required|numeric|min:0|max:100'
         ]);
 
         try {
@@ -491,8 +558,18 @@ class OperatorController extends Controller
                 [
                     'status_final' => $request->status_final,
                     'catatan_final' => $request->catatan_final,
+                    'nilai' => $request->nilai,
                     'id_pt' => auth('operator')->id()
                 ]
+            );
+            
+            // Kirim notifikasi ke mahasiswa dan dosen
+            $notificationService = new NotificationService();
+            $notificationService->notifyHasilFinal(
+                $proposal,
+                $request->status_final,
+                $request->nilai,
+                $request->catatan_final
             );
             
             DB::commit();
@@ -852,6 +929,81 @@ class OperatorController extends Controller
                 'selesai_review' => $selesaiReview
             ];
         });
+    }
+
+    /**
+     * Get chart data for dashboard
+     */
+    private function getChartData($tahun)
+    {
+        // Data proposal per tahun (3 tahun terakhir)
+        $years = [$tahun - 2, $tahun - 1, $tahun];
+        $proposalPerTahun = [];
+        
+        foreach ($years as $year) {
+            $count = Proposal::whereYear('tanggal_pengajuan', $year)->count();
+            $proposalPerTahun[] = [
+                'tahun' => $year,
+                'jumlah' => $count
+            ];
+        }
+        
+        // Data proposal per skim di tahun terbaru
+        $proposalPerSkim = Proposal::whereYear('tanggal_pengajuan', $tahun)
+            ->selectRaw('skim, COUNT(*) as jumlah')
+            ->groupBy('skim')
+            ->orderBy('jumlah', 'desc')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'skim' => $item->skim,
+                    'jumlah' => $item->jumlah
+                ];
+            });
+        
+        // Data proposal per fakultas di tahun terbaru
+        $proposalPerFakultas = Proposal::whereYear('tanggal_pengajuan', $tahun)
+            ->join('mahasiswas', 'proposals.id_mahasiswa', '=', 'mahasiswas.id_mahasiswa')
+            ->selectRaw('mahasiswas.fakultas_mhs as nama_fakultas, COUNT(*) as jumlah')
+            ->groupBy('mahasiswas.fakultas_mhs')
+            ->orderBy('jumlah', 'desc')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'fakultas' => $item->nama_fakultas,
+                    'jumlah' => $item->jumlah
+                ];
+            });
+        
+        return [
+            'proposal_per_tahun' => $proposalPerTahun,
+            'proposal_per_skim' => $proposalPerSkim,
+            'proposal_per_fakultas' => $proposalPerFakultas
+        ];
+    }
+
+    /**
+     * Get top 10 proposals by nilai
+     */
+    private function getTopProposals($tahun)
+    {
+        return Proposal::with(['mahasiswa', 'hasilFinal'])
+            ->whereYear('tanggal_pengajuan', $tahun)
+            ->whereHas('hasilFinal')
+            ->join('hasil_finals', 'proposals.id_proposal', '=', 'hasil_finals.id_proposal')
+            ->orderBy('hasil_finals.nilai', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($proposal, $index) {
+                return [
+                    'ranking' => $index + 1,
+                    'judul' => $proposal->judul_proposal,
+                    'skim' => $proposal->skim,
+                    'mahasiswa' => $proposal->mahasiswa->nama_mahasiswa ?? 'N/A',
+                    'nilai' => $proposal->hasilFinal->nilai ?? 0,
+                    'status' => $proposal->hasilFinal->status_final ?? 'N/A'
+                ];
+            });
     }
 }
 

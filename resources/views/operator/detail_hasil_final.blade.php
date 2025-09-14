@@ -191,15 +191,24 @@
                         <!-- Display existing result -->
                         <div class="alert alert-info">
                             <h6><i class="fas fa-info-circle me-2"></i>Hasil Final Sudah Ditentukan</h6>
-                            <p><strong>Status:</strong> 
-                                <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }}">
-                                    {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
-                                </span>
-                            </p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }}">
+                                            {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Nilai:</strong> 
+                                        <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
+                                </div>
+                            </div>
                             @if($proposal->hasilFinal->catatan_final)
                                 <p><strong>Catatan:</strong> {{ $proposal->hasilFinal->catatan_final }}</p>
                             @endif
-                            <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
                         </div>
                         
                         <!-- Edit button -->
@@ -223,6 +232,16 @@
                                         <option value="lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_final == 'lolos' ? 'selected' : '' }}>Lolos</option>
                                         <option value="tidak_lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_final == 'tidak_lolos' ? 'selected' : '' }}>Tidak Lolos</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label required-field">Nilai (0-100)</label>
+                                    <input type="number" class="form-control" name="nilai" 
+                                           value="{{ $proposal->hasilFinal ? $proposal->hasilFinal->nilai : '' }}"
+                                           min="0" max="100" step="0.01" required
+                                           placeholder="Masukkan nilai 0-100">
+                                    <div class="form-text">Nilai untuk perangkingan proposal (0.00 - 100.00)</div>
                                 </div>
                             </div>
                         </div>

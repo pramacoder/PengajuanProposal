@@ -16,8 +16,13 @@ class HasilFinal extends Model
     protected $fillable = [
         'status_final',
         'catatan_final',
+        'nilai',
         'id_proposal',
         'id_pt'
+    ];
+
+    protected $casts = [
+        'nilai' => 'decimal:2'
     ];
 
     // Relationships

@@ -20,6 +20,100 @@
         </div>
     </div>
     
+    <!-- Chart Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Grafik Analisis Proposal
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="chartTypeSelector" style="width: auto;">
+                                <option value="per_tahun">Jumlah Proposal per Tahun</option>
+                                <option value="per_skim">Jumlah Proposal per Skim ({{ $tahun }})</option>
+                                <option value="per_fakultas">Jumlah Proposal per Fakultas ({{ $tahun }})</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="proposalChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Proposals Ranking -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        Perangkingan 10 Proposal Terbaik ({{ $tahun }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($topProposals->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th width="5%">Ranking</th>
+                                        <th width="40%">Judul Proposal</th>
+                                        <th width="15%">Skim</th>
+                                        <th width="20%">Mahasiswa</th>
+                                        <th width="10%">Nilai</th>
+                                        <th width="10%">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($topProposals as $proposal)
+                                    <tr>
+                                        <td>
+                                            @if($proposal['ranking'] <= 3)
+                                                <span class="badge bg-{{ $proposal['ranking'] == 1 ? 'warning' : ($proposal['ranking'] == 2 ? 'secondary' : 'danger') }} fs-6">
+                                                    {{ $proposal['ranking'] }}
+                                                </span>
+                                            @else
+                                                <span class="badge bg-primary">{{ $proposal['ranking'] }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <strong>{{ Str::limit($proposal['judul'], 60) }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ $proposal['skim'] }}</span>
+                                        </td>
+                                        <td>{{ $proposal['mahasiswa'] }}</td>
+                                        <td>
+                                            <span class="badge bg-success fs-6">{{ number_format($proposal['nilai'], 2) }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ $proposal['status'] == 'lolos' ? 'success' : 'danger' }}">
+                                                {{ $proposal['status'] == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada data perangkingan</h6>
+                            <p class="text-muted">Data perangkingan akan muncul setelah ada proposal yang dinilai final.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Summary Section -->
     <div class="row mb-4">
         <div class="col-12">
@@ -191,6 +285,9 @@
 @endsection
 
 @section('scripts')
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Year selector change
@@ -198,6 +295,92 @@ document.addEventListener('DOMContentLoaded', function() {
         const year = this.value;
         window.location.href = `{{ route('operator.dashboard') }}?tahun=${year}`;
     });
+    
+    // Chart data from Laravel
+    const chartData = @json($chartData);
+    
+    // Initialize chart
+    const ctx = document.getElementById('proposalChart').getContext('2d');
+    let chart = null;
+    
+    // Chart configuration
+    const chartConfig = {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Jumlah Proposal',
+                data: [],
+                backgroundColor: '#800000', // Maroon color
+                borderColor: '#660000',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Jumlah Proposal per Tahun'
+                }
+            }
+        }
+    };
+    
+    // Function to update chart
+    function updateChart(type) {
+        let labels = [];
+        let data = [];
+        let title = '';
+        
+        switch(type) {
+            case 'per_tahun':
+                labels = chartData.proposal_per_tahun.map(item => item.tahun);
+                data = chartData.proposal_per_tahun.map(item => item.jumlah);
+                title = 'Jumlah Proposal per Tahun';
+                break;
+            case 'per_skim':
+                labels = chartData.proposal_per_skim.map(item => item.skim);
+                data = chartData.proposal_per_skim.map(item => item.jumlah);
+                title = `Jumlah Proposal per Skim ({{ $tahun }})`;
+                break;
+            case 'per_fakultas':
+                labels = chartData.proposal_per_fakultas.map(item => item.fakultas);
+                data = chartData.proposal_per_fakultas.map(item => item.jumlah);
+                title = `Jumlah Proposal per Fakultas ({{ $tahun }})`;
+                break;
+        }
+        
+        if (chart) {
+            chart.destroy();
+        }
+        
+        chartConfig.data.labels = labels;
+        chartConfig.data.datasets[0].data = data;
+        chartConfig.options.plugins.title.text = title;
+        
+        chart = new Chart(ctx, chartConfig);
+    }
+    
+    // Chart type selector change
+    document.getElementById('chartTypeSelector').addEventListener('change', function() {
+        updateChart(this.value);
+    });
+    
+    // Initialize with default chart (per tahun)
+    updateChart('per_tahun');
 });
 
 function pilihReviewer(skim) {
