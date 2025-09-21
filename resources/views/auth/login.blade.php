@@ -356,8 +356,17 @@
                             </button>
                         </form>
 
-                        <!-- Forgot Password Link -->
+                        <!-- Request Credentials and Forgot Password Links -->
                         <div class="mt-6 text-center">
+                            <p class="text-sm text-gray-600 mb-3">Butuh kredensial login?</p>
+                            <a href="{{ route('register') }}" 
+                               class="inline-flex items-center px-4 py-2 border border-green-300 text-green-700 bg-white rounded-lg hover:bg-green-50 hover:border-green-400 focus:ring-2 focus:ring-green-200 transition-all duration-200 mb-3">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"></path>
+                                </svg>
+                                Request Kredensial
+                            </a>
+                            
                             <p class="text-sm text-gray-600 mb-3">Lupa password Anda?</p>
                             <a href="{{ route('password.forgot') }}" 
                                class="inline-flex items-center px-4 py-2 border border-maroon-300 text-maroon-700 bg-white rounded-lg hover:bg-maroon-50 hover:border-maroon-400 focus:ring-2 focus:ring-maroon-200 transition-all duration-200">

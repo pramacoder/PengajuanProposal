@@ -508,9 +508,9 @@
                 </div>
             </div>
 
-            <!-- Informasi Dosen Pembimbing -->
+            <!-- Informasi Dosen Pendamping -->
             <div class="info-section">
-                <h5><i class="fas fa-user-tie me-2"></i>Dosen Pembimbing</h5>
+                <h5><i class="fas fa-user-tie me-2"></i>Dosen Pendamping</h5>
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label">Nama Dosen</span>

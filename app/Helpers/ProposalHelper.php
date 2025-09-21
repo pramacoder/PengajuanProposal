@@ -77,7 +77,7 @@ class ProposalHelper
             'judul.min' => 'Judul proposal minimal 10 karakter',
             'judul.max' => 'Judul proposal maksimal 200 karakter',
             'skim.required' => 'Skim PKM wajib dipilih',
-            'dosen_pembimbing.required' => 'Dosen pembimbing wajib dipilih',
+            'dosen_pembimbing.required' => 'Dosen pendamping wajib dipilih',
             'dana_diajukan.required' => 'Dana yang diajukan wajib diisi',
             'dana_diajukan.min' => $isInsentif ? 'PKM Insentif tidak memiliki pendanaan. Dana harus 0.' : 'Dana minimal Rp 1.000.000',
             'dana_diajukan.max' => $isInsentif ? 'PKM Insentif tidak memiliki pendanaan. Dana harus 0.' : 'Dana maksimal Rp 15.000.000',

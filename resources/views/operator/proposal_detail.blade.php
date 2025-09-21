@@ -352,11 +352,11 @@
                 </div>
             </div>
 
-            <!-- Dosen Pembimbing -->
+            <!-- Dosen Pendamping -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-user-tie me-2"></i>Dosen Pembimbing
+                        <i class="fas fa-user-tie me-2"></i>Dosen Pendamping
                     </h5>
                 </div>
                 <div class="card-body">

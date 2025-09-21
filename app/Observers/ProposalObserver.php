@@ -30,6 +30,15 @@ class ProposalObserver
                 'proposal_status' => 'draft'
             ]
         );
+
+        // Kirim notifikasi ke dosen pembimbing jika proposal sudah diajukan
+        if ($proposal->status === 'submitted' && $proposal->mahasiswa->dosenPembimbing) {
+            $this->notificationService->sendProposalNotificationToDosenPembimbing(
+                $proposal->mahasiswa->dosenPembimbing->email_dosen,
+                $proposal->mahasiswa->nama_mhs,
+                $proposal->judul
+            );
+        }
     }
 
     /**
@@ -57,7 +66,7 @@ class ProposalObserver
                     $proposal,
                     'success',
                     'Proposal Divalidasi',
-                    "Proposal '{$proposal->judul}' telah divalidasi oleh dosen pembimbing dan siap untuk review.",
+                    "Proposal '{$proposal->judul}' telah divalidasi oleh dosen pendamping dan siap untuk review.",
                     [
                         'action' => 'view',
                         'validation_status' => 'valid'

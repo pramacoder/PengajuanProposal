@@ -15,7 +15,7 @@ class Mahasiswa extends Authenticatable
 
     protected $fillable = [
         'nim', 'nama_mhs', 'prodi_mhs', 'fakultas_mhs', 'no_hp_mhs', 'email_mhs',
-        'password', 'role', 'is_active', 'email_verified_at'
+        'password', 'role', 'is_active', 'email_verified_at', 'id_dosen_pembimbing'
     ];
 
     protected $hidden = [
@@ -44,6 +44,12 @@ class Mahasiswa extends Authenticatable
     public function fakultas()
     {
         return $this->belongsTo(Fakultas::class, 'fakultas_mhs', 'nama_fakultas');
+    }
+
+    // Relasi One-to-One dengan Dosen (Dosen Pembimbing)
+    public function dosenPembimbing()
+    {
+        return $this->belongsTo(Dosen::class, 'id_dosen_pembimbing', 'id_dosen');
     }
 
     // Accessor untuk nama_mahasiswa (kompatibilitas dengan view)

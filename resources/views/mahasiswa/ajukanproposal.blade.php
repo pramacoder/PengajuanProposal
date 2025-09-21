@@ -216,6 +216,30 @@
     .error-message.show {
         display: block;
     }
+
+    .btn-submit:disabled {
+        background: #6c757d;
+        border-color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .btn-submit:disabled:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .submit-help-text {
+        transition: all 0.3s ease;
+    }
+
+    .submit-help-text.ready {
+        color: #28a745;
+    }
+
+    .submit-help-text.incomplete {
+        color: #dc3545;
+    }
 </style>
 @endsection
 
@@ -226,6 +250,106 @@
                 <x-page-header 
                     title="Ajukan Proposal PKM" 
                     subtitle="UNIVERSITAS UDAYANA" />
+
+    <!-- Error Alert -->
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Terdapat Kesalahan dalam Form
+            </h5>
+            <p class="mb-2">Mohon perbaiki kesalahan berikut sebelum melanjutkan:</p>
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Special Error Messages for Duplicate NIMs -->
+    @if($errors->has('nim_duplicate'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-user-times me-2"></i>
+                NIM Sudah Terdaftar dalam Proposal Lain
+            </h5>
+            <p class="mb-2">Beberapa anggota tim sudah terdaftar dalam proposal lain:</p>
+            <ul class="mb-0">
+                @foreach($errors->get('nim_duplicate') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if($errors->has('team_nim'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-users-slash me-2"></i>
+                NIM Duplikat dalam Tim
+            </h5>
+            <p class="mb-2">Terdapat NIM yang sama dalam satu tim:</p>
+            <ul class="mb-0">
+                @foreach($errors->get('team_nim') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if($errors->has('team_size'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-users me-2"></i>
+                Jumlah Anggota Tim Tidak Sesuai
+            </h5>
+            <p class="mb-2">Jumlah anggota tim tidak memenuhi ketentuan:</p>
+            <ul class="mb-0">
+                @foreach($errors->get('team_size') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if($errors->has('optional_members'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading">
+                <i class="fas fa-user-plus me-2"></i>
+                Data Anggota Opsional Tidak Lengkap
+            </h5>
+            <p class="mb-2">Jika mengisi data anggota opsional, semua field harus diisi:</p>
+            <ul class="mb-0">
+                @foreach($errors->get('optional_members') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Success Message -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Warning Message -->
+    @if(session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            {{ session('warning') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
     <form action="{{ route('mahasiswa.proposal.store') }}" method="POST" enctype="multipart/form-data" id="proposalForm">
         @csrf
@@ -248,24 +372,27 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label for="skim" class="form-label required-field">Skim/Jenis PKM</label>
-                    <select class="form-select" id="skim" name="skim" required>
+                    <select class="form-select @error('skim') is-invalid @enderror" id="skim" name="skim" required>
                         <option value="">Pilih Skim</option>
                         <optgroup label="PKM Pendanaan">
-                            <option value="RE">PKM-RE (Riset Eksak)</option>
-                            <option value="RSH">PKM-RSH (Riset Sosial Humaniora)</option>
-                            <option value="K">PKM-K (Kewirausahaan)</option>
-                            <option value="PM">PKM-PM (Pengabdian Masyarakat)</option>
-                            <option value="PI">PKM-PI (Penerapan Iptek)</option>
-                            <option value="KC">PKM-KC (Karsa Cipta)</option>
-                            <option value="KI">PKM-KI (Karsa Ilmiah)</option>
-                            <option value="VGK">PKM-VGK (Video Gagasan Konstruktif)</option>
+                            <option value="RE" {{ old('skim') == 'RE' ? 'selected' : '' }}>PKM-RE (Riset Eksak)</option>
+                            <option value="RSH" {{ old('skim') == 'RSH' ? 'selected' : '' }}>PKM-RSH (Riset Sosial Humaniora)</option>
+                            <option value="K" {{ old('skim') == 'K' ? 'selected' : '' }}>PKM-K (Kewirausahaan)</option>
+                            <option value="PM" {{ old('skim') == 'PM' ? 'selected' : '' }}>PKM-PM (Pengabdian Masyarakat)</option>
+                            <option value="PI" {{ old('skim') == 'PI' ? 'selected' : '' }}>PKM-PI (Penerapan Iptek)</option>
+                            <option value="KC" {{ old('skim') == 'KC' ? 'selected' : '' }}>PKM-KC (Karsa Cipta)</option>
+                            <option value="KI" {{ old('skim') == 'KI' ? 'selected' : '' }}>PKM-KI (Karsa Ilmiah)</option>
+                            <option value="VGK" {{ old('skim') == 'VGK' ? 'selected' : '' }}>PKM-VGK (Video Gagasan Konstruktif)</option>
                         </optgroup>
                         <optgroup label="PKM Insentif">
-                            <option value="GFT">PKM-GFT (Gagasan Futuristik Tertulis)</option>
-                            <option value="AI">PKM-AI (Artikel Ilmiah)</option>
+                            <option value="GFT" {{ old('skim') == 'GFT' ? 'selected' : '' }}>PKM-GFT (Gagasan Futuristik Tertulis)</option>
+                            <option value="AI" {{ old('skim') == 'AI' ? 'selected' : '' }}>PKM-AI (Artikel Ilmiah)</option>
                         </optgroup>
                     </select>
                     <div class="error-message" id="skim_error"></div>
+                    @error('skim')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="tahun_ajaran" class="form-label">Tahun Ajaran</label>
@@ -279,20 +406,26 @@
                     <label for="dana_diajukan" class="form-label required-field">Dana yang Diajukan</label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
-                        <input type="number" class="form-control" id="dana_diajukan" name="dana_diajukan" placeholder="0" min="0" max="15000000" required>
+                        <input type="number" class="form-control @error('dana_diajukan') is-invalid @enderror" id="dana_diajukan" name="dana_diajukan" placeholder="0" min="0" max="15000000" value="{{ old('dana_diajukan') }}" required>
                     </div>
                     <div class="form-text" id="dana_help_text">Maksimal Rp 15.000.000</div>
                     <div class="error-message" id="dana_diajukan_error"></div>
+                    @error('dana_diajukan')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="dosen_pembimbing" class="form-label required-field">Dosen Pembimbing</label>
-                    <select class="form-control" id="dosen_pembimbing" name="dosen_pembimbing" required>
-                        <option value="">-- Pilih Dosen Pembimbing --</option>
+                    <label for="dosen_pembimbing" class="form-label required-field">Dosen Pendamping</label>
+                    <select class="form-control @error('dosen_pembimbing') is-invalid @enderror" id="dosen_pembimbing" name="dosen_pembimbing" required>
+                        <option value="">-- Pilih Dosen Pendamping --</option>
                         @foreach($dosens as $dosen)
-                            <option value="{{ $dosen->nama_dosen }}">{{ $dosen->nama_dosen }}{{ $dosen->gelar_belakang ? ', '.$dosen->gelar_belakang : '' }}</option>
+                            <option value="{{ $dosen->nama_dosen }}" {{ old('dosen_pembimbing') == $dosen->nama_dosen ? 'selected' : '' }}>{{ $dosen->nama_dosen }}{{ $dosen->gelar_belakang ? ', '.$dosen->gelar_belakang : '' }}</option>
                         @endforeach
                     </select>
                     <div class="error-message" id="dosen_pembimbing_error"></div>
+                    @error('dosen_pembimbing')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
         </div>
@@ -306,40 +439,58 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="ketua_nama" class="form-label required-field">Nama Lengkap</label>
-                    <input type="text" class="form-control" id="ketua_nama" name="ketua_nama" placeholder="Masukkan nama lengkap" required>
+                    <input type="text" class="form-control @error('ketua_nama') is-invalid @enderror" id="ketua_nama" name="ketua_nama" placeholder="Masukkan nama lengkap" value="{{ old('ketua_nama') }}" required>
                     <div class="error-message" id="ketua_nama_error"></div>
+                    @error('ketua_nama')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="ketua_nim" class="form-label required-field">NIM</label>
-                                            <input type="text" class="form-control" id="ketua_nim" name="ketua_nim" placeholder="Masukkan NIM" required>
+                    <input type="text" class="form-control @error('ketua_nim') is-invalid @enderror" id="ketua_nim" name="ketua_nim" placeholder="Masukkan NIM" value="{{ old('ketua_nim') }}" required>
                     <div class="error-message" id="ketua_nim_error"></div>
+                    @error('ketua_nim')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="ketua_fakultas" class="form-label required-field">Fakultas</label>
-                    <select class="form-select" id="ketua_fakultas" name="ketua_fakultas" required>
+                    <select class="form-select @error('ketua_fakultas') is-invalid @enderror" id="ketua_fakultas" name="ketua_fakultas" required>
                         <option value="">-- Pilih Fakultas --</option>
                         @foreach($fakultas as $fak)
-                            <option value="{{ $fak->nama_fakultas }}">{{ $fak->nama_fakultas }}</option>
+                            <option value="{{ $fak->nama_fakultas }}" {{ old('ketua_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
                         @endforeach
                     </select>
                     <div class="error-message" id="ketua_fakultas_error"></div>
+                    @error('ketua_fakultas')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="ketua_prodi" class="form-label required-field">Program Studi</label>
-                    <select class="form-select" id="ketua_prodi" name="ketua_prodi" required>
+                    <select class="form-select @error('ketua_prodi') is-invalid @enderror" id="ketua_prodi" name="ketua_prodi" required>
                         <option value="">-- Pilih Program Studi --</option>
                     </select>
                     <div class="error-message" id="ketua_prodi_error"></div>
+                    @error('ketua_prodi')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="ketua_email" class="form-label required-field">Email</label>
-                    <input type="email" class="form-control" id="ketua_email" name="ketua_email" placeholder="Masukkan email" required>
+                    <input type="email" class="form-control @error('ketua_email') is-invalid @enderror" id="ketua_email" name="ketua_email" placeholder="Masukkan email" value="{{ old('ketua_email') }}" required>
                     <div class="error-message" id="ketua_email_error"></div>
+                    @error('ketua_email')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="ketua_no_hp" class="form-label required-field">No. HP</label>
-                    <input type="tel" class="form-control" id="ketua_no_hp" name="ketua_no_hp" placeholder="Masukkan nomor HP" required>
+                    <input type="tel" class="form-control @error('ketua_no_hp') is-invalid @enderror" id="ketua_no_hp" name="ketua_no_hp" placeholder="Masukkan nomor HP" value="{{ old('ketua_no_hp') }}" required>
                     <div class="error-message" id="ketua_no_hp_error"></div>
+                    @error('ketua_no_hp')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
         </div>
@@ -365,40 +516,58 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="anggota1_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" id="anggota1_nama" name="anggota1_nama" placeholder="Masukkan nama">
+                        <input type="text" class="form-control @error('anggota1_nama') is-invalid @enderror" id="anggota1_nama" name="anggota1_nama" placeholder="Masukkan nama" value="{{ old('anggota1_nama') }}">
                         <div class="error-message" id="anggota1_nama_error"></div>
+                        @error('anggota1_nama')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota1_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control" id="anggota1_nim" name="anggota1_nim" placeholder="Masukkan NIM">
+                        <input type="text" class="form-control @error('anggota1_nim') is-invalid @enderror" id="anggota1_nim" name="anggota1_nim" placeholder="Masukkan NIM" value="{{ old('anggota1_nim') }}">
                         <div class="error-message" id="anggota1_nim_error"></div>
+                        @error('anggota1_nim')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota1_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select" id="anggota1_fakultas" name="anggota1_fakultas">
+                        <select class="form-select @error('anggota1_fakultas') is-invalid @enderror" id="anggota1_fakultas" name="anggota1_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
-                                <option value="{{ $fak->nama_fakultas }}">{{ $fak->nama_fakultas }}</option>
+                                <option value="{{ $fak->nama_fakultas }}" {{ old('anggota1_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
                             @endforeach
                         </select>
                         <div class="error-message" id="anggota1_fakultas_error"></div>
+                        @error('anggota1_fakultas')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota1_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select" id="anggota1_prodi" name="anggota1_prodi">
+                        <select class="form-select @error('anggota1_prodi') is-invalid @enderror" id="anggota1_prodi" name="anggota1_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota1_prodi_error"></div>
+                        @error('anggota1_prodi')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota1_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="anggota1_email" name="anggota1_email" placeholder="Masukkan email">
+                        <input type="email" class="form-control @error('anggota1_email') is-invalid @enderror" id="anggota1_email" name="anggota1_email" placeholder="Masukkan email" value="{{ old('anggota1_email') }}">
                         <div class="error-message" id="anggota1_email_error"></div>
+                        @error('anggota1_email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota1_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control" id="anggota1_no_hp" name="anggota1_no_hp" placeholder="Masukkan nomor HP">
+                        <input type="tel" class="form-control @error('anggota1_no_hp') is-invalid @enderror" id="anggota1_no_hp" name="anggota1_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota1_no_hp') }}">
                         <div class="error-message" id="anggota1_no_hp_error"></div>
+                        @error('anggota1_no_hp')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -411,40 +580,58 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="anggota2_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" id="anggota2_nama" name="anggota2_nama" placeholder="Masukkan nama">
+                        <input type="text" class="form-control @error('anggota2_nama') is-invalid @enderror" id="anggota2_nama" name="anggota2_nama" placeholder="Masukkan nama" value="{{ old('anggota2_nama') }}">
                         <div class="error-message" id="anggota2_nama_error"></div>
+                        @error('anggota2_nama')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota2_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control" id="anggota2_nim" name="anggota2_nim" placeholder="Masukkan NIM">
+                        <input type="text" class="form-control @error('anggota2_nim') is-invalid @enderror" id="anggota2_nim" name="anggota2_nim" placeholder="Masukkan NIM" value="{{ old('anggota2_nim') }}">
                         <div class="error-message" id="anggota2_nim_error"></div>
+                        @error('anggota2_nim')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota2_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select" id="anggota2_fakultas" name="anggota2_fakultas">
+                        <select class="form-select @error('anggota2_fakultas') is-invalid @enderror" id="anggota2_fakultas" name="anggota2_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
-                                <option value="{{ $fak->nama_fakultas }}">{{ $fak->nama_fakultas }}</option>
+                                <option value="{{ $fak->nama_fakultas }}" {{ old('anggota2_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
                             @endforeach
                         </select>
                         <div class="error-message" id="anggota2_fakultas_error"></div>
+                        @error('anggota2_fakultas')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota2_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select" id="anggota2_prodi" name="anggota2_prodi">
+                        <select class="form-select @error('anggota2_prodi') is-invalid @enderror" id="anggota2_prodi" name="anggota2_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota2_prodi_error"></div>
+                        @error('anggota2_prodi')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota2_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="anggota2_email" name="anggota2_email" placeholder="Masukkan email">
+                        <input type="email" class="form-control @error('anggota2_email') is-invalid @enderror" id="anggota2_email" name="anggota2_email" placeholder="Masukkan email" value="{{ old('anggota2_email') }}">
                         <div class="error-message" id="anggota2_email_error"></div>
+                        @error('anggota2_email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota2_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control" id="anggota2_no_hp" name="anggota2_no_hp" placeholder="Masukkan nomor HP">
+                        <input type="tel" class="form-control @error('anggota2_no_hp') is-invalid @enderror" id="anggota2_no_hp" name="anggota2_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota2_no_hp') }}">
                         <div class="error-message" id="anggota2_no_hp_error"></div>
+                        @error('anggota2_no_hp')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -457,40 +644,58 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="anggota3_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" id="anggota3_nama" name="anggota3_nama" placeholder="Masukkan nama">
+                        <input type="text" class="form-control @error('anggota3_nama') is-invalid @enderror" id="anggota3_nama" name="anggota3_nama" placeholder="Masukkan nama" value="{{ old('anggota3_nama') }}">
                         <div class="error-message" id="anggota3_nama_error"></div>
+                        @error('anggota3_nama')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota3_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control" id="anggota3_nim" name="anggota3_nim" placeholder="Masukkan NIM">
+                        <input type="text" class="form-control @error('anggota3_nim') is-invalid @enderror" id="anggota3_nim" name="anggota3_nim" placeholder="Masukkan NIM" value="{{ old('anggota3_nim') }}">
                         <div class="error-message" id="anggota3_nim_error"></div>
+                        @error('anggota3_nim')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota3_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select" id="anggota3_fakultas" name="anggota3_fakultas">
+                        <select class="form-select @error('anggota3_fakultas') is-invalid @enderror" id="anggota3_fakultas" name="anggota3_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
-                                <option value="{{ $fak->nama_fakultas }}">{{ $fak->nama_fakultas }}</option>
+                                <option value="{{ $fak->nama_fakultas }}" {{ old('anggota3_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
                             @endforeach
                         </select>
                         <div class="error-message" id="anggota3_fakultas_error"></div>
+                        @error('anggota3_fakultas')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota3_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select" id="anggota3_prodi" name="anggota3_prodi">
+                        <select class="form-select @error('anggota3_prodi') is-invalid @enderror" id="anggota3_prodi" name="anggota3_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota3_prodi_error"></div>
+                        @error('anggota3_prodi')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota3_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="anggota3_email" name="anggota3_email" placeholder="Masukkan email">
+                        <input type="email" class="form-control @error('anggota3_email') is-invalid @enderror" id="anggota3_email" name="anggota3_email" placeholder="Masukkan email" value="{{ old('anggota3_email') }}">
                         <div class="error-message" id="anggota3_email_error"></div>
+                        @error('anggota3_email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota3_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control" id="anggota3_no_hp" name="anggota3_no_hp" placeholder="Masukkan nomor HP">
+                        <input type="tel" class="form-control @error('anggota3_no_hp') is-invalid @enderror" id="anggota3_no_hp" name="anggota3_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota3_no_hp') }}">
                         <div class="error-message" id="anggota3_no_hp_error"></div>
+                        @error('anggota3_no_hp')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -503,40 +708,58 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="anggota4_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control" id="anggota4_nama" name="anggota4_nama" placeholder="Masukkan nama">
+                        <input type="text" class="form-control @error('anggota4_nama') is-invalid @enderror" id="anggota4_nama" name="anggota4_nama" placeholder="Masukkan nama" value="{{ old('anggota4_nama') }}">
                         <div class="error-message" id="anggota4_nama_error"></div>
+                        @error('anggota4_nama')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota4_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control" id="anggota4_nim" name="anggota4_nim" placeholder="Masukkan NIM">
+                        <input type="text" class="form-control @error('anggota4_nim') is-invalid @enderror" id="anggota4_nim" name="anggota4_nim" placeholder="Masukkan NIM" value="{{ old('anggota4_nim') }}">
                         <div class="error-message" id="anggota4_nim_error"></div>
+                        @error('anggota4_nim')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota4_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select" id="anggota4_fakultas" name="anggota4_fakultas">
+                        <select class="form-select @error('anggota4_fakultas') is-invalid @enderror" id="anggota4_fakultas" name="anggota4_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
-                                <option value="{{ $fak->nama_fakultas }}">{{ $fak->nama_fakultas }}</option>
+                                <option value="{{ $fak->nama_fakultas }}" {{ old('anggota4_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
                             @endforeach
                         </select>
                         <div class="error-message" id="anggota4_fakultas_error"></div>
+                        @error('anggota4_fakultas')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota4_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select" id="anggota4_prodi" name="anggota4_prodi">
+                        <select class="form-select @error('anggota4_prodi') is-invalid @enderror" id="anggota4_prodi" name="anggota4_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota4_prodi_error"></div>
+                        @error('anggota4_prodi')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota4_email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="anggota4_email" name="anggota4_email" placeholder="Masukkan email">
+                        <input type="email" class="form-control @error('anggota4_email') is-invalid @enderror" id="anggota4_email" name="anggota4_email" placeholder="Masukkan email" value="{{ old('anggota4_email') }}">
                         <div class="error-message" id="anggota4_email_error"></div>
+                        @error('anggota4_email')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="anggota4_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control" id="anggota4_no_hp" name="anggota4_no_hp" placeholder="Masukkan nomor HP">
+                        <input type="tel" class="form-control @error('anggota4_no_hp') is-invalid @enderror" id="anggota4_no_hp" name="anggota4_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota4_no_hp') }}">
                         <div class="error-message" id="anggota4_no_hp_error"></div>
+                        @error('anggota4_no_hp')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -551,7 +774,7 @@
             <!-- Upload Proposal -->
             <div class="mb-4">
                 <label class="form-label required-field">File Proposal (PDF)</label>
-                <div class="file-upload-area" id="proposalUploadArea">
+                <div class="file-upload-area @error('proposal_file') border-danger @enderror" id="proposalUploadArea">
                     <div class="file-upload-icon">
                         <i class="fas fa-file-pdf"></i>
                     </div>
@@ -576,6 +799,9 @@
                         <div class="progress-fill" id="proposalProgress"></div>
                     </div>
                 </div>
+                @error('proposal_file')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="alert alert-info">
@@ -591,10 +817,17 @@
 
         <!-- Submit Button -->
         <div class="text-center">
-            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn" disabled>
                 <i class="fas fa-paper-plane me-2"></i>Ajukan Proposal
             </button>
+            <div class="mt-2">
+                <small class="text-muted" id="submitHelpText">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Lengkapi semua field wajib untuk mengaktifkan tombol submit
+                </small>
+            </div>
         </div>
+        
     </form>
 </div>
 @endsection
@@ -859,12 +1092,12 @@
             }
         }
 
-        // Validate dosen pembimbing
+        // Validate dosen pendamping
         const dosenPembimbingField = document.getElementById('dosen_pembimbing');
         if (dosenPembimbingField) {
             const dosenPembimbing = dosenPembimbingField.value;
             if (!dosenPembimbing) {
-                showError('dosen_pembimbing', 'Dosen pembimbing wajib dipilih!');
+                showError('dosen_pembimbing', 'Dosen pendamping wajib dipilih!');
                 hasErrors = true;
             }
         }
@@ -1103,6 +1336,148 @@
         this.submit();
     });
 
+    // Function to validate form for submit button state
+    function validateFormForSubmit() {
+        if (!submitBtn || !submitHelpText) return;
+        
+        const requiredFields = [
+            'judul', 'skim', 'dana_diajukan', 'dosen_pembimbing',
+            'ketua_nama', 'ketua_nim', 'ketua_prodi', 'ketua_fakultas', 
+            'ketua_email', 'ketua_no_hp', 'anggota1_nama', 'anggota1_nim',
+            'anggota1_prodi', 'anggota1_fakultas', 'anggota1_email', 'anggota1_no_hp',
+            'anggota2_nama', 'anggota2_nim', 'anggota2_prodi', 'anggota2_fakultas',
+            'anggota2_email', 'anggota2_no_hp'
+        ];
+        
+        let isValid = true;
+        let missingFields = [];
+        
+        // Check required fields
+        for (let fieldId of requiredFields) {
+            const field = document.getElementById(fieldId);
+            if (!field || !field.value.trim()) {
+                isValid = false;
+                missingFields.push(fieldId);
+            }
+        }
+        
+        // Check file upload
+        const proposalFile = document.getElementById('proposal_file');
+        if (!proposalFile || !proposalFile.files[0]) {
+            isValid = false;
+            missingFields.push('proposal_file');
+        }
+        
+        // Check judul length
+        const judulField = document.getElementById('judul');
+        if (judulField && judulField.value.trim()) {
+            const judul = judulField.value.trim();
+            if (judul.length < 10 || judul.length > 200) {
+                isValid = false;
+            }
+        }
+        
+        // Check NIM format for ketua and required anggota
+        const nimFields = ['ketua_nim', 'anggota1_nim', 'anggota2_nim'];
+        for (let nimFieldId of nimFields) {
+            const nimField = document.getElementById(nimFieldId);
+            if (nimField && nimField.value.trim()) {
+                const nim = nimField.value.trim();
+                if (nim.length < 8) {
+                    isValid = false;
+                }
+            }
+        }
+        
+        // Check email format for ketua and required anggota
+        const emailFields = ['ketua_email', 'anggota1_email', 'anggota2_email'];
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        for (let emailFieldId of emailFields) {
+            const emailField = document.getElementById(emailFieldId);
+            if (emailField && emailField.value.trim()) {
+                const email = emailField.value.trim();
+                if (!emailRegex.test(email)) {
+                    isValid = false;
+                }
+            }
+        }
+        
+        // Check phone number format for ketua and required anggota
+        const phoneFields = ['ketua_no_hp', 'anggota1_no_hp', 'anggota2_no_hp'];
+        for (let phoneFieldId of phoneFields) {
+            const phoneField = document.getElementById(phoneFieldId);
+            if (phoneField && phoneField.value.trim()) {
+                const phone = phoneField.value.trim();
+                if (phone.length < 10) {
+                    isValid = false;
+                }
+            }
+        }
+        
+        // Check optional members (anggota 3 & 4) - if any field is filled, all must be filled
+        const optionalMembers = ['anggota3', 'anggota4'];
+        for (let member of optionalMembers) {
+            const fields = ['nama', 'nim', 'prodi', 'fakultas', 'email', 'no_hp'];
+            let hasAnyData = false;
+            let allFieldsFilled = true;
+            
+            for (let field of fields) {
+                const fieldId = member + '_' + field;
+                const fieldElement = document.getElementById(fieldId);
+                if (fieldElement && fieldElement.value.trim()) {
+                    hasAnyData = true;
+                }
+            }
+            
+            if (hasAnyData) {
+                for (let field of fields) {
+                    const fieldId = member + '_' + field;
+                    const fieldElement = document.getElementById(fieldId);
+                    if (!fieldElement || !fieldElement.value.trim()) {
+                        allFieldsFilled = false;
+                        break;
+                    }
+                }
+                
+                if (!allFieldsFilled) {
+                    isValid = false;
+                }
+            }
+        }
+        
+        // Check dana based on skim type
+        const selectedSkim = document.getElementById('skim').value;
+        const insentifSkims = ['GFT', 'AI'];
+        const isInsentif = insentifSkims.includes(selectedSkim);
+        const danaValue = danaField ? parseInt(danaField.value) || 0 : 0;
+        
+        if (isInsentif) {
+            if (danaValue !== 0) {
+                isValid = false;
+            }
+        } else {
+            if (!danaValue || danaValue < 1000000 || danaValue > 15000000) {
+                isValid = false;
+            }
+        }
+        
+        // Update button state
+        if (isValid) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('btn-secondary');
+            submitBtn.classList.add('btn-primary');
+            submitHelpText.textContent = '✓ Form sudah lengkap, Anda dapat mengajukan proposal';
+            submitHelpText.className = 'mt-2 small text-success submit-help-text ready';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-secondary');
+            const missingCount = missingFields.length;
+            submitHelpText.textContent = `Lengkapi ${missingCount} field wajib untuk mengaktifkan tombol submit`;
+            submitHelpText.className = 'mt-2 small text-muted submit-help-text incomplete';
+        }
+    }
+
     function clearAllErrors() {
         const errorDivs = document.querySelectorAll('.error-message');
         const errorFields = document.querySelectorAll('.error-highlight');
@@ -1121,6 +1496,8 @@
     let ketuaNimField = null;
     let danaField = null;
     let skimField = null;
+    let submitBtn = null;
+    let submitHelpText = null;
     
     // Auto-fill data mahasiswa yang login
     document.addEventListener('DOMContentLoaded', function() {
@@ -1130,6 +1507,8 @@
         ketuaNimField = document.getElementById('ketua_nim');
         danaField = document.getElementById('dana_diajukan');
         skimField = document.getElementById('skim');
+        submitBtn = document.getElementById('submitBtn');
+        submitHelpText = document.getElementById('submitHelpText');
         
         // Setup file upload areas
         setupFileUpload('proposal_file', 'proposalUploadArea', 'proposalFileInfo', 'proposalFileName', 'proposalFileSize', 'proposalProgress');
@@ -1202,13 +1581,57 @@
             this.value = value;
         });
 
-        // Clear errors on input
+        // Clear errors on input and validate form
         const inputs = document.querySelectorAll('input, select');
         inputs.forEach(input => {
             input.addEventListener('input', function() {
                 clearError(this.id);
+                validateFormForSubmit();
+            });
+            
+            input.addEventListener('change', function() {
+                clearError(this.id);
+                validateFormForSubmit();
             });
         });
+
+        // Setup file input validation
+        const proposalFile = document.getElementById('proposal_file');
+        if (proposalFile) {
+            proposalFile.addEventListener('change', function() {
+                validateFormForSubmit();
+            });
+        }
+
+        // Initial validation
+        validateFormForSubmit();
+        
+        // Show error toast if there are server-side errors
+        @if($errors->any())
+            @if($errors->has('nim_duplicate'))
+                showToast('Beberapa anggota tim sudah terdaftar dalam proposal lain. Silakan ganti anggota tim.', 'error');
+            @elseif($errors->has('team_nim'))
+                showToast('Terdapat NIM yang sama dalam satu tim. Silakan periksa data anggota.', 'error');
+            @elseif($errors->has('team_size'))
+                showToast('Jumlah anggota tim tidak sesuai ketentuan (minimal 3, maksimal 5 orang).', 'error');
+            @elseif($errors->has('optional_members'))
+                showToast('Data anggota opsional tidak lengkap. Jika diisi, semua field harus diisi.', 'error');
+            @else
+                showToast('Terdapat kesalahan dalam form. Silakan periksa field yang ditandai dengan warna merah.', 'error');
+            @endif
+            
+            // Scroll to first error field
+            setTimeout(() => {
+                const firstErrorField = document.querySelector('.is-invalid');
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    firstErrorField.focus();
+                }
+            }, 500);
+        @endif
 
         // Handle skim change to update dana field behavior
         const danaLabel = document.querySelector('label[for="dana_diajukan"]');
@@ -1247,6 +1670,9 @@
                     danaField.value = '1000000';
                 }
             }
+            
+            // Trigger form validation after dana field behavior update
+            validateFormForSubmit();
         }
         
         // Add event listener for skim change
@@ -1540,6 +1966,9 @@
                 
                 // Clear any previous errors
                 clearError('anggota'+no+'_nim');
+                
+                // Trigger form validation
+                validateFormForSubmit();
             } else {
                 console.log(`Data anggota ${no} tidak ditemukan atau format response salah:`, data);
                 showError('anggota'+no+'_nim', 'Mahasiswa dengan NIM tersebut tidak ditemukan!');
@@ -1700,6 +2129,9 @@
                 clearError('ketua_fakultas');
                 clearError('ketua_email');
                 clearError('ketua_no_hp');
+                
+                // Trigger form validation
+                validateFormForSubmit();
             } else {
                 console.log('Data ketua tidak ditemukan atau format response salah:', data);
                 showError('ketua_nim', 'Mahasiswa dengan NIM tersebut tidak ditemukan!');
@@ -1822,6 +2254,9 @@
                     prodiSelect.value = selectedProdi;
                     console.log(`Set ${prodiFieldId} to:`, selectedProdi);
                 }
+                
+                // Trigger form validation after prodi dropdown is updated
+                validateFormForSubmit();
             }
         })
         .catch(error => {
@@ -1861,6 +2296,7 @@
             }, 5000);
         }
     }
+
 
 
 </script>

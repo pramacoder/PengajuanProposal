@@ -76,7 +76,7 @@
                             <p><strong>No. HP:</strong> {{ $proposal->ketua_no_hp }}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6>Dosen Pembimbing</h6>
+                            <h6>Dosen Pendamping</h6>
                             <p><strong>Nama:</strong> {{ $proposal->dosen_pembimbing }}</p>
                         </div>
                     </div>

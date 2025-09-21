@@ -30,10 +30,16 @@ class Dosen extends Authenticatable
         'is_active' => 'boolean',
     ];
 
-    // Relasi One-to-Many ke Proposal
+    // Relasi One-to-Many ke Proposal (sebagai Dosen Pendamping)
     public function proposals()
     {
         return $this->hasMany(Proposal::class, 'id_dosen');
+    }
+
+    // Relasi One-to-Many ke Mahasiswa (sebagai Dosen Pembimbing)
+    public function mahasiswaBimbingan()
+    {
+        return $this->hasMany(Mahasiswa::class, 'id_dosen_pembimbing', 'id_dosen');
     }
 }
 

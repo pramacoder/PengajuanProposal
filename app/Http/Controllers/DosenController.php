@@ -38,10 +38,10 @@ class DosenController extends Controller
         ], 401);
     }
 
-    // Dashboard dosen - redirect ke menu PKM
+    // Dashboard dosen - redirect ke dashboard pendamping (legacy)
     public function dashboard()
     {
-        return redirect()->route('dosen.validasi.proposal');
+        return redirect()->route('dosen.pendamping.dashboard');
     }
 
     // 1.1 Validasi Proposal

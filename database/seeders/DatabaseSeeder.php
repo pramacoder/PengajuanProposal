@@ -19,27 +19,26 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
-        // DISABLED FOR TESTING - Database akan kosong
-        // $this->call([
-        //     // Cleanup database terlebih dahulu
-        //     CleanupSeeder::class,
+        $this->call([
+            // Cleanup database terlebih dahulu
+            CleanupSeeder::class,
             
-        //     // Seed data master
-        //     FakultasSeeder::class,
-        //     ProdiSeeder::class,
-        //     MahasiswaSeeder::class,
-        //     DosenSeeder::class,
-        //     PTSeeder::class,
-        //     ReviewerSeeder::class,
-        //     RuangKontrolSeeder::class,
+            // Seed data master
+            FakultasSeeder::class,
+            ProdiSeeder::class,
+            DosenSeeder::class,
+            MahasiswaSeeder::class,
+            OperatorSeeder::class,
+            ReviewerSeeder::class,
+            RuangKontrolSeeder::class,
             
-        //     // Seed data yang bergantung pada master
-        //     ProposalSeeder::class,
-        //     DokumenSeeder::class,
-        //     NilaiAdministratifSeeder::class,
-        //     NilaiSubstantifSeeder::class,
-        //     HasilFinalSeeder::class,
-        //     NotificationSeeder::class,
-        // ]);
+            // Seed data yang bergantung pada master
+            ProposalSeeder::class,
+            DokumenSeeder::class,
+            NilaiAdministratifSeeder::class,
+            NilaiSubstantifSeeder::class,
+            HasilFinalSeeder::class,
+            NotificationSeeder::class,
+        ]);
     }
 }

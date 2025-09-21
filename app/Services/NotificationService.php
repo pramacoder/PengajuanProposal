@@ -42,7 +42,7 @@ class NotificationService
     }
 
     /**
-     * Kirim notifikasi ke dosen pembimbing
+     * Kirim notifikasi ke dosen pendamping
      */
     public function notifyDosen(Proposal $proposal, string $type, string $title, string $message, array $data = []): void
     {
@@ -156,7 +156,7 @@ class NotificationService
             ],
             'valid' => [
                 'title' => 'Proposal Divalidasi',
-                'message' => "Proposal '{$proposal->judul}' telah divalidasi oleh dosen pembimbing.",
+                'message' => "Proposal '{$proposal->judul}' telah divalidasi oleh dosen pendamping.",
                 'type' => 'success'
             ],
             'tidak_valid' => [
@@ -330,7 +330,7 @@ class NotificationService
             ]
         );
 
-        // Notifikasi ke dosen pembimbing
+        // Notifikasi ke dosen pendamping
         $this->notifyDosen(
             $proposal,
             $type,

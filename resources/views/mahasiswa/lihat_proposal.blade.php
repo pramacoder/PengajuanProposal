@@ -1060,7 +1060,7 @@
                                 </span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">Dosen Pembimbing</span>
+                                <span class="info-label">Dosen Pendamping</span>
                                 <span class="info-value">{{ $proposal->dosen_pembimbing ?? 'N/A' }}</span>
                             </div>
                             <div class="info-row">

@@ -166,6 +166,7 @@ class ProposalController extends Controller
                 'judul_proposal' => $request->judul,
                 'judul' => $request->judul,
                 'tanggal_pengajuan' => now(),
+                'tahun_pengajuan' => date('Y'), // Tahun pengajuan adalah tahun saat ini
                 'skim' => $request->skim,
                 'dosen_pembimbing' => $request->dosen_pembimbing,
                 'dana_diajukan' => $danaDiajukan,
@@ -279,7 +280,7 @@ class ProposalController extends Controller
             DB::commit();
 
             return redirect()->route('mahasiswa.proposal.index')
-                ->with('success', 'Proposal berhasil diajukan! Silakan tunggu validasi dari dosen pembimbing.');
+                ->with('success', 'Proposal berhasil diajukan! Silakan tunggu validasi dari dosen pendamping.');
 
         } catch (\Exception $e) {
             DB::rollback();

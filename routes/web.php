@@ -5,6 +5,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProposalController;
 use App\Http\Controllers\DropdownController;
 use App\Http\Controllers\DosenController;
+use App\Http\Controllers\DosenPembimbingController;
+use App\Http\Controllers\DosenPendampingController;
+use App\Http\Controllers\MahasiswaRegistrationController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\ReviewerController;
 use App\Http\Controllers\ApiController;
@@ -12,6 +15,10 @@ use App\Http\Controllers\ApiController;
 // Route untuk autentikasi
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+
+// Route untuk request kredensial login
+Route::get('/request-credentials', [MahasiswaRegistrationController::class, 'showRegistrationForm'])->name('register');
+Route::post('/request-credentials', [MahasiswaRegistrationController::class, 'register']);
 
 // Route untuk reset password
 Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.forgot');
@@ -87,11 +94,27 @@ Route::post('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'subm
 });
 
 Route::middleware(['auth:dosen'])->group(function () {
+    // Dashboard utama dosen (redirect ke pembimbing atau pendamping)
     Route::get('/dosen/dashboard', [DosenController::class, 'dashboard'])->name('dosen.dashboard');
     Route::get('/dosen/profile', [AuthController::class, 'showProfile'])->name('dosen.profile');
     Route::put('/dosen/profile', [AuthController::class, 'updateProfile'])->name('dosen.profile.update');
     
-    // Route untuk validasi proposal (bisa dilakukan di kedua fase)
+    // Route untuk Dosen Pembimbing
+    Route::prefix('dosen/pembimbing')->name('dosen.pembimbing.')->group(function () {
+        Route::get('/dashboard', [DosenPembimbingController::class, 'dashboard'])->name('dashboard');
+        Route::get('/mahasiswa-bimbingan', [DosenPembimbingController::class, 'mahasiswaBimbingan'])->name('mahasiswa.bimbingan');
+        Route::get('/proposal/{id}/detail', [DosenPembimbingController::class, 'detailProposal'])->name('proposal.detail');
+    });
+    
+    // Route untuk Dosen Pendamping
+    Route::prefix('dosen/pendamping')->name('dosen.pendamping.')->group(function () {
+        Route::get('/dashboard', [DosenPendampingController::class, 'dashboard'])->name('dashboard');
+        Route::get('/proposal-validasi', [DosenPendampingController::class, 'proposalValidasi'])->name('proposal.validasi');
+        Route::get('/proposal/{id}/detail', [DosenPendampingController::class, 'detailProposal'])->name('proposal.detail');
+        Route::post('/proposal/{id}/validasi', [DosenPendampingController::class, 'validasi'])->name('proposal.validasi.submit');
+    });
+    
+    // Route untuk validasi proposal (legacy - bisa dilakukan di kedua fase)
     Route::get('/dosen/validasi-proposal', [DosenController::class, 'validasiProposal'])->name('dosen.validasi.proposal');
     Route::get('/dosen/proposal/{id}/detail', [DosenController::class, 'detailProposal'])->name('dosen.proposal.detail');
     Route::post('/dosen/proposal/{id}/validasi', [DosenController::class, 'validasiProposalAction'])->name('dosen.proposal.validasi');

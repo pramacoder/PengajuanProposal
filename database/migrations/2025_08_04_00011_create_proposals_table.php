@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('judul')->nullable(); // Field baru untuk judul
             $table->date('tanggal_pengajuan');
             $table->enum('skim', ['RE', 'RSH', 'K', 'PM', 'PI', 'KC', 'KI', 'VGK', 'GFT', 'AI']);
-            $table->string('dosen_pembimbing')->nullable(); // Field baru untuk nama dosen pembimbing
+            $table->string('dosen_pembimbing')->nullable(); // Field baru untuk nama dosen pendamping
             $table->decimal('dana_diajukan', 15, 2)->nullable(); // Field baru untuk dana
             $table->string('tahun_ajaran')->nullable(); // Field baru untuk tahun ajaran
             
