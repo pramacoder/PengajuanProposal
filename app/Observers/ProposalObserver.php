@@ -33,10 +33,16 @@ class ProposalObserver
 
         // Kirim notifikasi ke dosen pembimbing jika proposal sudah diajukan
         if ($proposal->status === 'submitted' && $proposal->mahasiswa->dosenPembimbing) {
-            $this->notificationService->sendProposalNotificationToDosenPembimbing(
-                $proposal->mahasiswa->dosenPembimbing->email_dosen,
-                $proposal->mahasiswa->nama_mhs,
-                $proposal->judul
+            $this->notificationService->notifyDosen(
+                $proposal,
+                'info',
+                'Proposal Baru Dikirim',
+                "Mahasiswa {$proposal->mahasiswa->nama_mhs} telah mengirim proposal baru: '{$proposal->judul}' untuk divalidasi.",
+                [
+                    'action' => 'review',
+                    'proposal_status' => 'submitted',
+                    'mahasiswa_nama' => $proposal->mahasiswa->nama_mhs
+                ]
             );
         }
     }

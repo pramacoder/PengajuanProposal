@@ -71,7 +71,6 @@ class AuthController extends Controller
         // Cek di tabel operator
         if (!$user) {
             $operator = PT::where('email_pt', $request->email)
-                         ->where('kode_pt', $request->nim)
                          ->first();
             if ($operator) {
                 $user = $operator;

@@ -1,4 +1,4 @@
-@extends('mainlayout.mainlayout')
+@extends('mainlayout.app')
 
 @section('title', 'Dashboard Dosen Pendamping')
 
@@ -152,12 +152,12 @@
                                             <td>{{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d/m/Y') }}</td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id) }}" 
+                                                    <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}" 
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye me-1"></i>Detail
                                                     </a>
                                                     @if($proposal->status_validasi == 'pending')
-                                                        <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id) }}#validasi" 
+                                                        <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}#validasi" 
                                                            class="btn btn-sm btn-warning">
                                                             <i class="fas fa-check me-1"></i>Validasi
                                                         </a>

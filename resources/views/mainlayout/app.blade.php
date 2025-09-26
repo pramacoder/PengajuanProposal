@@ -306,6 +306,11 @@
 
         .sidebar-menu > li {
             margin-bottom: 0.5rem;
+            list-style: none;
+        }
+
+        .sidebar-menu > li::marker {
+            display: none;
         }
 
         .sidebar-menu a {
@@ -325,6 +330,15 @@
             transform: translateX(5px);
         }
 
+        /* Ensure no list markers on any menu items */
+        .sidebar-menu li {
+            list-style: none;
+        }
+
+        .sidebar-menu li::marker {
+            display: none;
+        }
+
         .sidebar-menu .submenu {
             list-style: none;
             padding: 0;
@@ -332,22 +346,86 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
+            background-color: rgba(0,0,0,0.1);
         }
 
         .sidebar-menu .submenu.show {
             max-height: 300px;
         }
 
+        .sidebar-menu .submenu li {
+            margin: 0;
+            list-style: none;
+        }
+
+        .sidebar-menu .submenu li::marker {
+            display: none;
+        }
+
         .sidebar-menu .submenu a {
-            padding-left: 2.5rem;
+            padding: 0.75rem 1.5rem 0.75rem 3rem;
             font-size: 0.9rem;
-            opacity: 0.9;
-            margin-right: 1.5rem;
+            color: rgba(255,255,255,0.8);
+            margin-right: 1rem;
+            border-radius: 0 25px 25px 0;
+            display: block;
+            transition: all 0.3s ease;
+            background-color: transparent;
+            position: relative;
         }
 
         .sidebar-menu .submenu a:hover {
-            opacity: 1;
             background-color: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(3px);
+        }
+
+        .sidebar-menu .submenu a.active {
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+            border-right: 3px solid white;
+            transform: translateX(5px);
+            font-weight: 600;
+        }
+
+        /* Auto-expand submenu if any child is active - Fallback for browsers without :has() support */
+        .sidebar-menu .submenu.show {
+            max-height: 300px;
+        }
+
+        /* Menu toggle styling */
+        .menu-toggle {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu-toggle .fa-chevron-down {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .menu-toggle.active .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        /* Parent menu styling when submenu is active */
+        .sidebar-menu .menu-toggle.active {
+            background-color: rgba(255,255,255,0.1);
+            border-right: 2px solid rgba(255,255,255,0.3);
+        }
+
+        /* Parent menu styling when submenu has active child */
+        .sidebar-menu .submenu:has(.active) ~ .menu-toggle {
+            background-color: rgba(255,255,255,0.1);
+            border-right: 2px solid rgba(255,255,255,0.3);
+        }
+
+        /* Fallback for browsers without :has() support */
+        .sidebar-menu .submenu.show .menu-toggle {
+            background-color: rgba(255,255,255,0.1);
+            border-right: 2px solid rgba(255,255,255,0.3);
         }
 
         /* Main Content Styles */
@@ -699,15 +777,43 @@
                     @endif
                     
                     @if(Auth::guard('dosen')->check())
-                        <li class="menu-dosen"><a href="{{ route('dosen.validasi.proposal') }}" class="@if(request()->routeIs('dosen.validasi.proposal')) active @endif">
-                            <i class="fas fa-clipboard-check me-2"></i>Validasi Proposal
-                        </a></li>
-                        <li class="menu-dosen"><a href="{{ route('dosen.hasil.review') }}" class="@if(request()->routeIs('dosen.hasil.review')) active @endif">
-                            <i class="fas fa-clipboard-list me-2"></i>Hasil Review
-                        </a></li>
-                        <li class="menu-dosen"><a href="{{ route('dosen.hasil.final') }}" class="@if(request()->routeIs('dosen.hasil.final')) active @endif">
-                            <i class="fas fa-trophy me-2"></i>Hasil Final
-                        </a></li>
+                        <!-- Menu Dosen Pembimbing -->
+                        <li class="menu-dosen">
+                            <a href="#" class="menu-toggle" data-target="pembimbingMahasiswa">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Pembimbing Mhs
+                                <i class="fas fa-chevron-down float-end"></i>
+                            </a>
+                            <ul class="submenu" id="pembimbingMahasiswa">
+                                <li><a href="{{ route('dosen.pembimbing.dashboard') }}" class="@if(request()->routeIs('dosen.pembimbing.dashboard')) active @endif">
+                                    <i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Pembimbing
+                                </a></li>
+                                <li><a href="{{ route('dosen.pembimbing.mahasiswa.bimbingan') }}" class="@if(request()->routeIs('dosen.pembimbing.mahasiswa.bimbingan')) active @endif">
+                                    <i class="fas fa-users me-2"></i>Mahasiswa Bimbingan
+                                </a></li>
+                            </ul>
+                        </li>
+                        
+                        <!-- Menu Dosen Pendamping -->
+                        <li class="menu-dosen">
+                            <a href="#" class="menu-toggle" data-target="pendampingProposal">
+                                <i class="fas fa-user-check me-2"></i>Pendamping Prpsl
+                                <i class="fas fa-chevron-down float-end"></i>
+                            </a>
+                            <ul class="submenu" id="pendampingProposal">
+                                <li><a href="{{ route('dosen.pendamping.dashboard') }}" class="@if(request()->routeIs('dosen.pendamping.dashboard')) active @endif">
+                                    <i class="fas fa-user-check me-2"></i>Dashboard Pendamping
+                                </a></li>
+                                <li><a href="{{ route('dosen.pendamping.proposal.validasi') }}" class="@if(request()->routeIs('dosen.pendamping.proposal.validasi')) active @endif">
+                                    <i class="fas fa-clipboard-check me-2"></i>Validasi Proposal
+                                </a></li>
+                                <li><a href="{{ route('dosen.hasil.review') }}" class="@if(request()->routeIs('dosen.hasil.review')) active @endif">
+                                    <i class="fas fa-clipboard-list me-2"></i>Hasil Review
+                                </a></li>
+                                <li><a href="{{ route('dosen.hasil.final') }}" class="@if(request()->routeIs('dosen.hasil.final')) active @endif">
+                                    <i class="fas fa-trophy me-2"></i>Hasil Final
+                                </a></li>
+                            </ul>
+                        </li>
                     @endif
                     
                     @if(Auth::guard('reviewer')->check())
@@ -830,16 +936,40 @@
                 
                 const targetId = this.getAttribute('data-target');
                 const submenu = document.getElementById(targetId);
-                const chevron = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+                const chevron = this.querySelector('.fa-chevron-down');
                 
+                // Toggle submenu
                 submenu.classList.toggle('show');
                 
-                if (submenu.classList.contains('show')) {
-                    chevron.classList.remove('fa-chevron-down');
-                    chevron.classList.add('fa-chevron-up');
-                } else {
-                    chevron.classList.remove('fa-chevron-up');
-                    chevron.classList.add('fa-chevron-down');
+                // Toggle active class on parent
+                this.classList.toggle('active');
+                
+                // Rotate chevron
+                if (chevron) {
+                    chevron.style.transform = submenu.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+                }
+            });
+        });
+
+        // Auto-expand submenu if any child is active
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.submenu').forEach(function(submenu) {
+                const hasActiveChild = submenu.querySelector('.active');
+                if (hasActiveChild) {
+                    submenu.classList.add('show');
+                    const parentToggle = submenu.parentElement.querySelector('.menu-toggle');
+                    const chevron = parentToggle.querySelector('.fa-chevron-down');
+                    
+                    if (parentToggle) {
+                        parentToggle.classList.add('active');
+                        parentToggle.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                        parentToggle.style.borderRight = '2px solid rgba(255,255,255,0.3)';
+                        
+                        // Rotate chevron
+                        if (chevron) {
+                            chevron.style.transform = 'rotate(180deg)';
+                        }
+                    }
                 }
             });
         });

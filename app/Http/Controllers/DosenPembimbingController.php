@@ -18,7 +18,7 @@ class DosenPembimbingController extends Controller
         
         // Ambil semua mahasiswa bimbingan
         $mahasiswaBimbingan = $dosen->mahasiswaBimbingan()->with(['proposal' => function($query) {
-            $query->with(['dokumens', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilFinal']);
+            $query->with(['dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilFinal']);
         }])->get();
 
         // Hitung statistik
@@ -45,7 +45,7 @@ class DosenPembimbingController extends Controller
         
         $proposal = Proposal::with([
             'mahasiswa',
-            'dokumens',
+            'dokumen',
             'nilaiAdministratif',
             'nilaiSubstantif',
             'hasilFinal',

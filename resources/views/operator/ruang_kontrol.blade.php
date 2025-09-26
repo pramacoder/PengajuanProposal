@@ -69,9 +69,7 @@
                                     <input type="date" class="form-control" id="pendaftaranMulai" 
                                            value="{{ $ruangKontrol->tanggal_pendaftaran_mulai ?? '' }}"
                                            {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'disabled' : '' }}>
-                                    <span class="input-group-text">
-                                        <i class="fas fa-calendar"></i>
-                                    </span>
+                                    
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -80,9 +78,8 @@
                                     <input type="date" class="form-control" id="pendaftaranSelesai" 
                                            value="{{ $ruangKontrol->tanggal_pendaftaran_selesai ?? '' }}"
                                            {{ $ruangKontrol->status_pendaftaran == 'terbuka' ? 'disabled' : '' }}>
-                                    <span class="input-group-text">
-                                        <i class="fas fa-calendar"></i>
-                                    </span>
+                                    
+                                           
                                 </div>
                             </div>
                         </div>
@@ -162,9 +159,6 @@
                                     <input type="date" class="form-control" id="perbaikanMulai" 
                                            value="{{ $ruangKontrol->tanggal_perbaikan_mulai ?? '' }}"
                                            {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'disabled' : '' }}>
-                                    <span class="input-group-text">
-                                        <i class="fas fa-calendar"></i>
-                                    </span>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -173,9 +167,7 @@
                                     <input type="date" class="form-control" id="perbaikanSelesai" 
                                            value="{{ $ruangKontrol->tanggal_perbaikan_selesai ?? '' }}"
                                            {{ $ruangKontrol->status_perbaikan == 'terbuka' ? 'disabled' : '' }}>
-                                    <span class="input-group-text">
-                                        <i class="fas fa-calendar"></i>
-                                    </span>
+                                    
                                 </div>
                             </div>
                         </div>

@@ -12,7 +12,7 @@ class Proposal extends Model
     protected $primaryKey = 'id_proposal';
 
     protected $fillable = [
-        'judul_proposal', 'judul', 'tanggal_pengajuan', 'tahun_pengajuan', 'skim', 'status_validasi',
+            'judul_proposal', 'judul', 'tanggal_pengajuan', 'skim', 'status_validasi',
         'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen',
         'dosen_pembimbing', 'dana_diajukan', 'tahun_ajaran', 'tanggal_validasi',
         'id_reviewer_administratif', 'id_reviewer_substantif_1', 'id_reviewer_substantif_2',

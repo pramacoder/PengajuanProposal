@@ -37,7 +37,7 @@
                                                         <strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d F Y, H.i') }}
                                                     </p>
                                                     <p class="mb-1">
-                                                        <strong>Dikirim Oleh:</strong> {{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}
+                                                        <strong>Dikirim Oleh:</strong> {{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}
                                                     </p>
                                                     <p class="mb-1">
                                                         <strong>Skim:</strong> {{ $proposal->skim }}
@@ -61,7 +61,7 @@
                                             </div>
                                         </div>
                                         <div class="col-md-3 text-end">
-                                            <a href="{{ route('dosen.proposal.detail', $proposal->id_proposal) }}" 
+                                            <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}" 
                                                class="btn btn-success">
                                                 <i class="fas fa-eye me-2"></i>Validasi
                                             </a>

@@ -19,7 +19,7 @@ class ProposalController extends Controller
     /**
      * Menampilkan form pengajuan proposal
      */
-    public function create()
+    public function create(Request $request)
     {
         $dosens = Dosen::all();
         $fakultas = \App\Models\Fakultas::orderBy('nama_fakultas')->get();
@@ -28,11 +28,12 @@ class ProposalController extends Controller
         if (auth()->guard('mahasiswa')->check()) {
             $user = auth()->guard('mahasiswa')->user();
             
-            // Cek apakah mahasiswa sudah memiliki proposal
-            $existingProposal = \App\Helpers\ProposalHelper::checkStudentInProposal($user->nim);
+            // Cek apakah mahasiswa sudah memiliki proposal di tahun akademik yang sama
+            $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            $existingProposal = \App\Helpers\ProposalHelper::checkStudentInProposal($user->nim, null, $tahunAjaran);
             if ($existingProposal) {
                 return redirect()->route('mahasiswa.proposal.index')
-                    ->with('warning', "Anda sudah terdaftar dalam proposal: \"{$existingProposal->judul}\". Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM.");
+                    ->with('warning', "Anda sudah terdaftar dalam proposal tahun {$tahunAjaran}: \"{$existingProposal->judul}\". Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.");
             }
             
             // Debug: Log user data
@@ -102,8 +103,9 @@ class ProposalController extends Controller
                     ->withInput();
             }
 
-            // Validasi keunikan NIM di seluruh proposal
-            $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all());
+            // Validasi keunikan NIM di seluruh proposal dengan pertimbangan tahun akademik
+            $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all(), null, $tahunAjaran);
             if (!empty($nimErrors)) {
                 return back()
                     ->withErrors(['nim_duplicate' => $nimErrors])
@@ -126,11 +128,12 @@ class ProposalController extends Controller
                     ->withInput();
             }
 
-            // Cek apakah ketua tim sudah terdaftar dalam proposal lain
-            $existingProposal = ProposalHelper::checkStudentInProposal($request->ketua_nim);
+            // Cek apakah ketua tim sudah terdaftar dalam proposal lain di tahun akademik yang sama
+            $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            $existingProposal = ProposalHelper::checkStudentInProposal($request->ketua_nim, null, $tahunAjaran);
             if ($existingProposal) {
                 return back()
-                    ->withErrors(['ketua_nim' => "Ketua tim dengan NIM {$request->ketua_nim} sudah terdaftar dalam proposal: {$existingProposal->judul}"])
+                    ->withErrors(['ketua_nim' => "Ketua tim dengan NIM {$request->ketua_nim} sudah terdaftar dalam proposal tahun {$tahunAjaran}: {$existingProposal->judul}"])
                     ->withInput();
             }
 
@@ -166,7 +169,6 @@ class ProposalController extends Controller
                 'judul_proposal' => $request->judul,
                 'judul' => $request->judul,
                 'tanggal_pengajuan' => now(),
-                'tahun_pengajuan' => date('Y'), // Tahun pengajuan adalah tahun saat ini
                 'skim' => $request->skim,
                 'dosen_pembimbing' => $request->dosen_pembimbing,
                 'dana_diajukan' => $danaDiajukan,
@@ -784,15 +786,16 @@ class ProposalController extends Controller
     /**
      * API untuk cek apakah mahasiswa sudah terdaftar dalam proposal
      */
-    public function checkStudentProposal($nim)
+    public function checkStudentProposal($nim, $tahunAjaran = null)
     {
-        $proposal = ProposalHelper::checkStudentInProposal($nim);
+        $proposal = ProposalHelper::checkStudentInProposal($nim, null, $tahunAjaran);
         
         return response()->json([
             'success' => true,
             'hasProposal' => $proposal !== null,
             'proposalTitle' => $proposal ? $proposal->judul : null,
             'proposalStatus' => $proposal ? $proposal->status : null,
+            'tahunAjaran' => $proposal ? $proposal->tahun_ajaran : null,
         ]);
     }
 

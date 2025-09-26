@@ -139,8 +139,9 @@ class ProposalHelper
 
     /**
      * Validasi keunikan NIM di seluruh proposal menggunakan tabel teams
+     * dengan pertimbangan tahun akademik
      */
-    public static function validateNIMsAcrossProposals($data, $excludeProposalId = null)
+    public static function validateNIMsAcrossProposals($data, $excludeProposalId = null, $tahunAjaran = null)
     {
         $errors = [];
         $nims = [];
@@ -159,10 +160,18 @@ class ProposalHelper
                 $query->where('id_proposal', '!=', $excludeProposalId);
             }
 
+            // Jika tahun akademik diberikan, hanya cek proposal dari tahun yang sama
+            if ($tahunAjaran) {
+                $query->whereHas('proposal', function($q) use ($tahunAjaran) {
+                    $q->where('tahun_ajaran', $tahunAjaran);
+                });
+            }
+
             $existingTeam = $query->first();
             if ($existingTeam) {
                 $proposal = $existingTeam->proposal;
-                $errors[] = "NIM {$nim} sudah terdaftar dalam proposal: {$proposal->judul}";
+                $tahunInfo = $tahunAjaran ? " tahun {$tahunAjaran}" : "";
+                $errors[] = "NIM {$nim} sudah terdaftar dalam proposal{$tahunInfo}: {$proposal->judul}";
             }
         }
 
@@ -209,13 +218,21 @@ class ProposalHelper
 
     /**
      * Cek apakah mahasiswa sudah terdaftar dalam proposal lain menggunakan tabel teams
+     * dengan pertimbangan tahun akademik
      */
-    public static function checkStudentInProposal($nim, $excludeProposalId = null)
+    public static function checkStudentInProposal($nim, $excludeProposalId = null, $tahunAjaran = null)
     {
         $query = Team::where('nim', $nim);
         
         if ($excludeProposalId) {
             $query->where('id_proposal', '!=', $excludeProposalId);
+        }
+
+        // Jika tahun akademik diberikan, hanya cek proposal dari tahun yang sama
+        if ($tahunAjaran) {
+            $query->whereHas('proposal', function($q) use ($tahunAjaran) {
+                $q->where('tahun_ajaran', $tahunAjaran);
+            });
         }
 
         $existingTeam = $query->first();

@@ -1288,9 +1288,10 @@
         // Check if user already has a proposal (double check)
         @if(isset($user))
         const currentUserNim = '{{ $user->nim ?? "" }}';
+        const tahunAjaran = document.getElementById('tahun_ajaran')?.value || '{{ date("Y") }}/{{ date("Y") + 1 }}';
         if (currentUserNim) {
             try {
-                const response = await fetch(`/api/mahasiswa/check-proposal/${currentUserNim}`, {
+                const response = await fetch(`/api/mahasiswa/check-proposal/${currentUserNim}?tahun_ajaran=${encodeURIComponent(tahunAjaran)}`, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1304,7 +1305,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.hasProposal) {
-                        showToast(`Anda sudah terdaftar dalam proposal: "${data.proposalTitle}". Tidak dapat mengajukan proposal baru.`, 'error');
+                        showToast(`Anda sudah terdaftar dalam proposal tahun ${tahunAjaran}: "${data.proposalTitle}". Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.`, 'error');
                         return false;
                     }
                 } else {

@@ -10,7 +10,7 @@ class EmailService
     /**
      * Kirim email registrasi
      */
-    public function sendRegistrationEmail($email, $nama, $identifier, $password, $role)
+    public function sendRegistrationEmail($email, $nama, $identifier, $password, $role, $emailLogin = null)
     {
         try {
             $subject = 'Kredensial Login - Sistem Pengajuan Proposal PKM';
@@ -19,6 +19,7 @@ class EmailService
                 'identifier' => $identifier,
                 'password' => $password,
                 'role' => $role,
+                'email_login' => $emailLogin ?: 'Email ' . $role . ' di database',
                 'login_url' => route('login')
             ];
 
@@ -32,6 +33,36 @@ class EmailService
 
         } catch (\Exception $e) {
             Log::error("Gagal mengirim email registrasi ke {$email}: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Kirim email reset password
+     */
+    public function sendPasswordResetEmail($email, $nama, $identifier, $password, $role, $emailLogin)
+    {
+        try {
+            $subject = 'Reset Password - Sistem Pengajuan Proposal PKM';
+            $data = [
+                'nama' => $nama,
+                'identifier' => $identifier,
+                'password' => $password,
+                'role' => $role,
+                'email_login' => $emailLogin,
+                'login_url' => route('login')
+            ];
+
+            Mail::send('emails.password_reset', $data, function ($message) use ($email, $subject) {
+                $message->to($email)
+                    ->subject($subject);
+            });
+
+            Log::info("Email reset password berhasil dikirim ke: {$email}");
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error("Gagal mengirim email reset password ke {$email}: " . $e->getMessage());
             return false;
         }
     }

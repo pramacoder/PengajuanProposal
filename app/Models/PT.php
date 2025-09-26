@@ -29,6 +29,16 @@ class PT extends Authenticatable
         'is_active' => 'boolean',
     ];
 
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'email_pt';
+    }
+
     // Relasi One-to-Many ke RuangKontrol
     public function ruangKontrol()
     {

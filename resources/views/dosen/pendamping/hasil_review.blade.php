@@ -51,7 +51,7 @@
                                                         <strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d F Y, H.i') }}
                                                     </p>
                                                     <p class="mb-1">
-                                                        <strong>Proposal dari:</strong> {{ $proposal->mahasiswa->nama_mahasiswa }}
+                                                        <strong>Proposal dari:</strong> {{ $proposal->mahasiswa->nama_mhs }}
                                                     </p>
                                                 </div>
                                                 <div class="col-md-6">
@@ -221,7 +221,7 @@
         modal.show();
         
         // Fetch review data
-        fetch(`/dosen/review-data/${proposalId}`)
+        fetch(`/dosen/pendamping/review-data/${proposalId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {

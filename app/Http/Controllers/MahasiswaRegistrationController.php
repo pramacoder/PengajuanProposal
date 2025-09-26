@@ -33,8 +33,12 @@ class MahasiswaRegistrationController extends Controller
     public function register(Request $request)
     {
         $request->validate([
+            'nama_mahasiswa' => 'required|string|max:255',
             'nim' => 'required|string|max:20',
-            'nuptk_dosen' => 'required|string|max:20'
+            'email_mahasiswa' => 'required|email|max:255',
+            'nama_dosen' => 'required|string|max:255',
+            'nuptk_dosen' => 'required|string|max:20',
+            'email_dosen' => 'required|email|max:255'
         ]);
 
         try {
@@ -69,26 +73,28 @@ class MahasiswaRegistrationController extends Controller
             $mahasiswa->update(['password' => Hash::make($passwordMahasiswa)]);
             $dosen->update(['password' => Hash::make($passwordDosen)]);
 
-            // Kirim email kredensial ke mahasiswa
+            // Kirim email kredensial ke mahasiswa (ke Gmail yang diinput)
             $this->emailService->sendRegistrationEmail(
-                $mahasiswa->email_mhs,
-                $mahasiswa->nama_mhs,
+                $request->email_mahasiswa, // Gmail yang diinput mahasiswa
+                $request->nama_mahasiswa, // Nama yang diinput mahasiswa
                 $mahasiswa->nim,
                 $passwordMahasiswa,
-                'mahasiswa'
+                'mahasiswa',
+                $mahasiswa->email_mhs // Email login yang sebenarnya
             );
 
-            // Kirim email kredensial ke dosen
+            // Kirim email kredensial ke dosen (ke Gmail yang diinput)
             $this->emailService->sendRegistrationEmail(
-                $dosen->email_dosen,
-                $dosen->nama_dosen,
+                $request->email_dosen, // Gmail yang diinput dosen
+                $request->nama_dosen, // Nama yang diinput dosen
                 $dosen->nuptk,
                 $passwordDosen,
-                'dosen'
+                'dosen',
+                $dosen->email_dosen // Email login yang sebenarnya
             );
 
             return redirect()->route('login')
-                ->with('success', 'Kredensial login berhasil dikirim! Silakan cek email mahasiswa dan dosen pembimbing untuk mendapatkan kredensial login.');
+                ->with('success', 'Kredensial login berhasil dikirim! Silakan cek Gmail mahasiswa dan dosen pembimbing untuk mendapatkan kredensial login.');
 
         } catch (\Exception $e) {
             return redirect()->back()

@@ -1,4 +1,4 @@
-@extends('mainlayout.mainlayout')
+@extends('mainlayout.app')
 
 @section('title', 'Detail Proposal Mahasiswa')
 
@@ -90,7 +90,7 @@
     </div>
 
     <!-- Dokumen Proposal -->
-    @if($proposal->dokumens->count() > 0)
+    @if($proposal->dokumen)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -113,21 +113,40 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($proposal->dokumens as $index => $dokumen)
+                                @if($proposal->dokumen)
                                     <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $dokumen->jenis_dokumen }}</td>
-                                        <td>{{ $dokumen->nama_file }}</td>
-                                        <td>{{ number_format($dokumen->ukuran_file / 1024, 2) }} KB</td>
-                                        <td>{{ \Carbon\Carbon::parse($dokumen->created_at)->format('d/m/Y H:i') }}</td>
+                                        <td>1</td>
+                                        <td>Proposal</td>
+                                        <td>{{ $proposal->dokumen->file_proposal ?: 'proposal.pdf' }}</td>
+                                        <td>-</td>
+                                        <td>{{ \Carbon\Carbon::parse($proposal->dokumen->created_at)->format('d/m/Y H:i') }}</td>
                                         <td>
-                                            <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id, 'jenis' => $dokumen->jenis_dokumen]) }}" 
+                                            <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
                                                class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-download me-1"></i>Download
                                             </a>
                                         </td>
                                     </tr>
-                                @endforeach
+                                    @if($proposal->dokumen->file_lampiran)
+                                        <tr>
+                                            <td>2</td>
+                                            <td>Lampiran</td>
+                                            <td>{{ $proposal->dokumen->file_lampiran }}</td>
+                                            <td>-</td>
+                                            <td>{{ \Carbon\Carbon::parse($proposal->dokumen->created_at)->format('d/m/Y H:i') }}</td>
+                                            <td>
+                                                <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'lampiran']) }}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-download me-1"></i>Download
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @else
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Tidak ada dokumen</td>
+                                    </tr>
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -138,7 +157,7 @@
     @endif
 
     <!-- Hasil Review -->
-    @if($proposal->nilaiAdministratif || $proposal->nilaiSubstantif || $proposal->hasilFinal)
+    @if($proposal->nilaiAdministratif->count() > 0 || $proposal->nilaiSubstantif->count() > 0 || $proposal->hasilFinal)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -148,19 +167,25 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if($proposal->nilaiAdministratif)
+                    @if($proposal->nilaiAdministratif->count() > 0)
                         <div class="mb-3">
                             <h6>Review Administratif</h6>
-                            <p><strong>Nilai:</strong> {{ $proposal->nilaiAdministratif->nilai_administratif }}</p>
-                            <p><strong>Komentar:</strong> {{ $proposal->nilaiAdministratif->komentar ?? 'Tidak ada komentar' }}</p>
+                            @foreach($proposal->nilaiAdministratif as $nilai)
+                                <p><strong>Nilai:</strong> {{ $nilai->nilai_administratif }}</p>
+                                <p><strong>Komentar:</strong> {{ $nilai->komentar ?? 'Tidak ada komentar' }}</p>
+                                @if(!$loop->last)<hr>@endif
+                            @endforeach
                         </div>
                     @endif
 
-                    @if($proposal->nilaiSubstantif)
+                    @if($proposal->nilaiSubstantif->count() > 0)
                         <div class="mb-3">
                             <h6>Review Substantif</h6>
-                            <p><strong>Nilai:</strong> {{ $proposal->nilaiSubstantif->nilai_substantif }}</p>
-                            <p><strong>Komentar:</strong> {{ $proposal->nilaiSubstantif->komentar ?? 'Tidak ada komentar' }}</p>
+                            @foreach($proposal->nilaiSubstantif as $nilai)
+                                <p><strong>Nilai:</strong> {{ $nilai->nilai_substantif }}</p>
+                                <p><strong>Komentar:</strong> {{ $nilai->komentar ?? 'Tidak ada komentar' }}</p>
+                                @if(!$loop->last)<hr>@endif
+                            @endforeach
                         </div>
                     @endif
 

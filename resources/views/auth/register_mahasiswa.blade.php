@@ -118,7 +118,17 @@
                             <i class="fas fa-user me-2"></i>Informasi Mahasiswa
                         </h5>
                         <div class="row">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="nama_mahasiswa" class="form-label required-field">Nama Mahasiswa</label>
+                                <input type="text" class="form-control @error('nama_mahasiswa') is-invalid @enderror" 
+                                       id="nama_mahasiswa" name="nama_mahasiswa" 
+                                       value="{{ old('nama_mahasiswa') }}" 
+                                       placeholder="Masukkan nama lengkap Anda" required>
+                                @error('nama_mahasiswa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
                                 <label for="nim" class="form-label required-field">NIM</label>
                                 <input type="text" class="form-control @error('nim') is-invalid @enderror" 
                                        id="nim" name="nim" 
@@ -127,7 +137,17 @@
                                 @error('nim')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Sistem akan mencari data mahasiswa berdasarkan NIM dan mengirim kredensial login ke email yang terdaftar.</div>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="email_mahasiswa" class="form-label required-field">Gmail Mahasiswa</label>
+                                <input type="email" class="form-control @error('email_mahasiswa') is-invalid @enderror" 
+                                       id="email_mahasiswa" name="email_mahasiswa" 
+                                       value="{{ old('email_mahasiswa') }}" 
+                                       placeholder="Masukkan Gmail Anda" required>
+                                @error('email_mahasiswa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Sistem akan mencari data mahasiswa berdasarkan NIM dan mengirim kredensial login ke Gmail ini.</div>
                             </div>
                         </div>
                     </div>
@@ -138,8 +158,18 @@
                             <i class="fas fa-chalkboard-teacher me-2"></i>Informasi Dosen Pembimbing
                         </h5>
                         <div class="row">
-                            <div class="col-md-12 mb-3">
-                                <label for="nuptk_dosen" class="form-label required-field">NUPTK Dosen Pembimbing</label>
+                            <div class="col-md-6 mb-3">
+                                <label for="nama_dosen" class="form-label required-field">Nama Dosen</label>
+                                <input type="text" class="form-control @error('nama_dosen') is-invalid @enderror" 
+                                       id="nama_dosen" name="nama_dosen" 
+                                       value="{{ old('nama_dosen') }}" 
+                                       placeholder="Masukkan nama dosen pembimbing" required>
+                                @error('nama_dosen')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nuptk_dosen" class="form-label required-field">NUPTK Dosen</label>
                                 <input type="text" class="form-control @error('nuptk_dosen') is-invalid @enderror" 
                                        id="nuptk_dosen" name="nuptk_dosen" 
                                        value="{{ old('nuptk_dosen') }}" 
@@ -147,7 +177,17 @@
                                 @error('nuptk_dosen')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
-                                <div class="form-text">Sistem akan mencari data dosen berdasarkan NUPTK dan mengirim kredensial login ke email yang terdaftar.</div>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="email_dosen" class="form-label required-field">Gmail Dosen</label>
+                                <input type="email" class="form-control @error('email_dosen') is-invalid @enderror" 
+                                       id="email_dosen" name="email_dosen" 
+                                       value="{{ old('email_dosen') }}" 
+                                       placeholder="Masukkan Gmail dosen pembimbing" required>
+                                @error('email_dosen')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div class="form-text">Sistem akan mencari data dosen berdasarkan NUPTK dan mengirim kredensial login ke Gmail ini.</div>
                             </div>
                         </div>
                     </div>

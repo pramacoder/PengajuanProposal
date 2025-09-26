@@ -49,34 +49,50 @@ class ApiController extends Controller
     }
     
     /**
-     * Check if mahasiswa already has a proposal
+     * Check if mahasiswa already has a proposal (with year consideration)
      */
-    public function checkMahasiswaInProposal($nim): JsonResponse
+    public function checkMahasiswaInProposal(Request $request, $nim): JsonResponse
     {
         try {
-            // Cek di tabel proposals (sistem lama)
-            $proposal = Proposal::where('ketua_nim', $nim)
-                ->orWhere('anggota1_nim', $nim)
-                ->orWhere('anggota2_nim', $nim)
-                ->orWhere('anggota3_nim', $nim)
-                ->orWhere('anggota4_nim', $nim)
-                ->first();
+            // Ambil tahun akademik dari query parameter atau request
+            $tahunAjaran = $request->query('tahun_ajaran') ?? $request->input('tahun_ajaran');
             
-            // Cek di tabel teams (sistem baru)
+            // Cek di tabel proposals (sistem lama) - hanya jika tidak ada tahun akademik
+            $proposal = null;
+            if (!$tahunAjaran) {
+                $proposal = Proposal::where('ketua_nim', $nim)
+                    ->orWhere('anggota1_nim', $nim)
+                    ->orWhere('anggota2_nim', $nim)
+                    ->orWhere('anggota3_nim', $nim)
+                    ->orWhere('anggota4_nim', $nim)
+                    ->first();
+            }
+            
+            // Cek di tabel teams (sistem baru) - selalu cek dengan filter tahun jika ada
             if (!$proposal) {
-                $teamMember = \App\Models\Team::where('nim', $nim)->first();
+                $teamQuery = \App\Models\Team::where('nim', $nim);
+                
+                if ($tahunAjaran) {
+                    $teamQuery->whereHas('proposal', function($q) use ($tahunAjaran) {
+                        $q->where('tahun_ajaran', $tahunAjaran);
+                    });
+                }
+                
+                $teamMember = $teamQuery->first();
                 if ($teamMember) {
                     $proposal = $teamMember->proposal;
                 }
             }
             
             if ($proposal) {
+                $tahunInfo = $tahunAjaran ? " tahun {$tahunAjaran}" : "";
                 return response()->json([
                     'success' => true,
                     'hasProposal' => true,
                     'proposalTitle' => $proposal->judul ?? $proposal->judul_proposal,
                     'proposalStatus' => $proposal->status,
-                    'message' => 'Mahasiswa sudah terdaftar dalam proposal lain'
+                    'tahunAjaran' => $proposal->tahun_ajaran,
+                    'message' => "Mahasiswa sudah terdaftar dalam proposal{$tahunInfo}"
                 ]);
             }
             

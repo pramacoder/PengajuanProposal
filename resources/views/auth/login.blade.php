@@ -205,29 +205,7 @@
                         </div>
                     </div>
                     
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Multi-Role Access</h3>
-                            <p class="text-maroon-100">Akses khusus untuk Mahasiswa, Dosen, Reviewer, dan Operator</p>
-                        </div>
-                    </div>
                     
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Review Terstruktur</h3>
-                            <p class="text-maroon-100">Sistem review administratif dan substantif yang komprehensif</p>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Footer -->

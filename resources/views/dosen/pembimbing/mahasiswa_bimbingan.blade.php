@@ -1,6 +1,6 @@
 @extends('mainlayout.app')
 
-@section('title', 'Dashboard Dosen Pembimbing')
+@section('title', 'Mahasiswa Bimbingan')
 
 @section('content')
 <div class="container-fluid">
@@ -9,11 +9,11 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2><i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Dosen Pembimbing</h2>
-                    <p class="text-muted">Monitor proposal mahasiswa bimbingan Anda</p>
+                    <h2><i class="fas fa-users me-2"></i>Mahasiswa Bimbingan</h2>
+                    <p class="text-muted">Daftar mahasiswa yang Anda bimbing</p>
                 </div>
                 <div class="btn-group" role="group">
-                    <a href="{{ route('dosen.pembimbing.dashboard') }}" class="btn btn-primary">
+                    <a href="{{ route('dosen.pembimbing.dashboard') }}" class="btn btn-outline-primary">
                         <i class="fas fa-chalkboard-teacher me-1"></i>Pembimbing
                     </a>
                     <a href="{{ route('dosen.pendamping.dashboard') }}" class="btn btn-outline-primary">
@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">{{ $totalMahasiswa }}</h4>
+                            <h4 class="card-title">{{ $mahasiswaBimbingan->count() }}</h4>
                             <p class="card-text">Total Mahasiswa</p>
                         </div>
                         <div class="align-self-center">
@@ -46,8 +46,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">{{ $totalProposal }}</h4>
-                            <p class="card-text">Total Proposal</p>
+                            <h4 class="card-title">{{ $mahasiswaBimbingan->where('proposal', '!=', null)->count() }}</h4>
+                            <p class="card-text">Sudah Ajukan Proposal</p>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-file-alt fa-2x"></i>
@@ -61,8 +61,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">{{ $proposalPending }}</h4>
-                            <p class="card-text">Pending</p>
+                            <h4 class="card-title">{{ $mahasiswaBimbingan->where('proposal.status_validasi', 'pending')->count() }}</h4>
+                            <p class="card-text">Proposal Pending</p>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-clock fa-2x"></i>
@@ -76,8 +76,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">{{ $proposalValid }}</h4>
-                            <p class="card-text">Valid</p>
+                            <h4 class="card-title">{{ $mahasiswaBimbingan->where('proposal.status_validasi', 'valid')->count() }}</h4>
+                            <p class="card-text">Proposal Valid</p>
                         </div>
                         <div class="align-self-center">
                             <i class="fas fa-check-circle fa-2x"></i>
@@ -94,7 +94,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-list me-2"></i>Mahasiswa Bimbingan
+                        <i class="fas fa-list me-2"></i>Daftar Mahasiswa Bimbingan
                     </h5>
                 </div>
                 <div class="card-body">
@@ -107,6 +107,9 @@
                                         <th>Nama Mahasiswa</th>
                                         <th>NIM</th>
                                         <th>Prodi</th>
+                                        <th>Fakultas</th>
+                                        <th>Email</th>
+                                        <th>No. HP</th>
                                         <th>Status Proposal</th>
                                         <th>Judul Proposal</th>
                                         <th>Tanggal Pengajuan</th>
@@ -127,6 +130,9 @@
                                             </td>
                                             <td>{{ $mahasiswa->nim }}</td>
                                             <td>{{ $mahasiswa->prodi_mhs }}</td>
+                                            <td>{{ $mahasiswa->fakultas_mhs }}</td>
+                                            <td>{{ $mahasiswa->email_mhs }}</td>
+                                            <td>{{ $mahasiswa->no_hp_mhs }}</td>
                                             <td>
                                                 @if($mahasiswa->proposal)
                                                     @switch($mahasiswa->proposal->status_validasi)

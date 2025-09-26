@@ -256,7 +256,7 @@ class DosenController extends Controller
             }
         }
 
-        return view('dosen.hasil_review', compact('proposals', 'dosen'));
+        return view('dosen.pendamping.hasil_review', compact('proposals', 'dosen'));
     }
 
     // Detail hasil review
@@ -273,7 +273,7 @@ class DosenController extends Controller
             ->where('id_dosen', $dosen->id_dosen)
             ->findOrFail($id);
 
-        return view('dosen.detail_hasil_review', compact('proposal', 'dosen'));
+        return view('dosen.pendamping.detail_hasil_review', compact('proposal', 'dosen'));
     }
 
     // 1.3 Hasil Final
@@ -312,7 +312,7 @@ class DosenController extends Controller
             })
         ]);
 
-        return view('dosen.hasil_final', compact('proposals', 'dosen'));
+        return view('dosen.pendamping.hasil_final', compact('proposals', 'dosen'));
     }
 
     // Detail hasil final
@@ -330,7 +330,7 @@ class DosenController extends Controller
             ->where('id_dosen', $dosen->id_dosen)
             ->findOrFail($id);
 
-        return view('dosen.detail_hasil_final', compact('proposal', 'dosen'));
+        return view('dosen.pendamping.detail_hasil_final', compact('proposal', 'dosen'));
     }
 
     // Download dokumen proposal

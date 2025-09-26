@@ -8,6 +8,7 @@ use App\Http\Controllers\DosenController;
 use App\Http\Controllers\DosenPembimbingController;
 use App\Http\Controllers\DosenPendampingController;
 use App\Http\Controllers\MahasiswaRegistrationController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\ReviewerController;
 use App\Http\Controllers\ApiController;
@@ -20,9 +21,17 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/request-credentials', [MahasiswaRegistrationController::class, 'showRegistrationForm'])->name('register');
 Route::post('/request-credentials', [MahasiswaRegistrationController::class, 'register']);
 
+// Alias untuk /register (untuk kemudahan akses)
+Route::get('/register', [MahasiswaRegistrationController::class, 'showRegistrationForm']);
+Route::post('/register', [MahasiswaRegistrationController::class, 'register']);
+
 // Route untuk reset password
-Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.forgot');
-Route::post('/forgot-password', [AuthController::class, 'sendPasswordReset'])->name('password.reset');
+Route::get('/reset-password', [PasswordResetController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])->name('password.reset');
+
+// Alias untuk /forgot-password (untuk kemudahan akses)
+Route::get('/forgot-password', [PasswordResetController::class, 'showResetForm'])->name('password.forgot');
+Route::post('/forgot-password', [PasswordResetController::class, 'resetPassword']);
 
 
 // Route untuk logout
@@ -112,6 +121,9 @@ Route::middleware(['auth:dosen'])->group(function () {
         Route::get('/proposal-validasi', [DosenPendampingController::class, 'proposalValidasi'])->name('proposal.validasi');
         Route::get('/proposal/{id}/detail', [DosenPendampingController::class, 'detailProposal'])->name('proposal.detail');
         Route::post('/proposal/{id}/validasi', [DosenPendampingController::class, 'validasi'])->name('proposal.validasi.submit');
+        Route::get('/hasil-review', [DosenPendampingController::class, 'hasilReview'])->name('hasil.review');
+        Route::get('/hasil-final', [DosenPendampingController::class, 'hasilFinal'])->name('hasil.final');
+        Route::get('/review-data/{id}', [DosenPendampingController::class, 'getReviewData'])->name('review.data');
     });
     
     // Route untuk validasi proposal (legacy - bisa dilakukan di kedua fase)
