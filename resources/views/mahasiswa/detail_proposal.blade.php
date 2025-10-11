@@ -397,11 +397,9 @@
     <!-- Header -->
     <x-page-header 
         title="Detail Proposal PKM" 
-        subtitle="UNIVERSITAS UDAYANA"
         description="Detail lengkap proposal PKM yang telah Anda ajukan"
         :showBackButton="true"
-        :backUrl="route('mahasiswa.proposal.index')"
-        backText="Kembali ke Daftar" />
+    />
 
     <!-- Proposal Detail Card -->
     <div class="proposal-detail-card">

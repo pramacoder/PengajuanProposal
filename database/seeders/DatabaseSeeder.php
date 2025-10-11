@@ -39,6 +39,9 @@ class DatabaseSeeder extends Seeder
             NilaiSubstantifSeeder::class,
             HasilFinalSeeder::class,
             NotificationSeeder::class,
+            
+            // Cleanup proposal 2025 untuk testing pengajuan proposal tahun ini
+            CleanupProposal2025Seeder::class,
         ]);
     }
 }

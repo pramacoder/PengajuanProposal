@@ -18,22 +18,47 @@ class ProposalRevisiController extends Controller
         $mahasiswa = Auth::guard('mahasiswa')->user();
         
         if (!$mahasiswa) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Data mahasiswa tidak ditemukan.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
         }
 
         // Cek apakah status perbaikan terbuka
         $ruangKontrol = RuangKontrol::first();
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
         }
 
         // Ambil proposal mahasiswa yang berstatus revisi
-        $proposal = Proposal::where('ketua_nim', $mahasiswa->nim)
-            ->where('status', 'revisi')
-            ->first();
+        // Cek dengan berbagai cara untuk menemukan proposal mahasiswa
+        $proposal = Proposal::where(function($query) use ($mahasiswa) {
+            // Cek sebagai ketua tim
+            $query->where('ketua_nim', $mahasiswa->nim)
+                  // ATAU sebagai anggota tim melalui tabel teams
+                  ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
+                      $teamQuery->where('nim', $mahasiswa->nim);
+                  })
+                  // ATAU sebagai mahasiswa yang membuat proposal
+                  ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+        })
+        ->where('status', 'revisi')
+        ->first();
 
         if (!$proposal) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Tidak ada proposal yang perlu direvisi.');
+            // Jika tidak ada proposal dengan status revisi, cek apakah ada proposal yang sedang direview
+            $proposalInReview = Proposal::where(function($query) use ($mahasiswa) {
+                $query->where('ketua_nim', $mahasiswa->nim)
+                      ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
+                          $teamQuery->where('nim', $mahasiswa->nim);
+                      })
+                      ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+            })
+            ->whereIn('status', ['review_administratif', 'review_substantif', 'review_completed'])
+            ->first();
+            
+            if ($proposalInReview) {
+                return redirect()->route('mahasiswa.proposal.index')->with('info', 'Proposal Anda masih dalam proses review. Silakan tunggu hingga review selesai untuk melakukan revisi.');
+            }
+            
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Tidak ada proposal yang perlu direvisi.');
         }
 
         // Ambil data revisi yang sudah ada
@@ -49,13 +74,13 @@ class ProposalRevisiController extends Controller
         $mahasiswa = Auth::guard('mahasiswa')->user();
         
         if (!$mahasiswa) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Data mahasiswa tidak ditemukan.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
         }
 
         // Cek apakah status perbaikan terbuka
         $ruangKontrol = RuangKontrol::first();
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
         }
 
         // Validasi request
@@ -69,12 +94,18 @@ class ProposalRevisiController extends Controller
         ]);
 
         // Ambil proposal mahasiswa yang berstatus revisi
-        $proposal = Proposal::where('ketua_nim', $mahasiswa->nim)
-            ->where('status', 'revisi')
-            ->first();
+        $proposal = Proposal::where(function($query) use ($mahasiswa) {
+            $query->where('ketua_nim', $mahasiswa->nim)
+                  ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
+                      $teamQuery->where('nim', $mahasiswa->nim);
+                  })
+                  ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+        })
+        ->where('status', 'revisi')
+        ->first();
 
         if (!$proposal) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Tidak ada proposal yang perlu direvisi.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Tidak ada proposal yang perlu direvisi.');
         }
 
         try {
@@ -104,18 +135,24 @@ class ProposalRevisiController extends Controller
         $mahasiswa = Auth::guard('mahasiswa')->user();
         
         if (!$mahasiswa) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Data mahasiswa tidak ditemukan.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
         }
 
         $revisi = ProposalRevisi::findOrFail($id);
         
         // Cek apakah revisi ini milik proposal mahasiswa yang login
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
-            ->where('ketua_nim', $mahasiswa->nim)
+            ->where(function($query) use ($mahasiswa) {
+                $query->where('ketua_nim', $mahasiswa->nim)
+                      ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
+                          $teamQuery->where('nim', $mahasiswa->nim);
+                      })
+                      ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+            })
             ->first();
 
         if (!$proposal) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'File revisi tidak ditemukan.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'File revisi tidak ditemukan.');
         }
 
         if (!Storage::disk('public')->exists($revisi->path_file)) {
@@ -130,24 +167,30 @@ class ProposalRevisiController extends Controller
         $mahasiswa = Auth::guard('mahasiswa')->user();
         
         if (!$mahasiswa) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Data mahasiswa tidak ditemukan.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
         }
 
         // Cek apakah status perbaikan terbuka
         $ruangKontrol = RuangKontrol::first();
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
         }
 
         $revisi = ProposalRevisi::findOrFail($id);
         
         // Cek apakah revisi ini milik proposal mahasiswa yang login
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
-            ->where('ketua_nim', $mahasiswa->nim)
+            ->where(function($query) use ($mahasiswa) {
+                $query->where('ketua_nim', $mahasiswa->nim)
+                      ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
+                          $teamQuery->where('nim', $mahasiswa->nim);
+                      })
+                      ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+            })
             ->first();
 
         if (!$proposal) {
-            return redirect()->route('mahasiswa.dashboard')->with('error', 'File revisi tidak ditemukan.');
+            return redirect()->route('mahasiswa.proposal.index')->with('error', 'File revisi tidak ditemukan.');
         }
 
         try {

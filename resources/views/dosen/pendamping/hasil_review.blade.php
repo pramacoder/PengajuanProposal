@@ -35,9 +35,8 @@
                                     <div class="row align-items-center">
                                         <div class="col-md-2">
                                             <div class="proposal-thumbnail">
-                                                <div class="text-center">
-                                                    <i class="fas fa-file-pdf fa-2x text-danger mb-2"></i>
-                                                    <div class="btn btn-sm btn-danger">PDF</div>
+                                                <div class="text-center d-flex align-items-center justify-content-center h-100">
+                                                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
                                                 </div>
                                             </div>
                                             <div class="text-center">

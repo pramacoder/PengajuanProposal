@@ -67,8 +67,8 @@ Route::get('/', function () {
 
 // Route untuk dashboard berdasarkan user type
 Route::middleware(['auth:mahasiswa'])->group(function () {
-    // Dashboard mahasiswa sekarang mengarah ke halaman ajukan proposal
-    Route::get('/mahasiswa/dashboard', [ProposalController::class, 'create'])->name('mahasiswa.dashboard');
+    // Dashboard mahasiswa sekarang mengarah ke dashboard yang proper
+    Route::get('/mahasiswa/dashboard', [ProposalController::class, 'dashboard'])->name('mahasiswa.dashboard');
     Route::get('/mahasiswa/profile', [AuthController::class, 'showProfile'])->name('mahasiswa.profile');
     Route::put('/mahasiswa/profile', [AuthController::class, 'updateProfile'])->name('mahasiswa.profile.update');
     

@@ -39,6 +39,18 @@ class Proposal extends Model
         return $this->belongsTo(Mahasiswa::class, 'id_mahasiswa', 'id_mahasiswa');
     }
 
+    // Relasi ke Team (anggota tim proposal)
+    public function teams()
+    {
+        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal');
+    }
+
+    // Relasi ke Mahasiswa melalui Team (semua anggota tim)
+    public function mahasiswaTim()
+    {
+        return $this->hasManyThrough(Mahasiswa::class, Team::class, 'id_proposal', 'id_mahasiswa', 'id_proposal', 'id_mahasiswa');
+    }
+
     // Relasi One-to-Many ke Dosen (Relasi Dosen Pendamping)
     public function dosen()
     {
@@ -61,14 +73,6 @@ class Proposal extends Model
     public function reviewerSubstantif2()
     {
         return $this->belongsTo(Reviewer::class, 'id_reviewer_substantif_2', 'id_reviewer');
-    }
-
-    /**
-     * Relasi ke anggota tim (1 proposal memiliki banyak anggota tim)
-     */
-    public function teams()
-    {
-        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal');
     }
 
     // Relasi One-to-One ke Dokumen

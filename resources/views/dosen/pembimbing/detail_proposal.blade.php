@@ -100,60 +100,103 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-primary mb-3">Informasi Dokumen</h6>
+                            <table class="table table-borderless">
                                 <tr>
-                                    <th>No</th>
-                                    <th>Jenis Dokumen</th>
-                                    <th>Nama File</th>
-                                    <th>Ukuran</th>
-                                    <th>Tanggal Upload</th>
-                                    <th>Aksi</th>
+                                    <td width="30%"><strong>Nama File:</strong></td>
+                                    <td>{{ $proposal->dokumen->file_proposal ?: 'proposal.pdf' }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                @if($proposal->dokumen)
-                                    <tr>
-                                        <td>1</td>
-                                        <td>Proposal</td>
-                                        <td>{{ $proposal->dokumen->file_proposal ?: 'proposal.pdf' }}</td>
-                                        <td>-</td>
-                                        <td>{{ \Carbon\Carbon::parse($proposal->dokumen->created_at)->format('d/m/Y H:i') }}</td>
-                                        <td>
-                                            <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
-                                               class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-download me-1"></i>Download
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @if($proposal->dokumen->file_lampiran)
-                                        <tr>
-                                            <td>2</td>
-                                            <td>Lampiran</td>
-                                            <td>{{ $proposal->dokumen->file_lampiran }}</td>
-                                            <td>-</td>
-                                            <td>{{ \Carbon\Carbon::parse($proposal->dokumen->created_at)->format('d/m/Y H:i') }}</td>
-                                            <td>
-                                                <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'lampiran']) }}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-download me-1"></i>Download
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endif
+                                <tr>
+                                    <td><strong>Tanggal Upload:</strong></td>
+                                    <td>{{ \Carbon\Carbon::parse($proposal->dokumen->created_at)->format('d F Y, H:i') }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        @if($proposal->dokumen->path_file)
+                                            <span class="badge bg-success">Tersedia</span>
+                                        @else
+                                            <span class="badge bg-warning">Belum Upload</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-primary mb-3">Aksi</h6>
+                            <div class="d-grid gap-2">
+                                @if($proposal->dokumen->path_file)
+                                    <a  
+                                       class="btn btn-outline-primary" target="_blank">
+                                        <i class="fas fa-download me-2"></i>Download Proposal pada Preview Proposal
+                                    </a>
                                 @else
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">Tidak ada dokumen</td>
-                                    </tr>
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        File proposal belum tersedia
+                                    </div>
                                 @endif
-                            </tbody>
-                        </table>
+                                
+                                @if($proposal->dokumen->file_lampiran)
+                                    <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'lampiran']) }}" 
+                                       class="btn btn-outline-secondary" target="_blank">
+                                        <i class="fas fa-download me-2"></i>Download Lampiran
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- PDF Viewer -->
+    @if($proposal->dokumen && $proposal->dokumen->path_file)
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-eye me-2"></i>Preview Proposal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="border rounded p-3 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="btn-group" role="group">
+                                    <button id="fullscreenBtn" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-expand me-1"></i>Fullscreen
+                                    </button>
+                                    <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
+                                       class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </a>
+                                </div>
+                                <span class="text-muted">PDF akan dimuat secara otomatis</span>
+                            </div>
+                            
+                            <div id="pdfViewer" class="pdf-loading">
+                                <div class="spinner"></div>
+                                <!-- PDF iframe will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>PDF tidak tersedia:</strong> File proposal belum diupload atau tidak dapat diakses.
+                </div>
+            </div>
+        </div>
+    @endif
     @endif
 
     <!-- Hasil Review -->
@@ -231,4 +274,211 @@
     </div>
     @endif
 </div>
+
+<style>
+    .pdf-loading {
+        position: relative;
+        min-height: 700px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .pdf-loading .spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--bs-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        transition: opacity 0.3s ease;
+    }
+    
+    @keyframes spin {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .pdf-iframe {
+        width: 100%;
+        height: 700px;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background: white;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        transition: opacity 0.3s ease;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        color: #dee2e6;
+    }
+    
+    .empty-state h4 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    
+    .empty-state p {
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+
+    /* Fullscreen styles */
+    .pdf-viewer-container:fullscreen {
+        background: white;
+        padding: 20px;
+    }
+    
+    .pdf-viewer-container:fullscreen .pdf-iframe {
+        height: calc(100vh - 100px);
+    }
+    
+    .pdf-viewer-container:-webkit-full-screen {
+        background: white;
+        padding: 20px;
+    }
+    
+    .pdf-viewer-container:-webkit-full-screen .pdf-iframe {
+        height: calc(100vh - 100px);
+    }
+    
+    .pdf-viewer-container:-ms-fullscreen {
+        background: white;
+        padding: 20px;
+    }
+    
+    .pdf-viewer-container:-ms-fullscreen .pdf-iframe {
+        height: calc(100vh - 100px);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if($proposal->dokumen && $proposal->dokumen->path_file)
+            loadPDFDocument();
+        @endif
+
+        // Initialize fullscreen functionality
+        initializeFullscreen();
+    });
+
+    function loadPDFDocument() {
+        const pdfViewer = document.getElementById('pdfViewer');
+        const pdfUrl = '{{ $proposal->dokumen ? Storage::url($proposal->dokumen->path_file) : "" }}';
+        
+        if (!pdfUrl) {
+            pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen proposal tidak ditemukan.</p></div>';
+            return;
+        }
+
+        // Create iframe first (before clearing content)
+        const iframe = document.createElement('iframe');
+        iframe.src = pdfUrl;
+        iframe.className = 'pdf-iframe';
+        iframe.style.width = '100%';
+        iframe.style.height = '700px';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '8px';
+        iframe.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        iframe.style.opacity = '0'; // Start invisible
+        iframe.style.transition = 'opacity 0.3s ease'; // Smooth transition
+        
+        // Pre-load iframe before showing
+        iframe.onload = function() {
+            // Smooth fade in
+            setTimeout(() => {
+                iframe.style.opacity = '1';
+                // Remove spinner after iframe is visible
+                const spinner = pdfViewer.querySelector('.spinner');
+                if (spinner) {
+                    spinner.style.opacity = '0';
+                    setTimeout(() => {
+                        if (spinner.parentNode) {
+                            spinner.parentNode.removeChild(spinner);
+                        }
+                    }, 300);
+                }
+            }, 100);
+        };
+
+        // Error handler
+        iframe.onerror = function() {
+            showDownloadOption(pdfViewer);
+        };
+
+        // Add iframe to container (but keep it invisible initially)
+        pdfViewer.appendChild(iframe);
+        
+        // Set timeout for iframe
+        setTimeout(() => {
+            const spinner = pdfViewer.querySelector('.spinner');
+            if (spinner && iframe.style.opacity === '0') {
+                showDownloadOption(pdfViewer);
+            }
+        }, 5000);
+    }
+
+    function showDownloadOption(pdfViewer) {
+        pdfViewer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-file-pdf"></i>
+                <h4>PDF Tidak Dapat Ditampilkan</h4>
+                <p>Browser Anda tidak dapat menampilkan PDF secara langsung.</p>
+                <p>Silakan download file untuk melihat dokumen:</p>
+                <div style="margin-top: 1rem;">
+                    <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function initializeFullscreen() {
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const pdfViewer = document.getElementById('pdfViewer');
+        
+        if (fullscreenBtn && pdfViewer) {
+            fullscreenBtn.addEventListener('click', function() {
+                const iframe = pdfViewer.querySelector('.pdf-iframe');
+                if (iframe) {
+                    if (iframe.requestFullscreen) {
+                        iframe.requestFullscreen();
+                    } else if (iframe.webkitRequestFullscreen) {
+                        iframe.webkitRequestFullscreen();
+                    } else if (iframe.msRequestFullscreen) {
+                        iframe.msRequestFullscreen();
+                    }
+                } else {
+                    // If using PDF.js canvas, make the container fullscreen
+                    if (pdfViewer.requestFullscreen) {
+                        pdfViewer.requestFullscreen();
+                    } else if (pdfViewer.webkitRequestFullscreen) {
+                        pdfViewer.webkitRequestFullscreen();
+                    } else if (pdfViewer.msRequestFullscreen) {
+                        pdfViewer.msRequestFullscreen();
+                    }
+                }
+            });
+        }
+    }
+</script>
 @endsection

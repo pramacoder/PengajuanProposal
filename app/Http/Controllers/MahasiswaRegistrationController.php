@@ -65,13 +65,22 @@ class MahasiswaRegistrationController extends Controller
                 'id_dosen_pembimbing' => $dosen->id_dosen
             ]);
 
-            // Generate password baru untuk mahasiswa dan dosen
-            $passwordMahasiswa = Str::random(8);
-            $passwordDosen = Str::random(8);
-
-            // Update password
-            $mahasiswa->update(['password' => Hash::make($passwordMahasiswa)]);
-            $dosen->update(['password' => Hash::make($passwordDosen)]);
+            // Gunakan password default yang konsisten untuk semua user
+            // Password ini akan sama untuk semua user baru dan akan direset melalui fitur reset password
+            $defaultPassword = 'password123';
+            
+            // Set password default jika belum ada
+            if (!$mahasiswa->password) {
+                $mahasiswa->update(['password' => Hash::make($defaultPassword)]);
+            }
+            
+            if (!$dosen->password) {
+                $dosen->update(['password' => Hash::make($defaultPassword)]);
+            }
+            
+            // Gunakan password default untuk dikirim ke email
+            $passwordMahasiswa = $defaultPassword;
+            $passwordDosen = $defaultPassword;
 
             // Kirim email kredensial ke mahasiswa (ke Gmail yang diinput)
             $this->emailService->sendRegistrationEmail(

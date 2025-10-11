@@ -34,6 +34,30 @@ class Mahasiswa extends Authenticatable
         return $this->hasOne(Proposal::class, 'id_mahasiswa');
     }
 
+    // Relasi untuk proposal tahun terbaru
+    public function proposalTahunTerbaru()
+    {
+        return $this->hasOne(Proposal::class, 'id_mahasiswa')->where('tahun_ajaran', '2024/2025');
+    }
+
+    // Relasi untuk semua proposal
+    public function proposals()
+    {
+        return $this->hasMany(Proposal::class, 'id_mahasiswa');
+    }
+
+    // Relasi ke Team (mahasiswa sebagai anggota tim)
+    public function teams()
+    {
+        return $this->hasMany(Team::class, 'id_mahasiswa', 'id_mahasiswa');
+    }
+
+    // Relasi ke Proposal melalui Team (proposal sebagai anggota tim)
+    public function proposalsAsMember()
+    {
+        return $this->hasManyThrough(Proposal::class, Team::class, 'id_mahasiswa', 'id_proposal', 'id_mahasiswa', 'id_proposal');
+    }
+
     // Relasi ke Prodi berdasarkan nama_prodi
     public function prodi()
     {

@@ -15,6 +15,7 @@ use App\Models\HasilFinal;
 use App\Models\Notification;
 use App\Models\Fakultas;
 use App\Models\Prodi;
+use App\Models\PT;
 
 class CleanupSeeder extends Seeder
 {
@@ -45,6 +46,7 @@ class CleanupSeeder extends Seeder
         Reviewer::truncate();
         Dosen::truncate();
         Mahasiswa::truncate();
+        PT::truncate();
         Prodi::truncate();
         Fakultas::truncate();
         
@@ -58,6 +60,7 @@ class CleanupSeeder extends Seeder
         DB::statement('ALTER TABLE reviewers AUTO_INCREMENT = 1');
         DB::statement('ALTER TABLE dosens AUTO_INCREMENT = 1');
         DB::statement('ALTER TABLE mahasiswas AUTO_INCREMENT = 1');
+        DB::statement('ALTER TABLE pts AUTO_INCREMENT = 1');
         DB::statement('ALTER TABLE prodis AUTO_INCREMENT = 1');
         DB::statement('ALTER TABLE fakultas AUTO_INCREMENT = 1');
         

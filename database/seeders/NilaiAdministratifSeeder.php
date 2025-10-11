@@ -56,6 +56,6 @@ class NilaiAdministratifSeeder extends Seeder
         }
 
         // Create some additional administrative reviews for testing purposes
-        NilaiAdministratif::factory()->count(5)->create();
+        // DIHAPUS: NilaiAdministratif::factory()->count(5)->create();
     }
 }

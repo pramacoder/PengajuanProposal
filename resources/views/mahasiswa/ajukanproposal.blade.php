@@ -1288,7 +1288,7 @@
         // Check if user already has a proposal (double check)
         @if(isset($user))
         const currentUserNim = '{{ $user->nim ?? "" }}';
-        const tahunAjaran = document.getElementById('tahun_ajaran')?.value || '{{ date("Y") }}/{{ date("Y") + 1 }}';
+        const tahunAjaran = document.getElementById('tahun_ajaran')?.value || '2024/2025';
         if (currentUserNim) {
             try {
                 const response = await fetch(`/api/mahasiswa/check-proposal/${currentUserNim}?tahun_ajaran=${encodeURIComponent(tahunAjaran)}`, {

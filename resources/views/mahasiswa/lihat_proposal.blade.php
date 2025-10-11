@@ -223,6 +223,38 @@
         margin-bottom: 2rem;
         font-size: 1.1rem;
     }
+    
+    .empty-state .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        min-width: 200px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .empty-state .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .empty-state .btn i {
+        margin-right: 8px;
+        font-size: 1.1em;
+    }
+    
+    .empty-state-button-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-top: 1rem;
+    }
 
     /* Action Sidebar Button */
     .action-toggle-btn {
@@ -940,7 +972,7 @@
     <!-- Header -->
     <x-page-header 
         title="Data Proposal PKM" 
-        subtitle="UNIVERSITAS UDAYANA"
+
         description="Selamat datang, {{ $user->nama_mhs }}! Berikut adalah daftar proposal PKM yang telah Anda ajukan." />
     
 
@@ -1159,9 +1191,11 @@
                     <h4>Belum Ada Proposal</h4>
                     <p>Anda belum mengajukan proposal PKM. Mulai dengan mengajukan proposal baru untuk berpartisipasi dalam program PKM.</p>
                     @if(\App\Helpers\RuangKontrolHelper::isPendaftaranActive())
-                        <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-plus me-2"></i>Ajukan Proposal Pertama
-                        </a>
+                        <div class="empty-state-button-wrapper">
+                            <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus"></i>Ajukan Proposal Pertama
+                            </a>
+                        </div>
                     @else
                         <div class="alert alert-warning">
                             <i class="fas fa-lock me-2"></i>

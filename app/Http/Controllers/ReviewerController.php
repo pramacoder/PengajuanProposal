@@ -530,12 +530,15 @@ class ReviewerController extends Controller
 
     public function submitReviewSubstantif(Request $request, $id)
     {
+        \Log::info('=== SUBMIT REVIEW SUBSTANTIF START ===');
+        \Log::info('Request received', [
+            'proposal_id' => $id,
+            'request_data' => $request->all(),
+            'user_id' => Auth::id(),
+            'timestamp' => now()
+        ]);
+        
         try {
-            \Log::info('Starting substantif review submission', [
-                'proposal_id' => $id,
-                'request_data' => $request->all(),
-                'timestamp' => now()
-            ]);
 
             // Validasi input
         $request->validate([
@@ -678,6 +681,132 @@ class ReviewerController extends Controller
         }
     }
 
+    /**
+     * Buka fase perbaikan secara otomatis ketika review selesai
+     */
+    private function openRevisionPhase()
+    {
+        try {
+            $ruangKontrol = \App\Models\RuangKontrol::first();
+            
+            if ($ruangKontrol && $ruangKontrol->status_perbaikan !== 'terbuka') {
+                $ruangKontrol->update([
+                    'status_perbaikan' => 'terbuka',
+                    'tanggal_perbaikan_mulai' => now(),
+                    'tanggal_perbaikan_selesai' => now()->addDays(7) // Berikan waktu 7 hari untuk revisi
+                ]);
+                
+                \Log::info('Revision phase opened automatically', [
+                    'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
+                    'tanggal_perbaikan_mulai' => $ruangKontrol->tanggal_perbaikan_mulai,
+                    'tanggal_perbaikan_selesai' => $ruangKontrol->tanggal_perbaikan_selesai
+                ]);
+                
+                // Kirim notifikasi ke semua mahasiswa yang proposalnya perlu direvisi
+                $this->notifyRevisionPhaseOpened();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error opening revision phase', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    /**
+     * Kirim notifikasi ke mahasiswa bahwa fase revisi telah dibuka
+     */
+    private function notifyRevisionPhaseOpened()
+    {
+        try {
+            $notificationService = new \App\Services\NotificationService();
+            
+            // Ambil semua proposal yang berstatus revisi
+            $proposalsForRevision = \App\Models\Proposal::where('status', 'revisi')->get();
+            
+            foreach ($proposalsForRevision as $proposal) {
+                $notificationService->notifyMahasiswa(
+                    $proposal,
+                    'revision_opened',
+                    'Fase Revisi Proposal Dibuka',
+                    "Proposal '{$proposal->judul_proposal}' telah selesai direview dan siap untuk direvisi. Silakan lakukan revisi sesuai catatan reviewer.",
+                    [
+                        'action_url' => route('mahasiswa.revisi.index'),
+                        'deadline' => \App\Models\RuangKontrol::first()->tanggal_perbaikan_selesai ?? null
+                    ]
+                );
+                
+                // Juga kirim notifikasi ke dosen pendamping
+                $notificationService->notifyDosen(
+                    $proposal,
+                    'revision_opened',
+                    'Fase Revisi Proposal Dibuka',
+                    "Proposal '{$proposal->judul_proposal}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
+                    [
+                        'action_url' => route('dosen.pembimbing.dashboard'),
+                        'deadline' => \App\Models\RuangKontrol::first()->tanggal_perbaikan_selesai ?? null
+                    ]
+                );
+            }
+            
+            \Log::info('Revision phase notifications sent', [
+                'proposals_count' => $proposalsForRevision->count()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error sending revision phase notifications', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+    
+    /**
+     * Kirim notifikasi khusus untuk proposal yang siap direvisi
+     */
+    private function notifyProposalReadyForRevision($proposal)
+    {
+        try {
+            $notificationService = new \App\Services\NotificationService();
+            $ruangKontrol = \App\Models\RuangKontrol::first();
+            
+            // Notifikasi ke mahasiswa
+            $notificationService->notifyMahasiswa(
+                $proposal,
+                'proposal_ready_revision',
+                'Proposal Siap Direvisi',
+                "Proposal '{$proposal->judul_proposal}' telah selesai direview oleh semua reviewer. Silakan lakukan revisi sesuai catatan reviewer yang diberikan.",
+                [
+                    'action_url' => route('mahasiswa.revisi.index'),
+                    'deadline' => $ruangKontrol->tanggal_perbaikan_selesai ?? null,
+                    'proposal_id' => $proposal->id_proposal
+                ]
+            );
+            
+            // Notifikasi ke dosen pendamping
+            $notificationService->notifyDosen(
+                $proposal,
+                'proposal_ready_revision',
+                'Proposal Siap Direvisi',
+                "Proposal '{$proposal->judul_proposal}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
+                [
+                    'action_url' => route('dosen.pembimbing.dashboard'),
+                    'deadline' => $ruangKontrol->tanggal_perbaikan_selesai ?? null,
+                    'proposal_id' => $proposal->id_proposal
+                ]
+            );
+            
+            \Log::info('Proposal ready for revision notification sent', [
+                'proposal_id' => $proposal->id_proposal
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error sending proposal ready for revision notification', [
+                'proposal_id' => $proposal->id_proposal,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
     private function checkReviewCompletion($proposal)
     {
         try {
@@ -740,6 +869,12 @@ class ReviewerController extends Controller
                 if ($adminCompleted && $substantif1Completed && $substantif2Completed) {
                     $oldStatus = $proposal->status;
                     $proposal->update(['status' => 'revisi']);
+                    
+                    // Buka fase perbaikan secara otomatis
+                    $this->openRevisionPhase();
+                    
+                    // Kirim notifikasi khusus untuk proposal ini
+                    $this->notifyProposalReadyForRevision($proposal);
                     
                     \Log::info('Proposal status updated to revisi', [
                         'proposal_id' => $proposal->id_proposal,
@@ -838,6 +973,12 @@ class ReviewerController extends Controller
                     if ($substantif1Completed && $substantif2Completed) {
                         $oldStatus = $proposal->status;
                         $proposal->update(['status' => 'revisi']);
+                        
+                        // Buka fase perbaikan secara otomatis
+                        $this->openRevisionPhase();
+                        
+                        // Kirim notifikasi khusus untuk proposal ini
+                        $this->notifyProposalReadyForRevision($proposal);
                         
                         \Log::info('Proposal status updated to revisi', [
                             'proposal_id' => $proposal->id_proposal,

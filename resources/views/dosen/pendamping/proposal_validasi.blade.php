@@ -21,9 +21,8 @@
                                     <div class="row align-items-center">
                                         <div class="col-md-2">
                                             <div class="proposal-thumbnail">
-                                                <div class="text-center">
-                                                    <i class="fas fa-file-pdf fa-2x text-danger mb-2"></i>
-                                                    <div class="btn btn-sm btn-danger">PDF</div>
+                                                <div class="text-center d-flex align-items-center justify-content-center h-100">
+                                                    <i class="fas fa-file-pdf fa-3x text-danger"></i>
                                                 </div>
                                             </div>
                                             <div class="text-center">
@@ -52,10 +51,31 @@
                                                     </p>
                                                     <p class="mb-1">
                                                         <strong>Status:</strong> 
-                                                        <span class="status-badge status-pending">
-                                                            <i class="fas fa-clock me-1"></i>
-                                                            Belum dilakukan Validasi
-                                                        </span>
+                                                        @switch($proposal->status_validasi)
+                                                            @case('pending')
+                                                                <span class="status-badge status-pending">
+                                                                    <i class="fas fa-clock me-1"></i>
+                                                                    Belum dilakukan Validasi
+                                                                </span>
+                                                                @break
+                                                            @case('valid')
+                                                                <span class="status-badge status-valid">
+                                                                    <i class="fas fa-check-circle me-1"></i>
+                                                                    Sudah Divalidasi
+                                                                </span>
+                                                                @break
+                                                            @case('tidak_valid')
+                                                                <span class="status-badge status-invalid">
+                                                                    <i class="fas fa-times-circle me-1"></i>
+                                                                    Ditolak
+                                                                </span>
+                                                                @break
+                                                            @default
+                                                                <span class="status-badge status-pending">
+                                                                    <i class="fas fa-clock me-1"></i>
+                                                                    Belum dilakukan Validasi
+                                                                </span>
+                                                        @endswitch
                                                     </p>
                                                 </div>
                                             </div>

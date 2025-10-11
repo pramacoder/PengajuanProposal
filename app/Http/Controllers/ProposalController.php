@@ -10,12 +10,63 @@ use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\HasilFinal;
 use App\Helpers\ProposalHelper;
+use App\Helpers\TahunAjaranHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ProposalController extends Controller
 {
+    /**
+     * Dashboard mahasiswa - menampilkan proposal yang sudah ada
+     */
+    public function dashboard()
+    {
+        // Cek user yang sedang login dari guard mahasiswa
+        if (!auth()->guard('mahasiswa')->check()) {
+            return redirect('/login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $user = auth()->guard('mahasiswa')->user();
+        
+        // Ambil proposal mahasiswa
+        $proposals = Proposal::where(function($query) use ($user) {
+            // Proposal yang dibuat oleh mahasiswa ini
+            $query->where('id_mahasiswa', $user->id_mahasiswa)
+                  // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                  ->orWhereHas('teams', function($teamQuery) use ($user) {
+                      $teamQuery->where('nim', $user->nim);
+                  });
+        })
+        ->with(['mahasiswa', 'dosen', 'dokumen', 'teams'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        // Hitung statistik
+        $totalProposals = $proposals->count();
+        $underReview = $proposals->whereIn('status', ['review_administratif', 'review_substantif', 'review_completed'])->count();
+        $waitingValidation = $proposals->where('status', 'submitted')->count();
+        $approved = $proposals->where('status', 'finalized')->count();
+        $revision = $proposals->where('status', 'revisi')->count();
+
+        // Cek apakah ada proposal yang perlu direvisi
+        $proposalForRevision = $proposals->where('status', 'revisi')->first();
+        
+        // Cek status ruang kontrol
+        $ruangKontrol = \App\Models\RuangKontrol::first();
+
+        return view('mahasiswa.dashboard', compact(
+            'proposals', 
+            'totalProposals', 
+            'underReview', 
+            'waitingValidation', 
+            'approved',
+            'revision',
+            'proposalForRevision',
+            'ruangKontrol'
+        ));
+    }
+
     /**
      * Menampilkan form pengajuan proposal
      */
@@ -29,7 +80,7 @@ class ProposalController extends Controller
             $user = auth()->guard('mahasiswa')->user();
             
             // Cek apakah mahasiswa sudah memiliki proposal di tahun akademik yang sama
-            $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            $tahunAjaran = $request->input('tahun_ajaran', '2024/2025');
             $existingProposal = \App\Helpers\ProposalHelper::checkStudentInProposal($user->nim, null, $tahunAjaran);
             if ($existingProposal) {
                 return redirect()->route('mahasiswa.proposal.index')

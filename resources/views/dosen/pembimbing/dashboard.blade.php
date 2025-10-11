@@ -10,7 +10,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h2><i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Dosen Pembimbing</h2>
-                    <p class="text-muted">Monitor proposal mahasiswa bimbingan Anda</p>
+                    <p class="text-muted">Monitor proposal mahasiswa bimbingan Anda - Tahun Ajaran 2024/2025</p>
                 </div>
                 <div class="btn-group" role="group">
                     <a href="{{ route('dosen.pembimbing.dashboard') }}" class="btn btn-primary">
@@ -93,9 +93,10 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-list me-2"></i>Mahasiswa Bimbingan
-                    </h5>
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Mahasiswa Bimbingan - Tahun Ajaran 2024/2025
+                </h5>
+                <small class="text-muted">Hanya menampilkan proposal tahun ajaran terbaru</small>
                 </div>
                 <div class="card-body">
                     @if($mahasiswaBimbingan->count() > 0)
@@ -128,8 +129,8 @@
                                             <td>{{ $mahasiswa->nim }}</td>
                                             <td>{{ $mahasiswa->prodi_mhs }}</td>
                                             <td>
-                                                @if($mahasiswa->proposal)
-                                                    @switch($mahasiswa->proposal->status_validasi)
+                                                @if($mahasiswa->proposalTahunTerbaru)
+                                                    @switch($mahasiswa->proposalTahunTerbaru->status_validasi)
                                                         @case('pending')
                                                             <span class="badge bg-warning">Pending</span>
                                                             @break
@@ -147,24 +148,24 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($mahasiswa->proposal)
-                                                    <div class="text-truncate" style="max-width: 200px;" title="{{ $mahasiswa->proposal->judul }}">
-                                                        {{ $mahasiswa->proposal->judul }}
+                                                @if($mahasiswa->proposalTahunTerbaru)
+                                                    <div class="text-truncate" style="max-width: 200px;" title="{{ $mahasiswa->proposalTahunTerbaru->judul }}">
+                                                        {{ $mahasiswa->proposalTahunTerbaru->judul }}
                                                     </div>
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($mahasiswa->proposal)
-                                                    {{ \Carbon\Carbon::parse($mahasiswa->proposal->tanggal_pengajuan)->format('d/m/Y') }}
+                                                @if($mahasiswa->proposalTahunTerbaru)
+                                                    {{ \Carbon\Carbon::parse($mahasiswa->proposalTahunTerbaru->tanggal_pengajuan)->format('d/m/Y') }}
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($mahasiswa->proposal)
-                                                    <a href="{{ route('dosen.pembimbing.proposal.detail', $mahasiswa->proposal->id_proposal) }}" 
+                                                @if($mahasiswa->proposalTahunTerbaru)
+                                                    <a href="{{ route('dosen.pembimbing.proposal.detail', $mahasiswa->proposalTahunTerbaru->id_proposal) }}" 
                                                        class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-eye me-1"></i>Detail
                                                     </a>
@@ -182,6 +183,7 @@
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">Belum Ada Mahasiswa Bimbingan</h5>
                             <p class="text-muted">Mahasiswa yang mendaftar dengan Anda sebagai dosen pembimbing akan muncul di sini.</p>
+                            <small class="text-muted">Menampilkan proposal tahun ajaran 2024/2025</small>
                         </div>
                     @endif
                 </div>

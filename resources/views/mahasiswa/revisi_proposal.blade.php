@@ -149,8 +149,7 @@
 <div class="container-fluid">
     <x-page-header 
         title="Revisi Proposal PKM" 
-        subtitle="UNIVERSITAS UDAYANA" />
-
+    />
     <!-- Status Perbaikan -->
     <div class="alert alert-info">
         <div class="d-flex align-items-center">
@@ -166,6 +165,26 @@
                         Periode: {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_mulai)->format('d M Y') }} - 
                         {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai)->format('d M Y') }}
                     </p>
+                    @php
+                        $deadline = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai);
+                        $daysLeft = now()->diffInDays($deadline, false);
+                    @endphp
+                    @if($daysLeft > 0)
+                        <p class="mb-0 text-warning">
+                            <i class="fas fa-clock me-1"></i>
+                            <strong>Sisa waktu: {{ $daysLeft }} hari</strong>
+                        </p>
+                    @elseif($daysLeft == 0)
+                        <p class="mb-0 text-danger">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>Hari terakhir!</strong>
+                        </p>
+                    @else
+                        <p class="mb-0 text-danger">
+                            <i class="fas fa-times-circle me-1"></i>
+                            <strong>Batas waktu telah terlampaui {{ abs($daysLeft) }} hari</strong>
+                        </p>
+                    @endif
                 @endif
             </div>
         </div>
@@ -196,6 +215,59 @@
                 </small>
             </div>
         </div>
+    </div>
+
+    <!-- Catatan Review -->
+    <div class="revisi-section">
+        <h4 class="section-title">
+            <i class="fas fa-comments me-2"></i>Catatan Review dari Reviewer
+        </h4>
+        
+        @php
+            $adminReview = $proposal->nilaiAdministratif->where('id_reviewer', $proposal->id_reviewer_administratif)->first();
+            $substantifReviews = $proposal->nilaiSubstantif;
+        @endphp
+        
+        @if($adminReview && $adminReview->note_administratif)
+        <div class="mb-4">
+            <h6 class="text-primary">
+                <i class="fas fa-user-tie me-2"></i>Review Administratif
+            </h6>
+            <div class="alert alert-light border-start border-primary border-4">
+                <p class="mb-0">{{ $adminReview->note_administratif }}</p>
+                <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>
+                    {{ \Carbon\Carbon::parse($adminReview->updated_at)->format('d M Y H:i') }}
+                </small>
+            </div>
+        </div>
+        @endif
+        
+        @if($substantifReviews->count() > 0)
+        <div class="mb-4">
+            <h6 class="text-primary">
+                <i class="fas fa-user-graduate me-2"></i>Review Substantif
+            </h6>
+            @foreach($substantifReviews as $review)
+                @if($review->note_substantif)
+                <div class="alert alert-light border-start border-info border-4 mb-3">
+                    <p class="mb-0">{{ $review->note_substantif }}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ \Carbon\Carbon::parse($review->updated_at)->format('d M Y H:i') }}
+                    </small>
+                </div>
+                @endif
+            @endforeach
+        </div>
+        @endif
+        
+        @if((!$adminReview || !$adminReview->note_administratif) && $substantifReviews->where('note_substantif')->count() == 0)
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Belum ada catatan review yang tersedia. Silakan tunggu hingga reviewer menyelesaikan review mereka.
+        </div>
+        @endif
     </div>
 
     <!-- Upload File Revisi -->

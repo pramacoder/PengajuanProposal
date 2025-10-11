@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Dosen;
 use App\Models\Proposal;
+use App\Helpers\TahunAjaranHelper;
 use Illuminate\Support\Facades\Auth;
 
 class DosenPembimbingController extends Controller
@@ -16,23 +17,26 @@ class DosenPembimbingController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
         
-        // Ambil semua mahasiswa bimbingan
-        $mahasiswaBimbingan = $dosen->mahasiswaBimbingan()->with(['proposal' => function($query) {
-            $query->with(['dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilFinal']);
+        // Ambil semua mahasiswa bimbingan dengan proposal tahun terbaru
+        $tahunAjaranTerbaru = '2024/2025';
+        $mahasiswaBimbingan = $dosen->mahasiswaBimbingan()->with(['proposalTahunTerbaru' => function($query) use ($tahunAjaranTerbaru) {
+            $query->where('tahun_ajaran', $tahunAjaranTerbaru)
+                  ->with(['dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilFinal']);
         }])->get();
 
-        // Hitung statistik
+        // Hitung statistik berdasarkan proposal tahun terbaru
         $totalMahasiswa = $mahasiswaBimbingan->count();
-        $totalProposal = $mahasiswaBimbingan->where('proposal', '!=', null)->count();
-        $proposalPending = $mahasiswaBimbingan->where('proposal.status_validasi', 'pending')->count();
-        $proposalValid = $mahasiswaBimbingan->where('proposal.status_validasi', 'valid')->count();
+        $totalProposal = $mahasiswaBimbingan->where('proposalTahunTerbaru', '!=', null)->count();
+        $proposalPending = $mahasiswaBimbingan->where('proposalTahunTerbaru.status_validasi', 'pending')->count();
+        $proposalValid = $mahasiswaBimbingan->where('proposalTahunTerbaru.status_validasi', 'valid')->count();
 
         return view('dosen.pembimbing.dashboard', compact(
             'mahasiswaBimbingan', 
             'totalMahasiswa', 
             'totalProposal', 
             'proposalPending', 
-            'proposalValid'
+            'proposalValid',
+            'tahunAjaranTerbaru'
         ));
     }
 
@@ -67,7 +71,11 @@ class DosenPembimbingController extends Controller
     {
         $dosen = Auth::guard('dosen')->user();
         
-        $mahasiswaBimbingan = $dosen->mahasiswaBimbingan()->with(['proposal'])->get();
+        // Ambil mahasiswa bimbingan dengan proposal tahun terbaru
+        $tahunAjaranTerbaru = '2024/2025';
+        $mahasiswaBimbingan = $dosen->mahasiswaBimbingan()->with(['proposalTahunTerbaru' => function($query) use ($tahunAjaranTerbaru) {
+            $query->where('tahun_ajaran', $tahunAjaranTerbaru);
+        }])->get();
 
         return view('dosen.pembimbing.mahasiswa_bimbingan', compact('mahasiswaBimbingan'));
     }

@@ -189,20 +189,20 @@ class OperatorController extends Controller
             $nilaiAdmin = NilaiAdministratif::create([
                 'id_proposal' => $request->proposal_id,
                 'id_reviewer' => $request->reviewer_administratif,
-                'note_administratif' => 'Review administratif dimulai',
+                'note_administratif' => null, // Tidak ada note default, reviewer harus mengisi
                 'checklist' => json_encode([])
             ]);
             
             $nilaiSub1 = NilaiSubstantif::create([
                 'id_proposal' => $request->proposal_id,
                 'id_reviewer' => $request->reviewer_substantif_1,
-                'note_substantif' => 'Review substantif dimulai'
+                'note_substantif' => null // Tidak ada note default, reviewer harus mengisi
             ]);
             
             $nilaiSub2 = NilaiSubstantif::create([
                 'id_proposal' => $request->proposal_id,
                 'id_reviewer' => $request->reviewer_substantif_2,
-                'note_substantif' => 'Review substantif dimulai'
+                'note_substantif' => null // Tidak ada note default, reviewer harus mengisi
             ]);
             
             \Log::info('Created review records', [

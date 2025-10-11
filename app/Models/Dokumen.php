@@ -9,8 +9,9 @@ class Dokumen extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'id_dokumen';
     protected $fillable = [
-        'path_file', 'tgl_upload', 'id_proposal'
+        'path_file', 'tgl_upload', 'id_proposal', 'skim'
     ];
 
     // Relasi One-to-One ke Proposal

@@ -77,6 +77,14 @@
             </p>
         </div>
         
+        <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h4 style="color: #0c5460; margin-top: 0;">ℹ️ Informasi Password:</h4>
+            <p style="color: #0c5460; margin-bottom: 0;">
+                <strong>Password ini adalah password default sistem.</strong><br>
+                Untuk keamanan yang lebih baik, silakan ubah password Anda setelah login pertama kali melalui menu "Ubah Password" di profil Anda.
+            </p>
+        </div>
+        
         <p><strong>Peran Anda:</strong> {{ ucfirst($role) }}</p>
         
         @if($role == 'mahasiswa')
@@ -100,7 +108,8 @@
         
         <div class="footer">
             <p><strong>Penting:</strong> Simpan kredensial ini dengan aman dan jangan bagikan kepada siapapun.</p>
-            <p>Password ini akan berlaku untuk login ke sistem. Jika Anda mengalami masalah, silakan hubungi administrator sistem.</p>
+            <p><strong>Password Default:</strong> Password yang diberikan adalah password default sistem. Untuk keamanan yang lebih baik, silakan ubah password Anda setelah login pertama kali.</p>
+            <p>Jika Anda mengalami masalah atau ingin mengubah password, silakan gunakan fitur "Reset Password" di halaman login atau hubungi administrator sistem.</p>
         </div>
     </div>
 </body>

@@ -47,7 +47,7 @@ class NilaiSubstantifSeeder extends Seeder
         }
 
         // Create some additional substantive reviews for testing
-        NilaiSubstantif::factory()->count(8)->create();
+        // DIHAPUS: NilaiSubstantif::factory()->count(8)->create();
     }
 
     private function generateDetailedResult(): string

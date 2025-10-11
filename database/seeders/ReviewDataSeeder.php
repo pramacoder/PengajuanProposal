@@ -37,9 +37,9 @@ class ReviewDataSeeder extends Seeder
         }
 
         foreach ($proposals as $index => $proposal) {
-            // Create administrative review with mixed true/false values (more false for negative feedback)
+            // Create administrative review dengan note kosong untuk testing
             NilaiAdministratif::create([
-                'note_administratif' => 'ini merupakan catatan review testing',
+                'note_administratif' => null, // Note kosong, reviewer harus mengisi
                 'checklist' => [
                     'format_dokumen' => false,       // ❌ Akan ditampilkan sebagai "Format Dokumen" - Perlu Perbaikan
                     'kelengkapan_data' => false,     // ❌ Akan ditampilkan sebagai "Kelengkapan Data" - Perlu Perbaikan
@@ -62,10 +62,10 @@ class ReviewDataSeeder extends Seeder
                 'id_reviewer' => $reviewers->random()->id_reviewer
             ]);
             
-            // Create another review with all true values for testing perfect case
+            // Create another review dengan note kosong untuk testing perfect case
             if ($index === 0) {
                 NilaiAdministratif::create([
-                    'note_administratif' => 'Test review dengan semua kriteria memenuhi standar',
+                    'note_administratif' => null, // Note kosong, reviewer harus mengisi
                     'checklist' => [
                         'format_dokumen' => true,        // ✅ Tidak ditampilkan (sudah baik)
                         'kelengkapan_data' => true,      // ✅ Tidak ditampilkan (sudah baik)
@@ -89,10 +89,10 @@ class ReviewDataSeeder extends Seeder
                 ]);
             }
 
-            // Create substantive reviews (multiple reviewers)
+            // Create substantive reviews dengan note kosong (multiple reviewers)
             for ($i = 0; $i < 2; $i++) {
                 NilaiSubstantif::create([
-                    'note_substantif' => 'Review substantif proposal. Kualitas konten dan metodologi sudah cukup baik, namun perlu perbaikan pada beberapa aspek.',
+                    'note_substantif' => null, // Note kosong, reviewer harus mengisi
                     'id_proposal' => $proposal->id_proposal,
                     'id_reviewer' => $reviewers->random()->id_reviewer
                 ]);

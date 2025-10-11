@@ -216,7 +216,7 @@ class AuthController extends Controller
     {
         // Cek user yang sedang login dan tampilkan profil
         if (Auth::guard('mahasiswa')->check()) {
-            $user = Auth::guard('mahasiswa')->user();
+            $user = Auth::guard('mahasiswa')->user()->load(['prodi.fakultas', 'proposals', 'teams.proposal']);
             return view('mahasiswa.profile', compact('user'));
         } elseif (Auth::guard('dosen')->check()) {
             $user = Auth::guard('dosen')->user();

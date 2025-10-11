@@ -1,3 +1,214 @@
+@section('styles')
+<style>
+    /* PDF Viewer Section Styles */
+    .pdf-viewer-section {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .pdf-viewer-section .card-header {
+        background: #8b3a3a;
+        color: white;
+        border-bottom: none;
+        padding: 1rem 1.5rem;
+    }
+    
+    .pdf-viewer-section .pdf-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .pdf-container-full {
+        position: relative;
+        background: #f8f9fa;
+        min-height: 80vh;
+    }
+    
+    .pdf-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        z-index: 10;
+    }
+    
+    .pdf-loading .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #8b3a3a;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    
+    .pdf-loading p {
+        color: #8b3a3a;
+        font-weight: 500;
+        margin: 0;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Fullscreen styles */
+    .pdf-viewer-section.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    .pdf-viewer-section.fullscreen .pdf-container-full {
+        height: calc(100vh - 80px);
+    }
+    
+    .pdf-viewer-section.fullscreen #pdfViewer {
+        height: calc(100vh - 80px) !important;
+    }
+    
+    /* Enhanced Card Styles */
+    .card-custom {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-custom:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+    
+    .card-header-custom {
+        background: linear-gradient(135deg, #8b3a3a 0%, #6d2d2d 100%);
+        color: white;
+        border-bottom: none;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+    }
+    
+    .card-header-custom h6 {
+        color: white;
+        margin: 0;
+        font-size: 1rem;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Table Enhancement */
+    .table-borderless td {
+        padding: 0.75rem 0;
+        border: none;
+        vertical-align: middle;
+    }
+    
+    .table-borderless td:first-child {
+        font-weight: 600;
+        color: #495057;
+        width: 40%;
+    }
+    
+    .table-borderless td:last-child {
+        color: #6c757d;
+    }
+    
+    /* Badge Enhancement */
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    
+    /* Button Enhancement */
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #8b3a3a 0%, #6d2d2d 100%);
+        border-color: #8b3a3a;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #6d2d2d 0%, #8b3a3a 100%);
+        border-color: #6d2d2d;
+    }
+    
+    /* Form Enhancement */
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #8b3a3a;
+        box-shadow: 0 0 0 0.2rem rgba(139,58,58,0.25);
+    }
+    
+    .form-check-input:checked {
+        background-color: #8b3a3a;
+        border-color: #8b3a3a;
+    }
+    
+    /* Status Icons Enhancement */
+    .fa-check-circle {
+        color: #28a745;
+    }
+    
+    .fa-clock {
+        color: #ffc107;
+    }
+    
+    .fa-plus-circle {
+        color: #17a2b8;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .pdf-viewer-section .card-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        
+        .pdf-viewer-section .pdf-controls {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .pdf-container-full {
+            min-height: 60vh;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+    }
+</style>
+@endsection
+
 @extends('mainlayout.app')
 
 @section('title', 'Detail Proposal - Review Administratif')
@@ -21,6 +232,54 @@
         </div>
     </div>
 
+    <!-- PDF Viewer Section - Full Width -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom pdf-viewer-section">
+                <div class="card-header card-header-custom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-pdf me-2"></i>Dokumen Proposal - {{ $proposal->judul }}
+                        </h5>
+                        <div class="pdf-controls">
+                            @if($proposal->dokumen && $proposal->dokumen->path_file)
+                                <a href="{{ asset('storage/' . $proposal->dokumen->path_file) }}" 
+                                   class="btn btn-sm btn-primary me-2" target="_blank">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="toggleFullscreen()">
+                                    <i class="fas fa-expand me-1"></i>Fullscreen
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="refreshPDFViewer()">
+                                    <i class="fas fa-redo me-1"></i>Refresh
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    @if($proposal->dokumen && $proposal->dokumen->path_file)
+                        <div class="pdf-container-full">
+                            <iframe 
+                                id="pdfViewer"
+                                src="{{ Storage::url($proposal->dokumen->path_file) }}"
+                                style="width: 100%; height: 80vh; border: none; border-radius: 8px;"
+                                frameborder="0"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                    @else
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-pdf fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">Dokumen proposal tidak tersedia</h5>
+                            <p class="text-muted">Silakan hubungi operator untuk informasi lebih lanjut</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Informasi Proposal -->
         <div class="col-lg-4">
@@ -33,24 +292,24 @@
                 <div class="card-body">
                     <table class="table table-borderless">
                         <tr>
-                            <td><strong>ID Proposal:</strong></td>
-                            <td>{{ $proposal->id_proposal }}</td>
+                            <td class="py-2 px-2"><strong>ID Proposal:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->id_proposal }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Judul:</strong></td>
-                            <td>{{ $proposal->judul_proposal }}</td>
+                            <td class="py-2 px-2"><strong>Judul:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->judul_proposal }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Skim:</strong></td>
-                            <td><span class="badge bg-primary">{{ $proposal->skim }}</span></td>
+                            <td class="py-2 px-2"><strong>Skim:</strong></td>
+                            <td class="py-2 px-2"><span class="badge bg-primary">{{ $proposal->skim }}</span></td>
                         </tr>
                         <tr>
-                            <td><strong>Tahun:</strong></td>
-                            <td>{{ $proposal->tahun ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Tahun:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->tahun ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Status:</strong></td>
-                            <td>
+                            <td class="py-2 px-2"><strong>Status:</strong></td>
+                            <td class="py-2 px-2">
                                 @php
                                     $statusClass = '';
                                     $statusText = '';
@@ -109,24 +368,24 @@
                 <div class="card-body">
                     <table class="table table-borderless">
                         <tr>
-                            <td><strong>Nama:</strong></td>
-                            <td>{{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Nama:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>NIM:</strong></td>
-                            <td>{{ $proposal->mahasiswa->nim ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>NIM:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Email:</strong></td>
-                            <td>{{ $proposal->mahasiswa->email_mhs ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Email:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->mahasiswa->email_mhs ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Program Studi:</strong></td>
-                            <td>{{ $proposal->mahasiswa->prodi_mhs ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Program Studi:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->mahasiswa->prodi_mhs ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Fakultas:</strong></td>
-                            <td>{{ $proposal->mahasiswa->fakultas_mhs ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Fakultas:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->mahasiswa->fakultas_mhs ?? 'N/A' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -142,16 +401,16 @@
                 <div class="card-body">
                     <table class="table table-borderless">
                         <tr>
-                            <td><strong>Nama:</strong></td>
-                            <td>{{ $proposal->dosen->nama_dosen ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Nama:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->dosen->nama_dosen ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>NUPTK:</strong></td>
-                            <td>{{ $proposal->dosen->nuptk ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>NUPTK:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->dosen->nuptk ?? 'N/A' }}</td>
                         </tr>
                         <tr>
-                            <td><strong>Email:</strong></td>
-                            <td>{{ $proposal->dosen->email_dosen ?? 'N/A' }}</td>
+                            <td class="py-2 px-2"><strong>Email:</strong></td>
+                            <td class="py-2 px-2">{{ $proposal->dosen->email_dosen ?? 'N/A' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -167,13 +426,20 @@
                 <div class="card-body">
                     @php
                         $existingReview = $proposal->nilaiAdministratif->where('id_reviewer', auth()->user()->id_reviewer)->first();
+                        $isReviewCompleted = $existingReview && $existingReview->note_administratif;
                     @endphp
                     
-                    @if($existingReview)
+                    @if($isReviewCompleted)
                         <div class="text-center">
                             <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
-                            <p class="text-success mb-0"><strong>Review Sudah Ada</strong></p>
+                            <p class="text-success mb-0"><strong>Review Sudah Selesai</strong></p>
                             <small class="text-muted">Data akan diupdate</small>
+                        </div>
+                    @elseif($existingReview)
+                        <div class="text-center">
+                            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                            <p class="text-warning mb-0"><strong>Review Belum Selesai</strong></p>
+                            <small class="text-muted">Silakan lengkapi review Anda</small>
                         </div>
                     @else
                         <div class="text-center">
@@ -186,47 +452,8 @@
             </div>
         </div>
 
-        <!-- PDF Viewer dan Form Review -->
+        <!-- Form Review Section -->
         <div class="col-lg-8">
-            <!-- PDF Viewer -->
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h6 class="mb-0">
-                        <i class="fas fa-file-pdf me-2"></i>Dokumen Proposal
-                    </h6>
-                </div>
-                <div class="card-body">
-                    @if($proposal->dokumen && $proposal->dokumen->path_file)
-                        <div class="pdf-container">
-                            <iframe 
-                                id="pdfViewer"
-                                src="{{ asset('storage/' . $proposal->dokumen->path_file) }}#toolbar=1&navpanes=1&scrollbar=1"
-                                style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px;"
-                                frameborder="0"
-                                allowfullscreen>
-                            </iframe>
-                        </div>
-                        <div class="pdf-controls">
-                            <a href="{{ asset('storage/' . $proposal->dokumen->path_file) }}" 
-                               class="btn btn-primary" target="_blank">
-                                <i class="fas fa-download me-1"></i>Download PDF
-                            </a>
-                            <button type="button" class="btn btn-outline-secondary" onclick="toggleFullscreen()">
-                                <i class="fas fa-expand me-1"></i>Fullscreen
-                            </button>
-                            <button type="button" class="btn btn-outline-info" onclick="refreshPDFViewer()">
-                                <i class="fas fa-redo me-1"></i>Refresh
-                            </button>
-                        </div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="fas fa-file-pdf fa-3x text-gray-300 mb-3"></i>
-                            <h5 class="text-gray-500">Dokumen proposal tidak tersedia</h5>
-                            <p class="text-gray-400">Silakan hubungi operator untuk informasi lebih lanjut</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
 
             <!-- Form Review Administratif -->
             <div class="card card-custom">
@@ -237,7 +464,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form id="formReviewAdministratif" method="POST" action="{{ route('reviewer.submit.review.administratif', $proposal->id_proposal) }}">
+                    <form id="formReviewAdministratif" method="POST" action="{{ route('reviewer.submit.review.administratif', $proposal->id_proposal) }}" onsubmit="return false;">
                         @csrf
                         
                         <!-- Status Review -->
@@ -404,11 +631,97 @@
 
 @push('scripts')
 <script>
-    // Form validation dan submission
-    document.getElementById('formReviewAdministratif').addEventListener('submit', function(e) {
-        e.preventDefault();
+    // PDF Viewer Functions
+    function hidePDFLoading() {
+        const loading = document.getElementById('pdf-loading');
+        const viewer = document.getElementById('pdfViewer');
         
-        console.log('Form submission started for administratif review');
+        if (loading && viewer) {
+            loading.style.display = 'none';
+            viewer.style.display = 'block';
+        }
+    }
+
+    function handlePDFError() {
+        const loading = document.getElementById('pdf-loading');
+        const viewer = document.getElementById('pdfViewer');
+        
+        if (loading) {
+            loading.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="text-warning">Gagal Memuat PDF</h5>
+                    <p class="text-muted">Dokumen PDF tidak dapat dimuat. Silakan coba lagi atau download manual.</p>
+                    <button class="btn btn-primary" onclick="refreshPDFViewer()">
+                        <i class="fas fa-redo me-1"></i>Coba Lagi
+                    </button>
+                </div>
+            `;
+        }
+        
+        if (viewer) {
+            viewer.style.display = 'none';
+        }
+    }
+
+
+    function toggleFullscreen() {
+        const pdfSection = document.querySelector('.pdf-viewer-section');
+        const fullscreenBtn = document.querySelector('[onclick="toggleFullscreen()"]');
+        
+        if (pdfSection) {
+            if (pdfSection.classList.contains('fullscreen')) {
+                // Exit fullscreen
+                pdfSection.classList.remove('fullscreen');
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand me-1"></i>Fullscreen';
+                document.body.style.overflow = '';
+            } else {
+                // Enter fullscreen
+                pdfSection.classList.add('fullscreen');
+                fullscreenBtn.innerHTML = '<i class="fas fa-compress me-1"></i>Exit Fullscreen';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+    }
+
+    function refreshPDFViewer() {
+        const pdfViewer = document.getElementById('pdfViewer');
+        
+        if (pdfViewer) {
+            // Simple reload by changing src
+            const currentSrc = pdfViewer.src;
+            pdfViewer.src = currentSrc + '?t=' + Date.now();
+        }
+    }
+
+
+    // Handle escape key to exit fullscreen
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const pdfSection = document.querySelector('.pdf-viewer-section.fullscreen');
+            if (pdfSection) {
+                toggleFullscreen();
+            }
+        }
+    });
+
+    // Form validation dan submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('formReviewAdministratif');
+        
+        if (!form) {
+            console.error('Form with ID "formReviewAdministratif" not found!');
+            return;
+        }
+        
+        console.log('Form found, adding event listener...');
+        
+        form.addEventListener('submit', function(e) {
+            console.log('Form submit event triggered');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Form submission started for administratif review');
         
         // Reset error messages
         document.getElementById('errorKesalahan').style.display = 'none';
@@ -480,6 +793,12 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
+            // Cek content type untuk memastikan response adalah JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Response is not JSON');
+            }
+            
             return response.json();
         })
         .then(data => {
@@ -514,9 +833,17 @@
             
             // Handle network atau parsing errors
             let errorMessage = 'Terjadi kesalahan saat menyimpan review';
+            
             if (error.message.includes('HTTP error')) {
                 errorMessage = 'Server error: ' + error.message;
+            } else if (error.message.includes('Response is not JSON')) {
+                errorMessage = 'Server mengembalikan response yang tidak valid. Silakan coba lagi.';
+            } else if (error.message.includes('JSON')) {
+                errorMessage = 'Gagal memproses response dari server. Silakan coba lagi.';
             }
+            
+            // Jangan tampilkan JSON raw di console untuk user
+            console.log('User-friendly error message:', errorMessage);
             
             if (typeof showToast === 'function') {
                 showToast(errorMessage, 'error');
@@ -529,9 +856,10 @@
             submitBtn.disabled = false;
             submitText.innerHTML = 'Simpan Review Administratif';
         });
+        });
     });
 
-    // PDF Viewer Functions
+
     function toggleFullscreen() {
         const pdfViewer = document.getElementById('pdfViewer');
         const container = pdfViewer.parentElement;

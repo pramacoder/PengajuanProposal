@@ -296,6 +296,15 @@
             margin-bottom: 2rem;
             padding: 0 1rem;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
         }
 
         .sidebar-menu {
@@ -687,9 +696,6 @@
                             <a class="dropdown-item profile-menu-item" href="{{ route('mahasiswa.profile') }}">
                                 <i class="fas fa-user"></i>Detail Profil
                             </a>
-                            <a class="dropdown-item profile-menu-item" href="{{ route('mahasiswa.profile') }}">
-                                <i class="fas fa-edit"></i>Edit Profil
-                            </a>
                         @elseif(Auth::guard('dosen')->check())
                             <a class="dropdown-item profile-menu-item" href="{{ route('dosen.profile') }}">
                                 <i class="fas fa-user"></i>Detail Profil
@@ -740,8 +746,7 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-title">
-            <i class="fas fa-file-alt me-2"></i>
-            PROPOSAL
+
         </div>
         
         <ul class="sidebar-menu">
