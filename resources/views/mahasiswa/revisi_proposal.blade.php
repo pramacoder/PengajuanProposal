@@ -167,7 +167,7 @@
                     </p>
                     @php
                         $deadline = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai);
-                        $daysLeft = now()->diffInDays($deadline, false);
+                        $daysLeft = (int) now()->diffInDays($deadline, false);
                     @endphp
                     @if($daysLeft > 0)
                         <p class="mb-0 text-warning">

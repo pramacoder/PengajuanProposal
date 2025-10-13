@@ -770,6 +770,9 @@
                 </a>
                 <ul class="submenu" id="pkm">
                     @if(Auth::guard('mahasiswa')->check())
+                        <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.dashboard') }}" class="@if(request()->routeIs('mahasiswa.dashboard')) active @endif">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
                         <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.proposal.create') }}" class="@if(request()->routeIs('mahasiswa.proposal.create')) active @endif">
                             <i class="fas fa-plus me-2"></i>Ajukan Proposal
                         </a></li>

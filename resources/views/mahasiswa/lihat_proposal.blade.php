@@ -976,41 +976,7 @@
         description="Selamat datang, {{ $user->nama_mhs }}! Berikut adalah daftar proposal PKM yang telah Anda ajukan." />
     
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stat-item">
-                    <div class="stat-number">{{ $totalProposals }}</div>
-                    <div class="stat-label">Total Proposal</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stat-item">
-                    <div class="stat-number">{{ $underReview }}</div>
-                    <div class="stat-label">Sedang Direview</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stat-item">
-                    <div class="stat-number">{{ $pendingValidation }}</div>
-                    <div class="stat-label">Menunggu Validasi</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="stat-item">
-                    <div class="stat-number">{{ $approved }}</div>
-                    <div class="stat-label">Disetujui</div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Proposal Cards -->
     <div class="row" id="proposalCards">
@@ -1047,7 +1013,7 @@
                                         {{ ucfirst(str_replace('_', ' ', $proposal->status_validasi)) }}
                                     @endif
                                 </span>
-                                <small>ID: PKM-{{ str_pad($proposal->id_proposal, 3, '0', STR_PAD_LEFT) }}</small>
+                                
                             </div>
                             <div class="proposal-title">
                             {{ $proposal->judul_proposal }}
@@ -1117,7 +1083,7 @@
                                                 $statusClass = 'warning';
                                                 break;
                                             case 'revisi_submitted':
-                                                $statusText = 'Sudah Direvisi';
+                                                $statusText = 'Menunggu Hasil Final';
                                                 $statusClass = 'info';
                                                 break;
                                             case 'lolos':
@@ -1174,10 +1140,14 @@
                             <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '{{ $proposal->id_proposal }}')">
                                 <i class="fas fa-clipboard-check me-1"></i>Review
                             </button>
-                            @if($proposal->status_final === 'revisi')
+                            @if($proposal->status === 'revisi')
                             <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit me-1"></i>Revisi
                             </a>
+                            @elseif($proposal->status === 'revisi_submitted')
+                            <span class="btn btn-info btn-sm disabled">
+                                <i class="fas fa-clock me-1"></i>Menunggu Hasil Final
+                            </span>
                             @endif
                         </div>
                     </div>

@@ -386,7 +386,9 @@ class ProposalController extends Controller
     {
         $user = auth()->guard('mahasiswa')->user();
         
-        $proposal = Proposal::with(['teams', 'dosen', 'dokumen', 'mahasiswa'])
+        $proposal = Proposal::with(['teams', 'dosen', 'dokumen', 'mahasiswa', 'proposalRevisi' => function($query) {
+                $query->orderBy('tanggal_submit', 'desc');
+            }])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini

@@ -2,6 +2,143 @@
 
 @section('title', 'Detail Hasil Final - Operator')
 
+@section('styles')
+<style>
+    .pdf-viewer-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .pdf-header {
+        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pdf-title {
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+        margin-right: 2rem;
+    }
+    
+    .pdf-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .pdf-viewer {
+        width: 100%;
+        height: 700px;
+        border: none;
+    }
+    
+    .pdf-iframe {
+        width: 100%;
+        height: 700px;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        background: white;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    
+    .pdf-loading {
+        position: relative;
+        min-height: 700px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .pdf-loading .spinner {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+    }
+    
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #8B0000;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        transition: opacity 0.3s ease;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .pdf-iframe {
+        transition: opacity 0.3s ease;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        color: #dee2e6;
+    }
+    
+    .empty-state h4 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    
+    .empty-state p {
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+
+    /* Fullscreen styles */
+    .pdf-viewer-container:fullscreen {
+        background: white;
+        padding: 20px;
+    }
+    
+    .pdf-viewer-container:fullscreen .pdf-iframe {
+        height: calc(100vh - 100px);
+    }
+    
+    .pdf-viewer-container:-webkit-full-screen {
+        background: white;
+        padding: 20px;
+    }
+    
+    .pdf-viewer-container:-webkit-full-screen .pdf-iframe {
+        height: calc(100vh - 100px);
+    }
+    
+    .pdf-viewer-container:-ms-fullscreen {
+        background: white;
+        padding: 20px;
+    }
+    
+    .pdf-viewer-container:-ms-fullscreen .pdf-iframe {
+        height: calc(100vh - 100px);
+    }
+</style>
+@endsection
+
 @section('content')
 <div class="container-fluid">
     <!-- Header Section -->
@@ -127,42 +264,24 @@
     </div>
 
     <!-- PDF Viewer Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fas fa-file-pdf me-2"></i>
-                        <span id="pdfViewerTitle">Pilih file untuk dilihat</span>
-                    </h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary me-2" id="prevPage" onclick="changePage(-1)" disabled>
-                            <i class="fas fa-chevron-left"></i> Sebelumnya
-                        </button>
-                        <span id="pageInfo" class="me-2">Halaman 1 dari 1</span>
-                        <button class="btn btn-sm btn-outline-secondary me-2" id="nextPage" onclick="changePage(1)" disabled>
-                            Selanjutnya <i class="fas fa-chevron-right"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="zoomOut()">
-                            <i class="fas fa-search-minus"></i>
-                        </button>
-                        <span class="mx-2" id="zoomLevel">100%</span>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="zoomIn()">
-                            <i class="fas fa-search-plus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div id="pdfViewer" class="text-center" style="min-height: 600px; border: 1px solid #dee2e6; border-radius: 0.375rem; background-color: #f8f9fa;">
-                        <div class="d-flex align-items-center justify-content-center h-100">
-                            <div class="text-muted">
-                                <i class="fas fa-file-pdf fa-3x mb-3"></i>
-                                <p>Klik tombol "Lihat" pada file revisi untuk menampilkan PDF</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="pdf-viewer-container">
+        <div class="pdf-header">
+            <h5 class="pdf-title">
+                <i class="fas fa-file-pdf me-2"></i>
+                <span id="pdfViewerTitle">Pilih file untuk dilihat</span>
+            </h5>
+            <div class="pdf-controls">
+                <button id="fullscreenBtn" class="btn btn-outline-secondary btn-sm me-2" style="display: none;">
+                    <i class="fas fa-expand me-1"></i>Fullscreen
+                </button>
+                <button id="downloadBtn" class="btn btn-outline-primary btn-sm" style="display: none;">
+                    <i class="fas fa-download me-1"></i>Download
+                </button>
             </div>
+        </div>
+        <div id="pdfViewer" class="pdf-loading">
+            <div class="spinner"></div>
+            <!-- PDF iframe will be inserted here -->
         </div>
     </div>
     @else
@@ -271,212 +390,267 @@
 @endsection
 
 @section('scripts')
-<!-- PDF.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
 <script>
-// PDF.js configuration
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    // PDF viewer variables
+    let currentPdfUrl = null;
+    let currentFileName = null;
 
-// PDF viewer variables
-let pdfDoc = null;
-let pageNum = 1;
-let pageRendering = false;
-let pageNumPending = null;
-let scale = 1.0;
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
-
-function toggleEditForm() {
-    const form = document.getElementById('hasilFinalForm');
-    const editBtn = document.querySelector('button[onclick="toggleEditForm()"]');
-    
-    if (form.style.display === 'none') {
-        form.style.display = 'block';
-        editBtn.innerHTML = '<i class="fas fa-times me-2"></i>Batal';
-    } else {
-        form.style.display = 'none';
-        editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Final';
-    }
-}
-
-// PDF Viewer Functions
-function viewPDF(pdfUrl, fileName) {
-    document.getElementById('pdfViewerTitle').textContent = fileName;
-    
-    // Show loading
-    const viewer = document.getElementById('pdfViewer');
-    viewer.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100"><div class="text-center"><i class="fas fa-spinner fa-spin fa-2x mb-3"></i><br>Memuat PDF...</div></div>';
-    
-    // Load PDF
-    pdfjsLib.getDocument(pdfUrl).promise.then(function(pdfDoc_) {
-        pdfDoc = pdfDoc_;
-        pageNum = 1;
-        scale = 1.0;
+    function toggleEditForm() {
+        const form = document.getElementById('hasilFinalForm');
+        const editBtn = document.querySelector('button[onclick="toggleEditForm()"]');
         
-        // Update page info
-        document.getElementById('pageInfo').textContent = `Halaman ${pageNum} dari ${pdfDoc.numPages}`;
-        document.getElementById('zoomLevel').textContent = '100%';
-        
-        // Enable/disable buttons
-        document.getElementById('prevPage').disabled = pageNum <= 1;
-        document.getElementById('nextPage').disabled = pageNum >= pdfDoc.numPages;
-        
-        // Render first page
-        renderPage(pageNum);
-    }).catch(function(error) {
-        console.error('Error loading PDF:', error);
-        viewer.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100"><div class="text-center text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-3"></i><br>Gagal memuat PDF</div></div>';
-    });
-}
-
-function renderPage(num) {
-    pageRendering = true;
-    
-    pdfDoc.getPage(num).then(function(page) {
-        const viewport = page.getViewport({scale: scale});
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        
-        const renderContext = {
-            canvasContext: ctx,
-            viewport: viewport
-        };
-        
-        const renderTask = page.render(renderContext);
-        
-        renderTask.promise.then(function() {
-            pageRendering = false;
-            if (pageNumPending !== null) {
-                renderPage(pageNumPending);
-                pageNumPending = null;
-            }
-            
-            // Update viewer
-            const viewer = document.getElementById('pdfViewer');
-            viewer.innerHTML = '';
-            viewer.appendChild(canvas);
-        });
-    });
-    
-    // Update page info
-    document.getElementById('pageInfo').textContent = `Halaman ${num} dari ${pdfDoc.numPages}`;
-}
-
-function queueRenderPage(num) {
-    if (pageRendering) {
-        pageNumPending = num;
-    } else {
-        renderPage(num);
-    }
-}
-
-function changePage(delta) {
-    if (pdfDoc === null) return;
-    
-    const newPageNum = pageNum + delta;
-    if (newPageNum >= 1 && newPageNum <= pdfDoc.numPages) {
-        pageNum = newPageNum;
-        queueRenderPage(pageNum);
-        
-        // Update button states
-        document.getElementById('prevPage').disabled = pageNum <= 1;
-        document.getElementById('nextPage').disabled = pageNum >= pdfDoc.numPages;
-    }
-}
-
-function zoomIn() {
-    if (pdfDoc === null) return;
-    
-    scale += 0.25;
-    if (scale > 3.0) scale = 3.0;
-    
-    document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
-    queueRenderPage(pageNum);
-}
-
-function zoomOut() {
-    if (pdfDoc === null) return;
-    
-    scale -= 0.25;
-    if (scale < 0.5) scale = 0.5;
-    
-    document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
-    queueRenderPage(pageNum);
-}
-
-// Form submission
-document.getElementById('hasilFinalForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    
-    // Show loading state
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
-    submitBtn.disabled = true;
-    
-    // Make API call
-    fetch(this.action, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'Accept': 'application/json'
-        },
-        body: formData
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return response.text().then(text => {
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                console.error('Failed to parse JSON:', text);
-                throw new Error('Invalid JSON response');
-            }
-        });
-    })
-    .then(data => {
-        console.log('Response data:', data);
-        
-        if (data.success) {
-            showToast(data.message || 'Hasil final berhasil disimpan', 'success');
-            
-            // Reload page to show updated data
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-            
+        if (form.style.display === 'none') {
+            form.style.display = 'block';
+            editBtn.innerHTML = '<i class="fas fa-times me-2"></i>Batal';
         } else {
-            showToast(data.message || 'Gagal menyimpan hasil final', 'error');
+            form.style.display = 'none';
+            editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Final';
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Terjadi kesalahan saat menyimpan hasil final: ' + error.message, 'error');
-    })
-    .finally(() => {
-        // Reset button state
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
-});
-
-function showToast(message, type) {
-    // Use the existing toast function from the layout
-    if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
-    } else {
-        // Fallback alert
-        alert(message);
     }
-}
+
+    // PDF Viewer Functions
+    function viewPDF(pdfUrl, fileName) {
+        currentPdfUrl = pdfUrl;
+        currentFileName = fileName;
+        
+        document.getElementById('pdfViewerTitle').textContent = fileName;
+        
+        // Show loading
+        const viewer = document.getElementById('pdfViewer');
+        viewer.innerHTML = '<div class="spinner"></div>';
+        
+        // Show controls
+        document.getElementById('fullscreenBtn').style.display = 'inline-block';
+        document.getElementById('downloadBtn').style.display = 'inline-block';
+        
+        // Load PDF using iframe
+        loadPDFDocument(pdfUrl, viewer);
+    }
+
+    function loadPDFDocument(pdfUrl, pdfViewer) {
+        console.log('Loading PDF from URL:', pdfUrl);
+        
+        if (!pdfUrl) {
+            pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen tidak ditemukan.</p></div>';
+            return;
+        }
+
+        // Create iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = pdfUrl;
+        iframe.className = 'pdf-iframe';
+        iframe.style.width = '100%';
+        iframe.style.height = '700px';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '8px';
+        iframe.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        iframe.style.opacity = '0';
+        iframe.style.transition = 'opacity 0.3s ease';
+        
+        // Pre-load iframe before showing
+        iframe.onload = function() {
+            console.log('Iframe loaded successfully');
+            setTimeout(() => {
+                iframe.style.opacity = '1';
+                const spinner = pdfViewer.querySelector('.spinner');
+                if (spinner) {
+                    spinner.style.opacity = '0';
+                    setTimeout(() => {
+                        if (spinner.parentNode) {
+                            spinner.parentNode.removeChild(spinner);
+                        }
+                    }, 300);
+                }
+            }, 100);
+        };
+
+        // Error handler
+        iframe.onerror = function() {
+            console.log('Iframe failed, showing download option');
+            showDownloadOption(pdfViewer);
+        };
+
+        pdfViewer.appendChild(iframe);
+        
+        // Set timeout for iframe
+        setTimeout(() => {
+            const spinner = pdfViewer.querySelector('.spinner');
+            if (spinner && iframe.style.opacity === '0') {
+                console.log('Iframe timeout, showing download option');
+                showDownloadOption(pdfViewer);
+            }
+        }, 5000);
+    }
+
+    function showDownloadOption(pdfViewer) {
+        pdfViewer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-file-pdf"></i>
+                <h4>PDF Tidak Dapat Ditampilkan</h4>
+                <p>Browser Anda tidak dapat menampilkan PDF secara langsung.</p>
+                <p>Silakan download file untuk melihat dokumen:</p>
+                <div style="margin-top: 1rem;">
+                    <a href="${currentPdfUrl}" 
+                       class="btn btn-primary" 
+                       download="${currentFileName}">
+                        <i class="fas fa-download me-1"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function initializeFullscreen() {
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const pdfViewer = document.getElementById('pdfViewer');
+        
+        if (fullscreenBtn && pdfViewer) {
+            fullscreenBtn.addEventListener('click', function() {
+                const iframe = pdfViewer.querySelector('.pdf-iframe');
+                if (iframe) {
+                    if (iframe.requestFullscreen) {
+                        iframe.requestFullscreen();
+                    } else if (iframe.webkitRequestFullscreen) {
+                        iframe.webkitRequestFullscreen();
+                    } else if (iframe.msRequestFullscreen) {
+                        iframe.msRequestFullscreen();
+                    }
+                } else {
+                    if (pdfViewer.requestFullscreen) {
+                        pdfViewer.requestFullscreen();
+                    } else if (pdfViewer.webkitRequestFullscreen) {
+                        pdfViewer.webkitRequestFullscreen();
+                    } else if (pdfViewer.msRequestFullscreen) {
+                        pdfViewer.msRequestFullscreen();
+                    }
+                }
+            });
+        }
+    }
+
+    function initializeDownload() {
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', function() {
+                if (currentPdfUrl) {
+                    const link = document.createElement('a');
+                    link.href = currentPdfUrl;
+                    link.download = currentFileName || 'document.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            });
+        }
+    }
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Detail hasil final page loaded');
+        
+        // Initialize fullscreen functionality
+        initializeFullscreen();
+        
+        // Initialize download functionality
+        initializeDownload();
+        
+        // Pre-load first revision PDF if available
+        @if($proposal->proposalRevisi->count() > 0)
+            const firstRevisi = @json($proposal->proposalRevisi->first());
+            if (firstRevisi) {
+                console.log('Pre-loading first revision PDF:', firstRevisi.nama_file);
+                // Pre-load the PDF URL for faster display
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = '{{ route('operator.revisi.download', $proposal->proposalRevisi->first()->id_revisi) }}';
+                document.head.appendChild(link);
+            }
+        @endif
+        
+        // Show success/error messages
+        @if(session('success'))
+            showToast('{{ session('success') }}', 'success');
+        @endif
+
+        @if(session('error'))
+            showToast('{{ session('error') }}', 'error');
+        @endif
+    });
+
+    // Form submission
+    document.getElementById('hasilFinalForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+        submitBtn.disabled = true;
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Hasil final berhasil diperbarui!', 'success');
+                // Optionally reload the page or update the UI
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('Gagal memperbarui hasil final: ' + (data.message || 'Terjadi kesalahan'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Terjadi kesalahan saat menyimpan hasil final: ' + error.message, 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
 </script>
 @endsection

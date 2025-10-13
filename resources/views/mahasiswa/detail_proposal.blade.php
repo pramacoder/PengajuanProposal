@@ -2,6 +2,10 @@
 
 @section('title', 'Detail Proposal PKM')
 
+@php
+    use Illuminate\Support\Facades\Storage;
+@endphp
+
 @section('styles')
 <style>
     .proposal-detail-card {
@@ -190,6 +194,7 @@
         font-weight: 600;
         color: #333;
         margin: 0;
+        margin-right: 2rem;
     }
     
     .pdf-controls {
@@ -389,6 +394,63 @@
         font-weight: 700;
         text-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
+
+    /* Revision Tabs Styles */
+    .revision-tabs {
+        background: white;
+    }
+
+    .revision-tabs .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 0;
+    }
+
+    .revision-tabs .nav-tabs .nav-link {
+        border: none;
+        border-radius: 0;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 1rem 1.5rem;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .revision-tabs .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        border-bottom-color: #007bff;
+        color: #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .revision-tabs .nav-tabs .nav-link.active {
+        color: #007bff;
+        background-color: white;
+        border-color: transparent;
+        border-bottom-color: #007bff;
+        font-weight: 600;
+    }
+
+    .revision-tabs .nav-tabs .nav-link i {
+        margin-right: 0.5rem;
+    }
+
+    .revision-info {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.9rem;
+    }
+
+    .revision-info strong {
+        color: #495057;
+    }
+
+    .tab-content {
+        background: white;
+    }
+
+    .tab-pane {
+        min-height: 400px;
+    }
 </style>
 @endsection
 
@@ -418,7 +480,6 @@
                         {{ ucfirst($proposal->status_validasi) }}
                     @endif
                 </span>
-                <small>ID: PKM-{{ str_pad($proposal->id_proposal, 3, '0', STR_PAD_LEFT) }}</small>
             </div>
             
             <div class="proposal-title">
@@ -592,13 +653,88 @@
         @endif
     </div>
 
+    <!-- Revision Documents -->
+    @if($proposal->proposalRevisi->count() > 0)
+    <div class="pdf-viewer-container mt-20">
+        <div class="pdf-header">
+            <h5 class="pdf-title">
+                <i class="fas fa-edit me-2"></i>
+                Dokumen Revisi ({{ $proposal->proposalRevisi->count() }} file)
+            </h5>
+            <div class="pdf-controls">
+                <button id="revisiFullscreenBtn" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="fas fa-expand me-1"></i>Fullscreen
+                </button>
+            </div>
+        </div>
+        
+        <!-- Revision Tabs -->
+        <div class="revision-tabs">
+            <ul class="nav nav-tabs" id="revisionTabs" role="tablist">
+                @foreach($proposal->proposalRevisi as $index => $revisi)
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {{ $index === 0 ? 'active' : '' }}" 
+                            id="revisi-tab-{{ $revisi->id_revisi }}" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#revisi-{{ $revisi->id_revisi }}" 
+                            type="button" 
+                            role="tab">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        Revisi {{ $index + 1 }}
+                        <small class="d-block text-muted">{{ $revisi->tanggal_submit->format('d/m/Y H:i') }}</small>
+                    </button>
+                </li>
+                @endforeach
+            </ul>
+            
+            <div class="tab-content" id="revisionTabContent">
+                @foreach($proposal->proposalRevisi as $index => $revisi)
+                <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" 
+                     id="revisi-{{ $revisi->id_revisi }}" 
+                     role="tabpanel">
+                    <div class="revision-info p-3 bg-light border-bottom">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Nama File:</strong> {{ $revisi->nama_file }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Tanggal Submit:</strong> {{ $revisi->tanggal_submit->format('d/m/Y H:i') }}
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <a href="{{ Storage::url($revisi->path_file) }}" 
+                                   class="btn btn-outline-primary btn-sm" 
+                                   download="{{ $revisi->nama_file }}">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="revisiPdfViewer-{{ $revisi->id_revisi }}" class="pdf-loading">
+                        <div class="spinner"></div>
+                        <!-- PDF iframe will be inserted here -->
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Action Buttons -->
     <div class="action-buttons">
         <a href="{{ route('mahasiswa.proposal.index') }}" class="btn btn-outline-secondary btn-action">
             <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar
         </a>
         
-        @if(in_array($proposal->status, ['draft', 'pending']))
+        @if($proposal->status === 'revisi')
+        <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
+            <i class="fas fa-edit me-2"></i>Revisi Proposal
+        </a>
+        @elseif($proposal->status === 'revisi_submitted')
+        <span class="btn btn-info btn-action disabled">
+            <i class="fas fa-clock me-2"></i>Menunggu Hasil Final
+        </span>
+        @elseif(in_array($proposal->status, ['draft', 'pending']))
         <a href="{{ route('mahasiswa.proposal.edit', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
             <i class="fas fa-edit me-2"></i>Edit Proposal
         </a>
@@ -633,6 +769,12 @@
             loadPDFDocument();
         @else
             console.log('No document found, showing empty state');
+        @endif
+
+        // Load revision documents if any
+        @if($proposal->proposalRevisi->count() > 0)
+            console.log('Loading revision documents...');
+            loadRevisionDocuments();
         @endif
 
         // Initialize fullscreen functionality
@@ -728,10 +870,94 @@
 
     
 
+    function loadRevisionDocuments() {
+        @if($proposal->proposalRevisi->count() > 0)
+            @foreach($proposal->proposalRevisi as $revisi)
+                loadRevisionPDF({{ $revisi->id_revisi }}, '{{ Storage::url($revisi->path_file) }}');
+            @endforeach
+        @endif
+    }
+
+    function loadRevisionPDF(revisiId, pdfUrl) {
+        const pdfViewer = document.getElementById(`revisiPdfViewer-${revisiId}`);
+        
+        console.log('Loading revision PDF:', { revisiId, pdfUrl });
+        
+        if (!pdfUrl) {
+            pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen revisi tidak ditemukan.</p></div>';
+            return;
+        }
+
+        // Create iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = pdfUrl;
+        iframe.className = 'pdf-iframe';
+        iframe.style.width = '100%';
+        iframe.style.height = '700px';
+        iframe.style.border = 'none';
+        iframe.style.borderRadius = '8px';
+        iframe.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        iframe.style.opacity = '0';
+        iframe.style.transition = 'opacity 0.3s ease';
+        
+        // Pre-load iframe before showing
+        iframe.onload = function() {
+            console.log('Revision iframe loaded successfully:', revisiId);
+            setTimeout(() => {
+                iframe.style.opacity = '1';
+                const spinner = pdfViewer.querySelector('.spinner');
+                if (spinner) {
+                    spinner.style.opacity = '0';
+                    setTimeout(() => {
+                        if (spinner.parentNode) {
+                            spinner.parentNode.removeChild(spinner);
+                        }
+                    }, 300);
+                }
+            }, 100);
+        };
+
+        // Error handler
+        iframe.onerror = function() {
+            console.log('Revision iframe failed:', revisiId);
+            showRevisionDownloadOption(pdfViewer, revisiId);
+        };
+
+        pdfViewer.appendChild(iframe);
+        
+        // Set timeout for iframe
+        setTimeout(() => {
+            const spinner = pdfViewer.querySelector('.spinner');
+            if (spinner && iframe.style.opacity === '0') {
+                console.log('Revision iframe timeout:', revisiId);
+                showRevisionDownloadOption(pdfViewer, revisiId);
+            }
+        }, 5000);
+    }
+
+    function showRevisionDownloadOption(pdfViewer, revisiId) {
+        pdfViewer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-file-pdf"></i>
+                <h4>PDF Tidak Dapat Ditampilkan</h4>
+                <p>Browser Anda tidak dapat menampilkan PDF secara langsung.</p>
+                <p>Silakan download file untuk melihat dokumen:</p>
+                <div style="margin-top: 1rem;">
+                    <a href="{{ Storage::url($proposal->proposalRevisi->first()->path_file ?? '') }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-download me-1"></i>Download PDF
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
     function initializeFullscreen() {
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const revisiFullscreenBtn = document.getElementById('revisiFullscreenBtn');
         const pdfViewer = document.getElementById('pdfViewer');
         
+        // Original PDF fullscreen
         if (fullscreenBtn && pdfViewer) {
             fullscreenBtn.addEventListener('click', function() {
                 const iframe = pdfViewer.querySelector('.pdf-iframe');
@@ -744,13 +970,31 @@
                         iframe.msRequestFullscreen();
                     }
                 } else {
-                    // If using PDF.js canvas, make the container fullscreen
                     if (pdfViewer.requestFullscreen) {
                         pdfViewer.requestFullscreen();
                     } else if (pdfViewer.webkitRequestFullscreen) {
                         pdfViewer.webkitRequestFullscreen();
                     } else if (pdfViewer.msRequestFullscreen) {
                         pdfViewer.msRequestFullscreen();
+                    }
+                }
+            });
+        }
+
+        // Revision PDF fullscreen
+        if (revisiFullscreenBtn) {
+            revisiFullscreenBtn.addEventListener('click', function() {
+                const activeTab = document.querySelector('#revisionTabContent .tab-pane.active');
+                if (activeTab) {
+                    const iframe = activeTab.querySelector('.pdf-iframe');
+                    if (iframe) {
+                        if (iframe.requestFullscreen) {
+                            iframe.requestFullscreen();
+                        } else if (iframe.webkitRequestFullscreen) {
+                            iframe.webkitRequestFullscreen();
+                        } else if (iframe.msRequestFullscreen) {
+                            iframe.msRequestFullscreen();
+                        }
                     }
                 }
             });

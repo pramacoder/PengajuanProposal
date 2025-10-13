@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Proposal;
 use App\Models\Dosen;
 use App\Models\Reviewer;
@@ -574,6 +575,10 @@ class OperatorController extends Controller
             
             DB::commit();
             
+            // Clear cache for this proposal
+            $cacheKey = "operator_detail_hasil_final_{$request->proposal_id}";
+            Cache::forget($cacheKey);
+            
             \Log::info('Hasil final updated successfully', [
                 'proposal_id' => $request->proposal_id,
                 'status_final' => $request->status_final
@@ -616,18 +621,21 @@ class OperatorController extends Controller
 
     public function detailHasilFinal($id)
     {
-        $proposal = Proposal::with([
-            'mahasiswa', 
-            'dosen', 
-            'teams', 
-            'dokumen', 
-            'nilaiAdministratif.reviewer', 
-            'nilaiSubstantif.reviewer', 
-            'hasilFinal',
-            'proposalRevisi' => function($query) {
-                $query->orderBy('tanggal_submit', 'desc');
-            }
-        ])->findOrFail($id);
+        // Use caching to improve performance
+        $cacheKey = "operator_detail_hasil_final_{$id}";
+        
+        $proposal = Cache::remember($cacheKey, 300, function() use ($id) { // Cache for 5 minutes
+            return Proposal::with([
+                'mahasiswa', 
+                'dosen', 
+                'teams', 
+                'dokumen', 
+                'hasilFinal',
+                'proposalRevisi' => function($query) {
+                    $query->orderBy('tanggal_submit', 'desc');
+                }
+            ])->findOrFail($id);
+        });
 
         return view('operator.detail_hasil_final', compact('proposal'));
     }
