@@ -159,11 +159,18 @@
                 </div>
                 <div class="card-body">
                     @php
-                        // Ambil proposal berdasarkan team_id
-                        $proposals = \App\Models\Proposal::where('team_id', $user->team_id)
-                            ->with(['mahasiswa', 'dosen', 'dokumen'])
-                            ->orderBy('tanggal_pengajuan', 'desc')
-                            ->get();
+                        // Ambil proposal berdasarkan team_id atau sebagai anggota tim
+                        $proposals = \App\Models\Proposal::where(function($query) use ($user) {
+                            // Proposal yang dibuat oleh mahasiswa ini
+                            $query->where('id_mahasiswa', $user->id_mahasiswa)
+                                  // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                                  ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                                      $memberQuery->where('nim', $user->nim);
+                                  });
+                        })
+                        ->with(['mahasiswa', 'dosen', 'dokumen', 'semuaAnggotaTim'])
+                        ->orderBy('tanggal_pengajuan', 'desc')
+                        ->get();
                         
                         $allProposals = collect();
                         
@@ -171,8 +178,13 @@
                             $role = 'Anggota Tim';
                             $roleClass = 'secondary';
                             
-                            // Cek apakah user adalah ketua tim
-                            if ($user->is_ketua) {
+                            // Cek apakah user adalah ketua tim berdasarkan data di proposal
+                            if ($proposal->ketua_nim === $user->nim) {
+                                $role = 'Ketua Tim';
+                                $roleClass = 'primary';
+                            }
+                            // Atau cek dari relasi semuaAnggotaTim
+                            elseif ($proposal->semuaAnggotaTim->where('nim', $user->nim)->where('is_ketua', true)->count() > 0) {
                                 $role = 'Ketua Tim';
                                 $roleClass = 'primary';
                             }

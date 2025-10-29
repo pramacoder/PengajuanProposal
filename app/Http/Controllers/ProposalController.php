@@ -610,8 +610,8 @@ class ProposalController extends Controller
                     // Proposal yang dibuat oleh mahasiswa ini
                     $query->where('id_mahasiswa', $user->id_mahasiswa)
                           // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                          ->orWhereHas('teams', function($teamQuery) use ($user) {
-                              $teamQuery->where('nim', $user->nim);
+                          ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                              $memberQuery->where('nim', $user->nim);
                           });
                 })
                 ->firstOrFail();
@@ -680,8 +680,8 @@ class ProposalController extends Controller
                 // Proposal yang dibuat oleh mahasiswa ini
                 $query->where('id_mahasiswa', $user->id_mahasiswa)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('teams', function($teamQuery) use ($user) {
-                          $teamQuery->where('nim', $user->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                          $memberQuery->where('nim', $user->nim);
                       });
             })
             ->firstOrFail();
@@ -786,8 +786,8 @@ class ProposalController extends Controller
                 // Proposal yang dibuat oleh mahasiswa ini
                 $query->where('id_mahasiswa', $user->id_mahasiswa)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('teams', function($teamQuery) use ($user) {
-                          $teamQuery->where('nim', $user->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                          $memberQuery->where('nim', $user->nim);
                       });
             })
             ->firstOrFail();

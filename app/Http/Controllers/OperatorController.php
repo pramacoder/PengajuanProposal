@@ -628,7 +628,7 @@ class OperatorController extends Controller
             return Proposal::with([
                 'mahasiswa', 
                 'dosen', 
-                'teams', 
+                'semuaAnggotaTim', 
                 'dokumen', 
                 'hasilFinal',
                 'proposalRevisi' => function($query) {
