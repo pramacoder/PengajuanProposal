@@ -3,38 +3,97 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Fakultas;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class FakultasSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        $now = Carbon::now();
-
-        // 13 Fakultas UNUD (kode bebas asalkan konsisten & unik)
-        $rows = [
-            ['nama_fakultas' => 'Fakultas Ilmu Budaya',                    'kode_fakultas' => 'FIB'],
-            ['nama_fakultas' => 'Fakultas Kedokteran',                    'kode_fakultas' => 'FK'],
-            ['nama_fakultas' => 'Fakultas Hukum',                         'kode_fakultas' => 'FH'],
-            ['nama_fakultas' => 'Fakultas Teknik',                        'kode_fakultas' => 'FT'],
-            ['nama_fakultas' => 'Fakultas Pertanian',                     'kode_fakultas' => 'FP'],
-            ['nama_fakultas' => 'Fakultas Ekonomi dan Bisnis',            'kode_fakultas' => 'FEB'],
-            ['nama_fakultas' => 'Fakultas Peternakan',                    'kode_fakultas' => 'FAPET'],
-            ['nama_fakultas' => 'Fakultas Matematika dan Ilmu Pengetahuan Alam', 'kode_fakultas' => 'FMIPA'],
-            ['nama_fakultas' => 'Fakultas Kedokteran Hewan',              'kode_fakultas' => 'FKH'],
-            ['nama_fakultas' => 'Fakultas Teknologi Pertanian',           'kode_fakultas' => 'FTP'],
-            ['nama_fakultas' => 'Fakultas Pariwisata',                    'kode_fakultas' => 'FPAR'],
-            ['nama_fakultas' => 'Fakultas Ilmu Sosial dan Ilmu Politik',  'kode_fakultas' => 'FISIP'],
-            ['nama_fakultas' => 'Fakultas Kelautan dan Perikanan',        'kode_fakultas' => 'FKP'],
+        $fakultas = [
+            [
+                'nama_fakultas' => 'Fakultas Ilmu Budaya',
+                'kode_fakultas' => 'FIB',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Kedokteran',
+                'kode_fakultas' => 'FK',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Hukum',
+                'kode_fakultas' => 'FH',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Teknik',
+                'kode_fakultas' => 'FT',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Pertanian',
+                'kode_fakultas' => 'FP',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Ekonomi dan Bisnis',
+                'kode_fakultas' => 'FEB',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Peternakan',
+                'kode_fakultas' => 'FAPET',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Matematika dan Ilmu Pengetahuan Alam',
+                'kode_fakultas' => 'FMIPA',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Kedokteran Hewan',
+                'kode_fakultas' => 'FKH',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Teknologi Pertanian',
+                'kode_fakultas' => 'FTP',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Pariwisata',
+                'kode_fakultas' => 'FAPAR',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Ilmu Sosial dan Ilmu Politik',
+                'kode_fakultas' => 'FISIP',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'nama_fakultas' => 'Fakultas Kelautan dan Perikanan',
+                'kode_fakultas' => 'FKP',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ];
 
-        $rows = array_map(fn($r) => $r + ['created_at' => $now, 'updated_at' => $now], $rows);
-
-        Fakultas::upsert(
-            $rows,
-            ['kode_fakultas'],                 // unique key
-            ['nama_fakultas', 'updated_at']    // updates
-        );
+        DB::table('fakultas')->insert($fakultas);
     }
 }
+

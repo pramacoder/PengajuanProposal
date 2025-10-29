@@ -505,9 +505,9 @@
                     if ($proposal->id_mahasiswa == $user->id_mahasiswa) {
                         $userRole = 'Pengaju';
                     } else {
-                        $userTeamMember = $proposal->teams->where('nim', $user->nim)->first();
+                        $userTeamMember = $proposal->semuaAnggotaTim->where('nim', $user->nim)->first();
                         if ($userTeamMember) {
-                            $userRole = ucfirst($userTeamMember->role);
+                            $userRole = $userTeamMember->is_ketua ? 'Ketua' : 'Anggota';
                         }
                     }
                 @endphp
@@ -590,18 +590,18 @@
 
             <!-- Informasi Tim -->
             <div class="info-section">
-                <h5><i class="fas fa-users me-2"></i>Anggota Tim ({{ $proposal->teams->count() }} orang)</h5>
+                <h5><i class="fas fa-users me-2"></i>Anggota Tim ({{ $proposal->semuaAnggotaTim->count() }} orang)</h5>
                 <div class="team-section">
-                    @foreach($proposal->teams as $member)
-                    <div class="team-member {{ $member->role == 'ketua' ? 'ketua' : '' }}">
+                    @foreach($proposal->semuaAnggotaTim as $member)
+                    <div class="team-member {{ $member->is_ketua ? 'ketua' : '' }}">
                         <div class="member-info">
-                            <div class="member-name">{{ $member->nama }}</div>
+                            <div class="member-name">{{ $member->nama_mhs }}</div>
                             <div class="member-details">
-                                NIM: {{ $member->nim }} | {{ $member->prodi }} | {{ $member->fakultas }}
+                                NIM: {{ $member->nim }} | {{ $member->prodi_mhs }} | {{ $member->fakultas_mhs }}
                             </div>
                         </div>
-                        <span class="member-role {{ $member->role == 'ketua' ? 'ketua' : '' }}">
-                            {{ ucfirst($member->role) }}
+                        <span class="member-role {{ $member->is_ketua ? 'ketua' : '' }}">
+                            {{ $member->is_ketua ? 'Ketua' : 'Anggota' }}
                         </span>
                     </div>
                     @endforeach

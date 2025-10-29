@@ -15,7 +15,8 @@ class Mahasiswa extends Authenticatable
 
     protected $fillable = [
         'nim', 'nama_mhs', 'prodi_mhs', 'fakultas_mhs', 'no_hp_mhs', 'email_mhs',
-        'password', 'role', 'is_active', 'email_verified_at', 'id_dosen_pembimbing'
+        'password', 'role', 'is_active', 'email_verified_at', 'id_dosen_pembimbing',
+        'team_id', 'is_ketua'
     ];
 
     protected $hidden = [
@@ -26,6 +27,7 @@ class Mahasiswa extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_active' => 'boolean',
+        'is_ketua' => 'boolean',
     ];
 
     // Relasi One-to-Many dengan Proposal
@@ -46,16 +48,30 @@ class Mahasiswa extends Authenticatable
         return $this->hasMany(Proposal::class, 'id_mahasiswa');
     }
 
-    // Relasi ke Team (mahasiswa sebagai anggota tim)
-    public function teams()
+    // Relasi ke anggota tim (self-reference berdasarkan team_id)
+    public function anggotaTim()
     {
-        return $this->hasMany(Team::class, 'id_mahasiswa', 'id_mahasiswa');
+        return $this->hasMany(Mahasiswa::class, 'team_id', 'team_id')
+                   ->where('id_mahasiswa', '!=', $this->id_mahasiswa);
     }
 
-    // Relasi ke Proposal melalui Team (proposal sebagai anggota tim)
+    // Relasi ke ketua tim (self-reference berdasarkan team_id)
+    public function ketuaTim()
+    {
+        return $this->hasOne(Mahasiswa::class, 'team_id', 'team_id')
+                   ->where('is_ketua', true);
+    }
+
+    // Relasi ke proposal sebagai ketua tim
+    public function proposalAsKetua()
+    {
+        return $this->hasOne(Proposal::class, 'team_id', 'team_id');
+    }
+
+    // Relasi ke proposal sebagai anggota tim
     public function proposalsAsMember()
     {
-        return $this->hasManyThrough(Proposal::class, Team::class, 'id_mahasiswa', 'id_proposal', 'id_mahasiswa', 'id_proposal');
+        return $this->hasMany(Proposal::class, 'team_id', 'team_id');
     }
 
     // Relasi ke Prodi berdasarkan nama_prodi

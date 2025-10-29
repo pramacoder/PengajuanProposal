@@ -159,35 +159,30 @@
                 </div>
                 <div class="card-body">
                     @php
-                        // Gabungkan proposal sebagai ketua tim dan sebagai anggota tim
+                        // Ambil proposal berdasarkan team_id
+                        $proposals = \App\Models\Proposal::where('team_id', $user->team_id)
+                            ->with(['mahasiswa', 'dosen', 'dokumen'])
+                            ->orderBy('tanggal_pengajuan', 'desc')
+                            ->get();
+                        
                         $allProposals = collect();
                         
-                        // Proposal sebagai ketua tim
-                        if ($user->proposals) {
-                            foreach ($user->proposals as $proposal) {
-                                $allProposals->push([
-                                    'proposal' => $proposal,
-                                    'role' => 'Ketua Tim',
-                                    'role_class' => 'primary'
-                                ]);
+                        foreach ($proposals as $proposal) {
+                            $role = 'Anggota Tim';
+                            $roleClass = 'secondary';
+                            
+                            // Cek apakah user adalah ketua tim
+                            if ($user->is_ketua) {
+                                $role = 'Ketua Tim';
+                                $roleClass = 'primary';
                             }
+                            
+                            $allProposals->push([
+                                'proposal' => $proposal,
+                                'role' => $role,
+                                'role_class' => $roleClass
+                            ]);
                         }
-                        
-                        // Proposal sebagai anggota tim
-                        if ($user->teams) {
-                            foreach ($user->teams as $team) {
-                                if ($team->proposal && !$allProposals->contains('proposal.id_proposal', $team->proposal->id_proposal)) {
-                                    $allProposals->push([
-                                        'proposal' => $team->proposal,
-                                        'role' => ucfirst(str_replace('anggota', 'Anggota ', $team->role)),
-                                        'role_class' => 'secondary'
-                                    ]);
-                                }
-                            }
-                        }
-                        
-                        // Urutkan berdasarkan tanggal pengajuan terbaru
-                        $allProposals = $allProposals->sortByDesc('proposal.tanggal_pengajuan');
                     @endphp
                     
                     @if($allProposals->count() > 0)

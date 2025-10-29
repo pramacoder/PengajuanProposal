@@ -3,213 +3,372 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Proposal;
-use App\Models\Mahasiswa;
-use App\Models\Dosen;
-use App\Models\Reviewer;
-use App\Models\Dokumen;
-use App\Models\NilaiAdministratif;
-use App\Models\NilaiSubstantif;
+use Illuminate\Support\Facades\DB;
 use Faker\Factory as Faker;
 
 class ProposalSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
         $faker = Faker::create('id_ID');
         
-        $this->command->info('Memulai seeding proposal...');
-        
-        // Ambil data yang sudah ada dari seeder lain
-        $reviewers = Reviewer::all();
-        $mahasiswas = Mahasiswa::all();
-        $dosens = Dosen::all();
-        
-        // Validasi jumlah data yang tersedia
-        if ($mahasiswas->count() < 60) {
-            $this->command->error('Jumlah mahasiswa tidak cukup! Minimal butuh 60 mahasiswa untuk 20 proposal.');
-            return;
-        }
-        
-        if ($dosens->count() < 20) {
-            $this->command->error('Jumlah dosen tidak cukup! Minimal butuh 20 dosen untuk 20 proposal.');
-            return;
-        }
-        
-        $this->command->info("Total mahasiswa tersedia: " . $mahasiswas->count());
-        $this->command->info("Total dosen tersedia: " . $dosens->count());
-        $this->command->info("Maksimal proposal yang bisa dibuat: " . floor($mahasiswas->count() / 3));
+        // Ambil semua mahasiswa (25 mahasiswa)
+        $mahasiswas = DB::table('mahasiswas')->get();
+        $dosens = DB::table('dosens')->pluck('id_dosen')->toArray();
+        $reviewers = DB::table('reviewers')->pluck('id_reviewer')->toArray();
         
         $proposals = [];
-        $usedMahasiswas = collect(); // Track mahasiswa yang sudah digunakan
         
-        // 1. Proposal 2023 (7 proposal) - Sudah selesai, memiliki hasil final
-        $this->command->info('Membuat proposal 2023 (sudah selesai)...');
-        for ($i = 0; $i < 7; $i++) {
-            $availableMahasiswas = $mahasiswas->whereNotIn('id_mahasiswa', $usedMahasiswas->pluck('id_mahasiswa'));
-            if ($availableMahasiswas->count() < 3) {
-                $this->command->error('Mahasiswa tidak cukup untuk membuat proposal ke-' . ($i + 1));
-                break;
-            }
-            
-            $ketua = $availableMahasiswas->random();
-            $anggota1 = $availableMahasiswas->where('id_mahasiswa', '!=', $ketua->id_mahasiswa)->random();
-            $anggota2 = $availableMahasiswas->whereNotIn('id_mahasiswa', [$ketua->id_mahasiswa, $anggota1->id_mahasiswa])->random();
-            
-            // Anggota 3 dan 4 opsional (random 0-2 anggota tambahan)
-            $remainingMahasiswas = $availableMahasiswas->whereNotIn('id_mahasiswa', [$ketua->id_mahasiswa, $anggota1->id_mahasiswa, $anggota2->id_mahasiswa]);
-            $additionalMembers = $remainingMahasiswas->take(rand(0, min(2, $remainingMahasiswas->count())));
-            $anggota3 = $additionalMembers->shift();
-            $anggota4 = $additionalMembers->shift();
-            
-            $proposal = Proposal::factory()->create([
-                'id_mahasiswa' => $ketua->id_mahasiswa,
-                'id_dosen' => $dosens->random()->id_dosen,
-                'status_validasi' => 'valid',
-                'status_final' => $faker->randomElement(['lolos', 'tidak_lolos']),
-                'status' => 'lolos',
-                'judul_proposal' => 'Proposal PKM 2023 - ' . ($i + 1),
-                'judul' => 'Proposal PKM 2023 - ' . ($i + 1),
-                'tanggal_pengajuan' => $faker->dateTimeBetween('2023-01-01', '2023-12-31'),
-                'tahun_ajaran' => '2023/2024',
-                'dana_diajukan' => $faker->numberBetween(1000000, 15000000),
-                'dosen_pembimbing' => $dosens->random()->nama_dosen,
-                // Kolom wajib - ketua
-                'ketua_nama' => $ketua->nama_mhs,
-                'ketua_nim' => $ketua->nim,
-                'ketua_prodi' => $ketua->prodi_mhs,
-                'ketua_fakultas' => $ketua->fakultas_mhs,
-                'ketua_email' => $ketua->email_mhs,
-                'ketua_no_hp' => $ketua->no_hp_mhs,
-                // Kolom wajib - anggota 1
-                'anggota1_nama' => $anggota1->nama_mhs,
-                'anggota1_nim' => $anggota1->nim,
-                'anggota1_prodi' => $anggota1->prodi_mhs,
-                'anggota1_fakultas' => $anggota1->fakultas_mhs,
-                'anggota1_email' => $anggota1->email_mhs,
-                'anggota1_no_hp' => $anggota1->no_hp_mhs,
-                // Kolom wajib - anggota 2
-                'anggota2_nama' => $anggota2->nama_mhs,
-                'anggota2_nim' => $anggota2->nim,
-                'anggota2_prodi' => $anggota2->prodi_mhs,
-                'anggota2_fakultas' => $anggota2->fakultas_mhs,
-                'anggota2_email' => $anggota2->email_mhs,
-                'anggota2_no_hp' => $anggota2->no_hp_mhs,
-                // Kolom opsional - anggota 3
-                'anggota3_nama' => $anggota3 ? $anggota3->nama_mhs : null,
-                'anggota3_nim' => $anggota3 ? $anggota3->nim : null,
-                'anggota3_prodi' => $anggota3 ? $anggota3->prodi_mhs : null,
-                'anggota3_fakultas' => $anggota3 ? $anggota3->fakultas_mhs : null,
-                'anggota3_email' => $anggota3 ? $anggota3->email_mhs : null,
-                'anggota3_no_hp' => $anggota3 ? $anggota3->no_hp_mhs : null,
-                // Kolom opsional - anggota 4
-                'anggota4_nama' => $anggota4 ? $anggota4->nama_mhs : null,
-                'anggota4_nim' => $anggota4 ? $anggota4->nim : null,
-                'anggota4_prodi' => $anggota4 ? $anggota4->prodi_mhs : null,
-                'anggota4_fakultas' => $anggota4 ? $anggota4->fakultas_mhs : null,
-                'anggota4_email' => $anggota4 ? $anggota4->email_mhs : null,
-                'anggota4_no_hp' => $anggota4 ? $anggota4->no_hp_mhs : null,
-            ]);
-            
-            $proposals[] = $proposal;
-            $usedMahasiswas->push($ketua, $anggota1, $anggota2);
-            if ($anggota3) $usedMahasiswas->push($anggota3);
-            if ($anggota4) $usedMahasiswas->push($anggota4);
-        }
+        // ===== TAHUN 2022/2023 - 5 Proposal (15 mahasiswa) =====
+        // Proposal 1 (Mahasiswa 1, 2, 3)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2022/2023',
+            '2022-09-15',
+            'RE',
+            'Pengembangan Sistem Informasi Manajemen Koperasi Berbasis Web',
+            15000000.00,
+            [1, 2, 3],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
         
-        // 2. Proposal 2024 (8 proposal) - Sudah selesai, memiliki hasil final
-        $this->command->info('Membuat proposal 2024 (sudah selesai)...');
-        for ($i = 0; $i < 8; $i++) {
-            $availableMahasiswas = $mahasiswas->whereNotIn('id_mahasiswa', $usedMahasiswas->pluck('id_mahasiswa'));
-            if ($availableMahasiswas->count() < 3) {
-                $this->command->error('Mahasiswa tidak cukup untuk membuat proposal ke-' . ($i + 8));
-                break;
-            }
-            
-            $ketua = $availableMahasiswas->random();
-            $anggota1 = $availableMahasiswas->where('id_mahasiswa', '!=', $ketua->id_mahasiswa)->random();
-            $anggota2 = $availableMahasiswas->whereNotIn('id_mahasiswa', [$ketua->id_mahasiswa, $anggota1->id_mahasiswa])->random();
-            
-            $remainingMahasiswas = $availableMahasiswas->whereNotIn('id_mahasiswa', [$ketua->id_mahasiswa, $anggota1->id_mahasiswa, $anggota2->id_mahasiswa]);
-            $additionalMembers = $remainingMahasiswas->take(rand(0, min(2, $remainingMahasiswas->count())));
-            $anggota3 = $additionalMembers->shift();
-            $anggota4 = $additionalMembers->shift();
-            
-            $proposal = Proposal::factory()->create([
-                'id_mahasiswa' => $ketua->id_mahasiswa,
-                'id_dosen' => $dosens->random()->id_dosen,
-                'status_validasi' => 'valid',
-                'status_final' => $faker->randomElement(['lolos', 'tidak_lolos']),
-                'status' => 'lolos',
-                'judul_proposal' => 'Proposal PKM 2024 - ' . ($i + 1),
-                'judul' => 'Proposal PKM 2024 - ' . ($i + 1),
-                'tanggal_pengajuan' => $faker->dateTimeBetween('2024-01-01', '2024-12-31'),
-                'tahun_ajaran' => '2024/2025',
-                'dana_diajukan' => $faker->numberBetween(1000000, 15000000),
-                'dosen_pembimbing' => $dosens->random()->nama_dosen,
-                // Kolom wajib - ketua
-                'ketua_nama' => $ketua->nama_mhs,
-                'ketua_nim' => $ketua->nim,
-                'ketua_prodi' => $ketua->prodi_mhs,
-                'ketua_fakultas' => $ketua->fakultas_mhs,
-                'ketua_email' => $ketua->email_mhs,
-                'ketua_no_hp' => $ketua->no_hp_mhs,
-                // Kolom wajib - anggota 1
-                'anggota1_nama' => $anggota1->nama_mhs,
-                'anggota1_nim' => $anggota1->nim,
-                'anggota1_prodi' => $anggota1->prodi_mhs,
-                'anggota1_fakultas' => $anggota1->fakultas_mhs,
-                'anggota1_email' => $anggota1->email_mhs,
-                'anggota1_no_hp' => $anggota1->no_hp_mhs,
-                // Kolom wajib - anggota 2
-                'anggota2_nama' => $anggota2->nama_mhs,
-                'anggota2_nim' => $anggota2->nim,
-                'anggota2_prodi' => $anggota2->prodi_mhs,
-                'anggota2_fakultas' => $anggota2->fakultas_mhs,
-                'anggota2_email' => $anggota2->email_mhs,
-                'anggota2_no_hp' => $anggota2->no_hp_mhs,
-                // Kolom opsional - anggota 3
-                'anggota3_nama' => $anggota3 ? $anggota3->nama_mhs : null,
-                'anggota3_nim' => $anggota3 ? $anggota3->nim : null,
-                'anggota3_prodi' => $anggota3 ? $anggota3->prodi_mhs : null,
-                'anggota3_fakultas' => $anggota3 ? $anggota3->fakultas_mhs : null,
-                'anggota3_email' => $anggota3 ? $anggota3->email_mhs : null,
-                'anggota3_no_hp' => $anggota3 ? $anggota3->no_hp_mhs : null,
-                // Kolom opsional - anggota 4
-                'anggota4_nama' => $anggota4 ? $anggota4->nama_mhs : null,
-                'anggota4_nim' => $anggota4 ? $anggota4->nim : null,
-                'anggota4_prodi' => $anggota4 ? $anggota4->prodi_mhs : null,
-                'anggota4_fakultas' => $anggota4 ? $anggota4->fakultas_mhs : null,
-                'anggota4_email' => $anggota4 ? $anggota4->email_mhs : null,
-                'anggota4_no_hp' => $anggota4 ? $anggota4->no_hp_mhs : null,
-            ]);
-            
-            $proposals[] = $proposal;
-            $usedMahasiswas->push($ketua, $anggota1, $anggota2);
-            if ($anggota3) $usedMahasiswas->push($anggota3);
-            if ($anggota4) $usedMahasiswas->push($anggota4);
-        }
+        // Proposal 2 (Mahasiswa 4, 5, 6)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2022/2023',
+            '2022-10-10',
+            'RSH',
+            'Analisis Matematika dalam Optimasi Algoritma Machine Learning',
+            20000000.00,
+            [4, 5, 6],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
         
-        // 3. Proposal 2025 - DIHAPUS untuk testing pengajuan proposal tahun ini
-        $this->command->info('Proposal 2025 tidak dibuat - untuk testing pengajuan proposal tahun ini');
+        // Proposal 3 (Mahasiswa 7, 8, 9)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2022/2023',
+            '2022-11-05',
+            'K',
+            'Pemanfaatan Energi Surya untuk Sistem Pendingin Rumah',
+            12000000.00,
+            [7, 8, 9],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
         
-        $this->command->info('ProposalSeeder berhasil dijalankan!');
-        $this->command->info('Total proposal yang dibuat: ' . count($proposals));
-        $this->command->info('Proposal 2023 (selesai): 7 proposal');
-        $this->command->info('Proposal 2024 (selesai): 8 proposal');
-        $this->command->info('Proposal 2025: 0 proposal (untuk testing pengajuan proposal tahun ini)');
-        $this->command->info('Mahasiswa yang digunakan: ' . $usedMahasiswas->count());
-        $this->command->info('Mahasiswa yang tersisa: ' . ($mahasiswas->count() - $usedMahasiswas->count()));
+        // Proposal 4 (Mahasiswa 10, 11, 12)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2022/2023',
+            '2022-12-01',
+            'PM',
+            'Sintesis Nanopartikel untuk Aplikasi Biomedis',
+            18000000.00,
+            [10, 11, 12],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
         
-        $this->command->info('');
-        $this->command->info('=== LOGIKA YANG BENAR ===');
-        $this->command->info('✓ 1 proposal = 1 team');
-        $this->command->info('✓ 1 team = minimal 3 mahasiswa, maksimal 5 mahasiswa');
-        $this->command->info('✓ 1 mahasiswa hanya bisa terikat pada 1 proposal');
-        $this->command->info('✓ Setiap proposal wajib memiliki dosen pendamping');
-        $this->command->info('✓ Total 15 proposal membutuhkan minimal 45 mahasiswa (15 × 3)');
-        $this->command->info('✓ Total 15 proposal membutuhkan minimal 15 dosen (1 dosen per proposal)');
-        $this->command->info('✓ Proposal 2023-2024 sudah selesai dan memiliki hasil final');
-        $this->command->info('✓ Proposal 2025 tidak dibuat untuk testing pengajuan proposal tahun ini');
+        // Proposal 5 (Mahasiswa 13, 14, 15)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2022/2023',
+            '2023-01-20',
+            'PI',
+            'Konservasi Keanekaragaman Hayati di Kawasan Hutan Lindung',
+            25000000.00,
+            [13, 14, 15],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // ===== TAHUN 2023/2024 - 8 Proposal (24 mahasiswa) =====
+        // Proposal 6 (Mahasiswa 1, 2, 3) - Mahasiswa yang sama bisa mengajukan di tahun berbeda
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-03-15',
+            'KC',
+            'Strategi Pemasaran Digital untuk UMKM di Bali',
+            10000000.00,
+            [1, 2, 3],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 7 (Mahasiswa 4, 5, 6)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-04-10',
+            'KI',
+            'Analisis Sistem Akuntansi pada Perusahaan Startup',
+            8000000.00,
+            [4, 5, 6],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 8 (Mahasiswa 7, 8, 9)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-05-20',
+            'VGK',
+            'Desain Bangunan Tahan Gempa dengan Material Lokal',
+            22000000.00,
+            [7, 8, 9],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 9 (Mahasiswa 10, 11, 12)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-06-15',
+            'GFT',
+            'Sistem Monitoring Energi Listrik Berbasis IoT',
+            16000000.00,
+            [10, 11, 12],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 10 (Mahasiswa 13, 14, 15)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-07-10',
+            'AI',
+            'Optimasi Mesin Diesel untuk Efisiensi Bahan Bakar',
+            14000000.00,
+            [13, 14, 15],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 11 (Mahasiswa 16, 17, 18)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-08-05',
+            'RE',
+            'Pengembangan Aplikasi Mobile untuk Manajemen Keuangan Pribadi',
+            13000000.00,
+            [16, 17, 18],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 12 (Mahasiswa 19, 20, 21)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-09-12',
+            'RSH',
+            'Studi Pengaruh Media Sosial terhadap Perilaku Konsumen',
+            11000000.00,
+            [19, 20, 21],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 13 (Mahasiswa 22, 23, 24)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2023/2024',
+            '2023-10-08',
+            'K',
+            'Inovasi Material Konstruksi Ramah Lingkungan',
+            17000000.00,
+            [22, 23, 24],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // ===== TAHUN 2024/2025 - 7 Proposal (21 mahasiswa) =====
+        // Proposal 14 (Mahasiswa 1, 2, 3)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-03-20',
+            'PM',
+            'Desain Arsitektur Berkelanjutan untuk Kawasan Pesisir',
+            17000000.00,
+            [1, 2, 3],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 15 (Mahasiswa 4, 5, 6)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-04-15',
+            'PI',
+            'Pengembangan Obat Herbal dari Tumbuhan Lokal Bali',
+            19000000.00,
+            [4, 5, 6],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 16 (Mahasiswa 7, 8, 9)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-05-10',
+            'KC',
+            'Peningkatan Kualitas Pelayanan Kesehatan di Puskesmas',
+            13000000.00,
+            [7, 8, 9],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 17 (Mahasiswa 10, 11, 12)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-06-25',
+            'KI',
+            'Reformasi Hukum dalam Penanganan Kasus Korupsi',
+            11000000.00,
+            [10, 11, 12],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 18 (Mahasiswa 13, 14, 15)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-07-18',
+            'VGK',
+            'Teknologi Pertanian Berkelanjutan untuk Lahan Kering',
+            21000000.00,
+            [13, 14, 15],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 19 (Mahasiswa 16, 17, 18)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-08-22',
+            'GFT',
+            'Peningkatan Produktivitas Ternak Sapi Bali',
+            15000000.00,
+            [16, 17, 18],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        // Proposal 20 (Mahasiswa 19, 20, 21)
+        $proposals[] = $this->createProposal(
+            $faker,
+            '2024/2025',
+            '2024-09-14',
+            'AI',
+            'Pencegahan Penyakit Zoonosis pada Hewan Ternak',
+            18000000.00,
+            [19, 20, 21],
+            $mahasiswas,
+            $dosens,
+            $reviewers
+        );
+        
+        DB::table('proposals')->insert($proposals);
+    }
+    
+    /**
+     * Helper function untuk membuat proposal
+     */
+    private function createProposal($faker, $tahunAjaran, $tanggalPengajuan, $skim, $judul, $dana, $mahasiswaIds, $allMahasiswas, $dosens, $reviewers)
+    {
+        // Ambil data mahasiswa berdasarkan ID
+        $ketua = $allMahasiswas->where('id_mahasiswa', $mahasiswaIds[0])->first();
+        $anggota1 = $allMahasiswas->where('id_mahasiswa', $mahasiswaIds[1])->first();
+        $anggota2 = $allMahasiswas->where('id_mahasiswa', $mahasiswaIds[2])->first();
+        
+        // Ambil dosen pembimbing dari ketua
+        $dosenPembimbing = DB::table('dosens')->where('id_dosen', $ketua->id_dosen_pembimbing)->first();
+        
+        $proposal = [
+            'judul_proposal' => $judul,
+            'judul' => $judul,
+            'tanggal_pengajuan' => $tanggalPengajuan,
+            'skim' => $skim,
+            'dosen_pembimbing' => $dosenPembimbing->nama_dosen ?? 'Unknown',
+            'dana_diajukan' => $dana,
+            'tahun_ajaran' => $tahunAjaran,
+            'status_validasi' => 'valid',
+            'status_final' => 'lolos',
+            'status' => 'lolos',
+            'catatan' => $faker->paragraph,
+            'tanggal_validasi' => now(),
+            'id_mahasiswa' => $ketua->id_mahasiswa,
+            'id_dosen' => $ketua->id_dosen_pembimbing,
+            'team_id' => $faker->unique()->randomNumber(5),
+            'id_reviewer_administratif' => $faker->randomElement($reviewers),
+            'id_reviewer_substantif_1' => $faker->randomElement($reviewers),
+            'id_reviewer_substantif_2' => $faker->randomElement($reviewers),
+            
+            // Data Ketua
+            'ketua_nama' => $ketua->nama_mhs,
+            'ketua_nim' => $ketua->nim,
+            'ketua_prodi' => $ketua->prodi_mhs,
+            'ketua_fakultas' => $ketua->fakultas_mhs,
+            'ketua_email' => $ketua->email_mhs,
+            'ketua_no_hp' => $ketua->no_hp_mhs,
+            
+            // Data Anggota 1
+            'anggota1_nama' => $anggota1->nama_mhs,
+            'anggota1_nim' => $anggota1->nim,
+            'anggota1_prodi' => $anggota1->prodi_mhs,
+            'anggota1_fakultas' => $anggota1->fakultas_mhs,
+            'anggota1_email' => $anggota1->email_mhs,
+            'anggota1_no_hp' => $anggota1->no_hp_mhs,
+            
+            // Data Anggota 2
+            'anggota2_nama' => $anggota2->nama_mhs,
+            'anggota2_nim' => $anggota2->nim,
+            'anggota2_prodi' => $anggota2->prodi_mhs,
+            'anggota2_fakultas' => $anggota2->fakultas_mhs,
+            'anggota2_email' => $anggota2->email_mhs,
+            'anggota2_no_hp' => $anggota2->no_hp_mhs,
+            
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+        
+        return $proposal;
     }
 }

@@ -38,7 +38,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
+                    <h5 class="card-title mb-0 text-white">
                         <i class="fas fa-user me-2"></i>Informasi Mahasiswa
                     </h5>
                 </div>
@@ -63,81 +63,97 @@
                 <!-- Informasi Proposal -->
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <h6 class="fw-bold text-primary mb-3">Informasi Proposal</h6>
-                        <table class="table table-borderless">
-                            <tr>
-                                <td width="30%"><strong>Judul:</strong></td>
-                                <td>{{ $proposal->judul_proposal }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Skim:</strong></td>
-                                <td>{{ $proposal->skim }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Ketua:</strong></td>
-                                <td>{{ $proposal->mahasiswa->nama_mhs }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Prodi:</strong></td>
-                                <td>{{ $proposal->mahasiswa->prodi->nama_prodi ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Fakultas:</strong></td>
-                                <td>{{ $proposal->mahasiswa->fakultas->nama_fakultas ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Email Ketua:</strong></td>
-                                <td>{{ $proposal->mahasiswa->email_mhs ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Status Validasi:</strong></td>
-                                <td>
-                                    @if($proposal->status_validasi === 'valid')
-                                        <span class="badge bg-success">Sudah Divalidasi</span>
-                                    @elseif($proposal->status_validasi === 'tidak_valid')
-                                        <span class="badge bg-danger">Ditolak</span>
-                                    @else
-                                        <span class="badge bg-warning">Belum Divalidasi</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Status Proposal:</strong></td>
-                                <td>
-                                    @if($proposal->status === 'valid')
-                                        <span class="badge bg-success">Valid</span>
-                                    @elseif($proposal->status === 'tidak_valid')
-                                        <span class="badge bg-danger">Tidak Valid</span>
-                                    @elseif($proposal->status === 'pending')
-                                        <span class="badge bg-warning">Pending</span>
-                                    @elseif($proposal->status === 'submitted')
-                                        <span class="badge bg-info">Submitted</span>
-                                    @else
-                                        <span class="badge bg-secondary">{{ ucfirst($proposal->status) }}</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        </table>
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>Informasi Proposal
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless mb-0">
+                                    <tr>
+                                        <td width="30%"><strong>Judul:</strong></td>
+                                        <td><div class="text-wrap" style="max-width: 100%; word-wrap: break-word;">{{ $proposal->judul_proposal }}</div></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Skim:</strong></td>
+                                        <td>{{ $proposal->skim }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ketua:</strong></td>
+                                        <td>{{ $proposal->mahasiswa->nama_mhs }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Prodi:</strong></td>
+                                        <td>{{ $proposal->mahasiswa->prodi->nama_prodi ?? 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Fakultas:</strong></td>
+                                        <td><div class="text-wrap" style="max-width: 100%; word-wrap: break-word;">{{ $proposal->mahasiswa->fakultas->nama_fakultas ?? 'N/A' }}</div></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Email Ketua:</strong></td>
+                                        <td>{{ $proposal->mahasiswa->email_mhs ?? 'N/A' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Status Validasi:</strong></td>
+                                        <td>
+                                            @if($proposal->status_validasi === 'valid')
+                                                <span class="badge bg-success">Sudah Divalidasi</span>
+                                            @elseif($proposal->status_validasi === 'tidak_valid')
+                                                <span class="badge bg-danger">Ditolak</span>
+                                            @else
+                                                <span class="badge bg-warning">Belum Divalidasi</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Status Proposal:</strong></td>
+                                        <td>
+                                            @if($proposal->status === 'valid')
+                                                <span class="badge bg-success">Valid</span>
+                                            @elseif($proposal->status === 'tidak_valid')
+                                                <span class="badge bg-danger">Tidak Valid</span>
+                                            @elseif($proposal->status === 'pending')
+                                                <span class="badge bg-warning">Pending</span>
+                                            @elseif($proposal->status === 'submitted')
+                                                <span class="badge bg-info">Submitted</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ ucfirst($proposal->status) }}</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="fw-bold text-primary mb-3">Dokumen</h6>
-                        <div class="d-grid gap-2">
-                            @if($proposal->dokumen && $proposal->dokumen->path_file)
-                                <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
-                                   class="btn btn-outline-primary" target="_blank">
-                                    <i class="fas fa-download me-2"></i>Download Proposal
-                                </a>
-                            @else
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    File proposal belum tersedia
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="fas fa-file-alt me-2"></i>Dokumen
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    @if($proposal->dokumen && $proposal->dokumen->path_file)
+                                        <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
+                                           class="btn btn-outline-primary" target="_blank">
+                                            <i class="fas fa-download me-2"></i>Download Proposal
+                                        </a>
+                                    @else
+                                        <div class="alert alert-warning mb-0">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            File proposal belum tersedia
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
-                            
-                            <!-- Lampiran tidak tersedia karena hanya ada 1 file per proposal -->
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                File lampiran tidak tersedia (sistem hanya mendukung 1 file per proposal)
+                                
+                                <!-- Info Alert -->
+                                <div class="alert alert-info mt-3 mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <small>File lampiran tidak tersedia (sistem hanya mendukung 1 file per proposal)</small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -605,10 +621,18 @@
     }
     
     // Submit validasi
-    function submitValidasi(action) {
-        if (confirmValidasi(action)) {
+    async function submitValidasi(action) {
+        const confirmed = await confirmValidasi(action);
+        
+        if (confirmed) {
             const actionInput = document.getElementById('actionInput');
             actionInput.value = action;
+            
+            // Show loading state
+            const submitBtn = event.target;
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
+            submitBtn.disabled = true;
             
             // Submit form
             const form = document.getElementById('validasiForm');
@@ -617,19 +641,19 @@
     }
 
     // Validate form before submission
-    function validateForm() {
+    async function validateForm() {
         const form = document.getElementById('validasiForm');
         const actionInput = document.getElementById('actionInput');
         
         if (!actionInput || !actionInput.value) {
-            alert('Pilih aksi validasi terlebih dahulu!');
+            await showCustomAlert('Pilih aksi validasi terlebih dahulu!', 'warning');
             return false;
         }
         
         if (actionInput.value === 'tolak') {
             const catatan = form.querySelector('textarea[name="catatan"]');
             if (!catatan || !catatan.value.trim()) {
-                alert('Harap isi alasan penolakan!');
+                await showCustomAlert('Harap isi alasan penolakan!', 'danger');
                 catatan.focus();
                 return false;
             }
@@ -638,26 +662,117 @@
         return true;
     }
 
-    // Confirm validasi
-    function confirmValidasi(action) {
-        const actionText = action === 'valid' ? 'validasi' : 'tolak';
-        const result = confirm(`Apakah Anda yakin ingin ${actionText} proposal ini?`);
-        
-        if (result) {
-            // Show loading state
-            const submitBtn = event.target;
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Memproses...';
-            submitBtn.disabled = true;
+    // Show custom alert
+    function showCustomAlert(message, type = 'info') {
+        return new Promise((resolve) => {
+            const typeColors = {
+                'info': 'primary',
+                'success': 'success',
+                'warning': 'warning',
+                'danger': 'danger'
+            };
             
-            // Re-enable button after 3 seconds if form doesn't submit
-            setTimeout(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 3000);
-        }
-        
-        return result;
+            const typeIcons = {
+                'info': 'fa-info-circle',
+                'success': 'fa-check-circle',
+                'warning': 'fa-exclamation-triangle',
+                'danger': 'fa-exclamation-circle'
+            };
+            
+            const color = typeColors[type] || 'primary';
+            const icon = typeIcons[type] || 'fa-info-circle';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="background: #343a40; color: white; border: 1px solid #495057;">
+                        <div class="modal-header" style="border-bottom: 1px solid #495057;">
+                            <h5 class="modal-title" style="color: white;">
+                                <i class="fas ${icon} me-2 text-${color}"></i>
+                                ${type === 'danger' ? 'Kesalahan' : type === 'warning' ? 'Peringatan' : type === 'success' ? 'Berhasil' : 'Informasi'}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="this.closest('.modal').remove()"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-0">${message}</p>
+                        </div>
+                        <div class="modal-footer" style="border-top: 1px solid #495057;">
+                            <button type="button" class="btn btn-${color}" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('closed'))">
+                                <i class="fas fa-check me-2"></i>Oke
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            modal.addEventListener('closed', () => resolve());
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                modal.remove();
+                resolve();
+            });
+        });
+    }
+
+    // Confirm validasi dengan custom modal
+    function confirmValidasi(action) {
+        return new Promise((resolve) => {
+            const actionText = action === 'valid' ? 'Validasi' : 'Tolak';
+            const actionIcon = action === 'valid' ? 'fa-check-circle' : 'fa-times-circle';
+            const actionColor = action === 'valid' ? 'success' : 'danger';
+            const actionMessage = action === 'valid' 
+                ? 'Proposal akan divalidasi dan dapat dilanjutkan ke tahap selanjutnya.'
+                : 'Proposal akan ditolak dan mahasiswa perlu memperbaiki proposal.';
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="background: #343a40; color: white; border: 1px solid #495057;">
+                        <div class="modal-header" style="border-bottom: 1px solid #495057;">
+                            <h5 class="modal-title" style="color: white;">
+                                <i class="fas ${actionIcon} me-2 text-${actionColor}"></i>
+                                Konfirmasi ${actionText} Proposal
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="this.closest('.modal').remove()"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">Apakah Anda yakin ingin ${actionText.toLowerCase()} proposal ini?</p>
+                            <div class="alert alert-${actionColor === 'success' ? 'info' : 'warning'} mb-0" style="background: ${actionColor === 'success' ? 'rgba(13, 110, 253, 0.1)' : 'rgba(255, 254, 250, 0.84)'}; border-color: ${actionColor === 'success' ? '#0d6efd' : '#ffc107'};">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Perhatian:</strong> ${actionMessage}
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="border-top: 1px solid #495057;">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('canceled'))">
+                                <i class="fas fa-times me-2"></i>Batal
+                            </button>
+                            <button type="button" class="btn btn-${actionColor}" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('confirmed'))">
+                                <i class="fas fa-${actionIcon} me-2"></i>Ya, ${actionText} Proposal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            modal.addEventListener('confirmed', () => resolve(true));
+            modal.addEventListener('canceled', () => resolve(false));
+            
+            // Close on backdrop click
+            modal.addEventListener('hidden.bs.modal', () => {
+                modal.remove();
+                resolve(false);
+            });
+        });
     }
 </script>
 @endsection

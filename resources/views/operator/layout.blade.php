@@ -211,8 +211,8 @@
             </button>
             
             <a class="navbar-brand" href="#">
-                <i class="fas fa-graduation-cap me-2"></i>
-                PROPOSAL PT
+                <i class="fas fa-cogs me-2"></i>
+                OPERATOR
             </a>
             
             <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
@@ -285,10 +285,6 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-title">
-            <i class="fas fa-file-alt me-2"></i>
-            PROPOSAL PT
-        </div>
         
         <ul class="sidebar-menu">
             <li>

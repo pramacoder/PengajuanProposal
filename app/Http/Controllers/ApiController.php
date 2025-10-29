@@ -68,19 +68,39 @@ class ApiController extends Controller
                     ->first();
             }
             
-            // Cek di tabel teams (sistem baru) - selalu cek dengan filter tahun jika ada
+            // Cek di tabel mahasiswa (sistem baru) - selalu cek dengan filter tahun jika ada
             if (!$proposal) {
-                $teamQuery = \App\Models\Team::where('nim', $nim);
+                $mahasiswa = \App\Models\Mahasiswa::where('nim', $nim)
+                    ->whereNotNull('team_id')
+                    ->first();
                 
-                if ($tahunAjaran) {
-                    $teamQuery->whereHas('proposal', function($q) use ($tahunAjaran) {
-                        $q->where('tahun_ajaran', $tahunAjaran);
+                if ($mahasiswa) {
+                    // Cek proposal berdasarkan team_id dan tahun ajaran
+                    $proposalQuery = Proposal::where('team_id', $mahasiswa->team_id);
+                    
+                    if ($tahunAjaran) {
+                        $proposalQuery->where('tahun_ajaran', $tahunAjaran);
+                    }
+                    
+                    // Logika validasi berdasarkan skenario:
+                    // 1. Proposal ditolak validasi → Mahasiswa bisa ajukan proposal baru saat pendaftaran terbuka
+                    // 2. Proposal setelah review → Mahasiswa tidak bisa ajukan proposal baru, hanya revisi
+                    // 3. Proposal masih dalam proses → Mahasiswa tidak bisa ajukan proposal baru
+                    // 4. Proposal sudah lolos → Mahasiswa tidak bisa ajukan proposal baru
+                    
+                    // Hanya proposal yang menghalangi pengajuan baru:
+                    $proposalQuery->where(function($query) {
+                        $query->where(function($subQuery) {
+                            // Case 2: Proposal setelah review - menghalangi pengajuan baru
+                            $subQuery->whereIn('status_final', ['review_administratif', 'review_substantif', 'revisi', 'lolos', 'tidak_lolos']);
+                        })->orWhere(function($subQuery) {
+                            // Case 3: Proposal masih dalam proses - menghalangi pengajuan baru
+                            $subQuery->whereIn('status_validasi', ['pending', 'valid'])
+                                     ->whereIn('status_final', ['draft', 'submitted']);
+                        });
                     });
-                }
-                
-                $teamMember = $teamQuery->first();
-                if ($teamMember) {
-                    $proposal = $teamMember->proposal;
+                    
+                    $proposal = $proposalQuery->first();
                 }
             }
             

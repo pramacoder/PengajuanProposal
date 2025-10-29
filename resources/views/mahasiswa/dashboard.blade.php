@@ -121,8 +121,8 @@
         <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-list me-2"></i>Daftar Proposal
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-list me-2 text-white"></i>Daftar Proposal
                     </h6>
                 </div>
                 <div class="card-body">

@@ -2,172 +2,62 @@
 
 namespace Database\Factories;
 
-use App\Models\Proposal;
-use App\Models\Mahasiswa;
-use App\Models\Dosen;
-use App\Models\Reviewer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Proposal>
+ */
 class ProposalFactory extends Factory
 {
-    protected $model = Proposal::class;
-
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
-        $skim_options = ['RE', 'RSH', 'KC', 'PM', 'PI', 'K', 'KI', 'VGK', 'AI', 'GFT'];
-        $status_validasi = ['pending', 'valid', 'tidak_valid'];
-        $status_final = ['draft', 'submitted', 'review_administratif', 'review_substantif', 'revisi', 'lolos', 'tidak_lolos'];
+        $skims = ['RE', 'RSH', 'K', 'PM', 'PI', 'KC', 'KI', 'VGK', 'GFT', 'AI'];
+        $statuses = ['pending', 'valid', 'tidak_valid', 'submitted', 'review_administratif', 'review_substantif', 'revisi', 'lolos', 'tidak_lolos'];
+        $years = ['2023/2024', '2024/2025'];
         
-        $judul_templates = [
-            'Sistem Prediksi {topic} Menggunakan {technology}',
-            'Aplikasi {topic} Berbasis {technology}',
-            'Pengembangan {topic} dengan {technology}',
-            'Implementasi {topic} Menggunakan {technology}',
-            'Analisis dan Implementasi {topic} dengan {technology}',
-            'Sistem Informasi {topic} Berbasis {technology}',
-            'Aplikasi Mobile {topic} Menggunakan {technology}',
-            'Platform {topic} Berbasis {technology}',
-            'Sistem Monitoring {topic} dengan {technology}',
-            'Aplikasi Web {topic} Menggunakan {technology}'
-        ];
-        
-        $topics = [
-            'Sistem Parkir', 'E-Commerce UMKM', 'Manajemen Inventori', 'Sistem Pembayaran',
-            'Monitoring Kesehatan', 'Sistem Akademik', 'Manajemen Proyek', 'Sistem Keamanan',
-            'Monitoring Lingkungan', 'Sistem Transportasi', 'Manajemen SDM', 'Sistem Keuangan',
-            'Monitoring IoT', 'Sistem Logistik', 'Manajemen Aset', 'Sistem Komunikasi'
-        ];
-        
-        $technologies = [
-            'Deep Learning', 'Machine Learning', 'Artificial Intelligence', 'Blockchain',
-            'Internet of Things', 'Cloud Computing', 'Mobile Development', 'Web Development',
-            'Data Analytics', 'Computer Vision', 'Natural Language Processing', 'Robotics',
-            'Augmented Reality', 'Virtual Reality', 'Edge Computing', 'Microservices'
-        ];
-        
-        $judul_template = $this->faker->randomElement($judul_templates);
-        $topic = $this->faker->randomElement($topics);
-        $technology = $this->faker->randomElement($technologies);
-        $judul = str_replace(['{topic}', '{technology}'], [$topic, $technology], $judul_template);
-
         return [
-            'judul_proposal' => $judul,
-            'judul' => $judul,
-            'tanggal_pengajuan' => $this->faker->dateTimeBetween('-6 months', 'now'),
-            'skim' => $this->faker->randomElement($skim_options),
-            'dosen_pembimbing' => $this->faker->name() . ', ' . $this->faker->randomElement(['S.T., M.T.', 'S.Kom., M.Kom.', 'S.Si., M.Si.']),
-            'dana_diajukan' => $this->faker->numberBetween(1000000, 15000000),
-            'tahun_ajaran' => '2024/2025',
-            'status_validasi' => $this->faker->randomElement($status_validasi),
-            'status_final' => $this->faker->randomElement($status_final),
-            'status' => $this->faker->randomElement(['pending', 'valid', 'tidak_valid', 'submitted', 'review_administratif', 'review_substantif', 'revisi', 'lolos', 'tidak_lolos']),
-            'catatan' => $this->faker->optional()->paragraph(),
-            'tanggal_validasi' => $this->faker->optional()->dateTimeBetween('-3 months', 'now'),
-            'id_mahasiswa' => Mahasiswa::factory(),
-            'id_dosen' => Dosen::factory(),
-            // Kolom reviewer baru - default null (belum ditugaskan)
-            'id_reviewer_administratif' => null,
-            'id_reviewer_substantif_1' => null,
-            'id_reviewer_substantif_2' => null,
+            'judul_proposal' => $this->faker->sentence(8),
+            'judul' => $this->faker->sentence(8),
+            'tanggal_pengajuan' => $this->faker->dateTimeBetween('-2 years', 'now'),
+            'skim' => $this->faker->randomElement($skims),
+            'dosen_pembimbing' => $this->faker->name(),
+            'dana_diajukan' => $this->faker->randomFloat(2, 5000000, 30000000),
+            'tahun_ajaran' => $this->faker->randomElement($years),
+            'status_validasi' => $this->faker->randomElement(['pending', 'valid', 'tidak_valid']),
+            'status_final' => $this->faker->randomElement(['draft', 'submitted', 'review_administratif', 'review_substantif', 'revisi', 'lolos', 'tidak_lolos']),
+            'status' => $this->faker->randomElement($statuses),
+            'catatan' => $this->faker->paragraph(),
+            'tanggal_validasi' => $this->faker->optional()->dateTimeBetween('-1 year', 'now'),
+            'id_mahasiswa' => $this->faker->numberBetween(1, 60),
+            'id_dosen' => $this->faker->numberBetween(1, 10),
+            'team_id' => $this->faker->numberBetween(1, 20),
+            'id_reviewer_administratif' => $this->faker->numberBetween(1, 12),
+            'id_reviewer_substantif_1' => $this->faker->numberBetween(1, 12),
+            'id_reviewer_substantif_2' => $this->faker->numberBetween(1, 12),
+            'ketua_nama' => $this->faker->name(),
+            'ketua_nim' => $this->faker->numerify('##########'),
+            'ketua_prodi' => $this->faker->randomElement(['Teknik Informatika', 'Matematika', 'Fisika', 'Kimia', 'Biologi', 'Manajemen', 'Akuntansi']),
+            'ketua_fakultas' => $this->faker->randomElement(['Fakultas Teknik', 'Fakultas Matematika dan Ilmu Pengetahuan Alam', 'Fakultas Ekonomi dan Bisnis']),
+            'ketua_email' => $this->faker->unique()->safeEmail(),
+            'ketua_no_hp' => $this->faker->numerify('08##########'),
+            'anggota1_nama' => $this->faker->name(),
+            'anggota1_nim' => $this->faker->numerify('##########'),
+            'anggota1_prodi' => $this->faker->randomElement(['Teknik Informatika', 'Matematika', 'Fisika', 'Kimia', 'Biologi', 'Manajemen', 'Akuntansi']),
+            'anggota1_fakultas' => $this->faker->randomElement(['Fakultas Teknik', 'Fakultas Matematika dan Ilmu Pengetahuan Alam', 'Fakultas Ekonomi dan Bisnis']),
+            'anggota1_email' => $this->faker->unique()->safeEmail(),
+            'anggota1_no_hp' => $this->faker->numerify('08##########'),
+            'anggota2_nama' => $this->faker->name(),
+            'anggota2_nim' => $this->faker->numerify('##########'),
+            'anggota2_prodi' => $this->faker->randomElement(['Teknik Informatika', 'Matematika', 'Fisika', 'Kimia', 'Biologi', 'Manajemen', 'Akuntansi']),
+            'anggota2_fakultas' => $this->faker->randomElement(['Fakultas Teknik', 'Fakultas Matematika dan Ilmu Pengetahuan Alam', 'Fakultas Ekonomi dan Bisnis']),
+            'anggota2_email' => $this->faker->unique()->safeEmail(),
+            'anggota2_no_hp' => $this->faker->numerify('08##########'),
         ];
-    }
-
-    // State untuk draft proposal
-    public function draft()
-    {
-        return $this->state([
-            'status_validasi' => 'pending',
-            'status_final' => 'draft',
-            'status' => 'pending',
-        ]);
-    }
-
-    // State untuk submitted proposal
-    public function submitted()
-    {
-        return $this->state([
-            'status_validasi' => 'pending',
-            'status_final' => 'submitted',
-            'status' => 'submitted',
-        ]);
-    }
-
-    // State untuk validated proposal
-    public function validated()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'submitted',
-            'status' => 'valid',
-        ]);
-    }
-
-    // State untuk review administratif dengan reviewer
-    public function reviewAdministratif()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'review_administratif',
-            'status' => 'review_administratif',
-            'id_reviewer_administratif' => Reviewer::factory(),
-            'id_reviewer_substantif_1' => Reviewer::factory(),
-            'id_reviewer_substantif_2' => Reviewer::factory(),
-        ]);
-    }
-
-    // State untuk review substantif dengan reviewer
-    public function reviewSubstantif()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'review_substantif',
-            'status' => 'review_substantif',
-            'id_reviewer_administratif' => Reviewer::factory(),
-            'id_reviewer_substantif_1' => Reviewer::factory(),
-            'id_reviewer_substantif_2' => Reviewer::factory(),
-        ]);
-    }
-
-    // State untuk revisi
-    public function revisi()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'revisi',
-            'status' => 'revisi',
-        ]);
-    }
-
-    // State untuk lolos
-    public function lolos()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'lolos',
-            'status' => 'lolos',
-        ]);
-    }
-
-    // State untuk tidak lolos
-    public function tidakLolos()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'tidak_lolos',
-            'status' => 'tidak_lolos',
-        ]);
-    }
-
-    // State untuk proposal yang sudah ditugaskan reviewer (untuk testing)
-    public function assignedToReviewers()
-    {
-        return $this->state([
-            'status_validasi' => 'valid',
-            'status_final' => 'review_administratif',
-            'status' => 'review_administratif',
-            'id_reviewer_administratif' => Reviewer::factory(),
-            'id_reviewer_substantif_1' => Reviewer::factory(),
-            'id_reviewer_substantif_2' => Reviewer::factory(),
-        ]);
     }
 }
+

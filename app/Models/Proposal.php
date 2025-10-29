@@ -13,11 +13,11 @@ class Proposal extends Model
 
     protected $fillable = [
             'judul_proposal', 'judul', 'tanggal_pengajuan', 'skim', 'status_validasi',
-        'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen',
+        'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen', 'team_id',
         'dosen_pembimbing', 'dana_diajukan', 'tahun_ajaran', 'tanggal_validasi',
         'id_reviewer_administratif', 'id_reviewer_substantif_1', 'id_reviewer_substantif_2',
         
-        // Data ketua tim
+        // Data ketua tim (untuk kompatibilitas dengan sistem lama)
         'ketua_nama', 'ketua_nim', 'ketua_prodi', 'ketua_fakultas', 'ketua_email', 'ketua_no_hp',
         
         // Data anggota 1
@@ -39,16 +39,24 @@ class Proposal extends Model
         return $this->belongsTo(Mahasiswa::class, 'id_mahasiswa', 'id_mahasiswa');
     }
 
-    // Relasi ke Team (anggota tim proposal)
-    public function teams()
+    // Relasi ke anggota tim (mahasiswa dengan team_id yang sama)
+    public function anggotaTim()
     {
-        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal');
+        return $this->hasMany(Mahasiswa::class, 'team_id', 'team_id')
+                   ->where('is_ketua', false);
     }
 
-    // Relasi ke Mahasiswa melalui Team (semua anggota tim)
-    public function mahasiswaTim()
+    // Relasi ke ketua tim (mahasiswa dengan team_id yang sama dan is_ketua = true)
+    public function ketuaTim()
     {
-        return $this->hasManyThrough(Mahasiswa::class, Team::class, 'id_proposal', 'id_mahasiswa', 'id_proposal', 'id_mahasiswa');
+        return $this->hasOne(Mahasiswa::class, 'team_id', 'team_id')
+                   ->where('is_ketua', true);
+    }
+
+    // Relasi ke semua anggota tim (termasuk ketua)
+    public function semuaAnggotaTim()
+    {
+        return $this->hasMany(Mahasiswa::class, 'team_id', 'team_id');
     }
 
     // Relasi One-to-Many ke Dosen (Relasi Dosen Pendamping)
@@ -106,32 +114,27 @@ class Proposal extends Model
     }
 
     /**
-     * Relasi ke ketua tim (1 proposal memiliki 1 ketua)
+     * Relasi ke ketua tim (1 proposal memiliki 1 ketua) - DEPRECATED, gunakan ketuaTim()
      */
     public function ketua()
     {
-        return $this->hasOne(Team::class, 'id_proposal', 'id_proposal')
-                    ->where('role', 'ketua');
+        return $this->ketuaTim();
     }
 
     /**
-     * Relasi ke anggota tim (1 proposal memiliki banyak anggota non-ketua)
+     * Relasi ke anggota tim (1 proposal memiliki banyak anggota non-ketua) - DEPRECATED, gunakan anggotaTim()
      */
     public function anggota()
     {
-        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal')
-                    ->where('role', '!=', 'ketua')
-                    ->orderBy('role');
+        return $this->anggotaTim();
     }
 
     /**
-     * Relasi ke semua anggota tim termasuk ketua
+     * Relasi ke semua anggota tim termasuk ketua - DEPRECATED, gunakan semuaAnggotaTim()
      */
     public function allMembers()
     {
-        return $this->hasMany(Team::class, 'id_proposal', 'id_proposal')
-                    ->orderByRaw("CASE WHEN role = 'ketua' THEN 1 ELSE 2 END")
-                    ->orderBy('role');
+        return $this->semuaAnggotaTim();
     }
 
     /**
@@ -139,7 +142,7 @@ class Proposal extends Model
      */
     public function getTeamSizeAttribute()
     {
-        return $this->teams()->where('status', 'active')->count();
+        return $this->semuaAnggotaTim()->count();
     }
 
     /**
@@ -214,41 +217,27 @@ class Proposal extends Model
     }
 
     /**
-     * Dapatkan anggota berdasarkan role
-     */
-    public function getMemberByRole($role)
-    {
-        return $this->teams()->where('role', $role)->first();
-    }
-
-    /**
      * Dapatkan ketua tim
      */
     public function getKetua()
     {
-        return $this->teams()->where('role', 'ketua')->first();
+        return $this->ketuaTim;
     }
 
     /**
-     * Dapatkan anggota wajib (anggota1 dan anggota2)
+     * Dapatkan anggota tim (non-ketua)
      */
-    public function getAnggotaWajib()
+    public function getAnggota()
     {
-        return $this->teams()
-                    ->whereIn('role', ['anggota1', 'anggota2'])
-                    ->orderBy('role')
-                    ->get();
+        return $this->anggotaTim;
     }
 
     /**
-     * Dapatkan anggota opsional (anggota3 dan anggota4)
+     * Dapatkan semua anggota tim
      */
-    public function getAnggotaOpsional()
+    public function getAllAnggota()
     {
-        return $this->teams()
-                    ->whereIn('role', ['anggota3', 'anggota4'])
-                    ->orderBy('role')
-                    ->get();
+        return $this->semuaAnggotaTim;
     }
 
     /**
@@ -256,7 +245,7 @@ class Proposal extends Model
      */
     public function isMember($nim)
     {
-        return $this->teams()->where('nim', $nim)->exists();
+        return $this->semuaAnggotaTim()->where('nim', $nim)->exists();
     }
 
     /**
@@ -264,7 +253,7 @@ class Proposal extends Model
      */
     public function isKetua($nim)
     {
-        return $this->teams()->where('nim', $nim)->where('role', 'ketua')->exists();
+        return $this->ketuaTim()->where('nim', $nim)->exists();
     }
 }
 

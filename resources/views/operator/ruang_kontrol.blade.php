@@ -27,7 +27,7 @@
             <div class="alert alert-info">
                 <h6 class="alert-heading">
                     <i class="fas fa-info-circle me-2"></i>
-                    Informasi Workflow Sistem
+                    Informasi Ruang Kontrol
                 </h6>
                 <p class="mb-2">Sistem pengajuan proposal berjalan dalam 2 fase yang saling eksklusif:</p>
                 <ul class="mb-0">
@@ -463,10 +463,8 @@ function updateRuangKontrol(type, status) {
             // Update UI
             updateStatusDisplay(type, status);
             
-            // Reload page to show updated status
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            // Update status info dates
+            updateStatusInfo();
         } else {
             showToast(data.message, 'error');
         }
@@ -569,6 +567,30 @@ function updateButtonStates() {
     } else {
         openPerbaikan.disabled = false;
         openPerbaikan.title = '';
+    }
+}
+
+function updateStatusInfo() {
+    // Update pendaftaran info
+    const pendaftaranMulai = document.getElementById('pendaftaranMulai').value;
+    const pendaftaranSelesai = document.getElementById('pendaftaranSelesai').value;
+    const pendaftaranInfo = document.getElementById('statusPendaftaranInfo');
+    
+    if (pendaftaranMulai && pendaftaranSelesai) {
+        const mulaiDate = new Date(pendaftaranMulai);
+        const selesaiDate = new Date(pendaftaranSelesai);
+        pendaftaranInfo.textContent = `${mulaiDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} - ${selesaiDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+    }
+    
+    // Update perbaikan info
+    const perbaikanMulai = document.getElementById('perbaikanMulai').value;
+    const perbaikanSelesai = document.getElementById('perbaikanSelesai').value;
+    const perbaikanInfo = document.getElementById('statusPerbaikanInfo');
+    
+    if (perbaikanMulai && perbaikanSelesai) {
+        const mulaiDate = new Date(perbaikanMulai);
+        const selesaiDate = new Date(perbaikanSelesai);
+        perbaikanInfo.textContent = `${mulaiDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} - ${selesaiDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`;
     }
 }
 

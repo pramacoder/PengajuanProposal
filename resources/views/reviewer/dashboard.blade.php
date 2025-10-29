@@ -1,9 +1,58 @@
+@section('styles')
+<style>
+    .reviewer-compact { font-size: 0.875rem; }
+    .reviewer-compact h1, .reviewer-compact .h1 { font-size: 1.5rem; }
+    .reviewer-compact h2, .reviewer-compact .h2 { font-size: 1.25rem; }
+    .reviewer-compact h3, .reviewer-compact .h3 { font-size: 1.1rem; }
+    .reviewer-compact .btn { padding: 0.35rem 0.6rem; font-size: 0.85rem; border-radius: 6px; }
+    .reviewer-compact .badge { padding: 0.3rem 0.5rem; font-size: 0.7rem; }
+    .reviewer-compact .form-select, .reviewer-compact .form-control { padding: 0.35rem 0.6rem; font-size: 0.875rem; }
+    .reviewer-compact .card-body { padding: 0.9rem; }
+    .reviewer-compact .card-header { padding: 0.7rem 0.9rem; }
+    .reviewer-compact table.table th, 
+    .reviewer-compact table.table td { padding: 0.5rem 0.6rem; }
+    .reviewer-compact .alert { padding: 0.6rem 0.8rem; font-size: 0.875rem; }
+    /* Tabel proposal: layout fixed dan skala lebih kecil */
+    .reviewer-compact .table { table-layout: fixed; font-size: 0.82rem; }
+    /* Lebar kolom: No, Judul, Mahasiswa, Dosen, Skim, Status, Jenis, Status Review, Tanggal, Aksi */
+    .reviewer-compact .table th:nth-child(1),
+    .reviewer-compact .table td:nth-child(1) { width: 4.5rem; }
+    .reviewer-compact .table th:nth-child(2),
+    .reviewer-compact .table td:nth-child(2) { width: 40%; }
+    .reviewer-compact .table th:nth-child(3),
+    .reviewer-compact .table td:nth-child(3) { width: 14%; }
+    .reviewer-compact .table th:nth-child(4),
+    .reviewer-compact .table td:nth-child(4) { width: 18%; }
+    .reviewer-compact .table th:nth-child(5),
+    .reviewer-compact .table td:nth-child(5) { width: 6rem; }
+    .reviewer-compact .table th:nth-child(6),
+    .reviewer-compact .table td:nth-child(6) { width: 9rem; }
+    .reviewer-compact .table th:nth-child(7),
+    .reviewer-compact .table td:nth-child(7) { width: 8rem; }
+    .reviewer-compact .table th:nth-child(8),
+    .reviewer-compact .table td:nth-child(8) { width: 8rem; }
+    .reviewer-compact .table th:nth-child(9),
+    .reviewer-compact .table td:nth-child(9) { width: 9rem; }
+    .reviewer-compact .table th:nth-child(10),
+    .reviewer-compact .table td:nth-child(10) { width: 6.5rem; }
+    /* Clamp teks judul agar tidak mendorong kolom lain */
+    .reviewer-compact .title-clamp { 
+        display: -webkit-box; 
+        -webkit-line-clamp: 2; 
+        -webkit-box-orient: vertical; 
+        overflow: hidden; 
+        word-wrap: break-word; 
+        white-space: normal; 
+    }
+</style>
+@endsection
+
 @extends('mainlayout.app')
 
 @section('title', 'Beranda Reviewer')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid reviewer-compact">
     <!-- Header -->
     <x-page-header 
         title="Beranda Reviewer" 
@@ -132,9 +181,9 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>
-                                        <strong>{{ $proposal->judul_proposal }}</strong>
+                                        <strong class="title-clamp">{{ $proposal->judul_proposal }}</strong>
                                         <br>
-                                        <small class="text-muted">ID: {{ $proposal->id_proposal }}</small>
+                                        <small class="text-muted"></small>
                                     </td>
                                     <td>
                                         {{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}

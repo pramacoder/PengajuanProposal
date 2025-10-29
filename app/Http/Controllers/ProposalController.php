@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Proposal;
 use App\Models\ProposalRevisi;
-use App\Models\Team;
+// use App\Models\Team; // Model Team sudah dihapus
 use App\Models\Dosen;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
@@ -34,11 +34,9 @@ class ProposalController extends Controller
             // Proposal yang dibuat oleh mahasiswa ini
             $query->where('id_mahasiswa', $user->id_mahasiswa)
                   // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                  ->orWhereHas('teams', function($teamQuery) use ($user) {
-                      $teamQuery->where('nim', $user->nim);
-                  });
+                  ->orWhere('team_id', $user->team_id);
         })
-        ->with(['mahasiswa', 'dosen', 'dokumen', 'teams'])
+        ->with(['mahasiswa', 'dosen', 'dokumen', 'semuaAnggotaTim'])
         ->orderBy('created_at', 'desc')
         ->get();
 
@@ -158,6 +156,17 @@ class ProposalController extends Controller
             $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
             $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all(), null, $tahunAjaran);
             if (!empty($nimErrors)) {
+                \Log::warning('NIM duplicate detected', [
+                    'nim_errors' => $nimErrors,
+                    'request_data' => [
+                        'ketua_nim' => $request->ketua_nim,
+                        'anggota1_nim' => $request->anggota1_nim,
+                        'anggota2_nim' => $request->anggota2_nim,
+                        'anggota3_nim' => $request->anggota3_nim,
+                        'anggota4_nim' => $request->anggota4_nim,
+                    ]
+                ]);
+                
                 return back()
                     ->withErrors(['nim_duplicate' => $nimErrors])
                     ->withInput();
@@ -358,14 +367,12 @@ class ProposalController extends Controller
         
         // Ambil proposal yang dimiliki oleh mahasiswa yang login (sebagai pengaju)
         // ATAU proposal di mana mahasiswa terdaftar sebagai anggota tim
-        $proposals = Proposal::with(['teams', 'dosen', 'dokumen', 'proposalRevisi', 'hasilFinal'])
+        $proposals = Proposal::with(['semuaAnggotaTim', 'dosen', 'dokumen', 'proposalRevisi', 'hasilFinal'])
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
                 $query->where('id_mahasiswa', $user->id_mahasiswa)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('teams', function($teamQuery) use ($user) {
-                          $teamQuery->where('nim', $user->nim);
-                      });
+                      ->orWhere('team_id', $user->team_id);
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -386,7 +393,7 @@ class ProposalController extends Controller
     {
         $user = auth()->guard('mahasiswa')->user();
         
-        $proposal = Proposal::with(['teams', 'dosen', 'dokumen', 'mahasiswa', 'proposalRevisi' => function($query) {
+        $proposal = Proposal::with(['semuaAnggotaTim', 'dosen', 'dokumen', 'mahasiswa', 'proposalRevisi' => function($query) {
                 $query->orderBy('tanggal_submit', 'desc');
             }])
             ->where('id_proposal', $id)
@@ -394,15 +401,13 @@ class ProposalController extends Controller
                 // Proposal yang dibuat oleh mahasiswa ini
                 $query->where('id_mahasiswa', $user->id_mahasiswa)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('teams', function($teamQuery) use ($user) {
-                          $teamQuery->where('nim', $user->nim);
-                      });
+                      ->orWhere('team_id', $user->team_id);
             })
             ->firstOrFail();
 
         // Ambil data tim
-        $ketua = $proposal->teams()->where('role', 'ketua')->first();
-        $anggota = $proposal->teams()->where('role', '!=', 'ketua')->orderBy('role')->get();
+        $ketua = $proposal->ketuaTim;
+        $anggota = $proposal->anggotaTim;
 
         return view('mahasiswa.detail_proposal', compact('proposal', 'ketua', 'anggota', 'user'));
     }
@@ -640,14 +645,14 @@ class ProposalController extends Controller
     {
         $user = auth()->guard('mahasiswa')->user();
         
-        $proposal = Proposal::with(['teams'])
+        $proposal = Proposal::with(['semuaAnggotaTim'])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
                 $query->where('id_mahasiswa', $user->id_mahasiswa)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('teams', function($teamQuery) use ($user) {
-                          $teamQuery->where('nim', $user->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                          $memberQuery->where('nim', $user->nim);
                       });
             })
             ->firstOrFail();
@@ -892,14 +897,14 @@ class ProposalController extends Controller
         $user = auth()->guard('mahasiswa')->user();
         
         // Ambil proposal berdasarkan ID
-        $proposal = Proposal::with(['mahasiswa', 'dosen', 'teams', 'dokumen'])
+        $proposal = Proposal::with(['mahasiswa', 'dosen', 'semuaAnggotaTim', 'dokumen'])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
                 $query->where('id_mahasiswa', $user->id_mahasiswa)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('teams', function($teamQuery) use ($user) {
-                          $teamQuery->where('nim', $user->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                          $memberQuery->where('nim', $user->nim);
                       });
             })
             ->firstOrFail();
@@ -936,8 +941,8 @@ class ProposalController extends Controller
                     // Proposal yang dibuat oleh mahasiswa ini
                     $query->where('id_mahasiswa', $user->id_mahasiswa)
                           // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                          ->orWhereHas('teams', function($teamQuery) use ($user) {
-                              $teamQuery->where('nim', $user->nim);
+                          ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                              $memberQuery->where('nim', $user->nim);
                           });
                 })
                 ->firstOrFail();

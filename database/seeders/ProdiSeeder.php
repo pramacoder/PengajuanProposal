@@ -3,123 +3,92 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Prodi;
-use App\Models\Fakultas;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ProdiSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // Peta kode_fakultas -> id_fakultas (sekali tarik)
-        $fmap = Fakultas::query()->pluck('id_fakultas', 'kode_fakultas')->toArray();
-        $fid  = fn(string $k) => $fmap[$k] ?? null;
-
-        // ===== Prodi S1 (SNBT) & penempatan ke fakultas =====
-        // Kode prodi (singkat) boleh kamu ganti sesuai standar internal
         $prodis = [
-            // FK
-            ['nama_prodi'=>'Kedokteran',                    'kode_prodi'=>'S1-KED',   'kode_fakultas'=>'FK'],
-            ['nama_prodi'=>'Kedokteran Gigi',               'kode_prodi'=>'S1-KG',    'kode_fakultas'=>'FK'],
-            ['nama_prodi'=>'Ilmu Kesehatan Masyarakat',     'kode_prodi'=>'S1-IKM',   'kode_fakultas'=>'FK'],
-            ['nama_prodi'=>'Keperawatan',                   'kode_prodi'=>'S1-Kep',   'kode_fakultas'=>'FK'],
-            ['nama_prodi'=>'Fisioterapi',                   'kode_prodi'=>'S1-Fis',   'kode_fakultas'=>'FK'],
-            ['nama_prodi'=>'Psikologi',                     'kode_prodi'=>'S1-Psi',   'kode_fakultas'=>'FK'],
+            // Fakultas Ilmu Budaya (id_fakultas = 1)
+            ['nama_prodi' => 'Antropologi Budaya',        'kode_prodi' => 'ANT',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Arkeologi',                 'kode_prodi' => 'ARK',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Ilmu Sejarah',              'kode_prodi' => 'SEJ',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Sastra Bali',               'kode_prodi' => 'SBA',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Sastra Indonesia',          'kode_prodi' => 'SIN',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Sastra Inggris',            'kode_prodi' => 'SING',  'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Sastra Jepang',             'kode_prodi' => 'SJA',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Sastra Jawa Kuno',          'kode_prodi' => 'SJK',   'id_fakultas' => 1, 'created_at' => now(), 'updated_at' => now()],
 
-            // FKH
-            ['nama_prodi'=>'Kedokteran Hewan',              'kode_prodi'=>'S1-KH',    'kode_fakultas'=>'FKH'],
+            // Fakultas Kedokteran (id_fakultas = 2)
+            ['nama_prodi' => 'Pendidikan Dokter',         'kode_prodi' => 'PD',    'id_fakultas' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Pendidikan Dokter Gigi',    'kode_prodi' => 'PDG',   'id_fakultas' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Ilmu Keperawatan',          'kode_prodi' => 'IK',    'id_fakultas' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Kesehatan Masyarakat',      'kode_prodi' => 'KM',    'id_fakultas' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Psikologi',                 'kode_prodi' => 'PSI',   'id_fakultas' => 2, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Fisioterapi',               'kode_prodi' => 'FTR',   'id_fakultas' => 2, 'created_at' => now(), 'updated_at' => now()],
 
-            // FT
-            ['nama_prodi'=>'Arsitektur',                    'kode_prodi'=>'S1-Ars',   'kode_fakultas'=>'FT'],
-            ['nama_prodi'=>'Teknik Sipil',                  'kode_prodi'=>'S1-TS',    'kode_fakultas'=>'FT'],
-            ['nama_prodi'=>'Teknik Mesin',                  'kode_prodi'=>'S1-TM',    'kode_fakultas'=>'FT'],
-            ['nama_prodi'=>'Teknik Elektro',                'kode_prodi'=>'S1-TE',    'kode_fakultas'=>'FT'],
-            ['nama_prodi'=>'Teknik Industri',               'kode_prodi'=>'S1-TInd',  'kode_fakultas'=>'FT'],
-            ['nama_prodi'=>'Teknik Lingkungan',             'kode_prodi'=>'S1-TL',    'kode_fakultas'=>'FT'],
-            // TI UNUD ada di Fakultas Teknik (resmi)
-            ['nama_prodi'=>'Teknologi Informasi',           'kode_prodi'=>'S1-TI',    'kode_fakultas'=>'FT'],
+            // Fakultas Hukum (id_fakultas = 3)
+            ['nama_prodi' => 'Ilmu Hukum',                'kode_prodi' => 'IH',    'id_fakultas' => 3, 'created_at' => now(), 'updated_at' => now()],
 
-            // FMIPA
-            ['nama_prodi'=>'Biologi',                       'kode_prodi'=>'S1-Bio',   'kode_fakultas'=>'FMIPA'],
-            ['nama_prodi'=>'Kimia',                         'kode_prodi'=>'S1-Kim',   'kode_fakultas'=>'FMIPA'],
-            ['nama_prodi'=>'Fisika',                        'kode_prodi'=>'S1-Fis',   'kode_fakultas'=>'FMIPA'],
-            ['nama_prodi'=>'Matematika',                    'kode_prodi'=>'S1-Mat',   'kode_fakultas'=>'FMIPA'],
-            ['nama_prodi'=>'Informatika',                   'kode_prodi'=>'S1-IF',    'kode_fakultas'=>'FMIPA'],
-            // Farmasi berada di FMIPA (resmi)
-            ['nama_prodi'=>'Farmasi',                       'kode_prodi'=>'S1-Far',   'kode_fakultas'=>'FMIPA'],
+            // Fakultas Teknik (id_fakultas = 4)
+            ['nama_prodi' => 'Arsitektur',                'kode_prodi' => 'ARS',   'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknik Elektro',            'kode_prodi' => 'TE',    'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknik Mesin',              'kode_prodi' => 'TM',    'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknik Sipil',              'kode_prodi' => 'TS',    'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknik Industri',           'kode_prodi' => 'TIN',   'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknik Lingkungan',         'kode_prodi' => 'TL',    'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
+            // Catatan: pakai kode_prodi unik.
+            ['nama_prodi' => 'Teknologi Informasi',       'kode_prodi' => 'TIF',   'id_fakultas' => 4, 'created_at' => now(), 'updated_at' => now()],
 
-            // FP
-            ['nama_prodi'=>'Agribisnis',                    'kode_prodi'=>'S1-AGB',   'kode_fakultas'=>'FP'],
-            ['nama_prodi'=>'Agroekoteknologi',              'kode_prodi'=>'S1-AGT',   'kode_fakultas'=>'FP'],
-            // Arsitektur Lanskap di F. Pertanian (resmi)
-            ['nama_prodi'=>'Arsitektur Lanskap',            'kode_prodi'=>'S1-ARL',   'kode_fakultas'=>'FP'],
+            // Fakultas Pertanian (id_fakultas = 5)
+            ['nama_prodi' => 'Agroekoteknologi',          'kode_prodi' => 'AGT',   'id_fakultas' => 5, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Agribisnis',                'kode_prodi' => 'AGB',   'id_fakultas' => 5, 'created_at' => now(), 'updated_at' => now()],
 
-            // FAPET
-            ['nama_prodi'=>'Peternakan',                    'kode_prodi'=>'S1-Pet',   'kode_fakultas'=>'FAPET'],
+            // Fakultas Ekonomi dan Bisnis (id_fakultas = 6)
+            ['nama_prodi' => 'Manajemen',                 'kode_prodi' => 'MNG',   'id_fakultas' => 6, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Ekonomi Pembangunan',       'kode_prodi' => 'EP',    'id_fakultas' => 6, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Akuntansi',                 'kode_prodi' => 'AKT',   'id_fakultas' => 6, 'created_at' => now(), 'updated_at' => now()],
 
-            // FTP
-            ['nama_prodi'=>'Teknologi Pangan',              'kode_prodi'=>'S1-TP',    'kode_fakultas'=>'FTP'],
-            ['nama_prodi'=>'Teknologi Industri Pertanian',  'kode_prodi'=>'S1-TIP',   'kode_fakultas'=>'FTP'],
-            ['nama_prodi'=>'Teknik Pertanian dan Biosistem','kode_prodi'=>'S1-TPB',   'kode_fakultas'=>'FTP'],
+            // Fakultas Peternakan (id_fakultas = 7)
+            ['nama_prodi' => 'Peternakan',                'kode_prodi' => 'PET',   'id_fakultas' => 7, 'created_at' => now(), 'updated_at' => now()],
 
-            // FISIP
-            ['nama_prodi'=>'Hubungan Internasional',        'kode_prodi'=>'S1-HI',    'kode_fakultas'=>'FISIP'],
-            ['nama_prodi'=>'Sosiologi',                     'kode_prodi'=>'S1-Sos',   'kode_fakultas'=>'FISIP'],
-            ['nama_prodi'=>'Administrasi Negara',           'kode_prodi'=>'S1-AN',    'kode_fakultas'=>'FISIP'],
-            ['nama_prodi'=>'Ilmu Komunikasi',               'kode_prodi'=>'S1-IKom',  'kode_fakultas'=>'FISIP'],
-            ['nama_prodi'=>'Ilmu Politik',                  'kode_prodi'=>'S1-IPol',  'kode_fakultas'=>'FISIP'],
+            // Fakultas Matematika dan Ilmu Pengetahuan Alam (id_fakultas = 8)
+            ['nama_prodi' => 'Matematika',                'kode_prodi' => 'MAT',   'id_fakultas' => 8, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Fisika',                    'kode_prodi' => 'FIS',   'id_fakultas' => 8, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Kimia',                     'kode_prodi' => 'KIM',   'id_fakultas' => 8, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Biologi',                   'kode_prodi' => 'BIO',   'id_fakultas' => 8, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Informatika',               'kode_prodi' => 'IF',    'id_fakultas' => 8, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Farmasi',                   'kode_prodi' => 'FAR',   'id_fakultas' => 8, 'created_at' => now(), 'updated_at' => now()],
 
-            // FEB
-            ['nama_prodi'=>'Ekonomi',                       'kode_prodi'=>'S1-Eko',   'kode_fakultas'=>'FEB'],
-            ['nama_prodi'=>'Akuntansi',                     'kode_prodi'=>'S1-Akt',   'kode_fakultas'=>'FEB'],
-            ['nama_prodi'=>'Manajemen',                     'kode_prodi'=>'S1-Mnj',   'kode_fakultas'=>'FEB'],
+            // Fakultas Kedokteran Hewan (id_fakultas = 9)
+            ['nama_prodi' => 'Kedokteran Hewan',          'kode_prodi' => 'KH',    'id_fakultas' => 9, 'created_at' => now(), 'updated_at' => now()],
 
-            // FH
-            ['nama_prodi'=>'Ilmu Hukum',                    'kode_prodi'=>'S1-IH',    'kode_fakultas'=>'FH'],
+            // Fakultas Teknologi Pertanian (id_fakultas = 10)
+            ['nama_prodi' => 'Teknik Pertanian dan Biosistem', 'kode_prodi' => 'TPB',  'id_fakultas' => 10, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknologi Industri Pertanian',   'kode_prodi' => 'TIP',  'id_fakultas' => 10, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Teknologi Pangan',               'kode_prodi' => 'TPG',  'id_fakultas' => 10, 'created_at' => now(), 'updated_at' => now()],
 
-            // FIB
-            ['nama_prodi'=>'Arkeologi',                     'kode_prodi'=>'S1-Ark',   'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Antropologi Budaya',            'kode_prodi'=>'S1-AB',    'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Ilmu Sejarah',                  'kode_prodi'=>'S1-Sej',   'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Sastra Indonesia',              'kode_prodi'=>'S1-SInd',  'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Sastra Inggris',                'kode_prodi'=>'S1-SIng',  'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Sastra Jawa Kuno',              'kode_prodi'=>'S1-SJK',   'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Sastra Bali',                   'kode_prodi'=>'S1-SBal',  'kode_fakultas'=>'FIB'],
-            ['nama_prodi'=>'Sastra Jepang',                 'kode_prodi'=>'S1-SJep',  'kode_fakultas'=>'FIB'],
+            // Fakultas Pariwisata (id_fakultas = 11)
+            ['nama_prodi' => 'Pariwisata',                'kode_prodi' => 'PAR',   'id_fakultas' => 11, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Destinasi Pariwisata',      'kode_prodi' => 'DP',    'id_fakultas' => 11, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Industri Perjalanan Wisata','kode_prodi' => 'IPW',   'id_fakultas' => 11, 'created_at' => now(), 'updated_at' => now()],
 
-            // FPAR
-            ['nama_prodi'=>'Pariwisata',                    'kode_prodi'=>'S1-Par',   'kode_fakultas'=>'FPAR'],
-            ['nama_prodi'=>'Industri Perjalanan Wisata',    'kode_prodi'=>'S1-IPW',   'kode_fakultas'=>'FPAR'],
+            // Fakultas Ilmu Sosial dan Ilmu Politik (id_fakultas = 12)
+            ['nama_prodi' => 'Administrasi Negara',       'kode_prodi' => 'AN',    'id_fakultas' => 12, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Ilmu Politik',              'kode_prodi' => 'IP',    'id_fakultas' => 12, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Ilmu Komunikasi',           'kode_prodi' => 'IKOM',  'id_fakultas' => 12, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Hubungan Internasional',    'kode_prodi' => 'HI',    'id_fakultas' => 12, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Sosiologi',                 'kode_prodi' => 'SOS',   'id_fakultas' => 12, 'created_at' => now(), 'updated_at' => now()],
 
-            // FKP
-            ['nama_prodi'=>'Ilmu Kelautan',                 'kode_prodi'=>'S1-IKL',   'kode_fakultas'=>'FKP'],
-            ['nama_prodi'=>'Manajemen Sumber Daya Perairan','kode_prodi'=>'S1-MSDP',  'kode_fakultas'=>'FKP'],
-            ['nama_prodi'=>'Akuakultur',                    'kode_prodi'=>'S1-Aku',   'kode_fakultas'=>'FKP'],
+            // Fakultas Kelautan dan Perikanan (id_fakultas = 13)
+            ['nama_prodi' => 'Ilmu Kelautan',             'kode_prodi' => 'IKL',   'id_fakultas' => 13, 'created_at' => now(), 'updated_at' => now()],
+            ['nama_prodi' => 'Manajemen Sumberdaya Perairan', 'kode_prodi' => 'MSP', 'id_fakultas' => 13, 'created_at' => now(), 'updated_at' => now()],
         ];
 
-        $now = Carbon::now();
-        $rows = [];
-        foreach ($prodis as $p) {
-            $id_fak = $fid($p['kode_fakultas']);
-            if (!$id_fak) {
-                // Lewati jika fakultas belum ada (menghindari FK error)
-                continue;
-            }
-            $rows[] = [
-                'nama_prodi'   => $p['nama_prodi'],
-                'kode_prodi'   => $p['kode_prodi'],
-                'id_fakultas'  => $id_fak,
-                'created_at'   => $now,
-                'updated_at'   => $now,
-            ];
-        }
-
-        // Wajib ada unique index di 'kode_prodi' pada migrasi Prodi
-        Prodi::upsert(
-            $rows,
-            ['kode_prodi'],                         // kunci unik
-            ['nama_prodi','id_fakultas','updated_at'] // kolom diupdate bila bentrok
-        );
+        DB::table('prodis')->insert($prodis);
     }
 }
-    

@@ -487,8 +487,9 @@ class ReviewerController extends Controller
         // Cek apakah semua review administratif sudah selesai
             $this->updateProposalStatus($proposal);
 
-        return response()->json([
-            'success' => true,
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
                 'message' => 'Review administratif berhasil disimpan',
                 'data' => [
                     'id' => $nilaiAdmin->id,
@@ -499,6 +500,10 @@ class ReviewerController extends Controller
                     'new_status' => $proposal->fresh()->status
                 ]
             ]);
+        }
+        
+        return redirect()->route('reviewer.detail.proposal', $id)
+            ->with('success', 'Review administratif berhasil disimpan.');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation error in administratif review', [
@@ -507,11 +512,15 @@ class ReviewerController extends Controller
                 'request_data' => $request->all()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
-                'errors' => $e->errors()
-            ], 422);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
+            return back()->withErrors($e->errors())->withInput();
             
         } catch (\Exception $e) {
             \Log::error('Error in submitReviewAdministratif', [
@@ -521,10 +530,14 @@ class ReviewerController extends Controller
                 'request_data' => $request->all()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ], 500);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
     }
 
@@ -642,8 +655,9 @@ class ReviewerController extends Controller
         // Cek apakah semua review substantif sudah selesai
         $this->checkReviewCompletion($proposal);
 
-        return response()->json([
-            'success' => true,
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
                 'message' => 'Review substantif berhasil disimpan',
                 'data' => [
                     'id' => $nilaiSubstantif->id,
@@ -652,6 +666,10 @@ class ReviewerController extends Controller
                     'saved_catatan' => $catatan
                 ]
             ]);
+        }
+        
+        return redirect()->route('reviewer.detail.proposal.substantif', $id)
+            ->with('success', 'Review substantif berhasil disimpan.');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation error in substantif review', [
@@ -660,11 +678,15 @@ class ReviewerController extends Controller
                 'request_data' => $request->all()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
-                'errors' => $e->errors()
-            ], 422);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            
+            return back()->withErrors($e->errors())->withInput();
             
         } catch (\Exception $e) {
             \Log::error('Error in submitReviewSubstantif', [
@@ -674,10 +696,14 @@ class ReviewerController extends Controller
                 'request_data' => $request->all()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ], 500);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
         }
     }
 

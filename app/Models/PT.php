@@ -36,7 +36,7 @@ class PT extends Authenticatable
      */
     public function getAuthIdentifierName()
     {
-        return 'email_pt';
+        return 'id_pt';
     }
 
     // Relasi One-to-Many ke RuangKontrol

@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\HasilFinal;
-use App\Models\Proposal;
-use App\Models\PT;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class HasilFinalSeeder extends Seeder
 {
@@ -14,72 +12,141 @@ class HasilFinalSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get proposals from 2023 and 2024 that should have final results
-        $proposals2023 = Proposal::where('tahun_ajaran', '2023/2024')->get();
-        $proposals2024 = Proposal::where('tahun_ajaran', '2024/2025')->get();
-        
-        // Get available PT IDs
-        $ptIds = PT::pluck('id_pt')->toArray();
-        
-        if (empty($ptIds)) {
-            $this->command->error('Tidak ada PT yang tersedia untuk hasil final!');
-            return;
-        }
-        
-        $this->command->info('Membuat hasil final untuk proposal 2023...');
-        foreach ($proposals2023 as $proposal) {
-            $status = $proposal->status_final === 'lolos' ? 'lolos' : 'tidak_lolos';
-            
-            HasilFinal::factory()->create([
-                'status_final' => $status,
-                'id_proposal' => $proposal->id_proposal,
-                'id_pt' => fake()->randomElement($ptIds),
-                'catatan_final' => $this->generateFinalNote($status, $proposal),
-                'nilai' => $status === 'lolos' ? fake()->numberBetween(75, 95) : fake()->numberBetween(40, 74),
-            ]);
-        }
-        
-        $this->command->info('Membuat hasil final untuk proposal 2024...');
-        foreach ($proposals2024 as $proposal) {
-            $status = $proposal->status_final === 'lolos' ? 'lolos' : 'tidak_lolos';
-            
-            HasilFinal::factory()->create([
-                'status_final' => $status,
-                'id_proposal' => $proposal->id_proposal,
-                'id_pt' => fake()->randomElement($ptIds),
-                'catatan_final' => $this->generateFinalNote($status, $proposal),
-                'nilai' => $status === 'lolos' ? fake()->numberBetween(75, 95) : fake()->numberBetween(40, 74),
-            ]);
-        }
-        
-        $this->command->info('HasilFinalSeeder berhasil dijalankan!');
-        $this->command->info('Total hasil final yang dibuat: ' . HasilFinal::count());
-        $this->command->info('Proposal 2023 dengan hasil final: ' . $proposals2023->count());
-        $this->command->info('Proposal 2024 dengan hasil final: ' . $proposals2024->count());
-    }
+        $hasilFinals = [
+            // Proposal 1 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat memuaskan. Kontribusi penelitian sangat signifikan.',
+                'nilai' => 85.50,
+                'id_proposal' => 1,
+                'id_pt' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 2 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat baik. Metodologi penelitian sangat solid.',
+                'nilai' => 88.75,
+                'id_proposal' => 2,
+                'id_pt' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 3 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang memuaskan. Kontribusi penelitian sangat relevan.',
+                'nilai' => 82.25,
+                'id_proposal' => 3,
+                'id_pt' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 4 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat baik. Potensi komersial yang menjanjikan.',
+                'nilai' => 90.00,
+                'id_proposal' => 4,
+                'id_pt' => 4,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 5 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat memuaskan. Kontribusi lingkungan yang signifikan.',
+                'nilai' => 87.50,
+                'id_proposal' => 5,
+                'id_pt' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 6 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang baik. Relevansi dengan kondisi lokal sangat tinggi.',
+                'nilai' => 83.75,
+                'id_proposal' => 6,
+                'id_pt' => 6,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 7 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat baik. Potensi publikasi yang tinggi.',
+                'nilai' => 86.25,
+                'id_proposal' => 7,
+                'id_pt' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 8 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang memuaskan. Dampak positif bagi masyarakat.',
+                'nilai' => 84.50,
+                'id_proposal' => 8,
+                'id_pt' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 9 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat baik. Kontribusi teknologi yang signifikan.',
+                'nilai' => 89.25,
+                'id_proposal' => 9,
+                'id_pt' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 10 - 2023
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang baik. Relevansi dengan kebutuhan industri tinggi.',
+                'nilai' => 85.00,
+                'id_proposal' => 10,
+                'id_pt' => 4,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 11 - 2024
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat memuaskan. Desain arsitektur yang inovatif.',
+                'nilai' => 88.75,
+                'id_proposal' => 11,
+                'id_pt' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 12 - 2024
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang sangat baik. Pemanfaatan kekayaan lokal yang optimal.',
+                'nilai' => 87.50,
+                'id_proposal' => 12,
+                'id_pt' => 6,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 13 - 2024
+            [
+                'status_final' => 'lolos',
+                'catatan_final' => 'Proposal dinyatakan lolos dengan nilai yang memuaskan. Dampak langsung pada masyarakat.',
+                'nilai' => 84.25,
+                'id_proposal' => 13,
+                'id_pt' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            // Proposal 14-20 (2024/2025) tidak memiliki hasil final karena masih dalam proses
+        ];
 
-    private function generateFinalNote(string $status, $proposal): string
-    {
-        if ($status === 'lolos') {
-            $notes = [
-                "Selamat! Proposal '{$proposal->judul_proposal}' telah lolos seleksi PKM {$proposal->skim}. Silakan lanjutkan ke tahap pelaksanaan sesuai timeline yang telah disetujui.",
-                "Proposal Anda dinyatakan LOLOS dan berhak mendapatkan pendanaan. Pastikan untuk mengikuti monitoring dan evaluasi yang akan dilaksanakan.",
-                "Terima kasih atas partisipasi Anda. Proposal telah memenuhi semua kriteria dan dinyatakan layak untuk didanai. Selamat melaksanakan program PKM!",
-                "Proposal lolos dengan catatan untuk memperhatikan timeline dan target luaran yang telah disetujui dalam proposal.",
-                "Proposal dinyatakan LOLOS dengan skor tinggi. Tim dinilai memiliki inovasi yang baik dan metodologi yang solid.",
-                "Selamat! Proposal berhasil lolos seleksi dengan predikat sangat memuaskan. Lanjutkan dengan semangat!",
-            ];
-        } else {
-            $notes = [
-                "Mohon maaf, proposal '{$proposal->judul_proposal}' belum dapat lolos pada seleksi kali ini. Kami mendorong Anda untuk terus berinovasi dan mengajukan proposal di periode berikutnya.",
-                "Proposal tidak lolos karena beberapa aspek masih perlu diperkuat, khususnya dalam metodologi dan kelayakan implementasi. Silakan perbaiki untuk pengajuan berikutnya.",
-                "Terima kasih atas partisipasi Anda. Meskipun proposal belum lolos kali ini, kami harap Anda tidak menyerah dan terus mengembangkan ide-ide inovatif.",
-                "Proposal tidak memenuhi kriteria minimum yang ditetapkan. Silakan pelajari feedback dari reviewer dan perbaiki untuk pengajuan selanjutnya.",
-                "Proposal belum lolos karena perlu perbaikan pada aspek teknis dan kelayakan implementasi. Jangan menyerah, teruslah berinovasi!",
-                "Meskipun proposal tidak lolos, ide yang disampaikan cukup menarik. Perbaiki metodologi dan ajukan kembali di periode berikutnya.",
-            ];
-        }
-
-        return fake()->randomElement($notes);
+        DB::table('hasil_finals')->insert($hasilFinals);
     }
 }
+

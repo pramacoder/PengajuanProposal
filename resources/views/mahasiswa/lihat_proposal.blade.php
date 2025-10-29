@@ -1027,9 +1027,9 @@
                                     if ($proposal->id_mahasiswa == $user->id_mahasiswa) {
                                         $userRole = 'Pengaju';
                                     } else {
-                                        $userTeamMember = $proposal->teams->where('nim', $user->nim)->first();
+                                        $userTeamMember = $proposal->semuaAnggotaTim->where('nim', $user->nim)->first();
                                         if ($userTeamMember) {
-                                            $userRole = ucfirst($userTeamMember->role);
+                                            $userRole = $userTeamMember->is_ketua ? 'Ketua' : 'Anggota';
                                         }
                                     }
                                 @endphp
@@ -1052,9 +1052,9 @@
                                 <span class="info-label">Ketua Tim</span>
                                 <span class="info-value">
                                     @php
-                                        $ketua = $proposal->teams->where('role', 'ketua')->first();
+                                        $ketua = $proposal->ketuaTim;
                                     @endphp
-                                    {{ $ketua ? $ketua->nama : 'N/A' }}
+                                    {{ $ketua ? $ketua->nama_mhs : 'N/A' }}
                                 </span>
                             </div>
                             <div class="info-row">
@@ -1067,7 +1067,7 @@
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Jumlah Anggota</span>
-                                <span class="info-value">{{ $proposal->teams->count() }} orang</span>
+                                <span class="info-value">{{ $proposal->semuaAnggotaTim->count() }} orang</span>
                             </div>
                             @if($proposal->proposalRevisi->count() > 0)
                             <div class="info-row">

@@ -6,286 +6,142 @@
     <title>Login - Sistem Pengajuan Proposal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        maroon: {
-                            50: '#fdf2f2',
-                            100: '#fce7e7',
-                            200: '#f9d5d5',
-                            300: '#f4b3b3',
-                            400: '#ed8a8a',
-                            500: '#e25c5c',
-                            600: '#d13e3e',
-                            700: '#b32b2b',
-                            800: '#942424',
-                            900: '#7a1f1f',
-                            950: '#420e0e',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         body {
-            background: linear-gradient(135deg, 
-                #420e0e 0%, 
-                #7a1f1f 15%, 
-                #942424 30%, 
-                #b32b2b 45%, 
-                #d13e3e 60%, 
-                #b32b2b 75%, 
-                #942424 90%, 
-                #7a1f1f 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            margin: 0;
+            padding: 0;
             height: 100vh;
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
         html, body { height: 100%; }
         
-        @keyframes gradientShift {
-            0% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-            100% {
-                background-position: 0% 50%;
-            }
-        }
-
-        /* Global page scale to 80% */
-        .page-zoom {
-            transform: scale(0.8);
-            transform-origin: top center;
+        /* Ensure main container fills viewport */
+        .main-container {
+            height: 100vh;
+            min-height: 100vh;
+            display: flex;
         }
         
-        /* Overlay untuk efek yang lebih halus */
-        body::before {
+        /* Left side background with image */
+        .left-side {
+            background-image: url('{{ asset('Backgroundlogin.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            min-height: 100vh;
+            height: 100vh;
+        }
+        
+        /* Dark overlay for better text readability */
+        .left-side::before {
             content: '';
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%),
-                        radial-gradient(circle at 40% 40%, rgba(255,255,255,0.03) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        .min-h-screen {
-            position: relative;
+            right: 0;
+            bottom: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(20, 30, 48, 0.95) 0%, rgba(36, 59, 85, 0.9) 100%);
             z-index: 1;
         }
         
-        /* Login Card Pop Up Effects */
-        .login-card {
-            animation: slideInUp 0.8s ease-out;
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .left-side-content {
+            position: relative;
+            z-index: 2;
         }
         
-        @keyframes slideInUp {
+        /* Right side - clean white */
+        .right-side {
+            background: #ffffff;
+            min-height: 100vh;
+            height: 100vh;
+        }
+        
+        /* Form animations */
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(50px) scale(0.9);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: translateY(0);
             }
         }
         
-        .login-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.3), 
-                        0 0 0 1px rgba(255, 255, 255, 0.2), 
-                        0 0 0 0 rgba(209, 62, 62, 0.2),
-                        0 0 50px rgba(209, 62, 62, 0.1);
+        .form-container {
+            animation: fadeInUp 0.6s ease-out;
         }
         
-        /* Login card animation */
-        .login-card {
-            animation: slideInUp 0.8s ease-out;
+        /* Input focus effects */
+        .input-field:focus {
+            outline: none;
+            border-color: #1a1a1a;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
         }
         
-        /* Glow effect */
-        .login-card::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, 
-                rgba(209, 62, 62, 0.3), 
-                rgba(255, 255, 255, 0.1), 
-                rgba(209, 62, 62, 0.3));
-            border-radius: 24px;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        /* Button hover effect */
+        .btn-login {
+            transition: all 0.3s ease;
         }
         
-        .login-card:hover::before {
-            opacity: 1;
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
         
-        /* Pulse effect */
-        .login-card {
-            position: relative;
+        .btn-google {
+            transition: all 0.3s ease;
         }
         
-        .login-card::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(209, 62, 62, 0.1) 0%, transparent 70%);
-            border-radius: 24px;
-            transform: translate(-50%, -50%) scale(0);
-            z-index: -1;
-            animation: pulse 4s ease-in-out infinite;
+        .btn-google:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
-        @keyframes pulse {
-            0% {
-                transform: translate(-50%, -50%) scale(0);
-                opacity: 1;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-                opacity: 0.3;
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1.5);
-                opacity: 0;
-            }
+        /* Logo animation */
+        .logo-container {
+            animation: fadeInUp 0.8s ease-out;
         }
     </style>
 </head>
-<body class="min-h-screen">
-    <div class="min-h-screen flex page-zoom">
-        <!-- Left Side - Information Panel -->
-        <div class="hidden lg:flex lg:w-1/2">
-            
+<body>
+    <div class="min-h-screen flex main-container h-full">
+        <!-- Left Side - Branding Panel -->
+        <div class="hidden lg:flex lg:w-1/2 left-side">
             <!-- Content -->
-            <div class="flex flex-col justify-center px-12 py-16 text-white">
+            <div class="flex flex-col justify-center px-8 py-8 text-white left-side-content w-full">
                 <!-- Logo & Title -->
-                <div class="mb-12">
-                    <div class="inline-flex items-center justify-center mb-8">
-                        <img src="{{ asset('UNUDLOGO.png') }}" alt="UNUD Logo" class="w-30 h-30 object-contain">
+                <div class="logo-container mb-6">
+                    <div class="flex items-center mb-4">
+                        <img src="{{ asset('UNUDLOGO.png') }}" alt="UNUD Logo" class="w-10 h-10 object-contain mr-3">
+                        <span class="text-lg font-bold">Universitas Udayana</span>
                     </div>
-                    <h1 class="text-5xl font-bold mb-6 leading-tight">Sistem Pengajuan<br>Proposal PKM & PPK Ormawa</h1>
-                    <p class="text-xl text-maroon-100 leading-relaxed">Platform terintegrasi untuk pengelolaan proposal Program Kreativitas Mahasiswa Universitas Udayana</p>
-                </div>
-
-                <!-- Features -->
-                <div class="space-y-6 mb-12">
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Pengajuan Proposal Mudah</h3>
-                            <p class="text-maroon-100">Ajukan proposal PKM dengan mudah melalui form online yang user-friendly</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Kelola Tim dengan Mudah</h3>
-                            <p class="text-maroon-100">Bentuk tim PKM dengan 3-5 anggota dan kelola data tim secara terpusat</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Upload Dokumen Aman</h3>
-                            <p class="text-maroon-100">Upload proposal dan dokumen pendukung dengan sistem keamanan terjamin</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Pantau Status Real-time</h3>
-                            <p class="text-maroon-100">Lacak status proposal dari pengajuan hingga hasil penilaian secara real-time</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mt-1">
-                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-2">Komunikasi dengan Pembimbing</h3>
-                            <p class="text-maroon-100">Berinteraksi langsung dengan dosen pembimbing untuk bimbingan proposal</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="border-t border-white/20 pt-6">
-                    <p class="text-maroon-100 text-sm">© 2024 Universitas Udayana. All rights reserved.</p>
+                    <h1 class="text-3xl font-bold mb-4 leading-tight">
+                        Kelola Proposal Lebih Cepat.<br>
+                        Ekspor Lebih Mudah.<br>
+                        Buat Dimana Saja.
+                    </h1>
+                    <p class="text-sm text-gray-300 leading-relaxed max-w-md">
+                        Dari pengajuan proposal hingga penilaian akhir, platform kami membantu Anda mengelola seluruh proses dengan mudah dan efisien.
+                    </p>
                 </div>
             </div>
         </div>
 
         <!-- Right Side - Login Form -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center px-8 py-12">
-            <div class="w-full max-w-md">
-                <!-- Mobile Logo -->
-                <div class="lg:hidden text-center mb-8">
-                    <div class="inline-flex items-center justify-center mb-4">
-                        <img src="{{ asset('UNUDLOGO.png') }}" alt="UNUD Logo" class="w-14 h-14 object-contain">
-                    </div>
-                    <h1 class="text-3xl font-bold text-white mb-2">Sistem Pengajuan Proposal</h1>
-                    <p class="text-maroon-100">Universitas Udayana</p>
+        <div class="w-full lg:w-1/2 flex items-center justify-center px-4 py-6 right-side">
+            <div class="w-full max-w-sm form-container">
+                <!-- Welcome Text -->
+                <div class="mb-4">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-1">Selamat Datang!</h2>
+                    <p class="text-xs text-gray-600">Masuk untuk mulai membuat proposal yang menakjubkan dengan mudah.</p>
                 </div>
 
-                <!-- Login Card -->
-                <div class="login-card bg-white rounded-2xl shadow-2xl overflow-hidden transform hover:scale-105 transition-all duration-300 hover:shadow-3xl" style="box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 0 0 rgba(209, 62, 62, 0.1);">
-                    <!-- Header -->
-                    <div class="bg-gradient-to-r from-maroon-600 to-maroon-700 px-8 py-8 text-center">
-                        <div class="inline-flex items-center justify-center mb-4">
-                            <img src="{{ asset('UNUDLOGO.png') }}" alt="UNUD Logo" class="w-14 h-14 object-contain">
-                        </div>
-                        <h2 class="text-2xl font-bold text-white mb-2">Selamat Datang Kembali</h2>
-                        <p class="text-maroon-100">Silakan login untuk mengakses sistem</p>
-                    </div>
-
-                    <!-- Login Form -->
-                    <div class="px-8 pb-8">
+                <!-- Error Messages -->
                         @if ($errors->any())
                             <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                                 <div class="flex">
@@ -317,90 +173,75 @@
                             </div>
                         @endif
 
-                        <form method="POST" action="{{ route('login') }}" x-data="{ showPassword: false }">
+                <!-- Login Form -->
+                <form method="POST" action="{{ route('login') }}" x-data="{ showPassword: false, rememberMe: false }">
                             @csrf
 
-                            <!-- Email Field -->
-                            <div class="mb-6">
-                                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
-                                        </svg>
-                                    </div>
-                                    <input type="email" 
-                                           id="email" 
-                                           name="email" 
-                                           value="{{ old('email') }}"
-                                           class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500 transition-colors duration-200"
-                                           placeholder="Masukkan email Anda"
-                                           required>
-                                </div>
-                            </div>
+                    <!-- Email Field -->
+                    <div class="mb-2">
+                        <label for="email" class="block text-xs font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               value="{{ old('email') }}"
+                               class="input-field block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-all duration-200"
+                               placeholder="masukan email anda"
+                               required>
+                    </div>
 
-                            <!-- Password Field -->
-                            <div class="mb-6">
-                                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                        </svg>
-                                    </div>
-                                    <input :type="showPassword ? 'text' : 'password'"
-                                           id="password" 
-                                           name="password"
-                                           class="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-maroon-500 focus:border-maroon-500 transition-colors duration-200"
-                                           placeholder="Masukkan password Anda"
-                                           required>
+                    <!-- Password Field -->
+                    <div class="mb-2">
+                        <label for="password" class="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                        <div class="relative">
+                            <input :type="showPassword ? 'text' : 'password'"
+                                   id="password" 
+                                   name="password"
+                                   class="input-field block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 transition-all duration-200"
+                                   placeholder="masukan password anda"
+                                   required>
                                     <button type="button" 
                                             @click="showPassword = !showPassword"
-                                            class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                        <svg x-show="!showPassword" class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600">
+                                <svg x-show="!showPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
-                                        <svg x-show="showPassword" class="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg x-show="showPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
                                         </svg>
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Login Button -->
-                            <button type="submit" 
-                                    class="w-full bg-gradient-to-r from-maroon-600 to-maroon-700 text-white py-3 px-4 rounded-lg font-medium hover:from-maroon-700 hover:to-maroon-800 focus:ring-4 focus:ring-maroon-200 transition-all duration-200 transform hover:scale-[1.02]">
-                                <span class="flex items-center justify-center">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                                    </svg>
-                                    Masuk ke Sistem
-                                </span>
-                            </button>
+                    <!-- Login Button -->
+                    <button type="submit" 
+                            class="btn-login w-full bg-gray-900 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 mb-3">
+                        Log In
+                    </button>
                         </form>
 
-                        <!-- Request Credentials and Forgot Password Links -->
-                        <div class="mt-6 text-center">
-                            <p class="text-sm text-gray-600 mb-3">Butuh kredensial login?</p>
-                            <a href="{{ route('register') }}" 
-                               class="inline-flex items-center px-4 py-2 border border-green-300 text-green-700 bg-white rounded-lg hover:bg-green-50 hover:border-green-400 focus:ring-2 focus:ring-green-200 transition-all duration-200 mb-3">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"></path>
-                                </svg>
-                                Request Kredensial
-                            </a>
+                <!-- Request Credentials Section -->
+                <div class="mt-3 text-center">
+                    <p class="text-xs text-gray-600 mb-1">Butuh kredensial login?</p>
+                    <a href="{{ route('register') }}" 
+                       class="btn-login inline-flex items-center justify-center w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-700 focus:ring-offset-2 transition-all duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
+                        Cari Akun
+                    </a>
+                </div>
                             
-                            <p class="text-sm text-gray-600 mb-3">Lupa password Anda?</p>
-                            <a href="{{ route('password.forgot') }}" 
-                               class="inline-flex items-center px-4 py-2 border border-maroon-300 text-maroon-700 bg-white rounded-lg hover:bg-maroon-50 hover:border-maroon-400 focus:ring-2 focus:ring-maroon-200 transition-all duration-200">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                                </svg>
-                                Reset Password
-                            </a>
-                        </div>
-                    </div>
+                <!-- Forgot Password Section -->
+                <div class="mt-2 text-center">
+                    <p class="text-xs text-gray-600 mb-1">Lupa password Anda?</p>
+                    <a href="{{ route('password.forgot') }}" 
+                       class="btn-login inline-flex items-center justify-center w-full px-3 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:ring-offset-2 transition-all duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
+                        Reset Password
+                    </a>
                 </div>
             </div>
         </div>

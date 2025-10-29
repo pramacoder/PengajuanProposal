@@ -30,13 +30,13 @@ class ProposalRevisiController extends Controller
         // Ambil proposal mahasiswa yang berstatus revisi
         // Cek dengan berbagai cara untuk menemukan proposal mahasiswa
         $proposal = Proposal::where(function($query) use ($mahasiswa) {
-            // Cek sebagai ketua tim
+            // Ketua tim berdasarkan nim
             $query->where('ketua_nim', $mahasiswa->nim)
-                  // ATAU sebagai anggota tim melalui tabel teams
-                  ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
-                      $teamQuery->where('nim', $mahasiswa->nim);
+                  // ATAU anggota tim lain via relasi semuaAnggotaTim (berbasis team_id)
+                  ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
+                      $memberQuery->where('nim', $mahasiswa->nim);
                   })
-                  // ATAU sebagai mahasiswa yang membuat proposal
+                  // ATAU sebagai mahasiswa pengaju
                   ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
         })
         ->where('status', 'revisi')
@@ -46,8 +46,8 @@ class ProposalRevisiController extends Controller
             // Jika tidak ada proposal dengan status revisi, cek apakah ada proposal yang sedang direview
             $proposalInReview = Proposal::where(function($query) use ($mahasiswa) {
                 $query->where('ketua_nim', $mahasiswa->nim)
-                      ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
-                          $teamQuery->where('nim', $mahasiswa->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
+                          $memberQuery->where('nim', $mahasiswa->nim);
                       })
                       ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
             })
@@ -96,8 +96,8 @@ class ProposalRevisiController extends Controller
         // Ambil proposal mahasiswa yang berstatus revisi
         $proposal = Proposal::where(function($query) use ($mahasiswa) {
             $query->where('ketua_nim', $mahasiswa->nim)
-                  ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
-                      $teamQuery->where('nim', $mahasiswa->nim);
+                  ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
+                      $memberQuery->where('nim', $mahasiswa->nim);
                   })
                   ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
         })
@@ -144,8 +144,8 @@ class ProposalRevisiController extends Controller
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
             ->where(function($query) use ($mahasiswa) {
                 $query->where('ketua_nim', $mahasiswa->nim)
-                      ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
-                          $teamQuery->where('nim', $mahasiswa->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
+                          $memberQuery->where('nim', $mahasiswa->nim);
                       })
                       ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
             })
@@ -182,8 +182,8 @@ class ProposalRevisiController extends Controller
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
             ->where(function($query) use ($mahasiswa) {
                 $query->where('ketua_nim', $mahasiswa->nim)
-                      ->orWhereHas('teams', function($teamQuery) use ($mahasiswa) {
-                          $teamQuery->where('nim', $mahasiswa->nim);
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
+                          $memberQuery->where('nim', $mahasiswa->nim);
                       })
                       ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
             })

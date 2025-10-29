@@ -9,7 +9,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('proposals', function (Blueprint $table) {
-            $table->bigIncrements('id_proposal')->primary();
+            $table->bigIncrements('id_proposal');
             
             // Informasi dasar proposal
             $table->string('judul_proposal');
@@ -32,6 +32,9 @@ return new class extends Migration
             // Foreign keys untuk relasi
             $table->foreignId('id_mahasiswa')->constrained('mahasiswas', 'id_mahasiswa')->onDelete('cascade');
             $table->foreignId('id_dosen')->constrained('dosens', 'id_dosen')->onDelete('cascade');
+            
+            // Team ID untuk mengelompokkan anggota tim
+            $table->integer('team_id')->nullable();
             
             // Kolom reviewer assignment untuk tracking yang lebih mudah
             $table->foreignId('id_reviewer_administratif')->nullable()->constrained('reviewers', 'id_reviewer')->onDelete('set null');
@@ -84,6 +87,7 @@ return new class extends Migration
             $table->index(['status_validasi', 'status_final'], 'idx_proposal_status');
             $table->index(['skim'], 'idx_proposal_skim');
             $table->index(['tanggal_pengajuan'], 'idx_proposal_tanggal');
+            $table->index(['team_id'], 'idx_proposal_team');
             $table->index(['ketua_nim'], 'idx_ketua_nim');
             $table->index(['anggota1_nim'], 'idx_anggota1_nim');
             $table->index(['anggota2_nim'], 'idx_anggota2_nim');

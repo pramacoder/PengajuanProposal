@@ -808,11 +808,20 @@
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Ketentuan Upload:</strong>
                 <ul class="mb-0 mt-2">
-                    <li>Format file harus PDF</li>
-                    <li>Ukuran maksimal 5MB per file</li>
-                    <li>File proposal harus lengkap sesuai template</li>
+                    <li>Format file harus PDF.  </li>
+                    <li>Ukuran maksimal 5MB per file.</li>
+                    <li>File proposal harus lengkap sesuai template.</li>
                 </ul>
             </div>
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Perhatian Mahasiswa:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Pastikan anggota tim tidak pernah ikut mengajukan proposal di tahun ini.</li>
+                    <li>Jika mahasiswa ingin keluar dari sebuah tim setelah pengajuan, disarankan untuk menghubungi dosen pendamping proposal untuk menolak validasi proposal.</li>
+                </ul>
+            </div>
+
         </div>
 
         <!-- Submit Button -->
@@ -1205,14 +1214,14 @@
             }
         }
 
-        // Check for duplicate members
+        // Check for duplicate members within the same team
         const memberNims = [];
         if (ketuaNimField) {
             const ketuaNimValue = ketuaNimField.value.trim();
             if (ketuaNimValue) memberNims.push(ketuaNimValue);
         }
 
-        // Check all anggota fields for duplicates
+        // Check all anggota fields for duplicates within the team
         const allAnggotaFields = ['anggota1', 'anggota2', 'anggota3', 'anggota4'];
         for (let anggota of allAnggotaFields) {
             const nimField = document.getElementById(anggota + '_nim');
@@ -1321,8 +1330,55 @@
         }
         @endif
 
-        // Confirmation
-        if (!confirm('Apakah Anda yakin ingin mengajukan proposal ini? Data yang sudah disubmit tidak dapat diubah.')) {
+        // Custom confirmation dialog dengan styling yang lebih baik
+        const confirmed = await new Promise((resolve) => {
+            // Create custom modal confirmation
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="background: #343a40; color: white; border: 1px solid #495057;">
+                        <div class="modal-header" style="border-bottom: 1px solid #495057;">
+                            <h5 class="modal-title" style="color: white;">
+                                <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                                Konfirmasi Pengajuan Proposal
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="this.closest('.modal').remove()"></button>
+                        </div>
+                        <div class="modal-body ">
+                            <p class="mb-3">Apakah Anda yakin ingin mengajukan proposal ini?</p>
+                            <div class="alert alert-warning mb-0" style="background: rgba(255, 254, 250, 0.84); border-color: #ffc107;">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Perhatian:</strong> Data yang sudah disubmit tidak dapat diubah.
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="border-top: 1px solid #495057;">
+                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('canceled'))">
+                                <i class="fas fa-times me-2"></i>Batal
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('confirmed'))">
+                                <i class="fas fa-check me-2"></i>Ya, Ajukan Proposal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            modal.addEventListener('confirmed', () => resolve(true));
+            modal.addEventListener('canceled', () => resolve(false));
+            
+            // Close on backdrop click
+            modal.addEventListener('hidden.bs.modal', () => {
+                modal.remove();
+                resolve(false);
+            });
+        });
+        
+        if (!confirmed) {
             return false;
         }
 

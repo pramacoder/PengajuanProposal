@@ -1,5 +1,18 @@
 @section('styles')
 <style>
+    /* Compact scale for reviewer pages to emulate 80% zoom at 100% */
+    .reviewer-compact { font-size: 0.875rem; }
+    .reviewer-compact h1, .reviewer-compact .h1 { font-size: 1.5rem; }
+    .reviewer-compact h2, .reviewer-compact .h2 { font-size: 1.25rem; }
+    .reviewer-compact h3, .reviewer-compact .h3 { font-size: 1.1rem; }
+    .reviewer-compact .btn { padding: 0.35rem 0.6rem; font-size: 0.85rem; border-radius: 6px; }
+    .reviewer-compact .badge { padding: 0.3rem 0.5rem; font-size: 0.7rem; }
+    .reviewer-compact .form-select, .reviewer-compact .form-control { padding: 0.35rem 0.6rem; font-size: 0.875rem; }
+    .reviewer-compact .card-body { padding: 0.9rem; }
+    .reviewer-compact .card-header { padding: 0.7rem 0.9rem; }
+    .reviewer-compact table.table th,
+    .reviewer-compact table.table td { padding: 0.5rem 0.6rem; }
+    .reviewer-compact .alert { padding: 0.6rem 0.8rem; font-size: 0.875rem; }
     /* PDF Viewer Section Styles */
     .pdf-viewer-section {
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -214,20 +227,20 @@
 @section('title', 'Detail Proposal - Review Administratif')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid reviewer-compact">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800">
                 <i class="fas fa-clipboard-check me-2"></i>Review Administratif
             </h1>
-            <p class="text-muted">Review administratif proposal: {{ $proposal->judul_proposal }}</p>
+            <p class="text-muted"></p>
         </div>
         
         <div class="d-flex align-items-center">
-            <a href="{{ url()->previous() }}" class="btn btn-secondary me-2">
+            <button type="button" class="btn btn-secondary me-2" onclick="goBackToReviewerDashboard()">
                 <i class="fas fa-arrow-left me-1"></i>Kembali
-            </a>
+            </button>
             <span class="badge bg-warning fs-6">Review Administratif</span>
         </div>
     </div>
@@ -464,7 +477,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form id="formReviewAdministratif" method="POST" action="{{ route('reviewer.submit.review.administratif', $proposal->id_proposal) }}" onsubmit="return false;">
+                    <form id="formReviewAdministratif" method="POST" action="{{ route('reviewer.submit.review.administratif', $proposal->id_proposal) }}">
                         @csrf
                         
                         <!-- Status Review -->
@@ -631,6 +644,49 @@
 
 @push('scripts')
 <script>
+    function goBackToReviewerDashboard() {
+        // Jika ada history sebelumnya dan bukan halaman ini sendiri, gunakan back
+        if (window.history.length > 1 && document.referrer && document.referrer !== window.location.href) {
+            window.history.back();
+            return;
+        }
+        // Fallback ke dashboard reviewer
+        window.location.href = "{{ route('reviewer.dashboard') }}";
+    }
+
+    // Success Modal for AJAX submissions
+    function showSuccessModal(message, backUrl) {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-check-circle me-2"></i>Berhasil
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">${message || 'Review berhasil disimpan.'}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <a href="${backUrl || window.location.href}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Kembali ke Detail
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+        modal.addEventListener('hidden.bs.modal', () => {
+            modal.remove();
+        });
+    }
+
     // PDF Viewer Functions
     function hidePDFLoading() {
         const loading = document.getElementById('pdf-loading');
@@ -781,8 +837,10 @@
             body: formData,
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            }
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
         })
         .then(response => {
             // Log response untuk debugging
@@ -805,19 +863,15 @@
             console.log('Response data:', data);
             
             if (data.success) {
-                // Tampilkan toast success
-                if (typeof showToast === 'function') {
-                    showToast(data.message, 'success');
-                } else {
-                    // Fallback jika showToast tidak tersedia
-                    alert('Berhasil: ' + data.message);
-                }
-                
-                // Redirect setelah delay
-                console.log('Redirecting in 2 seconds...');
+                // Tampilkan modal sukses dengan tombol kembali
+                showSuccessModal(data.message, window.location.href);
+
+                // Fallback auto-reload jika modal tidak tersedia
                 setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+                    if (document.querySelector('.modal.show') === null) {
+                        window.location.reload();
+                    }
+                }, 2500);
             } else {
                 // Handle error response
                 const errorMessage = data.message || 'Terjadi kesalahan';

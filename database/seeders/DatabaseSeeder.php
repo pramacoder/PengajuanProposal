@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,36 +11,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
-
         $this->call([
-            // Cleanup database terlebih dahulu
-            CleanupSeeder::class,
-            
-            // Seed data master
+            // Seed data utama terlebih dahulu
             FakultasSeeder::class,
             ProdiSeeder::class,
+            ReviewerSeeder::class,
+            PtSeeder::class,
             DosenSeeder::class,
             MahasiswaSeeder::class,
-            OperatorSeeder::class,
-            ReviewerSeeder::class,
-            RuangKontrolSeeder::class,
             
-            // Seed data yang bergantung pada master
+            // Seed data proposal
             ProposalSeeder::class,
-            DokumenSeeder::class,
+            
+            // Seed data penilaian
             NilaiAdministratifSeeder::class,
             NilaiSubstantifSeeder::class,
             HasilFinalSeeder::class,
-            NotificationSeeder::class,
             
-            // Cleanup proposal 2025 untuk testing pengajuan proposal tahun ini
-            CleanupProposal2025Seeder::class,
+            // Seed data ruang kontrol
+            RuangKontrolSeeder::class,
         ]);
     }
 }

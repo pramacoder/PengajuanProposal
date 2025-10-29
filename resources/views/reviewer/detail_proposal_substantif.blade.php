@@ -1,5 +1,18 @@
 @section('styles')
 <style>
+    /* Compact scale for reviewer pages to emulate 80% zoom at 100% */
+    .reviewer-compact { font-size: 0.875rem; }
+    .reviewer-compact h1, .reviewer-compact .h1 { font-size: 1.5rem; }
+    .reviewer-compact h2, .reviewer-compact .h2 { font-size: 1.25rem; }
+    .reviewer-compact h3, .reviewer-compact .h3 { font-size: 1.1rem; }
+    .reviewer-compact .btn { padding: 0.35rem 0.6rem; font-size: 0.85rem; border-radius: 6px; }
+    .reviewer-compact .badge { padding: 0.3rem 0.5rem; font-size: 0.7rem; }
+    .reviewer-compact .form-select, .reviewer-compact .form-control { padding: 0.35rem 0.6rem; font-size: 0.875rem; }
+    .reviewer-compact .card-body { padding: 0.9rem; }
+    .reviewer-compact .card-header { padding: 0.7rem 0.9rem; }
+    .reviewer-compact table.table th,
+    .reviewer-compact table.table td { padding: 0.5rem 0.6rem; }
+    .reviewer-compact .alert { padding: 0.6rem 0.8rem; font-size: 0.875rem; }
     /* PDF Viewer Section Styles */
     .pdf-viewer-section {
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -244,20 +257,20 @@
 @section('title', 'Detail Proposal - Review Substantif')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid reviewer-compact">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800">
                 <i class="fas fa-clipboard-check me-2"></i>Review Substantif
             </h1>
-            <p class="text-muted">Review substantif proposal: {{ $proposal->judul_proposal }}</p>
+            <p class="text-muted"></p>
         </div>
         
         <div class="d-flex align-items-center">
-            <a href="{{ url()->previous() }}" class="btn btn-secondary me-2">
+            <button type="button" class="btn btn-secondary me-2" onclick="goBackToReviewerDashboard()">
                 <i class="fas fa-arrow-left me-1"></i>Kembali
-            </a>
+            </button>
             <span class="badge bg-success fs-6">Review Substantif</span>
         </div>
     </div>
@@ -321,10 +334,6 @@
                 </div>
                 <div class="card-body">
                     <table class="table table-borderless">
-                        <tr>
-                            <td class="py-2 px-2"><strong>ID Proposal:</strong></td>
-                            <td class="py-2 px-2">{{ $proposal->id_proposal }}</td>
-                        </tr>
                         <tr>
                             <td class="py-2 px-2"><strong>Judul:</strong></td>
                             <td class="py-2 px-2">{{ $proposal->judul_proposal }}</td>
@@ -543,6 +552,14 @@
 
 @push('scripts')
 <script>
+    function goBackToReviewerDashboard() {
+        if (window.history.length > 1 && document.referrer && document.referrer !== window.location.href) {
+            window.history.back();
+            return;
+        }
+        window.location.href = "{{ route('reviewer.dashboard') }}";
+    }
+
     // PDF Viewer Functions
     function hidePDFLoading() {
         const loading = document.getElementById('pdf-loading');

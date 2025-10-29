@@ -518,7 +518,7 @@ class OperatorController extends Controller
         $proposal = Proposal::with([
             'mahasiswa', 
             'dosen', 
-            'teams', 
+            'semuaAnggotaTim', 
             'dokumen', 
             'nilaiAdministratif.reviewer', 
             'nilaiSubstantif.reviewer', 

@@ -163,17 +163,17 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
-                            <thead class="table-dark">
+                            <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>Skim</th>
-                                    <th>Jumlah</th>
-                                    <th>Sudah Valid</th>
-                                    <th>Belum Valid</th>
-                                    <th>Tolak Valid</th>
-                                    <th>Sedang Review</th>
-                                    <th>Selesai Review</th>
-                                    <th>Aksi</th>
+                                    <th class="bg-dark text-white">No</th>
+                                    <th class="bg-dark text-white">Skim</th>
+                                    <th class="bg-dark text-white">Jumlah</th>
+                                    <th class="bg-success text-white">Sudah Valid</th>
+                                    <th class="bg-warning text-white">Belum Valid</th>
+                                    <th class="bg-danger text-white">Tolak Valid</th>
+                                    <th class="bg-info text-white">Sedang Review</th>
+                                    <th class="bg-primary text-white">Selesai Review</th>
+                                    <th class="bg-dark text-white">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -181,24 +181,12 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td><strong>{{ $data['skim'] }}</strong></td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ $data['jumlah'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">{{ $data['sudah_valid'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning">{{ $data['belum_valid'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-danger">{{ $data['tolak_valid'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">{{ $data['sedang_review'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ $data['selesai_review'] }}</span>
-                                    </td>
+                                    <td class="text-dark fw-bold">{{ $data['jumlah'] }}</td>
+                                    <td class="text-success fw-bold">{{ $data['sudah_valid'] }}</td>
+                                    <td class="text-warning fw-bold">{{ $data['belum_valid'] }}</td>
+                                    <td class="text-danger fw-bold">{{ $data['tolak_valid'] }}</td>
+                                    <td class="text-info fw-bold">{{ $data['sedang_review'] }}</td>
+                                    <td class="text-primary fw-bold">{{ $data['selesai_review'] }}</td>
                                     <td>
                                         <button class="btn btn-primary btn-sm" onclick="pilihReviewer('{{ $data['skim'] }}')">
                                             <i class="fas fa-user-plus me-1"></i>
@@ -228,17 +216,17 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
-                            <thead class="table-dark">
+                            <thead>
                                 <tr>
-                                    <th>No</th>
-                                    <th>Skim</th>
-                                    <th>Jumlah</th>
-                                    <th>Sudah Valid</th>
-                                    <th>Belum Valid</th>
-                                    <th>Tolak Valid</th>
-                                    <th>Sedang Review</th>
-                                    <th>Selesai Review</th>
-                                    <th>Aksi</th>
+                                    <th class="bg-dark text-white">No</th>
+                                    <th class="bg-dark text-white">Skim</th>
+                                    <th class="bg-dark text-white">Jumlah</th>
+                                    <th class="bg-success text-white">Sudah Valid</th>
+                                    <th class="bg-warning text-white">Belum Valid</th>
+                                    <th class="bg-danger text-white">Tolak Valid</th>
+                                    <th class="bg-info text-white">Sedang Review</th>
+                                    <th class="bg-primary text-white">Selesai Review</th>
+                                    <th class="bg-dark text-white">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -246,24 +234,12 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td><strong>{{ $data['skim'] }}</strong></td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ $data['jumlah'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">{{ $data['sudah_valid'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning">{{ $data['belum_valid'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-danger">{{ $data['tolak_valid'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">{{ $data['sedang_review'] }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ $data['selesai_review'] }}</span>
-                                    </td>
+                                    <td class="text-dark fw-bold">{{ $data['jumlah'] }}</td>
+                                    <td class="text-success fw-bold">{{ $data['sudah_valid'] }}</td>
+                                    <td class="text-warning fw-bold">{{ $data['belum_valid'] }}</td>
+                                    <td class="text-danger fw-bold">{{ $data['tolak_valid'] }}</td>
+                                    <td class="text-info fw-bold">{{ $data['sedang_review'] }}</td>
+                                    <td class="text-primary fw-bold">{{ $data['selesai_review'] }}</td>
                                     <td>
                                         <button class="btn btn-primary btn-sm" onclick="pilihReviewer('{{ $data['skim'] }}')">
                                             <i class="fas fa-user-plus me-1"></i>
@@ -282,6 +258,110 @@
 </div>
 
 
+@endsection
+
+@section('styles')
+<style>
+/* Konsistensi font untuk tabel operator */
+.table th {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.table td {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.875rem;
+    vertical-align: middle;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+/* Khusus untuk kolom Skim agar left-aligned */
+.table td:nth-child(2) {
+    text-align: left;
+}
+
+/* Khusus untuk kolom Aksi agar left-aligned */
+.table td:last-child {
+    text-align: left;
+}
+
+/* Memastikan warna text konsisten */
+.text-success {
+    color: #198754 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-info {
+    color: #0dcaf0 !important;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.text-dark {
+    color: #212529 !important;
+}
+
+/* Header tabel dengan warna berbeda */
+.bg-success {
+    background-color: #198754 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.bg-dark {
+    background-color: #212529 !important;
+}
+
+/* Border untuk tabel */
+.table {
+    border-collapse: collapse;
+    border: 1px solid #dee2e6;
+}
+
+.table th,
+.table td {
+    border-right: 1px solid #dee2e6;
+}
+
+.table th:last-child,
+.table td:last-child {
+    border-right: none;
+}
+
+/* Hover effect untuk row */
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+</style>
 @endsection
 
 @section('scripts')
