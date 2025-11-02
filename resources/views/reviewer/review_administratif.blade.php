@@ -66,7 +66,6 @@
                                     <td>
                                         <strong>{{ $proposal->judul_proposal }}</strong>
                                         <br>
-                                        <small class="text-muted">ID: {{ $proposal->id_proposal }}</small>
                                     </td>
                                     <td>
                                         {{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}
@@ -98,7 +97,6 @@
                                         </a>
                                         <!-- Debug info -->
                                         <small class="d-block text-muted mt-1">
-                                            ID: {{ $proposal->id_proposal }} | 
                                             Status: {{ $proposal->status }} | 
                                             Valid: {{ $proposal->status_validasi }}
                                         </small>

@@ -19,6 +19,9 @@ class RuangKontrol extends Model
         'tanggal_pendaftaran_selesai',
         'tanggal_perbaikan_mulai',
         'tanggal_perbaikan_selesai',
+        'tahun_ajaran',
+        'nama_history',
+        'is_active',
         'id_pt'
     ];
 

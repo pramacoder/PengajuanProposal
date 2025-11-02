@@ -7,11 +7,33 @@ use App\Models\RuangKontrol;
 class RuangKontrolHelper
 {
     /**
+     * Ambil ruang kontrol aktif untuk tahun ajaran terbaru
+     */
+    private static function getActiveRuangKontrol()
+    {
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        
+        // Cari yang aktif untuk tahun ajaran terbaru
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
+        return $ruangKontrol;
+    }
+    
+    /**
      * Cek status pendaftaran
      */
     public static function isPendaftaranOpen()
     {
-        $ruangKontrol = RuangKontrol::first();
+        $ruangKontrol = self::getActiveRuangKontrol();
         return $ruangKontrol && $ruangKontrol->status_pendaftaran === 'terbuka';
     }
 
@@ -20,7 +42,7 @@ class RuangKontrolHelper
      */
     public static function isPerbaikanOpen()
     {
-        $ruangKontrol = RuangKontrol::first();
+        $ruangKontrol = self::getActiveRuangKontrol();
         return $ruangKontrol && $ruangKontrol->status_perbaikan === 'terbuka';
     }
 
@@ -29,7 +51,7 @@ class RuangKontrolHelper
      */
     public static function getRuangKontrolStatus()
     {
-        $ruangKontrol = RuangKontrol::first();
+        $ruangKontrol = self::getActiveRuangKontrol();
         
         if (!$ruangKontrol) {
             return [
@@ -73,7 +95,7 @@ class RuangKontrolHelper
      */
     public static function isPendaftaranActive()
     {
-        $ruangKontrol = RuangKontrol::first();
+        $ruangKontrol = self::getActiveRuangKontrol();
         
         if (!$ruangKontrol || $ruangKontrol->status_pendaftaran !== 'terbuka') {
             return false;
@@ -90,7 +112,7 @@ class RuangKontrolHelper
      */
     public static function isPerbaikanActive()
     {
-        $ruangKontrol = RuangKontrol::first();
+        $ruangKontrol = self::getActiveRuangKontrol();
         
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
             return false;

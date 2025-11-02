@@ -608,13 +608,53 @@
                 </div>
             </div>
 
-            <!-- Catatan -->
-            @if($proposal->catatan)
+            <!-- Catatan dan File Koreksi jika Proposal Ditolak -->
+            @if($proposal->status_validasi === 'tidak_valid' && $proposal->catatan)
+            <div class="info-section">
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-times-circle me-2"></i>Proposal Ditolak oleh Dosen Pendamping
+                    </h5>
+                    <hr>
+                    <p class="mb-2"><strong>Alasan Penolakan:</strong></p>
+                    <p class="mb-3">{{ $proposal->catatan }}</p>
+                    @if($proposal->tanggal_validasi)
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            Tanggal: {{ \Carbon\Carbon::parse($proposal->tanggal_validasi)->format('d F Y H:i') }}
+                        </small>
+                    @endif
+                </div>
+            </div>
+            @elseif($proposal->catatan)
+            <!-- Catatan (jika ada tapi bukan penolakan) -->
             <div class="info-section">
                 <h5><i class="fas fa-sticky-note me-2"></i>Catatan</h5>
                 <div class="info-item">
                     <span class="info-label">Catatan</span>
                     <span class="info-value">{{ $proposal->catatan }}</span>
+                </div>
+            </div>
+            @endif
+
+            <!-- Review PDF Dosen (untuk validasi) -->
+            @if($proposal->status_validasi === 'valid' && $proposal->path_review_dosen)
+            <div class="info-section">
+                <h5><i class="fas fa-file-pdf me-2"></i>Review PDF dari Dosen</h5>
+                <div class="info-item">
+                    <span class="info-label">File Review</span>
+                    <span class="info-value">
+                        <a href="{{ Storage::disk('public')->url($proposal->path_review_dosen) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>
+                            {{ $proposal->nama_file_review_dosen ?? 'Download Review PDF' }}
+                        </a>
+                        @if($proposal->tanggal_review_dosen)
+                            <br><small class="text-muted mt-2 d-block">
+                                <i class="fas fa-calendar me-1"></i>
+                                Diupload pada: {{ \Carbon\Carbon::parse($proposal->tanggal_review_dosen)->format('d F Y H:i') }}
+                            </small>
+                        @endif
+                    </span>
                 </div>
             </div>
             @endif
@@ -726,7 +766,11 @@
             <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar
         </a>
         
-        @if($proposal->status === 'revisi')
+        @if($proposal->status_validasi === 'tidak_valid')
+        <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-action">
+            <i class="fas fa-redo me-2"></i>Ajukan Ulang Proposal
+        </a>
+        @elseif($proposal->status === 'revisi')
         <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
             <i class="fas fa-edit me-2"></i>Revisi Proposal
         </a>
@@ -758,7 +802,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Debug: Log proposal data
         console.log('Proposal Data:', {
-            id: {{ $proposal->id_proposal }},
             hasDokumen: {{ $proposal->dokumen ? 'true' : 'false' }},
             pathFile: '{{ $proposal->dokumen ? $proposal->dokumen->path_file : "null" }}',
             dokumenId: {{ $proposal->dokumen ? $proposal->dokumen->id_dokumen : 'null' }}

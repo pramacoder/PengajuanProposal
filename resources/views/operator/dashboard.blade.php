@@ -9,43 +9,6 @@
         title="BERANDA" 
         subtitle="UNIVERSITAS UDAYANA" />
     
-    <!-- Year Selector -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <select class="form-select" id="yearSelector">
-                <option value="2025" {{ $tahun == '2025' ? 'selected' : '' }}>2025</option>
-                <option value="2024" {{ $tahun == '2024' ? 'selected' : '' }}>2024</option>
-                <option value="2023" {{ $tahun == '2023' ? 'selected' : '' }}>2023</option>
-            </select>
-        </div>
-    </div>
-    
-    <!-- Chart Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="fas fa-chart-bar me-2"></i>
-                            Grafik Analisis Proposal
-                        </h5>
-                        <div class="d-flex gap-2">
-                            <select class="form-select form-select-sm" id="chartTypeSelector" style="width: auto;">
-                                <option value="per_tahun">Jumlah Proposal per Tahun</option>
-                                <option value="per_skim">Jumlah Proposal per Skim ({{ $tahun }})</option>
-                                <option value="per_fakultas">Jumlah Proposal per Fakultas ({{ $tahun }})</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <canvas id="proposalChart" width="400" height="200"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- Top Proposals Ranking -->
     <div class="row mb-4">
         <div class="col-12">
@@ -195,6 +158,17 @@
                                     </td>
                                 </tr>
                                 @endforeach
+                                <!-- Total Row -->
+                                <tr class="table-dark fw-bold">
+                                    <td colspan="2" class="text-white text-center"><strong>TOTAL</strong></td>
+                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('jumlah') }}</td>
+                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('sudah_valid') }}</td>
+                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('belum_valid') }}</td>
+                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('tolak_valid') }}</td>
+                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('sedang_review') }}</td>
+                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('selesai_review') }}</td>
+                                    <td></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -248,9 +222,241 @@
                                     </td>
                                 </tr>
                                 @endforeach
+                                <!-- Total Row -->
+                                <tr class="table-dark fw-bold">
+                                    <td colspan="2" class="text-white text-center"><strong>TOTAL</strong></td>
+                                    <td class="text-white text-center">{{ $pkmInsentif->sum('jumlah') }}</td>
+                                    <td class="text-white text-center">{{ $pkmInsentif->sum('sudah_valid') }}</td>
+                                    <td class="text-white text-center">{{ $pkmInsentif->sum('belum_valid') }}</td>
+                                    <td class="text-white text-center">{{ $pkmInsentif->sum('tolak_valid') }}</td>
+                                    <td class="text-white text-center">{{ $pkmInsentif->sum('sedang_review') }}</td>
+                                    <td class="text-white text-center">{{ $pkmInsentif->sum('selesai_review') }}</td>
+                                    <td></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Year Selector -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <select class="form-select" id="yearSelector">
+                <option value="2025" {{ $tahun == '2025' ? 'selected' : '' }}>2025</option>
+                <option value="2024" {{ $tahun == '2024' ? 'selected' : '' }}>2024</option>
+                <option value="2023" {{ $tahun == '2023' ? 'selected' : '' }}>2023</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Chart Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            Grafik Analisis Proposal
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" id="chartTypeSelector" style="width: auto;">
+                                <option value="per_tahun">Jumlah Proposal per Tahun</option>
+                                <option value="per_skim">Jumlah Proposal per Skim ({{ $tahun }})</option>
+                                <option value="per_fakultas">Jumlah Proposal per Fakultas ({{ $tahun }})</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="proposalChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Proposal Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter me-2"></i>
+                        Filter & Tampilkan Proposal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Filter Form -->
+                    <form method="GET" action="{{ route('operator.dashboard') }}" id="filterProposalForm">
+                        <input type="hidden" name="tahun" value="{{ $tahun }}">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Fakultas</label>
+                                <select name="filter_fakultas" id="filterFakultasProposal" class="form-select">
+                                    <option value="">Semua Fakultas</option>
+                                    @foreach($fakultas as $f)
+                                        <option value="{{ $f->id_fakultas }}" {{ request('filter_fakultas') == $f->id_fakultas ? 'selected' : '' }}>
+                                            {{ $f->nama_fakultas }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Prodi</label>
+                                <select name="filter_prodi" id="filterProdiProposal" class="form-select">
+                                    <option value="">Semua Prodi</option>
+                                    @foreach($prodis as $p)
+                                        <option value="{{ $p->id_prodi }}" {{ request('filter_prodi') == $p->id_prodi ? 'selected' : '' }}>
+                                            {{ $p->nama_prodi }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Skim</label>
+                                <select name="filter_skim" id="filterSkim" class="form-select">
+                                    <option value="">Semua Skim</option>
+                                    @foreach($skims as $skim)
+                                        <option value="{{ $skim }}" {{ request('filter_skim') == $skim ? 'selected' : '' }}>
+                                            {{ $skim }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Status Lolos</label>
+                                <select name="filter_status" id="filterStatus" class="form-select">
+                                    <option value="">Semua Status</option>
+                                    <option value="lolos" {{ request('filter_status') == 'lolos' ? 'selected' : '' }}>Lolos</option>
+                                    <option value="tidak_lolos" {{ request('filter_status') == 'tidak_lolos' ? 'selected' : '' }}>Tidak Lolos</option>
+                                    <option value="belum_final" {{ request('filter_status') == 'belum_final' ? 'selected' : '' }}>Belum Final</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search me-1"></i> Terapkan Filter
+                                </button>
+                                <a href="{{ route('operator.dashboard', ['tahun' => $tahun]) }}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i> Reset
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Proposal Table -->
+                    @if(request()->has('filter_fakultas') || request()->has('filter_prodi') || request()->has('filter_skim') || request()->has('filter_status'))
+                        <div class="mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Hasil Filter ({{ $filteredProposals->count() }} proposal ditemukan)
+                                </h6>
+                                @if($filteredProposals->count() > 20 && !request()->has('show_all'))
+                                    <form method="GET" action="{{ route('operator.dashboard') }}" style="display: inline;">
+                                        <input type="hidden" name="tahun" value="{{ $tahun }}">
+                                        @if(request()->has('filter_fakultas'))
+                                            <input type="hidden" name="filter_fakultas" value="{{ request('filter_fakultas') }}">
+                                        @endif
+                                        @if(request()->has('filter_prodi'))
+                                            <input type="hidden" name="filter_prodi" value="{{ request('filter_prodi') }}">
+                                        @endif
+                                        @if(request()->has('filter_skim'))
+                                            <input type="hidden" name="filter_skim" value="{{ request('filter_skim') }}">
+                                        @endif
+                                        @if(request()->has('filter_status'))
+                                            <input type="hidden" name="filter_status" value="{{ request('filter_status') }}">
+                                        @endif
+                                        <input type="hidden" name="show_all" value="1">
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-list-ul me-1"></i> Tampilkan Semua
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                            
+                            @if($filteredProposals->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped proposal-filter-table">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th class="text-white">No</th>
+                                                <th class="text-white">Judul Proposal</th>
+                                                <th class="text-white">Skim</th>
+                                                <th class="text-white">Ketua Tim</th>
+                                                <th class="text-white">Prodi</th>
+                                                <th class="text-white">Fakultas</th>
+                                                <th class="text-white">Status Validasi</th>
+                                                <th class="text-white">Status Final</th>
+                                                <th class="text-white">Nilai</th>
+                                                <th class="text-white">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($filteredProposals as $index => $proposal)
+                                            <tr>
+                                                <td>{{ $index + 1 }}</td>
+                                                <td>
+                                                    <strong>{{ Str::limit($proposal->judul ?? $proposal->judul_proposal, 50) }}</strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge" style="background-color: #800000; color: white;">{{ $proposal->skim }}</span>
+                                                </td>
+                                                <td>{{ $proposal->mahasiswa->nama_mhs ?? '-' }}</td>
+                                                <td>{{ $proposal->mahasiswa->prodi_mhs ?? '-' }}</td>
+                                                <td>{{ $proposal->mahasiswa->fakultas_mhs ?? '-' }}</td>
+                                                <td>
+                                                    @if($proposal->status_validasi === 'valid')
+                                                        <span class="badge bg-success">Valid</span>
+                                                    @elseif($proposal->status_validasi === 'tidak_valid')
+                                                        <span class="badge bg-danger">Tidak Valid</span>
+                                                    @else
+                                                        <span class="badge bg-warning">Belum Valid</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($proposal->hasilFinal)
+                                                        @if($proposal->hasilFinal->status_final === 'lolos')
+                                                            <span class="badge bg-success">Lolos</span>
+                                                        @else
+                                                            <span class="badge bg-danger">Tidak Lolos</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="badge bg-secondary">Belum Final</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($proposal->hasilFinal)
+                                                        <span class="badge" style="background-color: #800000; color: white;">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <a href="{{ route('operator.proposal.detail', $proposal->id_proposal) }}" class="btn btn-sm" style="background-color: #800000; color: white; border: none;">
+                                                        <i class="fas fa-eye"></i> Detail
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Tidak ada proposal yang sesuai dengan filter yang dipilih.
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="alert alert-light text-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Pilih filter untuk menampilkan proposal
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -361,6 +567,57 @@
 .table tbody tr:hover {
     background-color: #f8f9fa;
 }
+
+/* Styling untuk proposal filter table - Konsisten maroon, hitam, putih */
+.proposal-filter-table {
+    border-collapse: collapse;
+    border: 1px solid #212529;
+}
+
+.proposal-filter-table thead th {
+    background-color: #212529 !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.75rem;
+    border: 1px solid #212529;
+}
+
+.proposal-filter-table tbody td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+
+.proposal-filter-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.proposal-filter-table tbody tr:hover {
+    background-color: #fff5f5;
+}
+
+.proposal-filter-table tbody td:nth-child(2) {
+    text-align: left;
+}
+
+.proposal-filter-table .badge {
+    padding: 0.375rem 0.75rem;
+    font-weight: 500;
+}
+
+/* Button maroon untuk aksi */
+.proposal-filter-table .btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.proposal-filter-table .btn:hover {
+    background-color: #660000 !important;
+    color: white !important;
+}
 </style>
 @endsection
 
@@ -465,6 +722,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function pilihReviewer(skim) {
     window.location.href = `{{ route('operator.pilih.reviewer') }}?tahun={{ $tahun }}&filter=${skim}`;
+}
+
+// Filter Fakultas-Prodi dependency
+const filterFakultasProposal = document.getElementById('filterFakultasProposal');
+const filterProdiProposal = document.getElementById('filterProdiProposal');
+
+if (filterFakultasProposal && filterProdiProposal) {
+    async function loadFilterProdiByFakultas(fakultasId) {
+        filterProdiProposal.innerHTML = '<option value="">Semua Prodi</option>';
+        if (!fakultasId) return;
+
+        try {
+            const response = await fetch(`/get-prodi/${fakultasId}`);
+            if (!response.ok) throw new Error('Gagal mengambil data prodi');
+            const data = await response.json();
+
+            data.forEach(function (item) {
+                const option = document.createElement('option');
+                option.value = item.id_prodi;
+                option.textContent = item.nama_prodi;
+                // Maintain selected value if exists
+                if (item.id_prodi == '{{ request('filter_prodi') }}') {
+                    option.selected = true;
+                }
+                filterProdiProposal.appendChild(option);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    filterFakultasProposal.addEventListener('change', function () {
+        loadFilterProdiByFakultas(this.value);
+    });
+
+    // Load prodi on page load if fakultas is selected
+    if (filterFakultasProposal.value) {
+        loadFilterProdiByFakultas(filterFakultasProposal.value);
+    }
 }
 </script>
 @endsection

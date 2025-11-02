@@ -193,8 +193,8 @@
                                 'proposal' => $proposal,
                                 'role' => $role,
                                 'role_class' => $roleClass
-                            ]);
-                        }
+                                    ]);
+                                }
                     @endphp
                     
                     @if($allProposals->count() > 0)

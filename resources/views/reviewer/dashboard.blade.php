@@ -261,7 +261,6 @@
                                         </a>
                                         <!-- Debug info -->
                                         <small class="d-block text-muted mt-1">
-                                            ID: {{ $proposal->id_proposal }} | 
                                             Status: {{ $proposal->status }} | 
                                             Valid: {{ $proposal->status_validasi }}
                                         </small>

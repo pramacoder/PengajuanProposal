@@ -80,55 +80,119 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>NIM</th>
-                                    <th>Nama</th>
-                                    <th>Email</th>
-                                    <th>Prodi</th>
-                                    <th>Fakultas</th>
-                                    <th>Aktif</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($mahasiswas as $m)
-                                <tr>
-                                    <td>{{ $m->nim }}</td>
-                                    <td>{{ $m->nama_mhs }}</td>
-                                    <td>{{ $m->email_mhs }}</td>
-                                    <td>{{ $m->prodi_mhs }}</td>
-                                    <td>{{ $m->fakultas_mhs }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ $m->is_active ? 'success' : 'secondary' }}">{{ $m->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                    </td>
-                                    <td class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
-                                                data-id="{{ $m->id_mahasiswa }}"
-                                                data-nama="{{ $m->nama_mhs }}"
-                                                data-nim="{{ $m->nim }}"
-                                                data-email="{{ $m->email_mhs }}"
-                                                data-no-hp="{{ $m->no_hp_mhs }}"
-                                                data-fakultas="{{ $m->fakultas_mhs }}"
-                                                data-prodi="{{ $m->prodi_mhs }}"
-                                                data-is-active="{{ $m->is_active ? '1' : '0' }}"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editMahasiswaModal">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form method="POST" action="{{ route('operator.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <!-- Filter Section -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Mahasiswa</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('operator.manage.accounts') }}" id="filterForm">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Fakultas</label>
+                                        <select name="filter_fakultas" id="filterFakultas" class="form-select">
+                                            <option value="">Semua Fakultas</option>
+                                            @foreach($fakultas as $f)
+                                                <option value="{{ $f->id_fakultas }}" {{ request('filter_fakultas') == $f->id_fakultas ? 'selected' : '' }}>{{ $f->nama_fakultas }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Prodi</label>
+                                        <select name="filter_prodi" id="filterProdi" class="form-select">
+                                            <option value="">Semua Prodi</option>
+                                            @foreach($prodis as $p)
+                                                <option value="{{ $p->id_prodi }}" {{ request('filter_prodi') == $p->id_prodi ? 'selected' : '' }}>{{ $p->nama_prodi }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">NIM (Search)</label>
+                                        <input type="text" name="filter_nim" id="filterNim" class="form-control" placeholder="Cari berdasarkan NIM..." value="{{ request('filter_nim') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
+                                        <a href="{{ route('operator.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
+
+                    <!-- Bulk Actions -->
+                    <form id="bulkDeleteForm" method="POST" action="{{ route('operator.accounts.mahasiswa.bulk-delete') }}" onsubmit="return confirm('Yakin ingin menghapus akun yang dipilih?')">
+                        @csrf
+                        <div class="mb-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <button type="submit" id="bulkDeleteBtn" class="btn btn-danger" disabled>
+                                    <i class="fas fa-trash me-1"></i> Hapus Terpilih (<span id="selectedCount">0</span>)
+                                </button>
+                            </div>
+                            <div class="text-muted">
+                                Total: <strong>{{ $mahasiswas->count() }}</strong> mahasiswa
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th width="50">
+                                            <input type="checkbox" id="selectAll" class="form-check-input">
+                                        </th>
+                                        <th>NIM</th>
+                                        <th>Nama</th>
+                                        <th>Email</th>
+                                        <th>Prodi</th>
+                                        <th>Fakultas</th>
+                                        <th>Aktif</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($mahasiswas as $m)
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" name="ids[]" value="{{ $m->id_mahasiswa }}" class="form-check-input mahasiswa-checkbox">
+                                        </td>
+                                        <td>{{ $m->nim }}</td>
+                                        <td>{{ $m->nama_mhs }}</td>
+                                        <td>{{ $m->email_mhs }}</td>
+                                        <td>{{ $m->prodi_mhs }}</td>
+                                        <td>{{ $m->fakultas_mhs }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ $m->is_active ? 'success' : 'secondary' }}">{{ $m->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                                        </td>
+                                        <td class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
+                                                    data-id="{{ $m->id_mahasiswa }}"
+                                                    data-nama="{{ $m->nama_mhs }}"
+                                                    data-nim="{{ $m->nim }}"
+                                                    data-email="{{ $m->email_mhs }}"
+                                                    data-no-hp="{{ $m->no_hp_mhs }}"
+                                                    data-fakultas="{{ $m->fakultas_mhs }}"
+                                                    data-prodi="{{ $m->prodi_mhs }}"
+                                                    data-is-active="{{ $m->is_active ? '1' : '0' }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editMahasiswaModal">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="POST" action="{{ route('operator.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="8" class="text-center">Tidak ada data mahasiswa</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Dosen -->
@@ -626,6 +690,87 @@ document.addEventListener('DOMContentLoaded', function () {
         // Change handler
         fakultasSelect.addEventListener('change', function () {
             loadProdiByFakultas(this.value);
+        });
+    }
+
+    // Bulk Delete Functionality
+    const selectAll = document.getElementById('selectAll');
+    const mahasiswaCheckboxes = document.querySelectorAll('.mahasiswa-checkbox');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    const selectedCount = document.getElementById('selectedCount');
+
+    function updateBulkDeleteButton() {
+        const checked = document.querySelectorAll('.mahasiswa-checkbox:checked');
+        const count = checked.length;
+        selectedCount.textContent = count;
+        
+        if (count > 0) {
+            bulkDeleteBtn.disabled = false;
+            bulkDeleteBtn.classList.remove('disabled');
+        } else {
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.classList.add('disabled');
+        }
+        
+        // Update select all checkbox state
+        if (selectAll) {
+            if (checked.length === 0) {
+                selectAll.indeterminate = false;
+                selectAll.checked = false;
+            } else if (checked.length === mahasiswaCheckboxes.length) {
+                selectAll.indeterminate = false;
+                selectAll.checked = true;
+            } else {
+                selectAll.indeterminate = true;
+            }
+        }
+    }
+
+    // Select All functionality
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            mahasiswaCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkDeleteButton();
+        });
+    }
+
+    // Individual checkbox change
+    mahasiswaCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkDeleteButton);
+    });
+
+    // Initial state
+    updateBulkDeleteButton();
+
+    // Filter Fakultas - Prodi dependency for filter form
+    const filterFakultas = document.getElementById('filterFakultas');
+    const filterProdi = document.getElementById('filterProdi');
+    
+    if (filterFakultas && filterProdi) {
+        async function loadFilterProdiByFakultas(fakultasId) {
+            filterProdi.innerHTML = '<option value="">Semua Prodi</option>';
+            if (!fakultasId) return;
+
+            try {
+                const response = await fetch(`/get-prodi/${fakultasId}`);
+                if (!response.ok) throw new Error('Gagal mengambil data prodi');
+                const data = await response.json();
+
+                data.forEach(function (item) {
+                    const option = document.createElement('option');
+                    option.value = item.id_prodi;
+                    option.textContent = item.nama_prodi;
+                    filterProdi.appendChild(option);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        filterFakultas.addEventListener('change', function () {
+            loadFilterProdiByFakultas(this.value);
         });
     }
 

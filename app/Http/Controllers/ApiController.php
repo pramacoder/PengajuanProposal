@@ -77,8 +77,8 @@ class ApiController extends Controller
                 if ($mahasiswa) {
                     // Cek proposal berdasarkan team_id dan tahun ajaran
                     $proposalQuery = Proposal::where('team_id', $mahasiswa->team_id);
-                    
-                    if ($tahunAjaran) {
+                
+                if ($tahunAjaran) {
                         $proposalQuery->where('tahun_ajaran', $tahunAjaran);
                     }
                     
@@ -99,7 +99,7 @@ class ApiController extends Controller
                                      ->whereIn('status_final', ['draft', 'submitted']);
                         });
                     });
-                    
+                
                     $proposal = $proposalQuery->first();
                 }
             }

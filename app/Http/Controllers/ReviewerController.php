@@ -7,11 +7,35 @@ use App\Models\Proposal;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\Dosen;
+use App\Models\RuangKontrol;
+use App\Helpers\TahunAjaranHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReviewerController extends Controller
 {
+    /**
+     * Ambil ruang kontrol aktif untuk tahun ajaran terbaru
+     */
+    private function getActiveRuangKontrol()
+    {
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        
+        // Cari yang aktif untuk tahun ajaran terbaru
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
+        return $ruangKontrol;
+    }
+    
     /**
      * Helper function untuk flatten array
      */
@@ -488,8 +512,8 @@ class ReviewerController extends Controller
             $this->updateProposalStatus($proposal);
 
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
+        return response()->json([
+            'success' => true,
                 'message' => 'Review administratif berhasil disimpan',
                 'data' => [
                     'id' => $nilaiAdmin->id,
@@ -513,11 +537,11 @@ class ReviewerController extends Controller
             ]);
             
             if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
-                    'errors' => $e->errors()
-                ], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
+                'errors' => $e->errors()
+            ], 422);
             }
             
             return back()->withErrors($e->errors())->withInput();
@@ -531,10 +555,10 @@ class ReviewerController extends Controller
             ]);
             
             if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-                ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
             }
             
             return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
@@ -656,8 +680,8 @@ class ReviewerController extends Controller
         $this->checkReviewCompletion($proposal);
 
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
+        return response()->json([
+            'success' => true,
                 'message' => 'Review substantif berhasil disimpan',
                 'data' => [
                     'id' => $nilaiSubstantif->id,
@@ -679,11 +703,11 @@ class ReviewerController extends Controller
             ]);
             
             if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
-                    'errors' => $e->errors()
-                ], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $this->arrayFlatten($e->errors())),
+                'errors' => $e->errors()
+            ], 422);
             }
             
             return back()->withErrors($e->errors())->withInput();
@@ -697,10 +721,10 @@ class ReviewerController extends Controller
             ]);
             
             if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-                ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
             }
             
             return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
@@ -713,7 +737,18 @@ class ReviewerController extends Controller
     private function openRevisionPhase()
     {
         try {
-            $ruangKontrol = \App\Models\RuangKontrol::first();
+            // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+            $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->where('is_active', true)
+                ->first();
+            
+            // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+            if (!$ruangKontrol) {
+                $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+            }
             
             if ($ruangKontrol && $ruangKontrol->status_perbaikan !== 'terbuka') {
                 $ruangKontrol->update([
@@ -758,7 +793,7 @@ class ReviewerController extends Controller
                     "Proposal '{$proposal->judul_proposal}' telah selesai direview dan siap untuk direvisi. Silakan lakukan revisi sesuai catatan reviewer.",
                     [
                         'action_url' => route('mahasiswa.revisi.index'),
-                        'deadline' => \App\Models\RuangKontrol::first()->tanggal_perbaikan_selesai ?? null
+                        'deadline' => $this->getActiveRuangKontrol()?->tanggal_perbaikan_selesai ?? null
                     ]
                 );
                 
@@ -770,7 +805,7 @@ class ReviewerController extends Controller
                     "Proposal '{$proposal->judul_proposal}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
                     [
                         'action_url' => route('dosen.pembimbing.dashboard'),
-                        'deadline' => \App\Models\RuangKontrol::first()->tanggal_perbaikan_selesai ?? null
+                        'deadline' => $this->getActiveRuangKontrol()?->tanggal_perbaikan_selesai ?? null
                     ]
                 );
             }
@@ -793,7 +828,8 @@ class ReviewerController extends Controller
     {
         try {
             $notificationService = new \App\Services\NotificationService();
-            $ruangKontrol = \App\Models\RuangKontrol::first();
+            // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+            $ruangKontrol = $this->getActiveRuangKontrol();
             
             // Notifikasi ke mahasiswa
             $notificationService->notifyMahasiswa(

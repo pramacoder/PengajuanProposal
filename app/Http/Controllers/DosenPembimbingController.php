@@ -15,29 +15,7 @@ class DosenPembimbingController extends Controller
      */
     public function dashboard()
     {
-        $dosen = Auth::guard('dosen')->user();
-        
-        // Ambil semua mahasiswa bimbingan dengan proposal tahun terbaru
-        $tahunAjaranTerbaru = '2024/2025';
-        $mahasiswaBimbingan = $dosen->mahasiswaBimbingan()->with(['proposalTahunTerbaru' => function($query) use ($tahunAjaranTerbaru) {
-            $query->where('tahun_ajaran', $tahunAjaranTerbaru)
-                  ->with(['dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilFinal']);
-        }])->get();
-
-        // Hitung statistik berdasarkan proposal tahun terbaru
-        $totalMahasiswa = $mahasiswaBimbingan->count();
-        $totalProposal = $mahasiswaBimbingan->where('proposalTahunTerbaru', '!=', null)->count();
-        $proposalPending = $mahasiswaBimbingan->where('proposalTahunTerbaru.status_validasi', 'pending')->count();
-        $proposalValid = $mahasiswaBimbingan->where('proposalTahunTerbaru.status_validasi', 'valid')->count();
-
-        return view('dosen.pembimbing.dashboard', compact(
-            'mahasiswaBimbingan', 
-            'totalMahasiswa', 
-            'totalProposal', 
-            'proposalPending', 
-            'proposalValid',
-            'tahunAjaranTerbaru'
-        ));
+        return view('dosen.pembimbing.dashboard');
     }
 
     /**
@@ -78,5 +56,21 @@ class DosenPembimbingController extends Controller
         }])->get();
 
         return view('dosen.pembimbing.mahasiswa_bimbingan', compact('mahasiswaBimbingan'));
+    }
+
+    /**
+     * Halaman Testing Child 1
+     */
+    public function testingChild1()
+    {
+        return view('dosen.pembimbing.testing.child1');
+    }
+
+    /**
+     * Halaman Testing Child 2
+     */
+    public function testingChild2()
+    {
+        return view('dosen.pembimbing.testing.child2');
     }
 }

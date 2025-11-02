@@ -22,7 +22,19 @@ class ProposalRevisiController extends Controller
         }
 
         // Cek apakah status perbaikan terbuka
-        $ruangKontrol = RuangKontrol::first();
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
         }
@@ -78,7 +90,19 @@ class ProposalRevisiController extends Controller
         }
 
         // Cek apakah status perbaikan terbuka
-        $ruangKontrol = RuangKontrol::first();
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
         }
@@ -171,7 +195,19 @@ class ProposalRevisiController extends Controller
         }
 
         // Cek apakah status perbaikan terbuka
-        $ruangKontrol = RuangKontrol::first();
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+        
         if (!$ruangKontrol || $ruangKontrol->status_perbaikan !== 'terbuka') {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Sistem perbaikan proposal sedang ditutup.');
         }

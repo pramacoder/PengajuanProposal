@@ -190,6 +190,11 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::get('/operator/assigned-proposals', [OperatorController::class, 'getAssignedProposals'])->name('operator.assigned.proposals');
     Route::get('/operator/ruang-kontrol', [OperatorController::class, 'ruangKontrol'])->name('operator.ruang.kontrol');
     Route::post('/operator/update-ruang-kontrol', [OperatorController::class, 'updateRuangKontrol'])->name('operator.update.ruang.kontrol');
+    Route::post('/operator/create-jadwal', [OperatorController::class, 'createJadwal'])->name('operator.create.jadwal');
+    Route::get('/operator/jadwal/{id}', [OperatorController::class, 'getJadwal'])->name('operator.get.jadwal');
+    Route::post('/operator/update-jadwal/{id}', [OperatorController::class, 'updateJadwal'])->name('operator.update.jadwal');
+    Route::delete('/operator/delete-jadwal/{id}', [OperatorController::class, 'deleteJadwal'])->name('operator.delete.jadwal');
+    Route::post('/operator/activate-jadwal/{id}', [OperatorController::class, 'activateJadwal'])->name('operator.activate.jadwal');
     Route::get('/operator/active-phase', [OperatorController::class, 'getActivePhase'])->name('operator.active.phase');
     Route::get('/operator/hasil-final', [OperatorController::class, 'hasilFinal'])->name('operator.hasil.final')->middleware('check.phase:perbaikan');
     Route::get('/operator/proposal/{id}/detail', [OperatorController::class, 'proposalDetail'])->name('operator.proposal.detail');
@@ -202,6 +207,7 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::post('/operator/akun/{type}', [OperatorController::class, 'storeAccount'])->name('operator.accounts.store');
     Route::put('/operator/akun/{type}/{id}', [OperatorController::class, 'updateAccount'])->name('operator.accounts.update');
     Route::delete('/operator/akun/{type}/{id}', [OperatorController::class, 'deleteAccount'])->name('operator.accounts.delete');
+    Route::post('/operator/akun/mahasiswa/bulk-delete', [OperatorController::class, 'bulkDeleteMahasiswa'])->name('operator.accounts.mahasiswa.bulk-delete');
     
     // Route untuk notifikasi operator
     Route::get('/operator/notifications', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('operator.notifications.get');

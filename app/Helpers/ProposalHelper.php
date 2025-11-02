@@ -161,12 +161,12 @@ class ProposalHelper
             if ($mahasiswa && $mahasiswa->team_id) {
                 // Cari proposal yang terkait dengan team_id
                 $query = \App\Models\Proposal::where('team_id', $mahasiswa->team_id);
-                
-                if ($excludeProposalId) {
+            
+            if ($excludeProposalId) {
                     $query->where('id_proposal', '!=', $excludeProposalId);
-                }
-                
-                if ($tahunAjaran) {
+            }
+
+            if ($tahunAjaran) {
                     $query->where('tahun_ajaran', $tahunAjaran);
                 }
                 
@@ -184,7 +184,7 @@ class ProposalHelper
                 });
                 
                 $proposal = $query->first();
-                
+
                 if ($proposal) {
                     $tahunInfo = $tahunAjaran ? " tahun {$tahunAjaran}" : "";
                     $memberType = $mahasiswa->is_ketua ? "Ketua" : "Anggota";
@@ -254,7 +254,7 @@ class ProposalHelper
         if ($excludeProposalId) {
             $proposalQuery->where('id_proposal', '!=', $excludeProposalId);
         }
-        
+
         if ($tahunAjaran) {
             $proposalQuery->where('tahun_ajaran', $tahunAjaran);
         }
@@ -487,49 +487,49 @@ class ProposalHelper
     private static function createOrUpdateMahasiswa($data)
     {
         try {
-            $mahasiswa = \App\Models\Mahasiswa::where('nim', $data['nim'])->first();
-            
-            if ($mahasiswa) {
-                // Update mahasiswa yang sudah ada
-                $mahasiswa->update([
-                    'nama_mhs' => $data['nama_mhs'],
-                    'prodi_mhs' => $data['prodi_mhs'],
-                    'fakultas_mhs' => $data['fakultas_mhs'],
-                    'email_mhs' => $data['email_mhs'],
-                    'no_hp_mhs' => $data['no_hp_mhs'],
-                    'team_id' => $data['team_id'],
-                    'is_ketua' => $data['is_ketua'],
-                ]);
+        $mahasiswa = \App\Models\Mahasiswa::where('nim', $data['nim'])->first();
+        
+        if ($mahasiswa) {
+            // Update mahasiswa yang sudah ada
+            $mahasiswa->update([
+                'nama_mhs' => $data['nama_mhs'],
+                'prodi_mhs' => $data['prodi_mhs'],
+                'fakultas_mhs' => $data['fakultas_mhs'],
+                'email_mhs' => $data['email_mhs'],
+                'no_hp_mhs' => $data['no_hp_mhs'],
+                'team_id' => $data['team_id'],
+                'is_ketua' => $data['is_ketua'],
+            ]);
                 
                 \Log::info('Mahasiswa updated', [
                     'nim' => $data['nim'],
                     'team_id' => $data['team_id'],
                     'is_ketua' => $data['is_ketua']
                 ]);
-            } else {
-                // Buat mahasiswa baru
-                $mahasiswa = \App\Models\Mahasiswa::create([
-                    'nim' => $data['nim'],
-                    'nama_mhs' => $data['nama_mhs'],
-                    'prodi_mhs' => $data['prodi_mhs'],
-                    'fakultas_mhs' => $data['fakultas_mhs'],
-                    'email_mhs' => $data['email_mhs'],
-                    'no_hp_mhs' => $data['no_hp_mhs'],
-                    'password' => bcrypt('default123'), // Password default
-                    'role' => 'mahasiswa',
-                    'is_active' => true,
-                    'team_id' => $data['team_id'],
-                    'is_ketua' => $data['is_ketua'],
-                ]);
+        } else {
+            // Buat mahasiswa baru
+            $mahasiswa = \App\Models\Mahasiswa::create([
+                'nim' => $data['nim'],
+                'nama_mhs' => $data['nama_mhs'],
+                'prodi_mhs' => $data['prodi_mhs'],
+                'fakultas_mhs' => $data['fakultas_mhs'],
+                'email_mhs' => $data['email_mhs'],
+                'no_hp_mhs' => $data['no_hp_mhs'],
+                'password' => bcrypt('default123'), // Password default
+                'role' => 'mahasiswa',
+                'is_active' => true,
+                'team_id' => $data['team_id'],
+                'is_ketua' => $data['is_ketua'],
+            ]);
                 
                 \Log::info('Mahasiswa created', [
                     'nim' => $data['nim'],
                     'team_id' => $data['team_id'],
                     'is_ketua' => $data['is_ketua']
                 ]);
-            }
-            
-            return $mahasiswa;
+        }
+        
+        return $mahasiswa;
             
         } catch (\Exception $e) {
             \Log::error('Error in createOrUpdateMahasiswa', [

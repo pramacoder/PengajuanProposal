@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\RuangKontrol;
+use App\Helpers\TahunAjaranHelper;
 use Illuminate\Support\Facades\Auth;
 
 class CheckRuangKontrol
@@ -23,14 +24,27 @@ class CheckRuangKontrol
             return $next($request);
         }
 
-        // Ambil status ruang kontrol
-        $ruangKontrol = RuangKontrol::first();
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
         
         if (!$ruangKontrol) {
-            // Jika tidak ada ruang kontrol, buat default tertutup
+            // Jika tidak ada ruang kontrol, buat default tertutup untuk tahun ajaran terbaru
             $ruangKontrol = RuangKontrol::create([
                 'status_pendaftaran' => 'tertutup',
                 'status_perbaikan' => 'tertutup',
+                'tahun_ajaran' => $tahunAjaranTerbaru,
+                'nama_history' => 'Jadwal ' . $tahunAjaranTerbaru,
+                'is_active' => true,
                 'id_pt' => 1 // Default PT ID
             ]);
         }

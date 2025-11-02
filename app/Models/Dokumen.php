@@ -11,7 +11,7 @@ class Dokumen extends Model
 
     protected $primaryKey = 'id_dokumen';
     protected $fillable = [
-        'path_file', 'tgl_upload', 'id_proposal', 'skim'
+        'path_file', 'path_file_original', 'tgl_upload', 'id_proposal', 'skim'
     ];
 
     // Relasi One-to-One ke Proposal

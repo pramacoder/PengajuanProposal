@@ -305,8 +305,6 @@
                 <div class="card-body">
                     <table class="table table-borderless">
                         <tr>
-                            <td class="py-2 px-2"><strong>ID Proposal:</strong></td>
-                            <td class="py-2 px-2">{{ $proposal->id_proposal }}</td>
                         </tr>
                         <tr>
                             <td class="py-2 px-2"><strong>Judul:</strong></td>
@@ -869,7 +867,7 @@
                 // Fallback auto-reload jika modal tidak tersedia
                 setTimeout(() => {
                     if (document.querySelector('.modal.show') === null) {
-                        window.location.reload();
+                    window.location.reload();
                     }
                 }, 2500);
             } else {

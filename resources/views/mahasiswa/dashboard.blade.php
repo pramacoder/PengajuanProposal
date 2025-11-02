@@ -130,7 +130,6 @@
                         <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                             <thead>
                                 <tr>
-                                    <th>ID Proposal</th>
                                     <th>Judul</th>
                                     <th>Skim</th>
                                     <th>Status</th>
@@ -141,7 +140,6 @@
                             <tbody>
                                 @foreach($proposals as $proposal)
                                 <tr>
-                                    <td>{{ $proposal->id_proposal }}</td>
                                     <td>{{ $proposal->judul_proposal }}</td>
                                     <td>
                                         <span class="badge bg-primary">{{ $proposal->skim }}</span>

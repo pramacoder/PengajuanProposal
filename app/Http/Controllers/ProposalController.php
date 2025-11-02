@@ -50,8 +50,18 @@ class ProposalController extends Controller
         // Cek apakah ada proposal yang perlu direvisi
         $proposalForRevision = $proposals->where('status', 'revisi')->first();
         
-        // Cek status ruang kontrol
-        $ruangKontrol = \App\Models\RuangKontrol::first();
+        // Cek status ruang kontrol - ambil yang aktif untuk tahun ajaran terbaru
+        $tahunAjaranTerbaru = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = \App\Models\RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = \App\Models\RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
 
         return view('mahasiswa.dashboard', compact(
             'proposals', 
@@ -191,7 +201,39 @@ class ProposalController extends Controller
             // Cek apakah ketua tim sudah terdaftar dalam proposal lain di tahun akademik yang sama
             $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
             $existingProposal = ProposalHelper::checkStudentInProposal($request->ketua_nim, null, $tahunAjaran);
-            if ($existingProposal) {
+                
+            // Jika ada proposal lama yang ditolak, hapus file proposal lamanya
+            if ($existingProposal && $existingProposal->status_validasi === 'tidak_valid') {
+                // Hapus file proposal lama (file koreksi dari dosen)
+                if ($existingProposal->dokumen && $existingProposal->dokumen->path_file) {
+                    $oldFilePath = $existingProposal->dokumen->path_file;
+                    if (Storage::disk('public')->exists($oldFilePath)) {
+                        Storage::disk('public')->delete($oldFilePath);
+                        \Log::info('Old proposal file deleted', [
+                            'proposal_id' => $existingProposal->id_proposal,
+                            'file_path' => $oldFilePath
+                        ]);
+                    }
+                    
+                    // Jika ada backup file asli, hapus juga
+                    if ($existingProposal->dokumen->path_file_original) {
+                        $originalFilePath = $existingProposal->dokumen->path_file_original;
+                        if (Storage::disk('public')->exists($originalFilePath)) {
+                            Storage::disk('public')->delete($originalFilePath);
+                            \Log::info('Original proposal file deleted', [
+                                'proposal_id' => $existingProposal->id_proposal,
+                                'file_path' => $originalFilePath
+                            ]);
+                        }
+                    }
+                }
+                
+                // Hapus review PDF dosen jika ada
+                if ($existingProposal->path_review_dosen && Storage::disk('public')->exists($existingProposal->path_review_dosen)) {
+                    Storage::disk('public')->delete($existingProposal->path_review_dosen);
+                }
+            } else if ($existingProposal) {
+                // Jika proposal lama masih aktif (bukan ditolak), tidak boleh membuat proposal baru
                 return back()
                     ->withErrors(['ketua_nim' => "Ketua tim dengan NIM {$request->ketua_nim} sudah terdaftar dalam proposal tahun {$tahunAjaran}: {$existingProposal->judul}"])
                     ->withInput();
@@ -422,17 +464,22 @@ class ProposalController extends Controller
             ->with('dokumen')
             ->firstOrFail();
 
-        if (!$proposal->dokumen) {
+        if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
             return back()->with('error', 'Dokumen tidak ditemukan.');
         }
 
-        $path = storage_path('app/' . $proposal->dokumen->path_file);
+        $path = $proposal->dokumen->path_file;
         
-        if (!file_exists($path)) {
+        if (!Storage::disk('public')->exists($path)) {
             return back()->with('error', 'File tidak ditemukan.');
         }
 
-        return response()->download($path);
+        // Get original filename or use path basename
+        $filename = $proposal->dokumen->path_file_original 
+            ? basename($proposal->dokumen->path_file_original)
+            : basename($path);
+
+        return Storage::disk('public')->download($path, $filename);
     }
 
     /**

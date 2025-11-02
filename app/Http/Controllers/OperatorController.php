@@ -22,10 +22,11 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Mahasiswa;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Helpers\TahunAjaranHelper;
 
 class OperatorController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         // Ambil data untuk dashboard
         $tahun = request('tahun', '2025');
@@ -46,7 +47,107 @@ class OperatorController extends Controller
         // Data perangkingan proposal terbaik
         $topProposals = $this->getTopProposals($tahun);
         
-        return view('operator.dashboard', compact('pkm8Bidang', 'pkmInsentif', 'totalKeseluruhan', 'totalInsentif', 'tahun', 'chartData', 'topProposals'));
+        // Data untuk filter proposal
+        $filteredProposals = $this->getFilteredProposals($request, $tahun);
+        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
+        $prodis = Prodi::orderBy('nama_prodi')->get();
+        
+        // Get unique skims from proposals
+        $skims = Proposal::whereYear('tanggal_pengajuan', $tahun)
+            ->distinct()
+            ->pluck('skim')
+            ->filter()
+            ->sort()
+            ->values();
+        
+        return view('operator.dashboard', compact(
+            'pkm8Bidang', 
+            'pkmInsentif', 
+            'totalKeseluruhan', 
+            'totalInsentif', 
+            'tahun', 
+            'chartData', 
+            'topProposals',
+            'filteredProposals',
+            'fakultas',
+            'prodis',
+            'skims'
+        ));
+    }
+    
+    /**
+     * Get filtered proposals based on request filters
+     */
+    private function getFilteredProposals(Request $request, $tahun)
+    {
+        // Jika tidak ada filter yang dipilih, return empty collection
+        if (!$request->filled('filter_fakultas') && 
+            !$request->filled('filter_prodi') && 
+            !$request->filled('filter_skim') && 
+            !$request->filled('filter_status')) {
+            return collect([]);
+        }
+        
+        $query = Proposal::with(['mahasiswa', 'semuaAnggotaTim', 'hasilFinal'])
+            ->whereYear('tanggal_pengajuan', $tahun);
+        
+        // Filter berdasarkan Fakultas
+        if ($request->filled('filter_fakultas')) {
+            $fakultas = Fakultas::find($request->filter_fakultas);
+            if ($fakultas) {
+                $query->where(function($q) use ($fakultas) {
+                    $q->whereHas('mahasiswa', function($subQ) use ($fakultas) {
+                        $subQ->where('fakultas_mhs', $fakultas->nama_fakultas);
+                    })->orWhereHas('semuaAnggotaTim', function($subQ) use ($fakultas) {
+                        $subQ->where('fakultas_mhs', $fakultas->nama_fakultas);
+                    });
+                });
+            }
+        }
+        
+        // Filter berdasarkan Prodi
+        if ($request->filled('filter_prodi')) {
+            $prodi = Prodi::find($request->filter_prodi);
+            if ($prodi) {
+                $query->where(function($q) use ($prodi) {
+                    $q->whereHas('mahasiswa', function($subQ) use ($prodi) {
+                        $subQ->where('prodi_mhs', $prodi->nama_prodi);
+                    })->orWhereHas('semuaAnggotaTim', function($subQ) use ($prodi) {
+                        $subQ->where('prodi_mhs', $prodi->nama_prodi);
+                    });
+                });
+            }
+        }
+        
+        // Filter berdasarkan Skim
+        if ($request->filled('filter_skim')) {
+            $query->where('skim', $request->filter_skim);
+        }
+        
+        // Filter berdasarkan Status Lolos
+        if ($request->filled('filter_status')) {
+            if ($request->filter_status === 'lolos') {
+                $query->whereHas('hasilFinal', function($q) {
+                    $q->where('status_final', 'lolos');
+                });
+            } elseif ($request->filter_status === 'tidak_lolos') {
+                $query->whereHas('hasilFinal', function($q) {
+                    $q->where('status_final', 'tidak_lolos');
+                });
+            } elseif ($request->filter_status === 'belum_final') {
+                $query->whereDoesntHave('hasilFinal');
+            }
+        }
+        
+        // Order by tanggal pengajuan
+        $proposals = $query->orderBy('tanggal_pengajuan', 'desc');
+        
+        // Limit to 20 by default unless "show_all" is requested
+        if (!$request->has('show_all') || $request->show_all != '1') {
+            $proposals = $proposals->limit(20);
+        }
+        
+        return $proposals->get();
     }
 
     public function pilihReviewer()
@@ -321,17 +422,148 @@ class OperatorController extends Controller
 
     public function ruangKontrol()
     {
-        $ruangKontrol = RuangKontrol::first();
+        // Gunakan TahunAjaranHelper untuk format tahun akademik
+        $tahunAjaranTerpilih = request('tahun', TahunAjaranHelper::getTahunAjaranTerbaru());
         
-        if (!$ruangKontrol) {
-            $ruangKontrol = RuangKontrol::create([
-                'status_pendaftaran' => 'tertutup',
-                'status_perbaikan' => 'tertutup',
-                'id_pt' => auth('operator')->id()
-            ]);
+        // Ambil ruang kontrol aktif untuk tahun akademik yang dipilih
+        $ruangKontrolAktif = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerpilih)
+            ->where('is_active', true)
+            ->first();
+        
+        // Jika tidak ada aktif, ambil yang pertama atau buat baru
+        if (!$ruangKontrolAktif) {
+            $ruangKontrolAktif = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerpilih)->first();
+            
+            if (!$ruangKontrolAktif) {
+                $ruangKontrolAktif = RuangKontrol::create([
+                    'status_pendaftaran' => 'tertutup',
+                    'status_perbaikan' => 'tertutup',
+                    'tahun_ajaran' => $tahunAjaranTerpilih,
+                    'nama_history' => 'Jadwal ' . $tahunAjaranTerpilih,
+                    'is_active' => true,
+                    'id_pt' => auth('operator')->id()
+                ]);
+            } else {
+                // Set yang pertama sebagai aktif jika belum ada yang aktif
+                $ruangKontrolAktif->update(['is_active' => true]);
+            }
         }
         
-        return view('operator.ruang_kontrol', compact('ruangKontrol'));
+        // Ambil semua history untuk dropdown (hanya format tahun akademik YYYY/YYYY)
+        $histories = RuangKontrol::whereNotNull('tahun_ajaran')
+            ->whereRaw("tahun_ajaran LIKE '%/%'") // Hanya format YYYY/YYYY
+            ->orderByRaw("CAST(SUBSTRING_INDEX(tahun_ajaran, '/', 1) AS UNSIGNED) DESC")
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function($item) {
+                // Double check: pastikan format benar (mengandung slash dan memiliki 2 bagian)
+                return strpos($item->tahun_ajaran, '/') !== false && 
+                       count(explode('/', $item->tahun_ajaran)) === 2;
+            })
+            ->groupBy('tahun_ajaran');
+        
+        // Ambil semua jadwal untuk tahun akademik yang dipilih
+        $jadwalTahun = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerpilih)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Auto-check dan update status berdasarkan tanggal (hanya untuk jadwal aktif)
+        if ($ruangKontrolAktif && $ruangKontrolAktif->is_active) {
+            $this->checkAndUpdateAutoActivation($ruangKontrolAktif);
+            // Reload untuk mendapatkan status terbaru
+            $ruangKontrolAktif->refresh();
+        }
+        
+        return view('operator.ruang_kontrol', compact('ruangKontrolAktif', 'histories', 'jadwalTahun', 'tahunAjaranTerpilih'));
+    }
+    
+    /**
+     * Extract year from tahun ajaran format (support "2025/2026")
+     * Untuk tahun akademik, ambil tahun pertama sebagai referensi
+     */
+    private function extractYearFromTahunAjaran($tahunAjaran)
+    {
+        if (strpos($tahunAjaran, '/') !== false) {
+            // Format "2025/2026" - ambil tahun pertama
+            $parts = explode('/', $tahunAjaran);
+            return (int) $parts[0];
+        }
+        // Jika format lama (tanpa slash), kembalikan sebagai integer
+        return (int) $tahunAjaran;
+    }
+    
+    /**
+     * Check apakah tahun akademik adalah tahun masa lalu
+     */
+    private function isTahunAkademikMasaLalu($tahunAjaran)
+    {
+        $tahunAkademikSekarang = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $tahunPertamaSekarang = (int) explode('/', $tahunAkademikSekarang)[0];
+        $tahunPertama = $this->extractYearFromTahunAjaran($tahunAjaran);
+        
+        return $tahunPertama < $tahunPertamaSekarang;
+    }
+
+    /**
+     * Check and auto-activate phases based on dates
+     */
+    private function checkAndUpdateAutoActivation($ruangKontrol)
+    {
+        $now = now();
+        $updated = false;
+        
+        // Check Fase 1: Pengajuan Proposal
+        if ($ruangKontrol->tanggal_pendaftaran_mulai && 
+            $ruangKontrol->tanggal_pendaftaran_selesai) {
+            
+            $mulai = \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_mulai);
+            $selesai = \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_selesai);
+            
+            // Jika sekarang berada dalam rentang tanggal fase 1 dan fase 1 belum terbuka
+            if ($now->gte($mulai) && $now->lte($selesai)) {
+                if ($ruangKontrol->status_pendaftaran !== 'terbuka') {
+                    $ruangKontrol->status_pendaftaran = 'terbuka';
+                    $ruangKontrol->status_perbaikan = 'tertutup'; // Tutup fase 2 jika fase 1 aktif
+                    $updated = true;
+                }
+            } 
+            // Jika sudah lewat tanggal selesai, tutup fase 1
+            elseif ($now->gt($selesai) && $ruangKontrol->status_pendaftaran === 'terbuka') {
+                $ruangKontrol->status_pendaftaran = 'tertutup';
+                $updated = true;
+            }
+        }
+        
+        // Check Fase 2: Perbaikan Proposal (hanya jika fase 1 tidak aktif)
+        if ($ruangKontrol->status_pendaftaran !== 'terbuka' &&
+            $ruangKontrol->tanggal_perbaikan_mulai && 
+            $ruangKontrol->tanggal_perbaikan_selesai) {
+            
+            $mulai = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_mulai);
+            $selesai = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai);
+            
+            // Jika sekarang berada dalam rentang tanggal fase 2 dan fase 2 belum terbuka
+            if ($now->gte($mulai) && $now->lte($selesai)) {
+                if ($ruangKontrol->status_perbaikan !== 'terbuka') {
+                    $ruangKontrol->status_perbaikan = 'terbuka';
+                    $updated = true;
+                }
+            } 
+            // Jika sudah lewat tanggal selesai, tutup fase 2
+            elseif ($now->gt($selesai) && $ruangKontrol->status_perbaikan === 'terbuka') {
+                $ruangKontrol->status_perbaikan = 'tertutup';
+                $updated = true;
+            }
+        }
+        
+        if ($updated) {
+            $ruangKontrol->save();
+            \Log::info('Auto-activation updated', [
+                'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
+                'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
+                'status_perbaikan' => $ruangKontrol->status_perbaikan
+            ]);
+        }
     }
 
     /**
@@ -339,7 +571,18 @@ class OperatorController extends Controller
      */
     public function getActivePhase()
     {
-        $ruangKontrol = RuangKontrol::first();
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
         
         if (!$ruangKontrol) {
             return response()->json([
@@ -379,7 +622,9 @@ class OperatorController extends Controller
             'tanggal_pendaftaran_mulai' => 'required|date',
             'tanggal_pendaftaran_selesai' => 'required|date|after:tanggal_pendaftaran_mulai',
             'tanggal_perbaikan_mulai' => 'required|date',
-            'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai'
+            'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai',
+            'tahun_ajaran' => 'nullable|string',
+            'nama_history' => 'nullable|string'
         ]);
 
         // Implement mutual exclusive logic
@@ -395,7 +640,31 @@ class OperatorController extends Controller
         }
 
         try {
-            $ruangKontrol = RuangKontrol::first();
+            // Tentukan tahun akademik dari tanggal fase 1 (menggunakan logika yang sama dengan TahunAjaranHelper)
+            $tanggalFase1Mulai = \Carbon\Carbon::parse($request->tanggal_pendaftaran_mulai);
+            $tahunFase1 = (int) $tanggalFase1Mulai->format('Y');
+            $bulanFase1 = (int) $tanggalFase1Mulai->format('n');
+            
+            if ($bulanFase1 >= 7) {
+                // Juli-Desember: tahun akademik = tahun / tahun+1 (misal: Des 2025 = 2025/2026)
+                $tahunAjaran = $tahunFase1 . '/' . ($tahunFase1 + 1);
+            } else {
+                // Januari-Juni: tahun akademik = tahun-1 / tahun (misal: Jan 2026 = 2025/2026)
+                $tahunAjaran = ($tahunFase1 - 1) . '/' . $tahunFase1;
+            }
+            
+            // Cek apakah tahun akademik adalah tahun masa lalu (tidak bisa digunakan)
+            if ($this->isTahunAkademikMasaLalu($tahunAjaran)) {
+                $tahunAkademikSekarang = TahunAjaranHelper::getTahunAjaranTerbaru();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tahun akademik masa lalu tidak dapat digunakan. Hanya tahun akademik sekarang (' . $tahunAkademikSekarang . ') dan tahun akademik depan yang bisa digunakan untuk mengatur fase.'
+                ], 422);
+            }
+            
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
+                ->where('is_active', true)
+                ->first();
             
             if (!$ruangKontrol) {
                 // Buat record baru jika belum ada
@@ -406,9 +675,18 @@ class OperatorController extends Controller
                     'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
                     'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
                     'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                    'tahun_ajaran' => $tahunAjaran,
+                    'nama_history' => $request->nama_history ?? 'Jadwal ' . $tahunAjaran,
+                    'is_active' => true,
                     'id_pt' => auth('operator')->id()
                 ]);
             } else {
+                // Simpan data lama sebagai history sebelum update
+                $ruangKontrolLama = $ruangKontrol->replicate();
+                $ruangKontrolLama->is_active = false;
+                $ruangKontrolLama->nama_history = $ruangKontrolLama->nama_history ?? 'History - ' . now()->format('d M Y H:i');
+                $ruangKontrolLama->save();
+                
                 // Update record yang sudah ada
                 $ruangKontrol->update([
                     'status_pendaftaran' => $statusPendaftaran,
@@ -416,7 +694,8 @@ class OperatorController extends Controller
                     'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
                     'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
                     'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai
+                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                    'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history
                 ]);
             }
             
@@ -455,6 +734,297 @@ class OperatorController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Create new schedule for future year
+     */
+    public function createJadwal(Request $request)
+    {
+        try {
+            // Log request untuk debugging
+            \Log::info('Create Jadwal Request', [
+                'data' => $request->all(),
+                'user_id' => auth('operator')->id()
+            ]);
+
+            // Validasi dengan custom messages (tahun_ajaran dari form adalah referensi saja)
+            // Tahun akademik yang sebenarnya akan di-determine dari tanggal fase 1
+            $validated = $request->validate([
+                'tahun_ajaran' => 'nullable|string', // Optional, hanya referensi untuk naming
+                'nama_history' => 'required|string|max:255',
+                'tanggal_pendaftaran_mulai' => 'required|date',
+                'tanggal_pendaftaran_selesai' => 'required|date|after:tanggal_pendaftaran_mulai',
+                'tanggal_perbaikan_mulai' => 'required|date',
+                'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai',
+            ], [
+                // 'tahun_ajaran' tidak ada required message karena optional
+                'nama_history.required' => 'Nama jadwal wajib diisi.',
+                'nama_history.max' => 'Nama jadwal maksimal 255 karakter.',
+                'tanggal_pendaftaran_mulai.required' => 'Tanggal mulai pendaftaran wajib diisi.',
+                'tanggal_pendaftaran_mulai.date' => 'Format tanggal mulai pendaftaran tidak valid.',
+                'tanggal_pendaftaran_selesai.required' => 'Tanggal selesai pendaftaran wajib diisi.',
+                'tanggal_pendaftaran_selesai.date' => 'Format tanggal selesai pendaftaran tidak valid.',
+                'tanggal_pendaftaran_selesai.after' => 'Tanggal selesai pendaftaran harus setelah tanggal mulai.',
+                'tanggal_perbaikan_mulai.required' => 'Tanggal mulai perbaikan wajib diisi.',
+                'tanggal_perbaikan_mulai.date' => 'Format tanggal mulai perbaikan tidak valid.',
+                'tanggal_perbaikan_selesai.required' => 'Tanggal selesai perbaikan wajib diisi.',
+                'tanggal_perbaikan_selesai.date' => 'Format tanggal selesai perbaikan tidak valid.',
+                'tanggal_perbaikan_selesai.after' => 'Tanggal selesai perbaikan harus setelah tanggal mulai.',
+            ]);
+
+            // Validasi tambahan: pastikan tanggal perbaikan setelah tanggal pendaftaran selesai
+            if ($request->tanggal_perbaikan_mulai && $request->tanggal_pendaftaran_selesai) {
+                if (strtotime($request->tanggal_perbaikan_mulai) < strtotime($request->tanggal_pendaftaran_selesai)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tanggal mulai perbaikan harus setelah tanggal selesai pendaftaran.'
+                    ], 422);
+                }
+            }
+
+            // Determine tahun akademik dari tanggal mulai fase 1
+            // Menggunakan logika yang sama dengan TahunAjaranHelper:
+            // - Jika bulan Juli-Desember: tahun akademik = tahun / tahun+1
+            // - Jika bulan Januari-Juni: tahun akademik = tahun-1 / tahun
+            $tanggalFase1Mulai = \Carbon\Carbon::parse($request->tanggal_pendaftaran_mulai);
+            $tahunFase1 = (int) $tanggalFase1Mulai->format('Y');
+            $bulanFase1 = (int) $tanggalFase1Mulai->format('n');
+            
+            if ($bulanFase1 >= 7) {
+                // Juli-Desember: tahun akademik = tahun / tahun+1 (misal: Des 2025 = 2025/2026)
+                $tahunAjaranFormatted = $tahunFase1 . '/' . ($tahunFase1 + 1);
+            } else {
+                // Januari-Juni: tahun akademik = tahun-1 / tahun (misal: Jan 2026 = 2025/2026)
+                $tahunAjaranFormatted = ($tahunFase1 - 1) . '/' . $tahunFase1;
+            }
+            
+            // Validasi: tahun akademik harus >= tahun akademik sekarang
+            $tahunAjaranSekarang = TahunAjaranHelper::getTahunAjaranTerbaru();
+            $tahunPertamaSekarang = (int) explode('/', $tahunAjaranSekarang)[0];
+            
+            if ($tahunFase1 < $tahunPertamaSekarang || 
+                ($bulanFase1 < 7 && ($tahunFase1 - 1) < $tahunPertamaSekarang)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tahun akademik dari fase pertama tidak boleh lebih kecil dari tahun akademik sekarang (' . $tahunAjaranSekarang . ').'
+                ], 422);
+            }
+            
+            // Cek apakah sudah ada jadwal dengan nama yang sama untuk tahun akademik yang sama
+            $existing = RuangKontrol::where('tahun_ajaran', $tahunAjaranFormatted)
+                ->where('nama_history', $request->nama_history)
+                ->first();
+            
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jadwal dengan nama yang sama sudah ada untuk tahun akademik ' . $tahunAjaranFormatted . '.'
+                ], 422);
+            }
+
+            // Get operator ID
+            $operatorId = auth('operator')->id();
+            if (!$operatorId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sesi Anda telah berakhir. Silakan login ulang.'
+                ], 401);
+            }
+
+            $ruangKontrol = RuangKontrol::create([
+                'status_pendaftaran' => 'tertutup',
+                'status_perbaikan' => 'tertutup',
+                'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                'tahun_ajaran' => $tahunAjaranFormatted, // Gunakan tahun yang di-determine dari fase 1
+                'nama_history' => $request->nama_history,
+                'is_active' => false,
+                'id_pt' => $operatorId
+            ]);
+
+            \Log::info('Jadwal berhasil dibuat', [
+                'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
+                'tahun_ajaran' => $ruangKontrol->tahun_ajaran,
+                'nama_history' => $ruangKontrol->nama_history
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal berhasil dibuat.',
+                'data' => $ruangKontrol
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Handle validation errors
+            $errors = $e->validator->errors()->all();
+            return response()->json([
+                'success' => false,
+                'message' => implode(' ', $errors)
+            ], 422);
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            \Log::error('Error creating jadwal', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membuat jadwal: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get schedule by ID
+     */
+    public function getJadwal($id)
+    {
+        try {
+            $ruangKontrol = RuangKontrol::findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $ruangKontrol
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal tidak ditemukan: ' . $e->getMessage()
+            ], 404);
+        }
+    }
+
+    /**
+     * Update schedule (only if not expired)
+     */
+    public function updateJadwal(Request $request, $id)
+    {
+        $ruangKontrol = RuangKontrol::findOrFail($id);
+        
+        // Cek apakah tahun ajaran adalah tahun masa lalu (tidak bisa diupdate)
+        // Support format "2025" dan "2025/2026"
+        $tahunSekarang = (int) date('Y');
+        $tahunAjaran = $this->extractYearFromTahunAjaran($ruangKontrol->tahun_ajaran);
+        
+        if ($tahunAjaran < $tahunSekarang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal tahun masa lalu tidak dapat diupdate. Hanya jadwal tahun sekarang (' . $tahunSekarang . ') dan tahun depan yang bisa diupdate.'
+            ], 422);
+        }
+        
+        // Cek apakah jadwal sudah lewat (tidak bisa diupdate)
+        $today = now();
+        if ($ruangKontrol->tanggal_pendaftaran_selesai && $ruangKontrol->tanggal_pendaftaran_selesai < $today) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal yang sudah lewat tidak dapat diupdate.'
+            ], 422);
+        }
+
+        $request->validate([
+            'nama_history' => 'required|string|max:255',
+            'tanggal_pendaftaran_mulai' => 'required|date',
+            'tanggal_pendaftaran_selesai' => 'required|date|after:tanggal_pendaftaran_mulai',
+            'tanggal_perbaikan_mulai' => 'required|date',
+            'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai',
+        ]);
+
+        try {
+            $ruangKontrol->update([
+                'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                'nama_history' => $request->nama_history,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal berhasil diperbarui.',
+                'data' => $ruangKontrol
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete schedule (only if not expired)
+     */
+    public function deleteJadwal($id)
+    {
+        $ruangKontrol = RuangKontrol::findOrFail($id);
+        
+        // Cek apakah jadwal sudah lewat (tidak bisa dihapus jika sudah lewat dan aktif)
+        $today = now();
+        if ($ruangKontrol->is_active && $ruangKontrol->tanggal_pendaftaran_selesai && $ruangKontrol->tanggal_pendaftaran_selesai < $today) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jadwal aktif yang sudah lewat tidak dapat dihapus.'
+            ], 422);
+        }
+
+        try {
+            $ruangKontrol->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal berhasil dihapus.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Activate schedule for a year
+     */
+    public function activateJadwal($id)
+    {
+        try {
+            $ruangKontrol = RuangKontrol::findOrFail($id);
+            
+            // Cek apakah tahun ajaran adalah tahun masa lalu (tidak bisa diaktifkan)
+            // Support format "2025" dan "2025/2026"
+            $tahunSekarang = (int) date('Y');
+            $tahunAjaran = $this->extractYearFromTahunAjaran($ruangKontrol->tahun_ajaran);
+            
+            if ($tahunAjaran < $tahunSekarang) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jadwal tahun masa lalu tidak dapat diaktifkan. Hanya jadwal tahun sekarang (' . $tahunSekarang . ') dan tahun depan yang bisa diaktifkan.'
+                ], 422);
+            }
+            
+            // Set semua jadwal untuk tahun yang sama menjadi tidak aktif
+            RuangKontrol::where('tahun_ajaran', $ruangKontrol->tahun_ajaran)
+                ->update(['is_active' => false]);
+            
+            // Set jadwal yang dipilih sebagai aktif
+            $ruangKontrol->update(['is_active' => true]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal berhasil diaktifkan.',
+                'data' => $ruangKontrol
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
@@ -641,15 +1211,58 @@ class OperatorController extends Controller
     }
 
     // Manajemen Akun
-    public function manageAccounts()
+    public function manageAccounts(Request $request)
     {
-        $mahasiswas = Mahasiswa::orderBy('created_at', 'desc')->limit(100)->get();
+        // Filter untuk Mahasiswa
+        $query = Mahasiswa::query();
+        
+        // Filter berdasarkan Fakultas
+        if ($request->filled('filter_fakultas')) {
+            $fakultas = Fakultas::find($request->filter_fakultas);
+            if ($fakultas) {
+                $query->where('fakultas_mhs', $fakultas->nama_fakultas);
+            }
+        }
+        
+        // Filter berdasarkan Prodi
+        if ($request->filled('filter_prodi')) {
+            $prodi = Prodi::find($request->filter_prodi);
+            if ($prodi) {
+                $query->where('prodi_mhs', $prodi->nama_prodi);
+            }
+        }
+        
+        // Filter berdasarkan NIM (search)
+        if ($request->filled('filter_nim')) {
+            $query->where('nim', 'like', '%' . $request->filter_nim . '%');
+        }
+        
+        $mahasiswas = $query->orderBy('created_at', 'desc')->get();
+        
+        // Data lainnya tetap sama
         $dosens = Dosen::orderBy('created_at', 'desc')->limit(100)->get();
         $reviewers = Reviewer::orderBy('created_at', 'desc')->limit(100)->get();
         $operators = PT::orderBy('created_at', 'desc')->limit(100)->get();
         $fakultas = Fakultas::orderBy('nama_fakultas')->get();
         $prodis = Prodi::orderBy('nama_prodi')->get();
+        
         return view('operator.manajemen_akun', compact('mahasiswas', 'dosens', 'reviewers', 'operators', 'fakultas', 'prodis'));
+    }
+    
+    // Bulk Delete Mahasiswa
+    public function bulkDeleteMahasiswa(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mahasiswas,id_mahasiswa',
+        ]);
+        
+        try {
+            $count = Mahasiswa::whereIn('id_mahasiswa', $request->ids)->delete();
+            return redirect()->route('operator.manage.accounts')->with('success', "Berhasil menghapus {$count} akun mahasiswa.");
+        } catch (\Exception $e) {
+            return redirect()->route('operator.manage.accounts')->with('error', 'Gagal menghapus akun mahasiswa: ' . $e->getMessage());
+        }
     }
 
     public function storeAccount(Request $request, $type)

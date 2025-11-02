@@ -16,6 +16,7 @@ class Proposal extends Model
         'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen', 'team_id',
         'dosen_pembimbing', 'dana_diajukan', 'tahun_ajaran', 'tanggal_validasi',
         'id_reviewer_administratif', 'id_reviewer_substantif_1', 'id_reviewer_substantif_2',
+        'path_review_dosen', 'nama_file_review_dosen', 'tanggal_review_dosen',
         
         // Data ketua tim (untuk kompatibilitas dengan sistem lama)
         'ketua_nama', 'ketua_nim', 'ketua_prodi', 'ketua_fakultas', 'ketua_email', 'ketua_no_hp',

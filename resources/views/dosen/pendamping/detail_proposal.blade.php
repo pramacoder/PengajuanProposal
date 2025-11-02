@@ -71,59 +71,59 @@
                             </div>
                             <div class="card-body">
                                 <table class="table table-borderless mb-0">
-                                    <tr>
-                                        <td width="30%"><strong>Judul:</strong></td>
+                            <tr>
+                                <td width="30%"><strong>Judul:</strong></td>
                                         <td><div class="text-wrap" style="max-width: 100%; word-wrap: break-word;">{{ $proposal->judul_proposal }}</div></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Skim:</strong></td>
-                                        <td>{{ $proposal->skim }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Ketua:</strong></td>
-                                        <td>{{ $proposal->mahasiswa->nama_mhs }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Prodi:</strong></td>
-                                        <td>{{ $proposal->mahasiswa->prodi->nama_prodi ?? 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Fakultas:</strong></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Skim:</strong></td>
+                                <td>{{ $proposal->skim }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ketua:</strong></td>
+                                <td>{{ $proposal->mahasiswa->nama_mhs }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Prodi:</strong></td>
+                                <td>{{ $proposal->mahasiswa->prodi->nama_prodi ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Fakultas:</strong></td>
                                         <td><div class="text-wrap" style="max-width: 100%; word-wrap: break-word;">{{ $proposal->mahasiswa->fakultas->nama_fakultas ?? 'N/A' }}</div></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Email Ketua:</strong></td>
-                                        <td>{{ $proposal->mahasiswa->email_mhs ?? 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Status Validasi:</strong></td>
-                                        <td>
-                                            @if($proposal->status_validasi === 'valid')
-                                                <span class="badge bg-success">Sudah Divalidasi</span>
-                                            @elseif($proposal->status_validasi === 'tidak_valid')
-                                                <span class="badge bg-danger">Ditolak</span>
-                                            @else
-                                                <span class="badge bg-warning">Belum Divalidasi</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Status Proposal:</strong></td>
-                                        <td>
-                                            @if($proposal->status === 'valid')
-                                                <span class="badge bg-success">Valid</span>
-                                            @elseif($proposal->status === 'tidak_valid')
-                                                <span class="badge bg-danger">Tidak Valid</span>
-                                            @elseif($proposal->status === 'pending')
-                                                <span class="badge bg-warning">Pending</span>
-                                            @elseif($proposal->status === 'submitted')
-                                                <span class="badge bg-info">Submitted</span>
-                                            @else
-                                                <span class="badge bg-secondary">{{ ucfirst($proposal->status) }}</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                </table>
+                            </tr>
+                            <tr>
+                                <td><strong>Email Ketua:</strong></td>
+                                <td>{{ $proposal->mahasiswa->email_mhs ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status Validasi:</strong></td>
+                                <td>
+                                    @if($proposal->status_validasi === 'valid')
+                                        <span class="badge bg-success">Sudah Divalidasi</span>
+                                    @elseif($proposal->status_validasi === 'tidak_valid')
+                                        <span class="badge bg-danger">Ditolak</span>
+                                    @else
+                                        <span class="badge bg-warning">Belum Divalidasi</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status Proposal:</strong></td>
+                                <td>
+                                    @if($proposal->status === 'valid')
+                                        <span class="badge bg-success">Valid</span>
+                                    @elseif($proposal->status === 'tidak_valid')
+                                        <span class="badge bg-danger">Tidak Valid</span>
+                                    @elseif($proposal->status === 'pending')
+                                        <span class="badge bg-warning">Pending</span>
+                                    @elseif($proposal->status === 'submitted')
+                                        <span class="badge bg-info">Submitted</span>
+                                    @else
+                                        <span class="badge bg-secondary">{{ ucfirst($proposal->status) }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        </table>
                             </div>
                         </div>
                     </div>
@@ -135,23 +135,23 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    @if($proposal->dokumen && $proposal->dokumen->path_file)
-                                        <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
-                                           class="btn btn-outline-primary" target="_blank">
-                                            <i class="fas fa-download me-2"></i>Download Proposal
-                                        </a>
-                                    @else
+                        <div class="d-grid gap-2">
+                            @if($proposal->dokumen && $proposal->dokumen->path_file)
+                                <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
+                                   class="btn btn-outline-primary" target="_blank">
+                                    <i class="fas fa-download me-2"></i>Download Proposal
+                                </a>
+                            @else
                                         <div class="alert alert-warning mb-0">
-                                            <i class="fas fa-exclamation-triangle me-2"></i>
-                                            File proposal belum tersedia
-                                        </div>
-                                    @endif
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    File proposal belum tersedia
                                 </div>
-                                
+                            @endif
+                                </div>
+                            
                                 <!-- Info Alert -->
                                 <div class="alert alert-info mt-3 mb-0">
-                                    <i class="fas fa-info-circle me-2"></i>
+                                <i class="fas fa-info-circle me-2"></i>
                                     <small>File lampiran tidak tersedia (sistem hanya mendukung 1 file per proposal)</small>
                                 </div>
                             </div>
@@ -194,8 +194,8 @@
 
                 <!-- Form Validasi -->
                 <div class="row">
-                    <div class="col-12">
-                        <h6 class="fw-bold text-primary mb-3">Aksi Validasi</h6>
+                    <div class="col-12 text-center">
+                        <h6 class="fw-bold mb-3">Aksi Validasi</h6>
                         
                         @if($proposal->status_validasi === 'valid')
                             <div class="alert alert-success">
@@ -217,8 +217,11 @@
                                 @endif
                             </div>
                         @else
-                            <form action="{{ route('dosen.pendamping.proposal.validasi.submit', $proposal->id_proposal) }}" method="POST" id="validasiForm" onsubmit="return validateForm()">
+                            <form action="{{ route('dosen.pendamping.proposal.validasi.submit', $proposal->id_proposal) }}" method="POST" id="validasiForm" enctype="multipart/form-data" onsubmit="return validateForm()">
                                 @csrf
+                                
+                                
+                                
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="d-grid gap-2">
@@ -250,6 +253,23 @@
                                         <textarea name="catatan" class="form-control" rows="4" 
                                                   placeholder="Masukkan alasan penolakan proposal..." required></textarea>
                                     </div>
+                                    
+                                    <!-- Upload File Koreksi (Opsional) -->
+                                    <div class="mb-3">
+                                        <label for="file_koreksi" class="form-label">
+                                            <i class="fas fa-file-pdf me-2"></i>
+                                            Upload File Koreksi <small class="text-muted">(Opsional - PDF)</small>
+                                        </label>
+                                        <input type="file" class="form-control" id="file_koreksi" name="file_koreksi" accept=".pdf">
+                                        <small class="form-text text-muted">
+                                            Format: PDF saja. Maksimal: 5MB. File ini akan menggantikan file proposal asli.
+                                        </small>
+                                        <div class="alert alert-info mt-2 mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <small>File koreksi yang diupload akan menggantikan file proposal asli. Mahasiswa akan melihat file ini sebagai file proposal yang telah dikoreksi.</small>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                         <button type="button" class="btn btn-secondary me-md-2" onclick="hideRejectForm()">
                                             <i class="fas fa-times me-2"></i>Batal

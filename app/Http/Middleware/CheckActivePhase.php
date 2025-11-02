@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\RuangKontrol;
+use App\Helpers\TahunAjaranHelper;
 
 class CheckActivePhase
 {
@@ -18,7 +19,18 @@ class CheckActivePhase
      */
     public function handle(Request $request, Closure $next, string $requiredPhase)
     {
-        $ruangKontrol = RuangKontrol::first();
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
         
         if (!$ruangKontrol) {
             // If no ruang kontrol exists, deny access

@@ -12,13 +12,22 @@
                     <h2><i class="fas fa-user-check me-2"></i>Dashboard Dosen Pendamping</h2>
                     <p class="text-muted">Validasi proposal yang ditugaskan kepada Anda</p>
                 </div>
-                <div class="btn-group" role="group">
-                    <a href="{{ route('dosen.pembimbing.dashboard') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-chalkboard-teacher me-1"></i>Pembimbing
-                    </a>
-                    <a href="{{ route('dosen.pendamping.dashboard') }}" class="btn btn-primary">
-                        <i class="fas fa-user-check me-1"></i>Pendamping
-                    </a>
+                <div>
+                    <!-- Filter Tahun Ajaran -->
+                    <form method="GET" action="{{ route('dosen.pendamping.dashboard') }}" class="d-inline">
+                        <div class="input-group">
+                            <label class="input-group-text" for="tahun_ajaran">
+                                <i class="fas fa-calendar me-2"></i>Tahun Ajaran
+                            </label>
+                            <select name="tahun_ajaran" id="tahun_ajaran" class="form-select" onchange="this.form.submit()" style="min-width: 150px;">
+                                @foreach($tahunAjaranList as $tahunAjaran)
+                                    <option value="{{ $tahunAjaran }}" {{ $tahunAjaranTerpilih == $tahunAjaran ? 'selected' : '' }}>
+                                        {{ $tahunAjaran }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -94,7 +103,7 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-list me-2"></i>Proposal untuk Validasi
+                        <i class="fas fa-list me-2"></i>Daftar Proposal - Tahun Ajaran {{ $tahunAjaranTerpilih }}
                     </h5>
                 </div>
                 <div class="card-body">
@@ -174,6 +183,7 @@
                             <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">Belum Ada Proposal</h5>
                             <p class="text-muted">Proposal yang ditugaskan kepada Anda untuk divalidasi akan muncul di sini.</p>
+                            <small class="text-muted">Tahun Ajaran: {{ $tahunAjaranTerpilih }}</small>
                         </div>
                     @endif
                 </div>
