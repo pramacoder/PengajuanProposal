@@ -133,65 +133,65 @@
                             </div>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-striped align-middle">
-                                <thead class="table-dark">
-                                    <tr>
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <thead class="table-dark">
+                                <tr>
                                         <th width="50">
                                             <input type="checkbox" id="selectAll" class="form-check-input">
                                         </th>
-                                        <th>NIM</th>
-                                        <th>Nama</th>
-                                        <th>Email</th>
-                                        <th>Prodi</th>
-                                        <th>Fakultas</th>
-                                        <th>Aktif</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                                    <th>NIM</th>
+                                    <th>Nama</th>
+                                    <th>Email</th>
+                                    <th>Prodi</th>
+                                    <th>Fakultas</th>
+                                    <th>Aktif</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                     @forelse($mahasiswas as $m)
-                                    <tr>
+                                <tr>
                                         <td>
                                             <input type="checkbox" name="ids[]" value="{{ $m->id_mahasiswa }}" class="form-check-input mahasiswa-checkbox">
                                         </td>
-                                        <td>{{ $m->nim }}</td>
-                                        <td>{{ $m->nama_mhs }}</td>
-                                        <td>{{ $m->email_mhs }}</td>
-                                        <td>{{ $m->prodi_mhs }}</td>
-                                        <td>{{ $m->fakultas_mhs }}</td>
-                                        <td>
-                                            <span class="badge bg-{{ $m->is_active ? 'success' : 'secondary' }}">{{ $m->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                        </td>
-                                        <td class="d-flex gap-2">
-                                            <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
-                                                    data-id="{{ $m->id_mahasiswa }}"
-                                                    data-nama="{{ $m->nama_mhs }}"
-                                                    data-nim="{{ $m->nim }}"
-                                                    data-email="{{ $m->email_mhs }}"
-                                                    data-no-hp="{{ $m->no_hp_mhs }}"
-                                                    data-fakultas="{{ $m->fakultas_mhs }}"
-                                                    data-prodi="{{ $m->prodi_mhs }}"
-                                                    data-is-active="{{ $m->is_active ? '1' : '0' }}"
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#editMahasiswaModal">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <form method="POST" action="{{ route('operator.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                                            </form>
-                                        </td>
-                                    </tr>
+                                    <td>{{ $m->nim }}</td>
+                                    <td>{{ $m->nama_mhs }}</td>
+                                    <td>{{ $m->email_mhs }}</td>
+                                    <td>{{ $m->prodi_mhs }}</td>
+                                    <td>{{ $m->fakultas_mhs }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ $m->is_active ? 'success' : 'secondary' }}">{{ $m->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                                    </td>
+                                    <td class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
+                                                data-id="{{ $m->id_mahasiswa }}"
+                                                data-nama="{{ $m->nama_mhs }}"
+                                                data-nim="{{ $m->nim }}"
+                                                data-email="{{ $m->email_mhs }}"
+                                                data-no-hp="{{ $m->no_hp_mhs }}"
+                                                data-fakultas="{{ $m->fakultas_mhs }}"
+                                                data-prodi="{{ $m->prodi_mhs }}"
+                                                data-is-active="{{ $m->is_active ? '1' : '0' }}"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editMahasiswaModal">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form method="POST" action="{{ route('operator.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
                                     @empty
                                     <tr>
                                         <td colspan="8" class="text-center">Tidak ada data mahasiswa</td>
                                     </tr>
                                     @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                            </tbody>
+                        </table>
+                    </div>
                     </form>
                 </div>
 
