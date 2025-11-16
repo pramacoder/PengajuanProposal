@@ -381,7 +381,7 @@
 
     function loadPDFDocument() {
         const pdfViewer = document.getElementById('pdfViewer');
-        const pdfUrl = '{{ $proposal->dokumen ? Storage::url($proposal->dokumen->path_file) : "" }}';
+        const pdfUrl = '{{ $proposal->dokumen ? asset('storage/' . $proposal->dokumen->path_file) : "" }}';
         
         if (!pdfUrl) {
             pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen proposal tidak ditemukan.</p></div>';

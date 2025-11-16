@@ -644,7 +644,7 @@
                 <div class="info-item">
                     <span class="info-label">File Review</span>
                     <span class="info-value">
-                        <a href="{{ Storage::disk('public')->url($proposal->path_review_dosen) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <a href="{{ asset('storage/' . $proposal->path_review_dosen) }}" target="_blank" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-download me-1"></i>
                             {{ $proposal->nama_file_review_dosen ?? 'Download Review PDF' }}
                         </a>
@@ -741,7 +741,7 @@
                                 <strong>Tanggal Submit:</strong> {{ $revisi->tanggal_submit->format('d/m/Y H:i') }}
                             </div>
                             <div class="col-md-3 text-end">
-                                <a href="{{ Storage::url($revisi->path_file) }}" 
+                                <a href="{{ asset('storage/' . $revisi->path_file) }}" 
                                    class="btn btn-outline-primary btn-sm" 
                                    download="{{ $revisi->nama_file }}">
                                     <i class="fas fa-download me-1"></i>Download
@@ -835,7 +835,7 @@
 
     function loadPDFDocument() {
         const pdfViewer = document.getElementById('pdfViewer');
-        const pdfUrl = '{{ $proposal->dokumen ? Storage::url($proposal->dokumen->path_file) : "" }}';
+        const pdfUrl = '{{ $proposal->dokumen ? asset('storage/' . $proposal->dokumen->path_file) : "" }}';
         
         console.log('Loading PDF from URL:', pdfUrl);
         
@@ -916,7 +916,7 @@
     function loadRevisionDocuments() {
         @if($proposal->proposalRevisi->count() > 0)
             @foreach($proposal->proposalRevisi as $revisi)
-                loadRevisionPDF({{ $revisi->id_revisi }}, '{{ Storage::url($revisi->path_file) }}');
+                loadRevisionPDF({{ $revisi->id_revisi }}, '{{ asset('storage/' . $revisi->path_file) }}');
             @endforeach
         @endif
     }
@@ -986,7 +986,7 @@
                 <p>Browser Anda tidak dapat menampilkan PDF secara langsung.</p>
                 <p>Silakan download file untuk melihat dokumen:</p>
                 <div style="margin-top: 1rem;">
-                    <a href="{{ Storage::url($proposal->proposalRevisi->first()->path_file ?? '') }}" 
+                    <a href="{{ asset('storage/' . ($proposal->proposalRevisi->first()->path_file ?? '')) }}" 
                        class="btn btn-primary">
                         <i class="fas fa-download me-1"></i>Download PDF
                     </a>

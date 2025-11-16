@@ -53,5 +53,31 @@ class TahunAjaranHelper
         
         return array_reverse($list); // Urutkan dari terbaru ke terlama
     }
+    
+    /**
+     * Get tahun ajaran berdasarkan tanggal tertentu
+     * 
+     * @param string|\DateTime|\Carbon\Carbon $date Tanggal untuk menentukan tahun ajaran
+     * @return string Format: YYYY/YYYY
+     */
+    public static function getTahunAjaranByDate($date)
+    {
+        if (is_string($date)) {
+            $date = \Carbon\Carbon::parse($date);
+        } elseif (!$date instanceof \Carbon\Carbon && !$date instanceof \DateTime) {
+            $date = \Carbon\Carbon::parse($date);
+        }
+        
+        $year = (int) $date->format('Y');
+        $month = (int) $date->format('n');
+        
+        // Jika bulan Januari-Juni, tahun ajaran adalah tahun sebelumnya/tahun sekarang
+        // Jika bulan Juli-Desember, tahun ajaran adalah tahun sekarang/tahun berikutnya
+        if ($month >= 7) {
+            return $year . '/' . ($year + 1);
+        } else {
+            return ($year - 1) . '/' . $year;
+        }
+    }
 }
 

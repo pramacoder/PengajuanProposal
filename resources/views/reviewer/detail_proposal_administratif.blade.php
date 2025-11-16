@@ -275,7 +275,7 @@
                         <div class="pdf-container-full">
                             <iframe 
                                 id="pdfViewer"
-                                src="{{ Storage::url($proposal->dokumen->path_file) }}"
+                                src="{{ asset('storage/' . $proposal->dokumen->path_file) }}"
                                 style="width: 100%; height: 80vh; border: none; border-radius: 8px;"
                                 frameborder="0"
                                 allowfullscreen>
@@ -491,117 +491,143 @@
 
                         <!-- Kesalahan Administratif -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Kesalahan Administratif yang Ditemukan <span class="text-danger">*</span></label>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Dokumen tidak lengkap" id="error1" 
-                                               {{ $existingReview && in_array('Dokumen tidak lengkap', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error1">
-                                            Dokumen tidak lengkap
-                                        </label>
+                            <label class="form-label fw-bold d-block">Kesalahan Administratif yang Ditemukan <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-danger d-block small" style="font-size: 0.85rem; margin-top: 0.5rem;">Pastikan anda mencentang hanya kesalahan yang sesuai dengan proposal<span class="text-danger">*</span></label>
+                            @php
+                                // Pastikan checklist tersedia, jika tidak gunakan default
+                                $checklistItems = $checklist ?? [];
+                                $existingChecklist = $existingReview ? ($existingReview->checklist ?? []) : [];
+                                
+                                // Jika checklist kosong atau tidak ada, gunakan default
+                                if (empty($checklistItems)) {
+                                    $checklistItems = \App\Helpers\ProposalHelper::getReviewChecklist('default');
+                                }
+                                
+                                // Collect all items from checklist untuk validasi
+                                $allChecklistItems = [];
+                                foreach ($checklistItems as $kategori => $items) {
+                                    if (is_array($items)) {
+                                        $allChecklistItems = array_merge($allChecklistItems, $items);
+                                    }
+                                }
+                                
+                                // Find items in existing review that are not in new checklist (backward compatibility)
+                                $orphanedItems = [];
+                                if (!empty($existingChecklist) && is_array($existingChecklist)) {
+                                    foreach ($existingChecklist as $item) {
+                                        if (!in_array($item, $allChecklistItems)) {
+                                            $orphanedItems[] = $item;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            
+                            @if(empty($checklistItems))
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Checklist untuk skim {{ $proposal->skim }} belum tersedia. Menggunakan checklist umum.
+                                </div>
+                            @endif
+                            
+                            @foreach($checklistItems as $kategori => $items)
+                                @if(is_array($items) && count($items) > 0)
+                                    <div class="checklist-category mb-4">
+                                        <div class="card border-primary mb-3">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-list-check me-2"></i>{{ $kategori }}
+                                                    <span class="badge bg-light text-primary ms-2" id="counter-{{ md5($kategori) }}">
+                                                        0 / {{ count($items) }}
+                                                    </span>
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    @php
+                                                        $itemsPerColumn = ceil(count($items) / 2);
+                                                        $itemsArray = array_values($items);
+                                                    @endphp
+                                                    
+                                                    @for($i = 0; $i < 2; $i++)
+                                                        <div class="col-md-6">
+                                                            @for($j = $i * $itemsPerColumn; $j < min(($i + 1) * $itemsPerColumn, count($itemsArray)); $j++)
+                                                                @php
+                                                                    $item = $itemsArray[$j];
+                                                                    $itemId = 'error_' . md5($kategori . '_' . $item);
+                                                                    $isChecked = in_array($item, $existingChecklist);
+                                                                @endphp
+                                                                <div class="form-check mb-2">
+                                                                    <input class="form-check-input checklist-item" 
+                                                                           type="checkbox" 
+                                                                           name="kesalahan_administratif[]" 
+                                                                           value="{{ $item }}" 
+                                                                           id="{{ $itemId }}"
+                                                                           data-category="{{ md5($kategori) }}"
+                                                                           {{ $isChecked ? 'checked' : '' }}>
+                                                                    <label class="form-check-label" for="{{ $itemId }}">
+                                                                        {{ $item }}
+                                                                    </label>
+                                                                </div>
+                                                            @endfor
+                                                        </div>
+                                                    @endfor
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Format dokumen tidak sesuai" id="error2"
-                                               {{ $existingReview && in_array('Format dokumen tidak sesuai', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error2">
-                                            Format dokumen tidak sesuai
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Data mahasiswa tidak lengkap" id="error3"
-                                               {{ $existingReview && in_array('Data mahasiswa tidak lengkap', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error3">
-                                            Data mahasiswa tidak lengkap
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Data dosen tidak lengkap" id="error4"
-                                               {{ $existingReview && in_array('Data dosen tidak lengkap', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error4">
-                                            Data dosen tidak lengkap
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Skim tidak sesuai" id="error5"
-                                               {{ $existingReview && in_array('Skim tidak sesuai', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error5">
-                                            Skim tidak sesuai
-                                        </label>
+                                @endif
+                            @endforeach
+                            
+                            {{-- Tampilkan item dari review lama yang tidak ada di checklist baru (backward compatibility) --}}
+                            @if(!empty($orphanedItems))
+                                <div class="checklist-category mb-4">
+                                    <div class="card border-warning mb-3">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Item dari Review Sebelumnya
+                                                <span class="badge bg-light text-warning ms-2">
+                                                    {{ count($orphanedItems) }} item
+                                                </span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-info mb-3">
+                                                <small>
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Item berikut berasal dari review sebelumnya dan tidak ada di checklist baru untuk skim ini.
+                                                </small>
+                                            </div>
+                                            <div class="row">
+                                                @php
+                                                    $orphanedPerColumn = ceil(count($orphanedItems) / 2);
+                                                @endphp
+                                                @for($i = 0; $i < 2; $i++)
+                                                    <div class="col-md-6">
+                                                        @for($j = $i * $orphanedPerColumn; $j < min(($i + 1) * $orphanedPerColumn, count($orphanedItems)); $j++)
+                                                            @php
+                                                                $item = $orphanedItems[$j];
+                                                                $itemId = 'error_orphaned_' . md5($item);
+                                                            @endphp
+                                                            <div class="form-check mb-2">
+                                                                <input class="form-check-input checklist-item" 
+                                                                       type="checkbox" 
+                                                                       name="kesalahan_administratif[]" 
+                                                                       value="{{ $item }}" 
+                                                                       id="{{ $itemId }}"
+                                                                       checked>
+                                                                <label class="form-check-label" for="{{ $itemId }}">
+                                                                    {{ $item }}
+                                                                </label>
+                                                            </div>
+                                                        @endfor
+                                                    </div>
+                                                @endfor
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Tanda tangan tidak lengkap" id="error7"
-                                               {{ $existingReview && in_array('Tanda tangan tidak lengkap', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error7">
-                                            Tanda tangan tidak lengkap
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Stempel/legitimasi tidak ada" id="error8"
-                                               {{ $existingReview && in_array('Stempel/legitimasi tidak ada', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error8">
-                                            Stempel/legitimasi tidak ada
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Salah penulisan identitas (nama/NIM/NIP)" id="error9"
-                                               {{ $existingReview && in_array('Salah penulisan identitas (nama/NIM/NIP)', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error9">
-                                            Salah penulisan identitas (nama/NIM/NIP)
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Tanggal dokumen tidak ada" id="error10"
-                                               {{ $existingReview && in_array('Tanggal dokumen tidak ada', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error10">
-                                            Tanggal dokumen tidak ada
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Jumlah halaman tidak sesuai ketentuan" id="error11"
-                                               {{ $existingReview && in_array('Jumlah halaman tidak sesuai ketentuan', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error11">
-                                            Jumlah halaman tidak sesuai ketentuan
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="File tidak terbaca atau rusak" id="error12"
-                                               {{ $existingReview && in_array('File tidak terbaca atau rusak', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error12">
-                                            File tidak terbaca atau rusak
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Dokumen tidak sesuai template" id="error13"
-                                               {{ $existingReview && in_array('Dokumen tidak sesuai template', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error13">
-                                            Dokumen tidak sesuai template
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="kesalahan_administratif[]" 
-                                               value="Lainnya" id="error6"
-                                               {{ $existingReview && in_array('Lainnya', $existingReview->checklist ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="error6">
-                                            Lainnya
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                            @endif
+                            
                             <div class="form-text text-danger" id="errorKesalahan" style="display: none;">
                                 Pilih minimal satu kesalahan administratif
                             </div>
@@ -757,6 +783,52 @@
                 toggleFullscreen();
             }
         }
+    });
+
+    // Update counter per kategori
+    function updateCategoryCounters() {
+        const checkboxes = document.querySelectorAll('.checklist-item');
+        const categoryCounts = {};
+        
+        // Initialize counters
+        checkboxes.forEach(checkbox => {
+            const category = checkbox.getAttribute('data-category');
+            if (!categoryCounts[category]) {
+                categoryCounts[category] = { total: 0, checked: 0 };
+            }
+            categoryCounts[category].total++;
+            if (checkbox.checked) {
+                categoryCounts[category].checked++;
+            }
+        });
+        
+        // Update counter badges
+        Object.keys(categoryCounts).forEach(category => {
+            const counter = document.getElementById('counter-' + category);
+            if (counter) {
+                const { checked, total } = categoryCounts[category];
+                counter.textContent = `${checked} / ${total}`;
+                
+                // Update badge color based on progress
+                if (checked === 0) {
+                    counter.className = 'badge bg-light text-primary ms-2';
+                } else if (checked === total) {
+                    counter.className = 'badge bg-success ms-2';
+                } else {
+                    counter.className = 'badge bg-warning text-dark ms-2';
+                }
+            }
+        });
+    }
+    
+    // Initialize counters on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCategoryCounters();
+        
+        // Update counters when checkboxes change
+        document.querySelectorAll('.checklist-item').forEach(checkbox => {
+            checkbox.addEventListener('change', updateCategoryCounters);
+        });
     });
 
     // Form validation dan submission

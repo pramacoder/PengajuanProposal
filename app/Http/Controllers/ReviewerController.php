@@ -9,6 +9,7 @@ use App\Models\NilaiSubstantif;
 use App\Models\Dosen;
 use App\Models\RuangKontrol;
 use App\Helpers\TahunAjaranHelper;
+use App\Helpers\ProposalHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -262,7 +263,25 @@ class ReviewerController extends Controller
                 'admin_review_completed' => $adminReviewCompleted
             ]);
 
-            return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted'));
+            // Ambil kriteria penilaian substantif berdasarkan skim proposal
+            $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
+            
+            // Ambil existing review untuk logging
+            $existingReview = $proposal->nilaiSubstantif->where('id_reviewer', $reviewer->id_reviewer)->first();
+            $existingSkor = $existingReview ? ($existingReview->skor_per_kriteria ?? []) : [];
+            
+            \Log::info('Loading substantif criteria', [
+                'proposal_id' => $id,
+                'skim' => $proposal->skim,
+                'criteria_count' => count($criteria),
+                'existing_review_id' => $existingReview ? $existingReview->id : null,
+                'existing_skor' => $existingSkor,
+                'existing_skor_count' => count($existingSkor),
+                'existing_skor_type' => gettype($existingSkor),
+                'existing_skor_keys' => is_array($existingSkor) ? array_keys($existingSkor) : []
+            ]);
+
+            return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted', 'criteria'));
             
         } catch (\Exception $e) {
             \Log::error('Error in detailProposalSubstantif', [
@@ -387,7 +406,10 @@ class ReviewerController extends Controller
 
             // Redirect ke halaman yang sesuai berdasarkan tipe review
             if ($isAdministratif) {
-                return view('reviewer.detail_proposal_administratif', compact('proposal'));
+                // Ambil checklist dinamis berdasarkan skim proposal
+                $checklist = ProposalHelper::getReviewChecklist($proposal->skim);
+                
+                return view('reviewer.detail_proposal_administratif', compact('proposal', 'checklist'));
             } else {
                 // Untuk substantif review, bisa dilakukan bersamaan dengan administratif
                 $adminReviewCompleted = $this->isAdminReviewCompleted($proposal);
@@ -577,13 +599,26 @@ class ReviewerController extends Controller
         
         try {
 
+            // Ambil kriteria penilaian untuk validasi
+            $criteria = ProposalHelper::getSubstantifCriteria($request->skim ?? 'default');
+            
+            // Buat rules validasi dinamis untuk skor
+            $validationRules = [
+                'catatan' => 'required|string|min:50|max:1000',
+                'skor' => 'required|array',
+                'skor.*' => 'required|numeric|min:0|max:10'
+            ];
+            
             // Validasi input
-        $request->validate([
-                'catatan' => 'required|string|min:50|max:1000'
-        ]);
+            $request->validate($validationRules);
 
         $reviewer = Auth::user();
         $proposal = Proposal::findOrFail($id);
+        
+        // Pastikan kriteria sesuai dengan skim proposal
+        if (empty($criteria)) {
+            $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
+        }
 
             \Log::info('Reviewer and proposal found', [
                 'reviewer_id' => $reviewer->id_reviewer,
@@ -648,31 +683,248 @@ class ReviewerController extends Controller
 
             // Prepare data untuk disimpan
             $catatan = $request->input('catatan');
+            $skorPerKriteriaRaw = $request->input('skor', []);
+            
+            \Log::info('Raw skor data received', [
+                'skor_raw' => $skorPerKriteriaRaw,
+                'skor_raw_type' => gettype($skorPerKriteriaRaw),
+                'skor_raw_count' => is_array($skorPerKriteriaRaw) ? count($skorPerKriteriaRaw) : 0,
+                'all_request_keys' => array_keys($request->all())
+            ]);
+            
+            // Pastikan skor adalah array
+            if (!is_array($skorPerKriteriaRaw)) {
+                \Log::error('Skor data is not an array', [
+                    'skor_raw' => $skorPerKriteriaRaw,
+                    'type' => gettype($skorPerKriteriaRaw)
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data skor tidak valid. Silakan refresh halaman dan coba lagi.'
+                ], 422);
+            }
+            
+            // Normalize array index menjadi numerik (0, 1, 2, dst)
+            // Form mengirim array dengan key string, kita perlu convert ke numeric array
+            $skorPerKriteria = [];
+            foreach ($skorPerKriteriaRaw as $key => $value) {
+                // Skip jika value kosong atau null
+                if ($value === null || $value === '' || $value === false) {
+                    continue;
+                }
+                
+                $index = (int) $key; // Convert string key ke integer
+                $skorValue = (float) $value; // Convert value ke float
+                
+                // Validasi skor harus antara 0-10
+                if ($skorValue < 0) {
+                    $skorValue = 0;
+                } elseif ($skorValue > 10) {
+                    $skorValue = 10;
+                }
+                
+                $skorPerKriteria[$index] = $skorValue;
+            }
+            
+            // Sort by key untuk memastikan urutan benar
+            ksort($skorPerKriteria);
+            
+            \Log::info('Normalized skor data', [
+                'skor_normalized' => $skorPerKriteria,
+                'skor_count' => count($skorPerKriteria),
+                'skor_keys' => array_keys($skorPerKriteria)
+            ]);
+            
+            // Validasi jumlah skor harus sesuai dengan jumlah kriteria yang sebenarnya
+            $expectedCount = ProposalHelper::countActualCriteria($criteria);
+            $actualCount = count($skorPerKriteria);
+            
+            if ($actualCount !== $expectedCount) {
+                \Log::warning('Jumlah skor tidak sesuai dengan jumlah kriteria', [
+                    'expected_count' => $expectedCount,
+                    'actual_count' => $actualCount,
+                    'skor_per_kriteria' => $skorPerKriteria,
+                    'skor_raw' => $skorPerKriteriaRaw
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => "Jumlah skor tidak sesuai. Diharapkan: {$expectedCount}, Diterima: {$actualCount}. Silakan pastikan semua skor sudah diisi."
+                ], 422);
+            }
+            
+            // Hitung total nilai dan nilai akhir
+            $scoreCalculation = ProposalHelper::calculateSubstantifScore($criteria, $skorPerKriteria);
             
             \Log::info('Data to be saved', [
                 'catatan' => $catatan,
-                'catatan_length' => strlen($catatan)
+                'catatan_length' => strlen($catatan),
+                'skor_per_kriteria_raw' => $skorPerKriteriaRaw,
+                'skor_per_kriteria_normalized' => $skorPerKriteria,
+                'total_nilai' => $scoreCalculation['total_nilai'],
+                'nilai_akhir' => $scoreCalculation['nilai_akhir']
             ]);
 
             // Update atau create nilai substantif
-            $nilaiSubstantif = NilaiSubstantif::updateOrCreate(
-            [
-                'id_proposal' => $id,
-                'id_reviewer' => $reviewer->id_reviewer
-            ],
-            [
-                    'note_substantif' => $catatan,
+            // Pastikan semua data terisi dengan benar dan tidak null
+            $dataToSave = [
+                'note_substantif' => $catatan,
+                'skor_per_kriteria' => !empty($skorPerKriteria) ? $skorPerKriteria : null,
+                'total_nilai' => $scoreCalculation['total_nilai'] ?? null,
+                'nilai_akhir' => $scoreCalculation['nilai_akhir'] ?? null,
                 'updated_at' => now()
-            ]
-        );
+            ];
+            
+            // Pastikan skor_per_kriteria adalah array yang valid
+            if (empty($dataToSave['skor_per_kriteria']) || !is_array($dataToSave['skor_per_kriteria'])) {
+                \Log::error('Invalid skor_per_kriteria data', [
+                    'skor_per_kriteria' => $skorPerKriteria,
+                    'type' => gettype($skorPerKriteria)
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data skor tidak valid. Silakan coba lagi.'
+                ], 422);
+            }
+            
+            \Log::info('Attempting to save nilai substantif', [
+                'proposal_id' => $id,
+                'reviewer_id' => $reviewer->id_reviewer,
+                'data_to_save' => $dataToSave,
+                'skor_per_kriteria_type' => gettype($dataToSave['skor_per_kriteria']),
+                'skor_per_kriteria_count' => count($dataToSave['skor_per_kriteria']),
+                'skor_per_kriteria_json' => json_encode($dataToSave['skor_per_kriteria'])
+            ]);
+            
+            try {
+                // Pastikan data tidak null sebelum save
+                if (empty($dataToSave['skor_per_kriteria']) || empty($dataToSave['note_substantif'])) {
+                    \Log::error('Data tidak lengkap sebelum save', [
+                        'data_to_save' => $dataToSave,
+                        'has_skor' => !empty($dataToSave['skor_per_kriteria']),
+                        'has_note' => !empty($dataToSave['note_substantif'])
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data tidak lengkap. Pastikan semua field terisi.'
+                    ], 422);
+                }
+                
+                // Gunakan DB transaction untuk memastikan data tersimpan dengan benar
+                DB::beginTransaction();
+                
+                $nilaiSubstantif = NilaiSubstantif::updateOrCreate(
+                    [
+                        'id_proposal' => $id,
+                        'id_reviewer' => $reviewer->id_reviewer
+                    ],
+                    $dataToSave
+                );
+                
+                // Refresh model untuk memastikan data ter-load dengan benar
+                $nilaiSubstantif->refresh();
+                
+                // Force reload dari database untuk memastikan data ter-load
+                $nilaiSubstantif = $nilaiSubstantif->fresh();
+                
+                // Verifikasi data sebelum commit
+                $verificationPassed = true;
+                $verificationErrors = [];
+                
+                if (empty($nilaiSubstantif->note_substantif)) {
+                    $verificationPassed = false;
+                    $verificationErrors[] = 'note_substantif is empty';
+                }
+                
+                if (empty($nilaiSubstantif->skor_per_kriteria) || !is_array($nilaiSubstantif->skor_per_kriteria)) {
+                    $verificationPassed = false;
+                    $verificationErrors[] = 'skor_per_kriteria is empty or not array';
+                }
+                
+                if (is_null($nilaiSubstantif->total_nilai)) {
+                    $verificationPassed = false;
+                    $verificationErrors[] = 'total_nilai is null';
+                }
+                
+                if (is_null($nilaiSubstantif->nilai_akhir)) {
+                    $verificationPassed = false;
+                    $verificationErrors[] = 'nilai_akhir is null';
+                }
+                
+                // Jika verifikasi gagal, rollback dan return error
+                if (!$verificationPassed) {
+                    DB::rollBack();
+                    \Log::error('Data verification failed before commit', [
+                        'nilai_id' => $nilaiSubstantif->id,
+                        'errors' => $verificationErrors,
+                        'data_attempted' => $dataToSave
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Data tidak tersimpan dengan benar. Silakan coba lagi. Error: ' . implode(', ', $verificationErrors)
+                    ], 500);
+                }
+                
+                // Commit transaction jika verifikasi berhasil
+                DB::commit();
+                
+                // Verifikasi data yang tersimpan langsung dari database setelah commit
+                $freshData = NilaiSubstantif::find($nilaiSubstantif->id);
+                \Log::info('Data saved to database - Verification', [
+                    'nilai_id' => $nilaiSubstantif->id,
+                    'verification_passed' => $verificationPassed,
+                    'saved_skor_per_kriteria' => $freshData->skor_per_kriteria,
+                    'saved_skor_per_kriteria_type' => gettype($freshData->skor_per_kriteria),
+                    'saved_skor_per_kriteria_count' => is_array($freshData->skor_per_kriteria) ? count($freshData->skor_per_kriteria) : 0,
+                    'saved_total_nilai' => $freshData->total_nilai,
+                    'saved_nilai_akhir' => $freshData->nilai_akhir,
+                    'raw_skor_per_kriteria' => $freshData->getRawOriginal('skor_per_kriteria'),
+                    'raw_total_nilai' => $freshData->getRawOriginal('total_nilai'),
+                    'raw_nilai_akhir' => $freshData->getRawOriginal('nilai_akhir')
+                ]);
+                
+            } catch (\Exception $saveException) {
+                DB::rollBack();
+                
+                \Log::error('Error saving nilai substantif', [
+                    'error' => $saveException->getMessage(),
+                    'trace' => $saveException->getTraceAsString(),
+                    'data_attempted' => $dataToSave,
+                    'file' => $saveException->getFile(),
+                    'line' => $saveException->getLine()
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan data penilaian: ' . $saveException->getMessage()
+                ], 500);
+            }
 
+            // Verifikasi data yang tersimpan
+            $savedSkor = $nilaiSubstantif->skor_per_kriteria;
+            $savedSkorArray = is_array($savedSkor) ? $savedSkor : json_decode($savedSkor, true);
+            
             \Log::info('Nilai substantif saved successfully', [
                 'nilai_id' => $nilaiSubstantif->id,
                 'proposal_id' => $id,
                 'reviewer_id' => $reviewer->id_reviewer,
                 'note_length' => strlen($catatan),
+                'total_nilai' => $scoreCalculation['total_nilai'],
+                'nilai_akhir' => $scoreCalculation['nilai_akhir'],
                 'saved_data' => [
-                    'note_substantif' => $nilaiSubstantif->note_substantif
+                    'note_substantif' => $nilaiSubstantif->note_substantif,
+                    'skor_per_kriteria' => $savedSkorArray,
+                    'skor_per_kriteria_count' => count($savedSkorArray ?? []),
+                    'total_nilai' => $nilaiSubstantif->total_nilai,
+                    'nilai_akhir' => $nilaiSubstantif->nilai_akhir
+                ],
+                'verification' => [
+                    'skor_saved_correctly' => !empty($savedSkorArray),
+                    'skor_count_matches' => count($savedSkorArray ?? []) === count($skorPerKriteria)
                 ]
             ]);
 
@@ -687,7 +939,9 @@ class ReviewerController extends Controller
                     'id' => $nilaiSubstantif->id,
                     'proposal_id' => $id,
                     'reviewer_id' => $reviewer->id_reviewer,
-                    'saved_catatan' => $catatan
+                    'saved_catatan' => $catatan,
+                    'total_nilai' => $scoreCalculation['total_nilai'],
+                    'nilai_akhir' => $scoreCalculation['nilai_akhir']
                 ]
             ]);
         }
@@ -912,19 +1166,37 @@ class ReviewerController extends Controller
             
             // Cek apakah semua review sudah selesai (untuk status review_completed)
         if ($adminReviewer && $substantifReviewer1 && $substantifReviewer2) {
-                // Cek review substantif
+// Cek review substantif
             $substantifReview1 = $proposal->nilaiSubstantif->where('id_reviewer', $substantifReviewer1)->first();
             $substantifReview2 = $proposal->nilaiSubstantif->where('id_reviewer', $substantifReviewer2)->first();
                 
-                $substantif1Completed = $substantifReview1 && $substantifReview1->note_substantif && 
-                                      $substantifReview1->note_substantif !== 'Review substantif dimulai';
-                $substantif2Completed = $substantifReview2 && $substantifReview2->note_substantif && 
-                                      $substantifReview2->note_substantif !== 'Review substantif dimulai';
+                // Cek apakah review substantif selesai dengan mengecek semua field yang diperlukan
+                $substantif1Completed = $substantifReview1 && 
+                                      !empty($substantifReview1->note_substantif) && 
+                                      $substantifReview1->note_substantif !== 'Review substantif dimulai' &&
+                                      !empty($substantifReview1->skor_per_kriteria) &&
+                                      !is_null($substantifReview1->total_nilai) &&
+                                      !is_null($substantifReview1->nilai_akhir);
+                
+                $substantif2Completed = $substantifReview2 && 
+                                      !empty($substantifReview2->note_substantif) && 
+                                      $substantifReview2->note_substantif !== 'Review substantif dimulai' &&
+                                      !empty($substantifReview2->skor_per_kriteria) &&
+                                      !is_null($substantifReview2->total_nilai) &&
+                                      !is_null($substantifReview2->nilai_akhir);
                 
                 \Log::info('Substantif review completion status', [
                     'proposal_id' => $proposal->id_proposal,
                     'substantif1_completed' => $substantif1Completed,
-                    'substantif2_completed' => $substantif2Completed
+                    'substantif2_completed' => $substantif2Completed,
+                    'substantif1_has_note' => $substantifReview1 ? !empty($substantifReview1->note_substantif) : false,
+                    'substantif1_has_skor' => $substantifReview1 ? !empty($substantifReview1->skor_per_kriteria) : false,
+                    'substantif1_has_total' => $substantifReview1 ? !is_null($substantifReview1->total_nilai) : false,
+                    'substantif1_has_akhir' => $substantifReview1 ? !is_null($substantifReview1->nilai_akhir) : false,
+                    'substantif2_has_note' => $substantifReview2 ? !empty($substantifReview2->note_substantif) : false,
+                    'substantif2_has_skor' => $substantifReview2 ? !empty($substantifReview2->skor_per_kriteria) : false,
+                    'substantif2_has_total' => $substantifReview2 ? !is_null($substantifReview2->total_nilai) : false,
+                    'substantif2_has_akhir' => $substantifReview2 ? !is_null($substantifReview2->nilai_akhir) : false
                 ]);
                 
                 // Jika semua review selesai, update ke revisi

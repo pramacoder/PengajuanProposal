@@ -360,13 +360,43 @@ class DosenController extends Controller
             abort(404, 'File tidak ditemukan - path_file kosong');
         }
 
-        // Cek apakah file ada di storage
-        if (!Storage::exists($path)) {
+        // Cek apakah file ada di storage (public disk)
+        if (!Storage::disk('public')->exists($path)) {
             abort(404, 'File tidak ditemukan di storage: ' . $path);
         }
 
-        // Download file
-        return Storage::download($path);
+        // Download file dari public disk
+        return Storage::disk('public')->download($path);
+    }
+
+    // Menampilkan PDF secara langsung untuk iframe
+    public function viewPdf($id)
+    {
+        try {
+            $dosen = Auth::guard('dosen')->user();
+            $proposal = Proposal::where('id_dosen', $dosen->id_dosen)
+                ->with('dokumen')
+                ->findOrFail($id);
+
+            if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+                abort(404, 'Dokumen tidak ditemukan.');
+            }
+
+            $path = storage_path('app/public/' . $proposal->dokumen->path_file);
+            
+            if (!file_exists($path)) {
+                abort(404, 'File tidak ditemukan: ' . $path);
+            }
+
+            // Return PDF dengan content-type yang tepat untuk iframe
+            return response()->file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in viewPdf (Dosen): ' . $e->getMessage());
+            abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
+        }
     }
 
     // Method untuk mendapatkan data review yang lebih detail

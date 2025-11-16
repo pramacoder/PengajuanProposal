@@ -17,12 +17,16 @@ class HasilFinal extends Model
         'status_final',
         'catatan_final',
         'nilai',
+        'skor_per_kriteria',
+        'dana_yang_dapat_diberikan',
         'id_proposal',
         'id_pt'
     ];
 
     protected $casts = [
-        'nilai' => 'decimal:2'
+        'nilai' => 'decimal:2',
+        'dana_yang_dapat_diberikan' => 'decimal:2',
+        'skor_per_kriteria' => 'array'
     ];
 
     // Relationships

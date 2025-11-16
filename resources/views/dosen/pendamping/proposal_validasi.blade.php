@@ -7,10 +7,27 @@
     <div class="col-12">
         <div class="card card-custom">
             <div class="card-header card-header-custom">
-                <h5 class="mb-0">
-                    <i class="fas fa-clipboard-check me-2"></i>
-                    Validasi Proposal
-                </h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        Validasi Proposal
+                    </h5>
+                    <!-- Filter Tahun Ajaran -->
+                    <form method="GET" action="{{ route('dosen.pendamping.proposal.validasi') }}" class="d-inline">
+                        <div class="input-group">
+                            <label class="input-group-text" for="tahun_ajaran">
+                                <i class="fas fa-calendar me-2"></i>Tahun Ajaran
+                            </label>
+                            <select name="tahun_ajaran" id="tahun_ajaran" class="form-select" onchange="this.form.submit()" style="min-width: 150px;">
+                                @foreach($tahunAjaranList as $tahunAjaran)
+                                    <option value="{{ $tahunAjaran }}" {{ $tahunAjaranTerpilih == $tahunAjaran ? 'selected' : '' }}>
+                                        {{ $tahunAjaran }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </form>
+                </div>
             </div>
             <div class="card-body">
                 @if($proposals->count() > 0)

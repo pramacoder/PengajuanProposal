@@ -126,6 +126,9 @@ Route::middleware(['auth:dosen'])->group(function () {
         Route::get('/review-data/{id}', [DosenPendampingController::class, 'getReviewData'])->name('review.data');
     });
     
+    // Route untuk view PDF dosen
+    Route::get('/dosen/proposal/{id}/view-pdf', [DosenController::class, 'viewPdf'])->name('dosen.proposal.view-pdf');
+    
     // Route untuk validasi proposal (legacy - bisa dilakukan di kedua fase)
     Route::get('/dosen/validasi-proposal', [DosenController::class, 'validasiProposal'])->name('dosen.validasi.proposal');
     Route::get('/dosen/proposal/{id}/detail', [DosenController::class, 'detailProposal'])->name('dosen.proposal.detail');
@@ -201,6 +204,7 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::post('/operator/update-hasil-final', [OperatorController::class, 'updateHasilFinal'])->name('operator.update.hasil.final')->middleware('check.phase:perbaikan');
     Route::get('/operator/revisi/{id}/download', [OperatorController::class, 'downloadRevisi'])->name('operator.revisi.download');
     Route::get('/operator/detail-hasil-final/{id}', [OperatorController::class, 'detailHasilFinal'])->name('operator.detail.hasil.final');
+    Route::get('/operator/proposal/{id}/view-pdf', [OperatorController::class, 'viewPdf'])->name('operator.proposal.view.pdf');
     
     // Manajemen Akun (Mahasiswa, Dosen, Reviewer, Operator)
     Route::get('/operator/akun', [OperatorController::class, 'manageAccounts'])->name('operator.manage.accounts');

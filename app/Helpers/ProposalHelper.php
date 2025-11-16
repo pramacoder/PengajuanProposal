@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\Proposal;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ProposalHelper
@@ -453,13 +454,167 @@ class ProposalHelper
             $teamMembers[] = $anggota4;
         }
 
-        \Log::info('Team data created successfully', [
-            'proposal_id' => $proposalId,
-            'team_id' => $teamId,
-            'team_count' => count($teamMembers)
-        ]);
-
         return $teamMembers;
+    }
+
+    /**
+     * Dapatkan checklist review administratif berdasarkan skim proposal
+     * 
+     * @param string $skim Skim proposal (RE, RSH, K, KI, KC, VGK, PM, PI, AI, GFT)
+     * @return array Array dengan struktur ['kategori' => ['item1', 'item2', ...]]
+     */
+    public static function getReviewChecklist($skim)
+    {
+        $checklistConfig = config('review_checklist');
+        
+        if (!$checklistConfig) {
+            // Fallback jika config tidak ditemukan
+            return $checklistConfig['default'] ?? [];
+        }
+        
+        // Normalize skim (uppercase)
+        $skim = strtoupper(trim($skim));
+        
+        // Cek apakah skim ada di config
+        if (isset($checklistConfig[$skim])) {
+            $checklist = $checklistConfig[$skim];
+            
+            // Jika value adalah string (alias), resolve ke config yang benar
+            if (is_string($checklist)) {
+                return self::getReviewChecklist($checklist);
+            }
+            
+            // Jika value adalah array, return langsung
+            if (is_array($checklist)) {
+                return $checklist;
+            }
+        }
+        
+        // Fallback ke default jika skim tidak dikenali
+        return $checklistConfig['default'] ?? [];
+    }
+
+    /**
+     * Dapatkan kriteria penilaian substantif berdasarkan skim proposal
+     * 
+     * @param string $skim Skim proposal (RE, RSH, K, KI, KC, VGK, PM, PI, AI, GFT)
+     * @return array Array dengan struktur [['kriteria' => '...', 'bobot' => ...], ...]
+     */
+    public static function getSubstantifCriteria($skim)
+    {
+        $criteriaConfig = config('review_substantif_criteria');
+        
+        if (!$criteriaConfig || !is_array($criteriaConfig)) {
+            // Fallback jika config tidak ditemukan
+            \Log::warning('Review substantif criteria config not found or invalid');
+            return $criteriaConfig['default'] ?? [];
+        }
+        
+        // Normalize skim (uppercase, remove prefix PKM- jika ada)
+        $skim = strtoupper(trim($skim));
+        $skim = str_replace('PKM-', '', $skim);
+        $skim = str_replace('PKM ', '', $skim);
+        $skim = trim($skim);
+        
+        \Log::info('Getting substantif criteria', [
+            'original_skim' => $skim,
+            'normalized_skim' => $skim,
+            'config_keys' => array_keys($criteriaConfig)
+        ]);
+        
+        // Cek apakah skim ada di config
+        if (isset($criteriaConfig[$skim])) {
+            $criteria = $criteriaConfig[$skim];
+            
+            // Jika value adalah string (alias), resolve ke config yang benar
+            if (is_string($criteria)) {
+                return self::getSubstantifCriteria($criteria);
+            }
+            
+            // Jika value adalah array, return langsung
+            if (is_array($criteria) && !empty($criteria)) {
+                \Log::info('Found criteria for skim', [
+                    'skim' => $skim,
+                    'criteria_count' => count($criteria)
+                ]);
+                return $criteria;
+            }
+        }
+        
+        // Fallback ke default jika skim tidak dikenali
+        \Log::warning('Skim not found in config, using default', [
+            'skim' => $skim,
+            'available_skims' => array_keys($criteriaConfig)
+        ]);
+        return $criteriaConfig['default'] ?? [];
+    }
+
+    /**
+     * Hitung total nilai dari skor per kriteria
+     * 
+     * @param array $criteria Array kriteria dengan bobot (bisa hierarkis dengan sub_kriteria)
+     * @param array $skorPerKriteria Array skor per kriteria (index sesuai dengan kriteria yang sudah di-flatten)
+     * @return array ['total_nilai' => ..., 'nilai_akhir' => ...]
+     */
+    public static function calculateSubstantifScore($criteria, $skorPerKriteria)
+    {
+        $totalNilai = 0;
+        $index = 0;
+        
+        foreach ($criteria as $item) {
+            if (isset($item['sub_kriteria']) && !empty($item['sub_kriteria'])) {
+                // Kriteria dengan sub-kriteria
+                foreach ($item['sub_kriteria'] as $subItem) {
+                    $skor = isset($skorPerKriteria[$index]) ? (float) $skorPerKriteria[$index] : 0;
+                    $bobot = (float) $subItem['bobot'];
+                    
+                    // Nilai = Bobot × Skor
+                    $nilai = $bobot * $skor;
+                    $totalNilai += $nilai;
+                    $index++;
+                }
+            } else {
+                // Kriteria tanpa sub-kriteria
+                $skor = isset($skorPerKriteria[$index]) ? (float) $skorPerKriteria[$index] : 0;
+                $bobot = (float) $item['bobot'];
+                
+                // Nilai = Bobot × Skor
+                $nilai = $bobot * $skor;
+                $totalNilai += $nilai;
+                $index++;
+            }
+        }
+        
+        // Nilai akhir = Total nilai / 10 (konversi dari 0-1000 ke 0-100)
+        $nilaiAkhir = $totalNilai / 10;
+        
+        return [
+            'total_nilai' => round($totalNilai, 2),
+            'nilai_akhir' => round($nilaiAkhir, 2)
+        ];
+    }
+
+    /**
+     * Hitung jumlah kriteria yang sebenarnya (tanpa header)
+     * 
+     * @param array $criteria Array kriteria dengan bobot (bisa hierarkis dengan sub_kriteria)
+     * @return int Jumlah kriteria yang sebenarnya
+     */
+    public static function countActualCriteria($criteria)
+    {
+        $count = 0;
+        
+        foreach ($criteria as $item) {
+            if (isset($item['sub_kriteria']) && !empty($item['sub_kriteria'])) {
+                // Kriteria dengan sub-kriteria: hitung sub-kriteria
+                $count += count($item['sub_kriteria']);
+            } else {
+                // Kriteria tanpa sub-kriteria: hitung 1
+                $count++;
+            }
+        }
+        
+        return $count;
     }
 
     /**
@@ -501,7 +656,7 @@ class ProposalHelper
                 'is_ketua' => $data['is_ketua'],
             ]);
                 
-                \Log::info('Mahasiswa updated', [
+                Log::info('Mahasiswa updated', [
                     'nim' => $data['nim'],
                     'team_id' => $data['team_id'],
                     'is_ketua' => $data['is_ketua']
@@ -522,7 +677,7 @@ class ProposalHelper
                 'is_ketua' => $data['is_ketua'],
             ]);
                 
-                \Log::info('Mahasiswa created', [
+                Log::info('Mahasiswa created', [
                     'nim' => $data['nim'],
                     'team_id' => $data['team_id'],
                     'is_ketua' => $data['is_ketua']
@@ -532,7 +687,7 @@ class ProposalHelper
         return $mahasiswa;
             
         } catch (\Exception $e) {
-            \Log::error('Error in createOrUpdateMahasiswa', [
+            Log::error('Error in createOrUpdateMahasiswa', [
                 'nim' => $data['nim'],
                 'error' => $e->getMessage(),
                 'data' => $data

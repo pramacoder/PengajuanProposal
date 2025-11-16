@@ -8,6 +8,20 @@
     <x-page-header 
         title="BERANDA" 
         subtitle="UNIVERSITAS UDAYANA" />
+
+    <!-- Tahun Ajaran Selector -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <label for="tahunAjaranSelector" class="form-label">Tahun Ajaran</label>
+            <select class="form-select" id="tahunAjaranSelector" name="tahun_ajaran">
+                @foreach($tahunAjaranList as $tahunAjaran)
+                    <option value="{{ $tahunAjaran }}" {{ $tahunAjaranTerpilih == $tahunAjaran ? 'selected' : '' }}>
+                        {{ $tahunAjaran }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    </div>
     
     <!-- Top Proposals Ranking -->
     <div class="row mb-4">
@@ -16,7 +30,7 @@
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
                         <i class="fas fa-trophy me-2"></i>
-                        Perangkingan 10 Proposal Terbaik ({{ $tahun }})
+                        Perangkingan 10 Proposal Terbaik ({{ $tahunAjaranTerpilih }})
                     </h5>
                 </div>
                 <div class="card-body">
@@ -241,16 +255,7 @@
         </div>
     </div>
     
-    <!-- Year Selector -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <select class="form-select" id="yearSelector">
-                <option value="2025" {{ $tahun == '2025' ? 'selected' : '' }}>2025</option>
-                <option value="2024" {{ $tahun == '2024' ? 'selected' : '' }}>2024</option>
-                <option value="2023" {{ $tahun == '2023' ? 'selected' : '' }}>2023</option>
-            </select>
-        </div>
-    </div>
+    
     
     <!-- Chart Section -->
     <div class="row mb-4">
@@ -265,8 +270,8 @@
                         <div class="d-flex gap-2">
                             <select class="form-select form-select-sm" id="chartTypeSelector" style="width: auto;">
                                 <option value="per_tahun">Jumlah Proposal per Tahun</option>
-                                <option value="per_skim">Jumlah Proposal per Skim ({{ $tahun }})</option>
-                                <option value="per_fakultas">Jumlah Proposal per Fakultas ({{ $tahun }})</option>
+                                <option value="per_skim">Jumlah Proposal per Skim ({{ $tahunAjaranTerpilih }})</option>
+                                <option value="per_fakultas">Jumlah Proposal per Fakultas ({{ $tahunAjaranTerpilih }})</option>
                             </select>
                         </div>
                     </div>
@@ -291,7 +296,7 @@
                 <div class="card-body">
                     <!-- Filter Form -->
                     <form method="GET" action="{{ route('operator.dashboard') }}" id="filterProposalForm">
-                        <input type="hidden" name="tahun" value="{{ $tahun }}">
+                        <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaranTerpilih }}">
                         <div class="row g-3 mb-4">
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold">Fakultas</label>
@@ -339,7 +344,7 @@
                                 <button type="submit" class="btn btn-primary me-2">
                                     <i class="fas fa-search me-1"></i> Terapkan Filter
                                 </button>
-                                <a href="{{ route('operator.dashboard', ['tahun' => $tahun]) }}" class="btn btn-secondary">
+                                <a href="{{ route('operator.dashboard', ['tahun_ajaran' => $tahunAjaranTerpilih]) }}" class="btn btn-secondary">
                                     <i class="fas fa-times me-1"></i> Reset
                                 </a>
                             </div>
@@ -356,7 +361,7 @@
                                 </h6>
                                 @if($filteredProposals->count() > 20 && !request()->has('show_all'))
                                     <form method="GET" action="{{ route('operator.dashboard') }}" style="display: inline;">
-                                        <input type="hidden" name="tahun" value="{{ $tahun }}">
+                                        <input type="hidden" name="tahun_ajaran" value="{{ $tahunAjaranTerpilih }}">
                                         @if(request()->has('filter_fakultas'))
                                             <input type="hidden" name="filter_fakultas" value="{{ request('filter_fakultas') }}">
                                         @endif
@@ -627,11 +632,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Year selector change
-    document.getElementById('yearSelector').addEventListener('change', function() {
-        const year = this.value;
-        window.location.href = `{{ route('operator.dashboard') }}?tahun=${year}`;
-    });
+    // Tahun ajaran selector change
+    const tahunAjaranSelector = document.getElementById('tahunAjaranSelector');
+    if (tahunAjaranSelector) {
+        tahunAjaranSelector.addEventListener('change', function() {
+            const tahunAjaran = this.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('tahun_ajaran', tahunAjaran);
+            window.location.href = url.toString();
+        });
+    }
     
     // Chart data from Laravel
     const chartData = @json($chartData);
@@ -691,12 +701,12 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'per_skim':
                 labels = chartData.proposal_per_skim.map(item => item.skim);
                 data = chartData.proposal_per_skim.map(item => item.jumlah);
-                title = `Jumlah Proposal per Skim ({{ $tahun }})`;
+                title = `Jumlah Proposal per Skim ({{ $tahunAjaranTerpilih }})`;
                 break;
             case 'per_fakultas':
                 labels = chartData.proposal_per_fakultas.map(item => item.fakultas);
                 data = chartData.proposal_per_fakultas.map(item => item.jumlah);
-                title = `Jumlah Proposal per Fakultas ({{ $tahun }})`;
+                title = `Jumlah Proposal per Fakultas ({{ $tahunAjaranTerpilih }})`;
                 break;
         }
         
@@ -721,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function pilihReviewer(skim) {
-    window.location.href = `{{ route('operator.pilih.reviewer') }}?tahun={{ $tahun }}&filter=${skim}`;
+    window.location.href = `{{ route('operator.pilih.reviewer') }}?tahun_ajaran={{ $tahunAjaranTerpilih }}&filter=${skim}`;
 }
 
 // Filter Fakultas-Prodi dependency

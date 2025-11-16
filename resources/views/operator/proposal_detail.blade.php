@@ -416,7 +416,7 @@
                         <p class="form-control-plaintext">{{ number_format($proposal->dokumen->ukuran_file / 1024, 2) }} KB</p>
                     </div>
                     <div>
-                        <a href="{{ Storage::disk('public')->url($proposal->dokumen->path_file) }}" 
+                        <a href="{{ asset('storage/' . $proposal->dokumen->path_file) }}" 
                            target="_blank" class="btn btn-primary w-100">
                             <i class="fas fa-download me-2"></i>Download PDF
                         </a>

@@ -396,7 +396,7 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="tahun_ajaran" class="form-label">Tahun Ajaran</label>
-                    <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran" value="2024/2025" readonly>
+                    <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran" value="{{ \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru() }}" readonly>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="tanggal_pengajuan" class="form-label">Tanggal Pengajuan</label>
@@ -842,7 +842,48 @@
 @endsection
 
 @section('scripts')
+@php
+    // Prepare user data for JavaScript
+    $currentUserNim = isset($user) ? ($user->nim ?? '') : '';
+    $userData = null;
+    if (isset($user)) {
+        $userData = [
+            'nama' => $user->nama_mhs ?? '',
+            'nim' => $user->nim ?? '',
+            'prodi' => $user->prodi_mhs ?? '',
+            'fakultas' => $user->fakultas_mhs ?? '',
+            'email' => $user->email_mhs ?? '',
+            'no_hp' => $user->no_hp_mhs ?? ''
+        ];
+    }
+    
+    // Prepare error message for JavaScript
+    $errorMessage = null;
+    if ($errors->any()) {
+        if ($errors->has('nim_duplicate')) {
+            $errorMessage = 'Beberapa anggota tim sudah terdaftar dalam proposal lain. Silakan ganti anggota tim.';
+        } elseif ($errors->has('team_nim')) {
+            $errorMessage = 'Terdapat NIM yang sama dalam satu tim. Silakan periksa data anggota.';
+        } elseif ($errors->has('team_size')) {
+            $errorMessage = 'Jumlah anggota tim tidak sesuai ketentuan (minimal 3, maksimal 5 orang).';
+        } elseif ($errors->has('optional_members')) {
+            $errorMessage = 'Data anggota opsional tidak lengkap. Jika diisi, semua field harus diisi.';
+        } else {
+            $errorMessage = 'Terdapat kesalahan dalam form. Silakan periksa field yang ditandai dengan warna merah.';
+        }
+    }
+    
+    // Encode to JSON for JavaScript
+    $currentUserNimJson = json_encode($currentUserNim);
+    $userDataJson = json_encode($userData);
+    $errorMessageJson = json_encode($errorMessage);
+@endphp
 <script>
+    // Set data from PHP
+    const CURRENT_USER_NIM = {!! $currentUserNimJson !!};
+    const USER_DATA = {!! $userDataJson !!};
+    const ERROR_MESSAGE = {!! $errorMessageJson !!};
+    
     // File upload handling
     function setupFileUpload(inputId, areaId, infoId, fileNameId, fileSizeId, progressId) {
         const input = document.getElementById(inputId);
@@ -1295,10 +1336,9 @@
         }
 
         // Check if user already has a proposal (double check)
-        @if(isset($user))
-        const currentUserNim = '{{ $user->nim ?? "" }}';
-        const tahunAjaran = document.getElementById('tahun_ajaran')?.value || '2024/2025';
-        if (currentUserNim) {
+        if (CURRENT_USER_NIM) {
+            const currentUserNim = CURRENT_USER_NIM;
+            const tahunAjaran = document.getElementById('tahun_ajaran')?.value || '2024/2025';
             try {
                 const response = await fetch(`/api/mahasiswa/check-proposal/${currentUserNim}?tahun_ajaran=${encodeURIComponent(tahunAjaran)}`, {
                     method: 'GET',
@@ -1328,7 +1368,6 @@
                 return false;
             }
         }
-        @endif
 
         // Custom confirmation dialog dengan styling yang lebih baik
         const confirmed = await new Promise((resolve) => {
@@ -1571,16 +1610,10 @@
         setupFileUpload('proposal_file', 'proposalUploadArea', 'proposalFileInfo', 'proposalFileName', 'proposalFileSize', 'proposalProgress');
 
         // Auto-fill data if available - moved inside DOMContentLoaded
-        @if(isset($user))
+        if (USER_DATA) {
+            const userData = USER_DATA;
             console.log('Auto-filling ketua data from user session...');
-            console.log('User data:', {
-                nama: '{{ $user->nama_mhs ?? "" }}',
-                nim: '{{ $user->nim ?? "" }}',
-                prodi: '{{ $user->prodi_mhs ?? "" }}',
-                fakultas: '{{ $user->fakultas_mhs ?? "" }}',
-                email: '{{ $user->email_mhs ?? "" }}',
-                no_hp: '{{ $user->no_hp_mhs ?? "" }}'
-            });
+            console.log('User data:', userData);
             
             // Check if fields exist before setting values
             const ketuaNama = document.getElementById('ketua_nama');
@@ -1599,35 +1632,34 @@
                 ketuaNoHp: ketuaNoHp
             });
             
-            if (ketuaNama) {
-                ketuaNama.value = '{{ $user->nama_mhs ?? "" }}';
+            if (ketuaNama && userData.nama) {
+                ketuaNama.value = userData.nama;
                 console.log('Set ketua_nama to:', ketuaNama.value);
             }
-            if (ketuaNim) {
-                ketuaNim.value = '{{ $user->nim ?? "" }}';
+            if (ketuaNim && userData.nim) {
+                ketuaNim.value = userData.nim;
                 console.log('Set ketua_nim to:', ketuaNim.value);
             }
-            if (ketuaFakultas) {
-                ketuaFakultas.value = '{{ $user->fakultas_mhs ?? "" }}';
+            if (ketuaFakultas && userData.fakultas) {
+                ketuaFakultas.value = userData.fakultas;
                 console.log('Set ketua_fakultas to:', ketuaFakultas.value);
                 
-                    // Update prodi dropdown after setting fakultas
-                    if ('{{ $user->fakultas_mhs ?? "" }}') {
-                        updateProdiDropdown('{{ $user->fakultas_mhs ?? "" }}', 'ketua_prodi', '{{ $user->prodi_mhs ?? "" }}');
-                    }
+                // Update prodi dropdown after setting fakultas
+                if (userData.fakultas) {
+                    updateProdiDropdown(userData.fakultas, 'ketua_prodi', userData.prodi);
+                }
             }
-            if (ketuaEmail) {
-                ketuaEmail.value = '{{ $user->email_mhs ?? "" }}';
+            if (ketuaEmail && userData.email) {
+                ketuaEmail.value = userData.email;
                 console.log('Set ketua_email to:', ketuaEmail.value);
             }
-            if (ketuaNoHp) {
-                ketuaNoHp.value = '{{ $user->no_hp_mhs ?? "" }}';
+            if (ketuaNoHp && userData.no_hp) {
+                ketuaNoHp.value = userData.no_hp;
                 console.log('Set ketua_no_hp to:', ketuaNoHp.value);
             }
-            
-        @else
+        } else {
             console.log('No user data available for auto-fill');
-        @endif
+        }
 
         // Format currency input
         danaField.addEventListener('input', function() {
@@ -1664,18 +1696,8 @@
         validateFormForSubmit();
         
         // Show error toast if there are server-side errors
-        @if($errors->any())
-            @if($errors->has('nim_duplicate'))
-                showToast('Beberapa anggota tim sudah terdaftar dalam proposal lain. Silakan ganti anggota tim.', 'error');
-            @elseif($errors->has('team_nim'))
-                showToast('Terdapat NIM yang sama dalam satu tim. Silakan periksa data anggota.', 'error');
-            @elseif($errors->has('team_size'))
-                showToast('Jumlah anggota tim tidak sesuai ketentuan (minimal 3, maksimal 5 orang).', 'error');
-            @elseif($errors->has('optional_members'))
-                showToast('Data anggota opsional tidak lengkap. Jika diisi, semua field harus diisi.', 'error');
-            @else
-                showToast('Terdapat kesalahan dalam form. Silakan periksa field yang ditandai dengan warna merah.', 'error');
-            @endif
+        if (ERROR_MESSAGE) {
+            showToast(ERROR_MESSAGE, 'error');
             
             // Scroll to first error field
             setTimeout(() => {
@@ -1688,7 +1710,7 @@
                     firstErrorField.focus();
                 }
             }, 500);
-        @endif
+        }
 
         // Handle skim change to update dana field behavior
         const danaLabel = document.querySelector('label[for="dana_diajukan"]');

@@ -460,11 +460,21 @@
 @endsection
 
 @section('dosen_scripts')
+@php
+    $pdfUrl = '';
+    if ($proposal->dokumen && $proposal->dokumen->path_file) {
+        // Gunakan route view-pdf untuk menampilkan PDF inline
+        $pdfUrl = route('dosen.proposal.view-pdf', $proposal->id_proposal);
+    }
+@endphp
 <script>
+    // Set PDF URL dari server
+    const PDF_URL = @json($pdfUrl);
+    
     document.addEventListener('DOMContentLoaded', function() {
-        @if($proposal->dokumen && $proposal->dokumen->path_file)
+        if (PDF_URL) {
             loadPDFDocument();
-        @endif
+        }
 
         // Initialize fullscreen functionality
         initializeFullscreen();
@@ -488,7 +498,7 @@
 
     function loadPDFDocument() {
         const pdfViewer = document.getElementById('pdfViewer');
-        const pdfUrl = '{{ $proposal->dokumen ? Storage::url($proposal->dokumen->path_file) : "" }}';
+        const pdfUrl = PDF_URL;
         
         if (!pdfUrl) {
             pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen proposal tidak ditemukan.</p></div>';

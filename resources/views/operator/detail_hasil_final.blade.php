@@ -222,6 +222,59 @@
         </div>
     </div>
 
+    <!-- PDF Proposal Viewer Section -->
+    @if($proposal->dokumen && $proposal->dokumen->path_file)
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-pdf me-2"></i>
+                        Dokumen Proposal
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="pdf-viewer-container">
+                        <div class="pdf-header">
+                            <h5 class="pdf-title">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                <span id="pdfProposalTitle">{{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}</span>
+                            </h5>
+                            <div class="pdf-controls">
+                                <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm me-2">
+                                    <i class="fas fa-expand me-1"></i>Fullscreen
+                                </button>
+                                <a href="{{ route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                   class="btn btn-outline-primary btn-sm" 
+                                   target="_blank">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
+                            </div>
+                        </div>
+                        <div id="pdfProposalViewer" class="pdf-loading">
+                            <div class="spinner"></div>
+                            <iframe id="proposalPdfIframe" 
+                                    src="{{ route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                    class="pdf-iframe" 
+                                    style="display: none;">
+                            </iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @else
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Dokumen proposal tidak tersedia.</strong>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- File Revisi Section -->
     @if($proposal->proposalRevisi->count() > 0)
     <div class="row mb-4">
@@ -245,8 +298,9 @@
                                 </small>
                             </div>
                             <div>
-                                <button class="btn btn-sm btn-outline-info me-2" 
-                                        onclick="viewPDF('{{ route('operator.revisi.download', $revisi->id_revisi) }}', '{{ $revisi->nama_file }}')">
+                                <button class="btn btn-sm btn-outline-info me-2 view-pdf-btn" 
+                                        data-pdf-url="{{ route('operator.revisi.download', $revisi->id_revisi) }}"
+                                        data-pdf-name="{{ $revisi->nama_file }}">
                                     <i class="fas fa-eye me-1"></i>Lihat
                                 </button>
                                 <a href="{{ route('operator.revisi.download', $revisi->id_revisi) }}" 
@@ -263,8 +317,8 @@
         </div>
     </div>
 
-    <!-- PDF Viewer Section -->
-    <div class="pdf-viewer-container">
+    <!-- PDF Viewer Section untuk Revisi -->
+    <div class="pdf-viewer-container" id="revisiPdfViewer" style="display: none;">
         <div class="pdf-header">
             <h5 class="pdf-title">
                 <i class="fas fa-file-pdf me-2"></i>
@@ -284,18 +338,151 @@
             <!-- PDF iframe will be inserted here -->
         </div>
     </div>
-    @else
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Belum ada file revisi yang dikumpulkan.</strong> Mahasiswa belum mengumpulkan file revisi proposal.
-            </div>
-        </div>
-    </div>
     @endif
 
     <!-- Form Hasil Final -->
+    <!-- Tabel Penilaian Substantif dari 2 Reviewer -->
+    @if($nilaiSubstantif1 || $nilaiSubstantif2)
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="mb-3">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    Referensi Penilaian Substantif dari Reviewer
+                </h5>
+            </div>
+            
+            @if($nilaiSubstantif1)
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user-check me-2"></i>
+                                Reviewer Substantif 1
+                                @if($nilaiSubstantif1->reviewer)
+                                    - {{ $nilaiSubstantif1->reviewer->nama_reviewer }}
+                                @endif
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @php
+                                $skor1 = $nilaiSubstantif1->skor_per_kriteria ?? [];
+                            @endphp
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="5%">No</th>
+                                            <th width="50%">Kriteria</th>
+                                            <th width="15%" class="text-center">Bobot</th>
+                                            <th width="15%" class="text-center">Skor</th>
+                                            <th width="15%" class="text-center">Nilai</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($criteria as $index => $item)
+                                            @php
+                                                $skorValue = isset($skor1[$index]) ? $skor1[$index] : 0;
+                                                $nilai = $item['bobot'] * $skorValue;
+                                            @endphp
+                                            <tr>
+                                                <td class="text-center">{{ $index + 1 }}</td>
+                                                <td><small>{{ $item['kriteria'] }}</small></td>
+                                                <td class="text-center">{{ number_format($item['bobot'], 2) }}</td>
+                                                <td class="text-center">{{ number_format($skorValue, 1) }}</td>
+                                                <td class="text-center">{{ number_format($nilai, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot class="table-secondary">
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-bold">Total</td>
+                                            <td class="text-center fw-bold">{{ number_format(array_sum($skor1) / count($criteria), 2) }}</td>
+                                            <td class="text-center fw-bold">{{ number_format($nilaiSubstantif1->total_nilai ?? 0, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
+                                            <td class="text-center fw-bold text-primary">{{ number_format($nilaiSubstantif1->nilai_akhir ?? 0, 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @if($nilaiSubstantif1->note_substantif)
+                                <div class="mt-2">
+                                    <small><strong>Catatan:</strong> {{ Str::limit($nilaiSubstantif1->note_substantif, 100) }}</small>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+            
+            @if($nilaiSubstantif2)
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user-check me-2"></i>
+                                Reviewer Substantif 2
+                                @if($nilaiSubstantif2->reviewer)
+                                    - {{ $nilaiSubstantif2->reviewer->nama_reviewer }}
+                                @endif
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @php
+                                $skor2 = $nilaiSubstantif2->skor_per_kriteria ?? [];
+                            @endphp
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="5%">No</th>
+                                            <th width="50%">Kriteria</th>
+                                            <th width="15%" class="text-center">Bobot</th>
+                                            <th width="15%" class="text-center">Skor</th>
+                                            <th width="15%" class="text-center">Nilai</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($criteria as $index => $item)
+                                            @php
+                                                $skorValue = isset($skor2[$index]) ? $skor2[$index] : 0;
+                                                $nilai = $item['bobot'] * $skorValue;
+                                            @endphp
+                                            <tr>
+                                                <td class="text-center">{{ $index + 1 }}</td>
+                                                <td><small>{{ $item['kriteria'] }}</small></td>
+                                                <td class="text-center">{{ number_format($item['bobot'], 2) }}</td>
+                                                <td class="text-center">{{ number_format($skorValue, 1) }}</td>
+                                                <td class="text-center">{{ number_format($nilai, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot class="table-secondary">
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-bold">Total</td>
+                                            <td class="text-center fw-bold">{{ number_format(array_sum($skor2) / count($criteria), 2) }}</td>
+                                            <td class="text-center fw-bold">{{ number_format($nilaiSubstantif2->total_nilai ?? 0, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
+                                            <td class="text-center fw-bold text-primary">{{ number_format($nilaiSubstantif2->nilai_akhir ?? 0, 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            @if($nilaiSubstantif2->note_substantif)
+                                <div class="mt-2">
+                                    <small><strong>Catatan:</strong> {{ Str::limit($nilaiSubstantif2->note_substantif, 100) }}</small>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-12">
             <div class="card card-custom">
@@ -308,10 +495,10 @@
                 <div class="card-body">
                     @if($proposal->hasilFinal)
                         <!-- Display existing result -->
-                        <div class="alert alert-info">
+                        <div class="alert alert-info mb-3">
                             <h6><i class="fas fa-info-circle me-2"></i>Hasil Final Sudah Ditentukan</h6>
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <p><strong>Status:</strong> 
                                         <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }}">
                                             {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
@@ -321,29 +508,221 @@
                                         <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
                                     </p>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    @if($proposal->hasilFinal->dana_yang_dapat_diberikan)
+                                        <p><strong>Dana yang Dapat Diberikan:</strong> 
+                                            <span class="badge bg-success fs-6">Rp {{ number_format($proposal->hasilFinal->dana_yang_dapat_diberikan, 0, ',', '.') }}</span>
+                                        </p>
+                                    @endif
                                     <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
                                 </div>
+                                <div class="col-md-4">
+                                    @if($proposal->hasilFinal->catatan_final)
+                                        <p><strong>Catatan:</strong> {{ Str::limit($proposal->hasilFinal->catatan_final, 100) }}</p>
+                                    @endif
+                                </div>
                             </div>
-                            @if($proposal->hasilFinal->catatan_final)
-                                <p><strong>Catatan:</strong> {{ $proposal->hasilFinal->catatan_final }}</p>
+                            @if($proposal->hasilFinal->catatan_final && strlen($proposal->hasilFinal->catatan_final) > 100)
+                                <p><strong>Catatan Lengkap:</strong> {{ $proposal->hasilFinal->catatan_final }}</p>
                             @endif
                         </div>
                         
                         <!-- Edit button -->
-                        <button type="button" class="btn btn-warning" onclick="toggleEditForm()">
+                        <button type="button" class="btn btn-warning mb-3" onclick="toggleEditForm()">
                             <i class="fas fa-edit me-2"></i>Edit Hasil Final
                         </button>
                     @endif
 
                     <!-- Form for input/update -->
                     <form id="hasilFinalForm" action="{{ route('operator.update.hasil.final') }}" method="POST" 
-                          style="{{ $proposal->hasilFinal ? 'display: none;' : '' }}">
+                          @if($proposal->hasilFinal) style="display: none;" @endif>
                         @csrf
                         <input type="hidden" name="proposal_id" value="{{ $proposal->id_proposal }}">
+                        <input type="hidden" name="skim" value="{{ $proposal->skim }}">
+                        
+                        @php
+                            $criteriaItems = $criteria ?? [];
+                            $existingHasilFinal = $proposal->hasilFinal;
+                            $existingSkorFinalRaw = $existingHasilFinal ? ($existingHasilFinal->skor_per_kriteria ?? []) : [];
+                            
+                            // Normalize existing skor untuk memastikan index numerik
+                            $existingSkorFinal = [];
+                            if (!empty($existingSkorFinalRaw) && is_array($existingSkorFinalRaw)) {
+                                foreach ($existingSkorFinalRaw as $key => $value) {
+                                    $index = (int) $key;
+                                    $existingSkorFinal[$index] = (float) $value;
+                                }
+                                ksort($existingSkorFinal);
+                            }
+                            
+                            // Jika kriteria kosong, gunakan default
+                            if (empty($criteriaItems)) {
+                                $criteriaItems = \App\Helpers\ProposalHelper::getSubstantifCriteria('default');
+                            }
+                            
+                            // Flatten struktur untuk perhitungan dan input
+                            $flattenedCriteria = [];
+                            $criteriaIndex = 0;
+                            $mainCriteriaNumber = 0;
+                            
+                            foreach($criteriaItems as $mainItem) {
+                                if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
+                                    // Kriteria utama dengan sub-kriteria
+                                    $mainCriteriaNumber++;
+                                    
+                                    // Tambahkan header kriteria utama
+                                    $flattenedCriteria[] = [
+                                        'main_number' => $mainCriteriaNumber,
+                                        'is_sub' => false,
+                                        'is_header' => true,
+                                        'kriteria' => $mainItem['kriteria'],
+                                        'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')),
+                                        'index' => -1,
+                                        'has_sub' => true
+                                    ];
+                                    
+                                    // Tambahkan sub-kriteria
+                                    foreach($mainItem['sub_kriteria'] as $subItem) {
+                                        $flattenedCriteria[] = [
+                                            'main_number' => $mainCriteriaNumber,
+                                            'is_sub' => true,
+                                            'is_header' => false,
+                                            'kriteria' => $subItem['kriteria'],
+                                            'bobot' => $subItem['bobot'],
+                                            'index' => $criteriaIndex++,
+                                            'has_sub' => false
+                                        ];
+                                    }
+                                } else {
+                                    // Kriteria utama tanpa sub-kriteria
+                                    $mainCriteriaNumber++;
+                                    $flattenedCriteria[] = [
+                                        'main_number' => $mainCriteriaNumber,
+                                        'is_sub' => false,
+                                        'is_header' => false,
+                                        'kriteria' => $mainItem['kriteria'],
+                                        'bobot' => $mainItem['bobot'],
+                                        'index' => $criteriaIndex++,
+                                        'has_sub' => false
+                                    ];
+                                }
+                            }
+                        @endphp
+
+                        <!-- Form Penilaian Hasil Final -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-3">Penilaian Hasil Final <span class="text-danger">*</span></label>
+                            
+                            @if(empty($criteriaItems))
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Kriteria penilaian untuk skim {{ $proposal->skim }} belum tersedia.
+                                </div>
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="table-primary">
+                                            <tr>
+                                                <th width="5%">No</th>
+                                                <th width="50%">Kriteria Penilaian</th>
+                                                <th width="10%" class="text-center">Bobot (%)</th>
+                                                <th width="15%" class="text-center">Skor (0-10)</th>
+                                                <th width="15%" class="text-center">Nilai</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($flattenedCriteria as $item)
+                                                @php
+                                                    // Untuk header, tidak ada skor (index = -1)
+                                                    if ($item['index'] >= 0) {
+                                                        $skorValue = isset($existingSkorFinal[$item['index']]) ? $existingSkorFinal[$item['index']] : '';
+                                                        $nilai = $skorValue ? ($item['bobot'] * $skorValue) : 0;
+                                                    } else {
+                                                        $skorValue = '';
+                                                        $nilai = 0;
+                                                    }
+                                                    
+                                                    // Tampilkan nomor untuk kriteria utama
+                                                    $showNumber = false;
+                                                    if (!$item['is_sub']) {
+                                                        $showNumber = true;
+                                                    }
+                                                @endphp
+                                                <tr>
+                                                    <td class="text-center">
+                                                        @if($showNumber)
+                                                            {{ $item['main_number'] }}
+                                                        @elseif($item['is_sub'])
+                                                            <span class="text-muted" style="font-size: 0.85em;">└─</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($item['is_sub'])
+                                                            <span style="padding-left: 1.5rem; color: #6c757d; font-size: 0.95em;">{{ $item['kriteria'] }}</span>
+                                                        @else
+                                                            <strong>{{ $item['kriteria'] }}</strong>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center fw-bold">
+                                                        @if($item['is_header'])
+                                                            <span class="text-muted">-</span>
+                                                        @else
+                                                            {{ number_format($item['bobot'], 2) }}
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($item['is_header'])
+                                                            <span class="text-muted">-</span>
+                                                        @else
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm skor-final-input text-center" 
+                                                                   name="skor[{{ $item['index'] }}]" 
+                                                                   value="{{ $skorValue }}"
+                                                                   min="0" 
+                                                                   max="10" 
+                                                                   step="0.1"
+                                                                   data-index="{{ $item['index'] }}"
+                                                                   data-bobot="{{ $item['bobot'] }}"
+                                                                   required>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if($item['is_header'])
+                                                            <span class="text-muted">-</span>
+                                                        @else
+                                                            <span class="nilai-final-display fw-bold" data-index="{{ $item['index'] }}">
+                                                                {{ $nilai > 0 ? number_format($nilai, 2) : '0.00' }}
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="table-secondary">
+                                            <tr>
+                                                <td colspan="2" class="text-end fw-bold">Total</td>
+                                                <td class="text-center fw-bold">100.00</td>
+                                                <td class="text-center">
+                                                    <span class="total-skor-final-display fw-bold">0.00</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="total-nilai-final-display fw-bold">0.00</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
+                                                <td class="text-center">
+                                                    <span class="nilai-akhir-final-display fw-bold text-primary" style="font-size: 1.2em;">0.00</span>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
                         
                         <div class="row mt-4">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label required-field">Status Final</label>
                                     <select class="form-select" name="status_final" required>
@@ -353,14 +732,28 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label required-field">Nilai (0-100)</label>
-                                    <input type="number" class="form-control" name="nilai" 
+                                    <label class="form-label required-field">Nilai Final (Otomatis dari Penilaian)</label>
+                                    <input type="number" class="form-control" name="nilai" id="nilaiFinalInput"
                                            value="{{ $proposal->hasilFinal ? $proposal->hasilFinal->nilai : '' }}"
                                            min="0" max="100" step="0.01" required
-                                           placeholder="Masukkan nilai 0-100">
-                                    <div class="form-text">Nilai untuk perangkingan proposal (0.00 - 100.00)</div>
+                                           placeholder="Akan terisi otomatis"
+                                           readonly>
+                                    <div class="form-text">Nilai akan terisi otomatis berdasarkan penilaian di atas</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Dana yang Dapat Diberikan</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input type="number" class="form-control" name="dana_yang_dapat_diberikan" id="danaFinalInput"
+                                               value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_yang_dapat_diberikan ?? '') : '' }}"
+                                               min="0" step="0.01"
+                                               placeholder="0">
+                                    </div>
+                                    <div class="form-text">Dana yang dapat diberikan kepada proposal ini</div>
                                 </div>
                             </div>
                         </div>
@@ -390,10 +783,29 @@
 @endsection
 
 @section('scripts')
+@php
+    $hasRevisi = $proposal->proposalRevisi->count() > 0;
+    $firstRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
+    $firstRevisiUrl = $firstRevisi ? route('operator.revisi.download', $firstRevisi->id_revisi) : null;
+    $successMessage = session('success');
+    $errorMessage = session('error');
+    
+    // Prepare JSON strings
+    $pageDataJson = json_encode([
+        'hasRevisi' => $hasRevisi,
+        'firstRevisi' => $firstRevisi,
+        'firstRevisiUrl' => $firstRevisiUrl,
+        'successMessage' => $successMessage,
+        'errorMessage' => $errorMessage
+    ]);
+@endphp
 <script>
     // PDF viewer variables
     let currentPdfUrl = null;
     let currentFileName = null;
+    
+    // Blade data converted to JavaScript
+    const pageData = JSON.parse('{!! addslashes($pageDataJson) !!}');
 
     function toggleEditForm() {
         const form = document.getElementById('hasilFinalForm');
@@ -407,6 +819,74 @@
             editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Final';
         }
     }
+
+    // Calculate nilai final real-time
+    function calculateNilaiFinal() {
+        const skorInputs = document.querySelectorAll('.skor-final-input');
+        let totalNilai = 0;
+        let totalSkor = 0;
+        let count = 0;
+        
+        skorInputs.forEach(input => {
+            // Skip header rows (index < 0)
+            const index = parseInt(input.dataset.index);
+            if (index < 0) return;
+            
+            const skor = parseFloat(input.value) || 0;
+            const bobot = parseFloat(input.dataset.bobot) || 0;
+            
+            // Hitung nilai per kriteria: Nilai = Bobot × Skor
+            const nilai = bobot * skor;
+            totalNilai += nilai;
+            totalSkor += skor;
+            count++;
+            
+            // Update nilai display per kriteria
+            const nilaiDisplay = document.querySelector(`.nilai-final-display[data-index="${index}"]`);
+            if (nilaiDisplay) {
+                nilaiDisplay.textContent = nilai.toFixed(2);
+            }
+        });
+        
+        // Update total nilai
+        const totalNilaiDisplay = document.querySelector('.total-nilai-final-display');
+        if (totalNilaiDisplay) {
+            totalNilaiDisplay.textContent = totalNilai.toFixed(2);
+        }
+        
+        // Update total skor (rata-rata)
+        const totalSkorDisplay = document.querySelector('.total-skor-final-display');
+        if (totalSkorDisplay) {
+            totalSkorDisplay.textContent = count > 0 ? (totalSkor / count).toFixed(2) : '0.00';
+        }
+        
+        // Hitung nilai akhir: Total Nilai / 10
+        const nilaiAkhir = totalNilai / 10;
+        const nilaiAkhirDisplay = document.querySelector('.nilai-akhir-final-display');
+        if (nilaiAkhirDisplay) {
+            nilaiAkhirDisplay.textContent = nilaiAkhir.toFixed(2);
+        }
+        
+        // Update input nilai final (readonly)
+        const nilaiFinalInput = document.getElementById('nilaiFinalInput');
+        if (nilaiFinalInput) {
+            nilaiFinalInput.value = nilaiAkhir.toFixed(2);
+        }
+    }
+    
+    // Event listener untuk input skor final
+    document.addEventListener('DOMContentLoaded', function() {
+        const skorInputs = document.querySelectorAll('.skor-final-input');
+        
+        // Hitung nilai awal jika ada data existing
+        calculateNilaiFinal();
+        
+        // Hitung nilai setiap kali skor berubah
+        skorInputs.forEach(input => {
+            input.addEventListener('input', calculateNilaiFinal);
+            input.addEventListener('change', calculateNilaiFinal);
+        });
+    });
 
     // PDF Viewer Functions
     function viewPDF(pdfUrl, fileName) {
@@ -545,37 +1025,90 @@
         }
     }
 
+    // Initialize PDF proposal viewer
+    function initializeProposalPdfViewer() {
+        const proposalIframe = document.getElementById('proposalPdfIframe');
+        if (proposalIframe) {
+            proposalIframe.onload = function() {
+                const spinner = document.querySelector('#pdfProposalViewer .spinner');
+                if (spinner) {
+                    spinner.style.opacity = '0';
+                    setTimeout(() => {
+                        if (spinner.parentNode) {
+                            spinner.parentNode.removeChild(spinner);
+                        }
+                        proposalIframe.style.display = 'block';
+                    }, 300);
+                }
+            };
+            
+            // Show iframe after a short delay
+            setTimeout(() => {
+                proposalIframe.style.display = 'block';
+            }, 500);
+        }
+        
+        // Initialize fullscreen for proposal PDF
+        const fullscreenProposalBtn = document.getElementById('fullscreenProposalBtn');
+        if (fullscreenProposalBtn && proposalIframe) {
+            fullscreenProposalBtn.addEventListener('click', function() {
+                if (proposalIframe.requestFullscreen) {
+                    proposalIframe.requestFullscreen();
+                } else if (proposalIframe.webkitRequestFullscreen) {
+                    proposalIframe.webkitRequestFullscreen();
+                } else if (proposalIframe.msRequestFullscreen) {
+                    proposalIframe.msRequestFullscreen();
+                }
+            });
+        }
+    }
+
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Detail hasil final page loaded');
         
-        // Initialize fullscreen functionality
+        // Initialize PDF proposal viewer
+        initializeProposalPdfViewer();
+        
+        // Initialize PDF view buttons for revisi
+        document.querySelectorAll('.view-pdf-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const pdfUrl = this.getAttribute('data-pdf-url');
+                const pdfName = this.getAttribute('data-pdf-name');
+                viewPDF(pdfUrl, pdfName);
+                
+                // Show revisi PDF viewer
+                const revisiViewer = document.getElementById('revisiPdfViewer');
+                if (revisiViewer) {
+                    revisiViewer.style.display = 'block';
+                }
+            });
+        });
+        
+        // Initialize fullscreen functionality for revisi
         initializeFullscreen();
         
-        // Initialize download functionality
+        // Initialize download functionality for revisi
         initializeDownload();
         
         // Pre-load first revision PDF if available
-        @if($proposal->proposalRevisi->count() > 0)
-            const firstRevisi = @json($proposal->proposalRevisi->first());
-            if (firstRevisi) {
-                console.log('Pre-loading first revision PDF:', firstRevisi.nama_file);
-                // Pre-load the PDF URL for faster display
-                const link = document.createElement('link');
-                link.rel = 'prefetch';
-                link.href = '{{ route('operator.revisi.download', $proposal->proposalRevisi->first()->id_revisi) }}';
-                document.head.appendChild(link);
-            }
-        @endif
+        if (pageData.hasRevisi && pageData.firstRevisi) {
+            console.log('Pre-loading first revision PDF:', pageData.firstRevisi.nama_file);
+            // Pre-load the PDF URL for faster display
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.href = pageData.firstRevisiUrl;
+            document.head.appendChild(link);
+        }
         
         // Show success/error messages
-        @if(session('success'))
-            showToast('{{ session('success') }}', 'success');
-        @endif
+        if (pageData.successMessage) {
+            showToast(pageData.successMessage, 'success');
+        }
 
-        @if(session('error'))
-            showToast('{{ session('error') }}', 'error');
-        @endif
+        if (pageData.errorMessage) {
+            showToast(pageData.errorMessage, 'error');
+        }
     });
 
     // Form submission

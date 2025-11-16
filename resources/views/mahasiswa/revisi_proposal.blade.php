@@ -157,10 +157,16 @@
             <div>
                 <h5 class="mb-1">Status Perbaikan: 
                     <span class="badge bg-success status-badge">
-                        {{ ucfirst($ruangKontrol->status_perbaikan ?? 'tertutup') }}
+                        {{ ucfirst($ruangKontrol ? $ruangKontrol->status_perbaikan : 'tertutup') }}
                     </span>
                 </h5>
-                @if($ruangKontrol->tanggal_perbaikan_mulai && $ruangKontrol->tanggal_perbaikan_selesai)
+                @if(!$ruangKontrol)
+                    <p class="mb-0 text-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Ruang kontrol tidak ditemukan untuk tahun ajaran ini.</strong>
+                    </p>
+                @endif
+                @if($ruangKontrol && $ruangKontrol->tanggal_perbaikan_mulai && $ruangKontrol->tanggal_perbaikan_selesai)
                     <p class="mb-0">
                         Periode: {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_mulai)->format('d M Y') }} - 
                         {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai)->format('d M Y') }}

@@ -206,6 +206,8 @@
                     @endphp
                     @if($ruangKontrolAktif->is_active && !$isTahunMasaLalu)
                     <form id="pendaftaranForm">
+                        {{-- Hidden input untuk ID jadwal aktif --}}
+                        <input type="hidden" id="ruangKontrolAktifId" value="{{ $ruangKontrolAktif->id_ruang_kontrol ?? '' }}">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Tanggal Mulai</label>
@@ -290,6 +292,8 @@
                     
                     @if($ruangKontrolAktif->is_active && !$isTahunMasaLalu)
                     <form id="perbaikanForm">
+                        {{-- Hidden input untuk ID jadwal aktif (sama dengan Fase 1) --}}
+                        <input type="hidden" id="ruangKontrolAktifIdPerbaikan" value="{{ $ruangKontrolAktif->id_ruang_kontrol ?? '' }}">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Tanggal Mulai</label>
@@ -391,7 +395,6 @@
                                 <tbody>
                                     @foreach($jadwalTahun as $jadwal)
                                         @php
-                                            $isExpired = $jadwal->tanggal_pendaftaran_selesai && \Carbon\Carbon::parse($jadwal->tanggal_pendaftaran_selesai)->lt(now());
                                             $tahunAkademikSekarang = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
                                             // Extract tahun dari format "2025/2026" (tahun akademik)
                                             $tahunAjaranStr = $jadwal->tahun_ajaran;
@@ -403,7 +406,9 @@
                                                 $tahunJadwal = (int) $tahunAjaranStr;
                                                 $tahunPertamaSekarang = (int) date('Y');
                                             }
-                                            $isTahunMasaLalu = $tahunJadwal < $tahunPertamaSekarang;
+                                            // Status kedaluwarsa berdasarkan tahun ajaran yang sudah lewat
+                                            $isKedaluwarsa = $tahunJadwal < $tahunPertamaSekarang;
+                                            $isTahunSekarang = $tahunJadwal == $tahunPertamaSekarang;
                                         @endphp
                                         <tr class="{{ $jadwal->is_active ? 'table-success' : '' }}">
                                             <td>
@@ -411,14 +416,14 @@
                                                 @if($jadwal->is_active)
                                                     <span class="badge bg-success ms-2">AKTIF</span>
                                                 @endif
-                                                @if($isTahunMasaLalu)
-                                                    <span class="badge bg-secondary ms-2">HISTORY</span>
+                                                @if($isKedaluwarsa)
+                                                    <span class="badge bg-secondary ms-2">KEDALUWARSA</span>
                                                 @endif
                                             </td>
                                             <td>
                                                 {{ $jadwal->tahun_ajaran }}
-                                                @if($isTahunMasaLalu)
-                                                    <br><small class="text-muted">(Hanya untuk melihat history)</small>
+                                                @if($isKedaluwarsa)
+                                                    <br><small class="text-muted">(Tahun ajaran sudah lewat - hanya untuk melihat history)</small>
                                                 @endif
                                             </td>
                                             <td>
@@ -440,7 +445,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($isExpired)
+                                                @if($isKedaluwarsa)
                                                     <span class="badge bg-secondary">Kedaluwarsa</span>
                                                 @elseif($jadwal->is_active)
                                                     <span class="badge bg-success">Aktif</span>
@@ -451,29 +456,26 @@
                                             <td>{{ \Carbon\Carbon::parse($jadwal->created_at)->format('d M Y H:i') }}</td>
                                             <td>
                                                 <div class="btn-group" role="group">
-                                                    @if($isTahunMasaLalu)
-                                                        <button type="button" class="btn btn-sm btn-secondary" disabled title="Jadwal tahun masa lalu hanya dapat dilihat, tidak dapat diubah">
+                                                    @if($isKedaluwarsa)
+                                                        {{-- Jadwal kedaluwarsa (tahun ajaran sudah lewat) - hanya bisa dilihat --}}
+                                                        <button type="button" class="btn btn-sm btn-secondary" disabled title="Jadwal tahun ajaran yang sudah lewat hanya dapat dilihat, tidak dapat diubah atau dihapus">
                                                             <i class="fas fa-eye"></i>
                                                             <span class="d-none d-md-inline ms-1">Hanya Lihat</span>
                                                         </button>
                                                     @else
+                                                        {{-- Jadwal tahun sekarang atau tahun depan - bisa diatur --}}
                                                         @if(!$jadwal->is_active)
                                                             <button type="button" class="btn btn-sm btn-success" onclick="activateJadwal({{ $jadwal->id_ruang_kontrol }})" title="Aktifkan Jadwal">
                                                                 <i class="fas fa-check"></i>
                                                             </button>
                                                         @endif
-                                                        @if(!$isExpired)
-                                                            <button type="button" class="btn btn-sm btn-warning" onclick="editJadwal({{ $jadwal->id_ruang_kontrol }})" title="Edit Jadwal">
-                                                                <i class="fas fa-edit"></i>
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteJadwal({{ $jadwal->id_ruang_kontrol }})" title="Hapus Jadwal">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        @else
-                                                            <button type="button" class="btn btn-sm btn-secondary" disabled title="Jadwal yang sudah lewat tidak dapat diedit">
-                                                                <i class="fas fa-lock"></i>
-                                                            </button>
-                                                        @endif
+                                                        {{-- Tahun sekarang bisa dihapus (termasuk yang aktif), tahun depan juga bisa --}}
+                                                        <button type="button" class="btn btn-sm btn-warning" onclick="editJadwal({{ $jadwal->id_ruang_kontrol }})" title="Edit Jadwal">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteJadwal({{ $jadwal->id_ruang_kontrol }})" title="Hapus Jadwal">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
                                                     @endif
                                                 </div>
                                             </td>
@@ -744,10 +746,16 @@ function updateRuangKontrol(type, status) {
         statusPendaftaran = status === 'terbuka' ? 'tertutup' : (document.getElementById('statusPendaftaran')?.textContent.toLowerCase() || 'tertutup');
     }
     
+    // Ambil ID jadwal aktif dari hidden input
+    const ruangKontrolId = document.getElementById('ruangKontrolAktifId')?.value || 
+                          document.getElementById('ruangKontrolAktifIdPerbaikan')?.value || 
+                          null;
+    
     const tahunSelector = document.getElementById('tahunSelector');
     const tahunAjaranTerpilih = tahunSelector ? tahunSelector.value : '{{ $tahunAjaranTerpilih ?? \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru() }}';
     
     const data = {
+        id_ruang_kontrol: ruangKontrolId, // Kirim ID jadwal yang akan diupdate
         status_pendaftaran: statusPendaftaran,
         status_perbaikan: statusPerbaikan,
         tanggal_pendaftaran_mulai: document.getElementById('pendaftaranMulai')?.value || '',

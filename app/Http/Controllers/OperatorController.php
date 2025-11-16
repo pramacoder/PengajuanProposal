@@ -28,32 +28,50 @@ class OperatorController extends Controller
 {
     public function dashboard(Request $request)
     {
-        // Ambil data untuk dashboard
-        $tahun = request('tahun', '2025');
+        // Ambil tahun ajaran yang dipilih (default: tahun ajaran terbaru)
+        $tahunAjaranTerpilih = $request->input('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        
+        // Ambil daftar tahun ajaran yang tersedia dari proposal
+        $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
+            ->whereRaw("tahun_ajaran LIKE '%/%'") // Hanya format YYYY/YYYY
+            ->distinct()
+            ->orderByRaw("CAST(SUBSTRING_INDEX(tahun_ajaran, '/', 1) AS UNSIGNED) DESC")
+            ->pluck('tahun_ajaran')
+            ->filter(function($item) {
+                // Pastikan format benar (mengandung slash dan memiliki 2 bagian)
+                return strpos($item, '/') !== false && 
+                       count(explode('/', $item)) === 2;
+            })
+            ->values();
+        
+        // Jika belum ada proposal, set default tahun ajaran terbaru
+        if ($tahunAjaranList->isEmpty()) {
+            $tahunAjaranList = collect([TahunAjaranHelper::getTahunAjaranTerbaru()]);
+        }
         
         // Data untuk PKM-8 Bidang
-        $pkm8Bidang = $this->getPKM8BidangData($tahun);
+        $pkm8Bidang = $this->getPKM8BidangData($tahunAjaranTerpilih);
         
         // Data untuk PKM Insentif
-        $pkmInsentif = $this->getPKMInsentifData($tahun);
+        $pkmInsentif = $this->getPKMInsentifData($tahunAjaranTerpilih);
         
         // Total keseluruhan
         $totalKeseluruhan = $pkm8Bidang->sum('jumlah');
         $totalInsentif = $pkmInsentif->sum('jumlah');
         
         // Data untuk grafik
-        $chartData = $this->getChartData($tahun);
+        $chartData = $this->getChartData($tahunAjaranTerpilih);
         
         // Data perangkingan proposal terbaik
-        $topProposals = $this->getTopProposals($tahun);
+        $topProposals = $this->getTopProposals($tahunAjaranTerpilih);
         
         // Data untuk filter proposal
-        $filteredProposals = $this->getFilteredProposals($request, $tahun);
+        $filteredProposals = $this->getFilteredProposals($request, $tahunAjaranTerpilih);
         $fakultas = Fakultas::orderBy('nama_fakultas')->get();
         $prodis = Prodi::orderBy('nama_prodi')->get();
         
-        // Get unique skims from proposals
-        $skims = Proposal::whereYear('tanggal_pengajuan', $tahun)
+        // Get unique skims from proposals berdasarkan tahun ajaran
+        $skims = Proposal::where('tahun_ajaran', $tahunAjaranTerpilih)
             ->distinct()
             ->pluck('skim')
             ->filter()
@@ -65,7 +83,8 @@ class OperatorController extends Controller
             'pkmInsentif', 
             'totalKeseluruhan', 
             'totalInsentif', 
-            'tahun', 
+            'tahunAjaranTerpilih', 
+            'tahunAjaranList',
             'chartData', 
             'topProposals',
             'filteredProposals',
@@ -78,7 +97,7 @@ class OperatorController extends Controller
     /**
      * Get filtered proposals based on request filters
      */
-    private function getFilteredProposals(Request $request, $tahun)
+    private function getFilteredProposals(Request $request, $tahunAjaran)
     {
         // Jika tidak ada filter yang dipilih, return empty collection
         if (!$request->filled('filter_fakultas') && 
@@ -89,7 +108,7 @@ class OperatorController extends Controller
         }
         
         $query = Proposal::with(['mahasiswa', 'semuaAnggotaTim', 'hasilFinal'])
-            ->whereYear('tanggal_pengajuan', $tahun);
+            ->where('tahun_ajaran', $tahunAjaran);
         
         // Filter berdasarkan Fakultas
         if ($request->filled('filter_fakultas')) {
@@ -617,6 +636,7 @@ class OperatorController extends Controller
         ]);
 
         $request->validate([
+            'id_ruang_kontrol' => 'nullable|exists:ruang_kontrols,id_ruang_kontrol',
             'status_pendaftaran' => 'required|in:terbuka,tertutup',
             'status_perbaikan' => 'required|in:terbuka,tertutup',
             'tanggal_pendaftaran_mulai' => 'required|date',
@@ -662,32 +682,19 @@ class OperatorController extends Controller
                 ], 422);
             }
             
-            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
-                ->where('is_active', true)
-                ->first();
-            
-            if (!$ruangKontrol) {
-                // Buat record baru jika belum ada
-                $ruangKontrol = RuangKontrol::create([
-                    'status_pendaftaran' => $statusPendaftaran,
-                    'status_perbaikan' => $statusPerbaikan,
-                    'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
-                    'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
-                    'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                    'tahun_ajaran' => $tahunAjaran,
-                    'nama_history' => $request->nama_history ?? 'Jadwal ' . $tahunAjaran,
-                    'is_active' => true,
-                    'id_pt' => auth('operator')->id()
-                ]);
-            } else {
-                // Simpan data lama sebagai history sebelum update
-                $ruangKontrolLama = $ruangKontrol->replicate();
-                $ruangKontrolLama->is_active = false;
-                $ruangKontrolLama->nama_history = $ruangKontrolLama->nama_history ?? 'History - ' . now()->format('d M Y H:i');
-                $ruangKontrolLama->save();
+            // Jika ID jadwal dikirim, update jadwal tersebut
+            if ($request->filled('id_ruang_kontrol')) {
+                $ruangKontrol = RuangKontrol::findOrFail($request->id_ruang_kontrol);
                 
-                // Update record yang sudah ada
+                // Pastikan jadwal ini untuk tahun ajaran yang sama
+                if ($ruangKontrol->tahun_ajaran !== $tahunAjaran) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Jadwal yang dipilih tidak sesuai dengan tahun ajaran yang dipilih.'
+                    ], 422);
+                }
+                
+                // Update jadwal yang sudah ada (hanya status, tidak membuat history)
                 $ruangKontrol->update([
                     'status_pendaftaran' => $statusPendaftaran,
                     'status_perbaikan' => $statusPerbaikan,
@@ -697,6 +704,46 @@ class OperatorController extends Controller
                     'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
                     'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history
                 ]);
+            } else {
+                // Jika ID tidak dikirim, cari jadwal aktif untuk tahun ajaran tersebut
+                $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
+                    ->where('is_active', true)
+                    ->first();
+                
+                if (!$ruangKontrol) {
+                    // Jika tidak ada yang aktif, cari jadwal yang tidak aktif untuk tahun ajaran tersebut
+                    $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                }
+                
+                if (!$ruangKontrol) {
+                    // Buat record baru jika benar-benar belum ada jadwal untuk tahun ajaran tersebut
+                    $ruangKontrol = RuangKontrol::create([
+                        'status_pendaftaran' => $statusPendaftaran,
+                        'status_perbaikan' => $statusPerbaikan,
+                        'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                        'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                        'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                        'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                        'tahun_ajaran' => $tahunAjaran,
+                        'nama_history' => $request->nama_history ?? 'Jadwal ' . $tahunAjaran,
+                        'is_active' => true,
+                        'id_pt' => auth('operator')->id()
+                    ]);
+                } else {
+                    // Update jadwal yang sudah ada (hanya status, tidak membuat history)
+                    $ruangKontrol->update([
+                        'status_pendaftaran' => $statusPendaftaran,
+                        'status_perbaikan' => $statusPerbaikan,
+                        'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                        'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                        'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                        'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                        'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history,
+                        'is_active' => true // Pastikan jadwal aktif
+                    ]);
+                }
             }
             
             // Log success
@@ -904,30 +951,25 @@ class OperatorController extends Controller
     }
 
     /**
-     * Update schedule (only if not expired)
+     * Update schedule (only if not expired based on tahun ajaran)
      */
     public function updateJadwal(Request $request, $id)
     {
         $ruangKontrol = RuangKontrol::findOrFail($id);
         
-        // Cek apakah tahun ajaran adalah tahun masa lalu (tidak bisa diupdate)
-        // Support format "2025" dan "2025/2026"
-        $tahunSekarang = (int) date('Y');
-        $tahunAjaran = $this->extractYearFromTahunAjaran($ruangKontrol->tahun_ajaran);
+        // Cek apakah tahun ajaran adalah tahun ajaran yang sudah lewat (tidak bisa diupdate)
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $tahunAjaranJadwal = $ruangKontrol->tahun_ajaran;
         
-        if ($tahunAjaran < $tahunSekarang) {
+        // Extract tahun pertama dari tahun ajaran untuk perbandingan
+        $tahunPertamaJadwal = $this->extractYearFromTahunAjaran($tahunAjaranJadwal);
+        $tahunPertamaTerbaru = $this->extractYearFromTahunAjaran($tahunAjaranTerbaru);
+        
+        // Jika tahun ajaran jadwal < tahun ajaran terbaru, berarti sudah kedaluwarsa
+        if ($tahunPertamaJadwal < $tahunPertamaTerbaru) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jadwal tahun masa lalu tidak dapat diupdate. Hanya jadwal tahun sekarang (' . $tahunSekarang . ') dan tahun depan yang bisa diupdate.'
-            ], 422);
-        }
-        
-        // Cek apakah jadwal sudah lewat (tidak bisa diupdate)
-        $today = now();
-        if ($ruangKontrol->tanggal_pendaftaran_selesai && $ruangKontrol->tanggal_pendaftaran_selesai < $today) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Jadwal yang sudah lewat tidak dapat diupdate.'
+                'message' => 'Jadwal dengan tahun ajaran yang sudah lewat tidak dapat diupdate. Hanya jadwal tahun ajaran sekarang (' . $tahunAjaranTerbaru . ') dan tahun ajaran depan yang bisa diupdate.'
             ], 422);
         }
 
@@ -962,20 +1004,30 @@ class OperatorController extends Controller
     }
 
     /**
-     * Delete schedule (only if not expired)
+     * Delete schedule (only if not expired based on tahun ajaran)
      */
     public function deleteJadwal($id)
     {
         $ruangKontrol = RuangKontrol::findOrFail($id);
         
-        // Cek apakah jadwal sudah lewat (tidak bisa dihapus jika sudah lewat dan aktif)
-        $today = now();
-        if ($ruangKontrol->is_active && $ruangKontrol->tanggal_pendaftaran_selesai && $ruangKontrol->tanggal_pendaftaran_selesai < $today) {
+        // Cek apakah tahun ajaran adalah tahun ajaran yang sudah lewat (tidak bisa dihapus)
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $tahunAjaranJadwal = $ruangKontrol->tahun_ajaran;
+        
+        // Extract tahun pertama dari tahun ajaran untuk perbandingan
+        $tahunPertamaJadwal = $this->extractYearFromTahunAjaran($tahunAjaranJadwal);
+        $tahunPertamaTerbaru = $this->extractYearFromTahunAjaran($tahunAjaranTerbaru);
+        
+        // Jika tahun ajaran jadwal < tahun ajaran terbaru, berarti sudah kedaluwarsa dan tidak bisa dihapus
+        if ($tahunPertamaJadwal < $tahunPertamaTerbaru) {
             return response()->json([
                 'success' => false,
-                'message' => 'Jadwal aktif yang sudah lewat tidak dapat dihapus.'
+                'message' => 'Jadwal dengan tahun ajaran yang sudah lewat tidak dapat dihapus. Jadwal ini hanya untuk melihat history.'
             ], 422);
         }
+        
+        // Jika tahun ajaran sama dengan tahun terbaru, bisa dihapus (termasuk yang aktif)
+        // Ini memungkinkan operator menghapus jadwal yang salah input di tahun sekarang
 
         try {
             $ruangKontrol->delete();
@@ -1112,13 +1164,41 @@ class OperatorController extends Controller
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_final' => 'required|in:lolos,tidak_lolos',
             'catatan_final' => 'nullable|string',
-            'nilai' => 'required|numeric|min:0|max:100'
+            'nilai' => 'required|numeric|min:0|max:100',
+            'skor' => 'required|array',
+            'skor.*' => 'required|numeric|min:0|max:10',
+            'dana_yang_dapat_diberikan' => 'nullable|numeric|min:0'
         ]);
 
         try {
             DB::beginTransaction();
             
             $proposal = Proposal::findOrFail($request->proposal_id);
+            
+            // Ambil kriteria untuk validasi jumlah skor
+            $criteria = \App\Helpers\ProposalHelper::getSubstantifCriteria($proposal->skim);
+            
+            // Hitung jumlah kriteria yang sebenarnya (hanya yang bisa di-score, bukan header)
+            $actualCriteriaCount = \App\Helpers\ProposalHelper::countActualCriteria($criteria);
+            
+            // Ambil skor per kriteria
+            $skorPerKriteria = $request->input('skor', []);
+            
+            // Normalize skor: convert string keys to integers and sort
+            $normalizedSkor = [];
+            foreach ($skorPerKriteria as $key => $value) {
+                $index = (int) $key;
+                $normalizedSkor[$index] = (float) $value;
+            }
+            ksort($normalizedSkor);
+            
+            // Validasi jumlah skor harus sesuai dengan jumlah kriteria yang bisa di-score
+            if (count($normalizedSkor) !== $actualCriteriaCount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jumlah skor tidak sesuai dengan jumlah kriteria penilaian. Diharapkan: ' . $actualCriteriaCount . ', Diterima: ' . count($normalizedSkor)
+                ], 422);
+            }
             
             // Update status proposal
             $proposal->update(['status' => $request->status_final]);
@@ -1130,6 +1210,8 @@ class OperatorController extends Controller
                     'status_final' => $request->status_final,
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
+                    'skor_per_kriteria' => $normalizedSkor,
+                    'dana_yang_dapat_diberikan' => $request->input('dana_yang_dapat_diberikan'),
                     'id_pt' => auth('operator')->id()
                 ]
             );
@@ -1189,6 +1271,35 @@ class OperatorController extends Controller
         }
     }
 
+    /**
+     * Menampilkan PDF proposal secara langsung untuk iframe
+     */
+    public function viewPdf($id)
+    {
+        try {
+            $proposal = Proposal::with('dokumen')->findOrFail($id);
+
+            if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+                abort(404, 'Dokumen tidak ditemukan.');
+            }
+
+            $path = storage_path('app/public/' . $proposal->dokumen->path_file);
+            
+            if (!file_exists($path)) {
+                abort(404, 'File tidak ditemukan: ' . $path);
+            }
+
+            // Return PDF dengan content-type yang tepat untuk iframe
+            return response()->file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in viewPdf: ' . $e->getMessage());
+            abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
+        }
+    }
+
     public function detailHasilFinal($id)
     {
         // Use caching to improve performance
@@ -1201,13 +1312,29 @@ class OperatorController extends Controller
                 'semuaAnggotaTim', 
                 'dokumen', 
                 'hasilFinal',
+                'nilaiSubstantif.reviewer',
                 'proposalRevisi' => function($query) {
                     $query->orderBy('tanggal_submit', 'desc');
                 }
             ])->findOrFail($id);
         });
 
-        return view('operator.detail_hasil_final', compact('proposal'));
+        // Ambil kriteria penilaian substantif berdasarkan skim proposal
+        $criteria = \App\Helpers\ProposalHelper::getSubstantifCriteria($proposal->skim);
+        
+        // Ambil nilai substantif dari 2 reviewer
+        $nilaiSubstantif1 = null;
+        $nilaiSubstantif2 = null;
+        
+        if ($proposal->id_reviewer_substantif_1) {
+            $nilaiSubstantif1 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
+        }
+        
+        if ($proposal->id_reviewer_substantif_2) {
+            $nilaiSubstantif2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
+        }
+
+        return view('operator.detail_hasil_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2'));
     }
 
     // Manajemen Akun
@@ -1448,44 +1575,44 @@ class OperatorController extends Controller
         return redirect()->route('operator.manage.accounts')->with('success', 'Akun berhasil dihapus.');
     }
 
-    private function getPKM8BidangData($tahun)
+    private function getPKM8BidangData($tahunAjaran)
     {
         $skims = ['RE', 'RSH', 'KC', 'PM', 'PI', 'K', 'KI', 'VGK'];
         
-        return collect($skims)->map(function($skim) use ($tahun) {
+        return collect($skims)->map(function($skim) use ($tahunAjaran) {
             // Total proposal berdasarkan skim
             $total = Proposal::where('skim', $skim)
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang sudah divalidasi (status_validasi = 'valid')
             $sudahValid = Proposal::where('skim', $skim)
                 ->where('status_validasi', 'valid')
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang belum divalidasi (status_validasi = 'pending')
             $belumValid = Proposal::where('skim', $skim)
                 ->where('status_validasi', 'pending')
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang ditolak validasi (status_validasi = 'tidak_valid')
             $tolakValid = Proposal::where('skim', $skim)
                 ->where('status_validasi', 'tidak_valid')
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang sedang dalam proses review
             $sedangReview = Proposal::where('skim', $skim)
                 ->whereIn('status', ['submitted', 'review_administratif', 'review_substantif', 'revisi'])
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang sudah selesai review (lolos/tidak_lolos)
             $selesaiReview = Proposal::where('skim', $skim)
                 ->whereIn('status', ['lolos', 'tidak_lolos'])
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             return [
@@ -1500,44 +1627,44 @@ class OperatorController extends Controller
         });
     }
 
-    private function getPKMInsentifData($tahun)
+    private function getPKMInsentifData($tahunAjaran)
     {
         $skims = ['AI', 'GFT'];
         
-        return collect($skims)->map(function($skim) use ($tahun) {
+        return collect($skims)->map(function($skim) use ($tahunAjaran) {
             // Total proposal berdasarkan skim
             $total = Proposal::where('skim', $skim)
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang sudah divalidasi (status_validasi = 'valid')
             $sudahValid = Proposal::where('skim', $skim)
                 ->where('status_validasi', 'valid')
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang belum divalidasi (status_validasi = 'pending')
             $belumValid = Proposal::where('skim', $skim)
                 ->where('status_validasi', 'pending')
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang ditolak validasi (status_validasi = 'tidak_valid')
             $tolakValid = Proposal::where('skim', $skim)
                 ->where('status_validasi', 'tidak_valid')
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang sedang dalam proses review
             $sedangReview = Proposal::where('skim', $skim)
                 ->whereIn('status', ['submitted', 'review_administratif', 'review_substantif', 'revisi'])
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             // Proposal yang sudah selesai review (lolos/tidak_lolos)
             $selesaiReview = Proposal::where('skim', $skim)
                 ->whereIn('status', ['lolos', 'tidak_lolos'])
-                ->whereYear('tanggal_pengajuan', $tahun)
+                ->where('tahun_ajaran', $tahunAjaran)
                 ->count();
             
             return [
@@ -1555,22 +1682,31 @@ class OperatorController extends Controller
     /**
      * Get chart data for dashboard
      */
-    private function getChartData($tahun)
+    private function getChartData($tahunAjaran)
     {
-        // Data proposal per tahun (3 tahun terakhir)
-        $years = [$tahun - 2, $tahun - 1, $tahun];
-        $proposalPerTahun = [];
+        // Ambil 3 tahun ajaran terakhir untuk chart
+        $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
+            ->whereRaw("tahun_ajaran LIKE '%/%'")
+            ->distinct()
+            ->orderByRaw("CAST(SUBSTRING_INDEX(tahun_ajaran, '/', 1) AS UNSIGNED) DESC")
+            ->pluck('tahun_ajaran')
+            ->filter(function($item) {
+                return strpos($item, '/') !== false && count(explode('/', $item)) === 2;
+            })
+            ->take(3)
+            ->values();
         
-        foreach ($years as $year) {
-            $count = Proposal::whereYear('tanggal_pengajuan', $year)->count();
-            $proposalPerTahun[] = [
-                'tahun' => $year,
+        // Data proposal per tahun ajaran (3 tahun ajaran terakhir)
+        $proposalPerTahun = $tahunAjaranList->map(function($ta) {
+            $count = Proposal::where('tahun_ajaran', $ta)->count();
+            return [
+                'tahun' => $ta,
                 'jumlah' => $count
             ];
-        }
+        })->toArray();
         
-        // Data proposal per skim di tahun terbaru
-        $proposalPerSkim = Proposal::whereYear('tanggal_pengajuan', $tahun)
+        // Data proposal per skim di tahun ajaran terpilih
+        $proposalPerSkim = Proposal::where('tahun_ajaran', $tahunAjaran)
             ->selectRaw('skim, COUNT(*) as jumlah')
             ->groupBy('skim')
             ->orderBy('jumlah', 'desc')
@@ -1582,8 +1718,8 @@ class OperatorController extends Controller
                 ];
             });
         
-        // Data proposal per fakultas di tahun terbaru
-        $proposalPerFakultas = Proposal::whereYear('tanggal_pengajuan', $tahun)
+        // Data proposal per fakultas di tahun ajaran terpilih
+        $proposalPerFakultas = Proposal::where('tahun_ajaran', $tahunAjaran)
             ->join('mahasiswas', 'proposals.id_mahasiswa', '=', 'mahasiswas.id_mahasiswa')
             ->selectRaw('mahasiswas.fakultas_mhs as nama_fakultas, COUNT(*) as jumlah')
             ->groupBy('mahasiswas.fakultas_mhs')
@@ -1606,10 +1742,10 @@ class OperatorController extends Controller
     /**
      * Get top 10 proposals by nilai
      */
-    private function getTopProposals($tahun)
+    private function getTopProposals($tahunAjaran)
     {
         return Proposal::with(['mahasiswa', 'hasilFinal'])
-            ->whereYear('tanggal_pengajuan', $tahun)
+            ->where('tahun_ajaran', $tahunAjaran)
             ->whereHas('hasilFinal')
             ->join('hasil_finals', 'proposals.id_proposal', '=', 'hasil_finals.id_proposal')
             ->orderBy('hasil_finals.nilai', 'desc')

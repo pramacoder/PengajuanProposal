@@ -1573,7 +1573,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="alert alert-${statusClass}">
                                     <h5 class="alert-heading">
                                         <i class="fas fa-${statusIcon} me-2"></i>
@@ -1581,7 +1581,7 @@
                                     </h5>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="alert alert-primary">
                                     <h5 class="alert-heading">
                                         <i class="fas fa-star me-2"></i>
@@ -1589,6 +1589,16 @@
                                     </h5>
                                 </div>
                             </div>
+                            ${finalResult.dana_yang_dapat_diberikan ? `
+                            <div class="col-md-4">
+                                <div class="alert alert-success">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-money-bill-wave me-2"></i>
+                                        Dana yang Dapat Diberikan: Rp ${formatRupiah(finalResult.dana_yang_dapat_diberikan)}
+                                    </h5>
+                                </div>
+                            </div>
+                            ` : ''}
                         </div>
                         
                         <div class="mb-3">
@@ -1620,6 +1630,13 @@
             closeModal();
         }
     });
+
+    // Format Rupiah helper function
+    function formatRupiah(value) {
+        if (!value) return '0';
+        const num = parseFloat(value);
+        return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
 
     // Toast notification function
     function showToast(message, type = 'info') {

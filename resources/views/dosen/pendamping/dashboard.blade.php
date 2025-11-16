@@ -109,8 +109,8 @@
                 <div class="card-body">
                     @if($proposals->count() > 0)
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table class="table table-striped align-middle">
+                                <thead class="table-dark">
                                     <tr>
                                         <th>No</th>
                                         <th>Mahasiswa</th>
@@ -159,19 +159,17 @@
                                                 @endswitch
                                             </td>
                                             <td>{{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d/m/Y') }}</td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}" 
-                                                       class="btn btn-sm btn-outline-primary">
-                                                        <i class="fas fa-eye me-1"></i>Detail
+                                            <td class="d-flex gap-2">
+                                                <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if($proposal->status_validasi == 'pending')
+                                                    <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}#validasi" 
+                                                       class="btn btn-sm btn-warning">
+                                                        <i class="fas fa-check"></i>
                                                     </a>
-                                                    @if($proposal->status_validasi == 'pending')
-                                                        <a href="{{ route('dosen.pendamping.proposal.detail', $proposal->id_proposal) }}#validasi" 
-                                                           class="btn btn-sm btn-warning">
-                                                            <i class="fas fa-check me-1"></i>Validasi
-                                                        </a>
-                                                    @endif
-                                                </div>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach

@@ -9,6 +9,7 @@ use App\Models\Dosen;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\HasilFinal;
+use App\Models\RuangKontrol;
 use App\Helpers\ProposalHelper;
 use App\Helpers\TahunAjaranHelper;
 use Illuminate\Http\Request;
@@ -266,15 +267,25 @@ class ProposalController extends Controller
                 $danaDiajukan = 0; // PKM Insentif tidak memiliki pendanaan
             }
 
+            // Tentukan tahun ajaran dari tanggal pengajuan (jika tidak ada atau tidak sesuai)
+            $tanggalPengajuan = now();
+            $tahunAjaranDariTanggal = \App\Helpers\TahunAjaranHelper::getTahunAjaranByDate($tanggalPengajuan);
+            $tahunAjaran = $request->tahun_ajaran;
+            
+            // Jika tahun ajaran dari request tidak sesuai dengan tanggal pengajuan, gunakan yang dari tanggal
+            if (empty($tahunAjaran) || $tahunAjaran !== $tahunAjaranDariTanggal) {
+                $tahunAjaran = $tahunAjaranDariTanggal;
+            }
+            
             // Buat proposal dengan data tim (untuk kompatibilitas dengan sistem lama)
             $proposal = Proposal::create([
                 'judul_proposal' => $request->judul,
                 'judul' => $request->judul,
-                'tanggal_pengajuan' => now(),
+                'tanggal_pengajuan' => $tanggalPengajuan,
                 'skim' => $request->skim,
                 'dosen_pembimbing' => $request->dosen_pembimbing,
                 'dana_diajukan' => $danaDiajukan,
-                'tahun_ajaran' => $request->tahun_ajaran,
+                'tahun_ajaran' => $tahunAjaran,
                 'status_validasi' => 'pending',
                 'status_final' => 'submitted',
                 'status' => 'submitted',
@@ -962,7 +973,25 @@ class ProposalController extends Controller
                 ->with('error', 'Proposal belum siap untuk direvisi. Status saat ini: ' . ucfirst(str_replace('_', ' ', $proposal->status)));
         }
 
-        return view('mahasiswa.revisi_proposal', compact('proposal', 'user'));
+        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        // Ambil data revisi yang sudah ada
+        $revisi = ProposalRevisi::where('id_proposal', $proposal->id_proposal)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('mahasiswa.revisi_proposal', compact('proposal', 'user', 'ruangKontrol', 'revisi'));
     }
 
     /**

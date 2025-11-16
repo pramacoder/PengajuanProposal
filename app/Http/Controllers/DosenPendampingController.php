@@ -211,13 +211,95 @@ class DosenPendampingController extends Controller
     /**
      * List proposal yang perlu divalidasi
      */
-    public function proposalValidasi()
+    public function proposalValidasi(Request $request)
     {
         $dosen = Auth::guard('dosen')->user();
         
-        $proposals = $dosen->proposals()->with(['mahasiswa'])->get();
+        // Ambil tahun ajaran yang dipilih (default: tahun ajaran terbaru)
+        $tahunAjaranTerpilih = $request->input('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        
+        // Query proposal dengan filter tahun ajaran
+        $proposalsQuery = $dosen->proposals()->with([
+            'mahasiswa',
+            'mahasiswa.prodi',
+            'mahasiswa.fakultas'
+        ]);
+        
+        // Filter berdasarkan tahun ajaran
+        // Jika tahun_ajaran di database null atau tidak sesuai, gunakan tahun ajaran dari tanggal_pengajuan
+        if ($tahunAjaranTerpilih) {
+            $proposalsQuery->where(function($query) use ($tahunAjaranTerpilih) {
+                // Filter berdasarkan tahun_ajaran yang ada di database
+                $query->where('tahun_ajaran', $tahunAjaranTerpilih)
+                      // Atau jika tahun_ajaran null/kosong, hitung dari tanggal_pengajuan
+                      ->orWhere(function($q) use ($tahunAjaranTerpilih) {
+                          $q->where(function($subQ) {
+                              $subQ->whereNull('tahun_ajaran')
+                                   ->orWhere('tahun_ajaran', '');
+                          })
+                          ->whereRaw("CONCAT(
+                              IF(MONTH(tanggal_pengajuan) >= 7, 
+                                  YEAR(tanggal_pengajuan), 
+                                  YEAR(tanggal_pengajuan) - 1
+                              ), 
+                              '/', 
+                              IF(MONTH(tanggal_pengajuan) >= 7, 
+                                  YEAR(tanggal_pengajuan) + 1, 
+                                  YEAR(tanggal_pengajuan)
+                              )
+                          ) = ?", [$tahunAjaranTerpilih]);
+                      });
+            });
+        }
+        
+        $proposals = $proposalsQuery->orderBy('tanggal_pengajuan', 'desc')->get();
+        
+        // Perbaiki tahun ajaran proposal yang null atau tidak sesuai dengan tanggal pengajuan
+        foreach ($proposals as $proposal) {
+            if (empty($proposal->tahun_ajaran) || 
+                $proposal->tahun_ajaran !== TahunAjaranHelper::getTahunAjaranByDate($proposal->tanggal_pengajuan)) {
+                // Hitung tahun ajaran dari tanggal pengajuan
+                $tahunAjaranDariTanggal = TahunAjaranHelper::getTahunAjaranByDate($proposal->tanggal_pengajuan);
+                
+                // Update tahun ajaran di database jika berbeda
+                if ($proposal->tahun_ajaran !== $tahunAjaranDariTanggal) {
+                    $proposal->tahun_ajaran = $tahunAjaranDariTanggal;
+                    $proposal->save();
+                }
+            }
+        }
 
-        return view('dosen.pendamping.proposal_validasi', compact('proposals'));
+        // Ambil daftar tahun ajaran yang tersedia dari proposal dosen ini
+        // Termasuk yang dihitung dari tanggal_pengajuan jika tahun_ajaran null
+        $tahunAjaranList = $dosen->proposals()
+            ->get()
+            ->map(function($proposal) {
+                // Jika tahun_ajaran null, hitung dari tanggal_pengajuan
+                if (empty($proposal->tahun_ajaran)) {
+                    return TahunAjaranHelper::getTahunAjaranByDate($proposal->tanggal_pengajuan);
+                }
+                return $proposal->tahun_ajaran;
+            })
+            ->filter(function($item) {
+                // Pastikan format benar (mengandung slash dan memiliki 2 bagian)
+                return !empty($item) && 
+                       strpos($item, '/') !== false && 
+                       count(explode('/', $item)) === 2;
+            })
+            ->unique()
+            ->sort(function($a, $b) {
+                $yearA = (int) explode('/', $a)[0];
+                $yearB = (int) explode('/', $b)[0];
+                return $yearB - $yearA; // Sort descending
+            })
+            ->values();
+
+        // Jika belum ada proposal, set default tahun ajaran terbaru
+        if ($tahunAjaranList->isEmpty()) {
+            $tahunAjaranList = collect([TahunAjaranHelper::getTahunAjaranTerbaru()]);
+        }
+
+        return view('dosen.pendamping.proposal_validasi', compact('proposals', 'tahunAjaranTerpilih', 'tahunAjaranList'));
     }
 
     /**
