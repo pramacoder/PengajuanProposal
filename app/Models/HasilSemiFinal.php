@@ -5,32 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class HasilFinal extends Model
+class HasilSemiFinal extends Model
 {
     use HasFactory;
 
-    protected $table = 'hasil_finals';
+    protected $table = 'hasil_semi_finals';
     protected $primaryKey = 'id';
     public $timestamps = true;
 
     protected $fillable = [
-        'status_pimnas', // Untuk Pimpinan PT
-        'status_pendanaan', // Untuk Pimpinan PT
-        'dana_yang_didapatkan', // Untuk Pimpinan PT
-        'status_final', // Untuk Operator (lolos, tidak_lolos)
-        'dana_yang_dapat_diberikan', // Untuk Operator
+        'status_final',
         'catatan_final',
         'nilai',
         'skor_per_kriteria',
         'id_proposal',
-        'id_pimpinan_pt', // Untuk Pimpinan PT
-        'id_pt' // Untuk Operator
+        'id_pt'
     ];
 
     protected $casts = [
         'nilai' => 'decimal:2',
-        'dana_yang_didapatkan' => 'decimal:2',
-        'dana_yang_dapat_diberikan' => 'decimal:2',
         'skor_per_kriteria' => 'array'
     ];
 
@@ -40,14 +33,11 @@ class HasilFinal extends Model
         return $this->belongsTo(Proposal::class, 'id_proposal', 'id_proposal');
     }
 
-    public function pimpinanPt()
-    {
-        return $this->belongsTo(PT::class, 'id_pimpinan_pt', 'id_pt');
-    }
-
     public function pt()
     {
         return $this->belongsTo(PT::class, 'id_pt', 'id_pt');
     }
 }
+
+
 

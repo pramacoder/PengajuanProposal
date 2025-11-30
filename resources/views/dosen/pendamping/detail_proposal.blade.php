@@ -763,22 +763,22 @@
             modal.className = 'modal fade';
             modal.innerHTML = `
                 <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content" style="background: #343a40; color: white; border: 1px solid #495057;">
-                        <div class="modal-header" style="border-bottom: 1px solid #495057;">
+                    <div class="modal-content" style="background: white; color: #212529; border: 1px solid #dee2e6;">
+                        <div class="modal-header" style="background: ${actionColor === 'success' ? '#198754' : '#dc3545'}; border-bottom: 1px solid ${actionColor === 'success' ? '#198754' : '#dc3545'};">
                             <h5 class="modal-title" style="color: white;">
-                                <i class="fas ${actionIcon} me-2 text-${actionColor}"></i>
+                                <i class="fas ${actionIcon} me-2" style="color: white;"></i>
                                 Konfirmasi ${actionText} Proposal
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="this.closest('.modal').remove()"></button>
                         </div>
-                        <div class="modal-body">
-                            <p class="mb-3">Apakah Anda yakin ingin ${actionText.toLowerCase()} proposal ini?</p>
-                            <div class="alert alert-${actionColor === 'success' ? 'info' : 'warning'} mb-0" style="background: ${actionColor === 'success' ? 'rgba(13, 110, 253, 0.1)' : 'rgba(255, 254, 250, 0.84)'}; border-color: ${actionColor === 'success' ? '#0d6efd' : '#ffc107'};">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Perhatian:</strong> ${actionMessage}
+                        <div class="modal-body" style="background: white; color: #212529;">
+                            <p class="mb-3" style="color: #212529;">Apakah Anda yakin ingin ${actionText.toLowerCase()} proposal ini?</p>
+                            <div class="alert alert-${actionColor === 'success' ? 'success' : 'warning'} mb-0" style="background: ${actionColor === 'success' ? 'rgba(25, 135, 84, 0.1)' : 'rgba(255, 193, 7, 0.1)'}; border-color: ${actionColor === 'success' ? '#198754' : '#ffc107'}; color: ${actionColor === 'success' ? '#0f5132' : '#664d03'};">
+                                <i class="fas fa-info-circle me-2" style="color: ${actionColor === 'success' ? '#198754' : '#ffc107'};"></i>
+                                <strong style="color: ${actionColor === 'success' ? '#0f5132' : '#664d03'};">Perhatian:</strong> <span style="color: ${actionColor === 'success' ? '#0f5132' : '#664d03'};">${actionMessage}</span>
                             </div>
                         </div>
-                        <div class="modal-footer" style="border-top: 1px solid #495057;">
+                        <div class="modal-footer" style="background: white; border-top: 1px solid #dee2e6;">
                             <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('canceled'))">
                                 <i class="fas fa-times me-2"></i>Batal
                             </button>

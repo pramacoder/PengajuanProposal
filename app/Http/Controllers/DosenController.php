@@ -9,9 +9,12 @@ use App\Models\Dokumen;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\HasilFinal;
+use App\Models\HasilSemiFinal;
 use App\Models\Mahasiswa;
 use App\Models\Dosen;
+use App\Models\ProposalRevisi;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class DosenController extends Controller
 {
@@ -396,6 +399,295 @@ class DosenController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error in viewPdf (Dosen): ' . $e->getMessage());
             abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
+        }
+    }
+
+    // ============================================
+    // DOSEN UNIVERSITAS - Menu Khusus
+    // ============================================
+
+    /**
+     * Dashboard Dosen Universitas - Menampilkan proposal yang didampinginya
+     */
+    public function dashboardUniversitas()
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        // Ambil proposal yang didampingi sebagai dosen universitas
+        $proposals = Proposal::with(['mahasiswa', 'dokumen', 'hasilSemiFinal', 'proposalRevisi'])
+            ->where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+
+        // Kategorikan proposal berdasarkan status
+        $proposalsValidasi = $proposals->where('status', 'validasi_akhir_dosen_univ');
+        $proposalsValid = $proposals->where('status_validasi', 'valid')->where('status', '!=', 'validasi_akhir_dosen_univ');
+        $proposalsTidakValid = $proposals->where('status_validasi', 'tidak_valid');
+
+        return view('dosen.universitas.dashboard', compact('proposals', 'proposalsValidasi', 'proposalsValid', 'proposalsTidakValid', 'dosen'));
+    }
+
+    /**
+     * Validasi Akhir Proposal oleh Dosen Universitas
+     */
+    public function validasiAkhirProposal()
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        // Ambil proposal yang perlu divalidasi akhir (status: validasi_akhir_dosen_univ)
+        $proposals = Proposal::with(['mahasiswa', 'dokumen', 'hasilSemiFinal', 'proposalRevisi'])
+            ->where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            ->where('status', 'validasi_akhir_dosen_univ')
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+
+        return view('dosen.universitas.validasi_akhir', compact('proposals', 'dosen'));
+    }
+
+    /**
+     * Detail Proposal untuk Validasi Akhir
+     */
+    public function detailValidasiAkhir($id)
+    {
+        $dosen = Auth::guard('dosen')->user();
+        
+        $proposal = Proposal::with([
+            'mahasiswa',
+            'semuaAnggotaTim',
+            'dokumen',
+            'hasilSemiFinal',
+            'proposalRevisi' => function($query) {
+                $query->where('path_file', 'like', '%revisi_akhir%')
+                      ->orderBy('tanggal_submit', 'desc');
+            }
+        ])
+            ->where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            ->where(function($query) {
+                $query->where('status', 'validasi_akhir_dosen_univ')
+                      ->orWhere('status', 'pimpinan_pt')
+                      ->orWhere('status', 'revisi_akhir');
+            })
+            ->findOrFail($id);
+
+        return view('dosen.universitas.detail_validasi_akhir', compact('proposal', 'dosen'));
+    }
+
+    /**
+     * Proses Validasi Akhir Proposal
+     */
+    public function submitValidasiAkhir(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'action' => 'required|in:valid,tolak',
+                'catatan' => 'required_if:action,tolak',
+                'file_review' => 'nullable|file|mimes:pdf|max:5120' // Optional PDF untuk review
+            ]);
+
+            $dosen = Auth::guard('dosen')->user();
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+                ->where(function($query) {
+                    $query->where('status', 'validasi_akhir_dosen_univ')
+                          ->orWhere('status', 'revisi_akhir');
+                })
+                ->findOrFail($id);
+
+            DB::beginTransaction();
+
+            if ($request->action === 'valid') {
+                // Validasi berhasil - proposal masuk ke Pimpinan PT
+                $proposal->status_validasi = 'valid';
+                $proposal->status = 'pimpinan_pt';
+                $proposal->status_final = 'pimpinan_pt';
+                $proposal->catatan = null;
+                $proposal->tanggal_validasi = now();
+                $message = 'Proposal berhasil divalidasi dan dikirim ke Pimpinan PT untuk penilaian final.';
+            } else {
+                // Validasi ditolak - kembali ke revisi akhir
+                $proposal->status_validasi = 'tidak_valid';
+                $proposal->status = 'revisi_akhir';
+                $proposal->status_final = 'revisi_akhir';
+                $proposal->catatan = $request->catatan;
+                $message = 'Proposal ditolak. Mahasiswa akan diminta untuk melakukan revisi ulang.';
+                
+                // Upload file review jika ada
+                if ($request->hasFile('file_review')) {
+                    $reviewFile = $request->file('file_review');
+                    $fileName = 'review_akhir_' . time() . '_' . $reviewFile->getClientOriginalName();
+                    $path = $reviewFile->storeAs('proposals/review_akhir', $fileName, 'public');
+                    
+                    $proposal->path_review_dosen = $path;
+                    $proposal->nama_file_review_dosen = $fileName;
+                    $proposal->tanggal_review_dosen = now();
+                }
+            }
+
+            $proposal->save();
+
+            DB::commit();
+
+            return redirect()->route('dosen.universitas.validasi.akhir')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error in submitValidasiAkhir', [
+                'proposal_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat memvalidasi proposal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * View PDF Proposal untuk Dosen Universitas
+     */
+    public function viewPdfUniversitas($id)
+    {
+        try {
+            $dosen = Auth::guard('dosen')->user();
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+                ->with('dokumen')
+                ->findOrFail($id);
+
+            if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+                abort(404, 'Dokumen tidak ditemukan.');
+            }
+
+            $pathFile = $proposal->dokumen->path_file;
+            
+            // Cek apakah path_file sudah termasuk 'public/' atau tidak
+            // Jika path_file sudah lengkap (misal: 'proposals/file.pdf'), tambahkan 'public/'
+            // Jika path_file sudah termasuk 'public/' (misal: 'public/proposals/file.pdf'), gunakan langsung
+            if (strpos($pathFile, 'public/') === 0) {
+                $path = storage_path('app/' . $pathFile);
+            } else {
+                $path = storage_path('app/public/' . $pathFile);
+            }
+            
+            \Log::info('View PDF Universitas', [
+                'proposal_id' => $id,
+                'path_file' => $pathFile,
+                'full_path' => $path,
+                'file_exists' => file_exists($path)
+            ]);
+            
+            if (!file_exists($path)) {
+                // Coba alternatif path
+                $altPath = storage_path('app/' . $pathFile);
+                if (file_exists($altPath)) {
+                    $path = $altPath;
+                } else {
+                    abort(404, 'File tidak ditemukan: ' . $path);
+                }
+            }
+
+            return response()->file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in viewPdfUniversitas: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * View PDF Revisi Akhir untuk Dosen Universitas
+     */
+    public function viewPdfRevisiAkhir($id)
+    {
+        try {
+            $dosen = Auth::guard('dosen')->user();
+            
+            // $id adalah ID proposal, bukan ID revisi
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+                ->with(['proposalRevisi' => function($query) {
+                    $query->where('path_file', 'like', '%revisi_akhir%')
+                          ->orderBy('tanggal_submit', 'desc');
+                }])
+                ->findOrFail($id);
+
+            $revisi = $proposal->proposalRevisi->first();
+            
+            if (!$revisi) {
+                abort(404, 'File revisi akhir tidak ditemukan.');
+            }
+
+            $pathFile = $revisi->path_file;
+            
+            // Cek apakah path_file sudah termasuk 'public/' atau tidak
+            if (strpos($pathFile, 'public/') === 0) {
+                $path = storage_path('app/' . $pathFile);
+            } else {
+                $path = storage_path('app/public/' . $pathFile);
+            }
+            
+            \Log::info('View PDF Revisi Akhir Universitas', [
+                'proposal_id' => $id,
+                'revisi_id' => $revisi->id,
+                'path_file' => $pathFile,
+                'full_path' => $path,
+                'file_exists' => file_exists($path)
+            ]);
+            
+            if (!file_exists($path)) {
+                // Coba alternatif path
+                $altPath = storage_path('app/' . $pathFile);
+                if (file_exists($altPath)) {
+                    $path = $altPath;
+                } else {
+                    abort(404, 'File tidak ditemukan: ' . $path);
+                }
+            }
+
+            return response()->file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $revisi->nama_file . '"'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in viewPdfRevisiAkhir: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download File Revisi Akhir
+     */
+    public function downloadRevisiAkhir($id)
+    {
+        try {
+            $dosen = Auth::guard('dosen')->user();
+            
+            // $id adalah ID proposal, bukan ID revisi
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+                ->with(['proposalRevisi' => function($query) {
+                    $query->where('path_file', 'like', '%revisi_akhir%')
+                          ->orderBy('tanggal_submit', 'desc');
+                }])
+                ->findOrFail($id);
+
+            $revisi = $proposal->proposalRevisi->first();
+            
+            if (!$revisi) {
+                return redirect()->back()->with('error', 'File revisi akhir tidak ditemukan.');
+            }
+
+            if (!Storage::disk('public')->exists($revisi->path_file)) {
+                return redirect()->back()->with('error', 'File revisi tidak ditemukan di server.');
+            }
+
+            return Storage::disk('public')->download($revisi->path_file, $revisi->nama_file);
+        } catch (\Exception $e) {
+            \Log::error('Error in downloadRevisiAkhir: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengunduh file revisi: ' . $e->getMessage());
         }
     }
 

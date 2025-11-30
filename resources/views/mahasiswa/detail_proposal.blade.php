@@ -588,6 +588,212 @@
                 </div>
             </div>
 
+            <!-- Informasi Dosen Pendamping Universitas -->
+            @if($proposal->dosenPendampingUniversitas)
+            <div class="info-section" style="border-left: 4px solid #8B0000; background: linear-gradient(135deg, rgba(139, 0, 0, 0.05) 0%, rgba(255, 255, 255, 0.1) 100%); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                <h5 style="color: #8B0000; font-weight: 600; margin-bottom: 1.5rem; display: flex; align-items: center;">
+                    <i class="fas fa-user-graduate me-2" style="font-size: 1.3rem;"></i>Dosen Pendamping Universitas
+                </h5>
+                <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1rem;">
+                    <div class="info-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <span class="info-label" style="color: #6c757d; font-size: 0.875rem; font-weight: 500;">Nama Dosen</span>
+                        <span class="info-value" style="color: #8B0000; font-weight: 600; font-size: 1rem;">
+                            {{ $proposal->dosenPendampingUniversitas->nama_dosen }}
+                            @if($proposal->dosenPendampingUniversitas->gelar_depan)
+                                , {{ $proposal->dosenPendampingUniversitas->gelar_depan }}
+                            @endif
+                            @if($proposal->dosenPendampingUniversitas->gelar_belakang)
+                                , {{ $proposal->dosenPendampingUniversitas->gelar_belakang }}
+                            @endif
+                        </span>
+                    </div>
+                    @if($proposal->dosenPendampingUniversitas->email_dosen)
+                    <div class="info-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <span class="info-label" style="color: #6c757d; font-size: 0.875rem; font-weight: 500;">Email</span>
+                        <span class="info-value">
+                            <a href="mailto:{{ $proposal->dosenPendampingUniversitas->email_dosen }}" style="color: #8B0000; text-decoration: none; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#a00000'" onmouseout="this.style.color='#8B0000'">
+                                <i class="fas fa-envelope me-1"></i>{{ $proposal->dosenPendampingUniversitas->email_dosen }}
+                            </a>
+                        </span>
+                    </div>
+                    @endif
+                    @if($proposal->dosenPendampingUniversitas->no_hp_dosen)
+                    <div class="info-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <span class="info-label" style="color: #6c757d; font-size: 0.875rem; font-weight: 500;">No. HP</span>
+                        <span class="info-value">
+                            <a href="tel:{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}" style="color: #8B0000; text-decoration: none; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#a00000'" onmouseout="this.style.color='#8B0000'">
+                                <i class="fas fa-phone me-1"></i>{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}
+                            </a>
+                        </span>
+                    </div>
+                    @endif
+                </div>
+                <div class="alert mt-3 mb-0" style="background: rgba(139, 0, 0, 0.08); border-left: 3px solid #8B0000; border-radius: 6px; padding: 1rem;">
+                    <small style="color: #495057; display: flex; align-items: center;">
+                        <i class="fas fa-info-circle me-2" style="color: #8B0000;"></i>
+                        Anda dapat menghubungi dosen pendamping universitas untuk konsultasi sebelum mengupload revisi akhir.
+                    </small>
+                </div>
+            </div>
+            @endif
+
+            <!-- Catatan Review dari Reviewer -->
+            @php
+                $adminReview = $proposal->nilaiAdministratif->where('id_reviewer', $proposal->id_reviewer_administratif)->first();
+                $checklistConfig = \App\Helpers\ProposalHelper::getReviewChecklist($proposal->skim);
+                $checklistChecked = $adminReview && $adminReview->checklist ? $adminReview->checklist : [];
+                $hasilSemiFinal = $proposal->hasilSemiFinal;
+                
+                // Collect substantive reviews
+                $substantifReviews = collect();
+                if ($proposal->id_reviewer_substantif_1) {
+                    $review1 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
+                    if ($review1 && $review1->note_substantif && 
+                        $review1->note_substantif !== 'Review substantif dimulai' &&
+                        !empty(trim($review1->note_substantif))) {
+                        $substantifReviews->push($review1);
+                    }
+                }
+                if ($proposal->id_reviewer_substantif_2) {
+                    $review2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
+                    if ($review2 && $review2->note_substantif && 
+                        $review2->note_substantif !== 'Review substantif dimulai' &&
+                        !empty(trim($review2->note_substantif))) {
+                        $substantifReviews->push($review2);
+                    }
+                }
+                
+                $hasAnyReview = $adminReview || $hasilSemiFinal || $substantifReviews->count() > 0;
+            @endphp
+            
+            @if($hasAnyReview)
+            <div class="info-section" style="margin-bottom: 2rem;">
+                <h5 style="color: var(--primary-color); font-weight: 600; margin-bottom: 1.5rem; display: flex; align-items: center;">
+                    <i class="fas fa-comments me-2"></i>Catatan Review dari Reviewer
+                </h5>
+                
+                <!-- Review Administratif -->
+                @if($adminReview)
+                <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #8b3a3a; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #8B0000 0%, #a00000 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div>
+                            <h5 style="color: #8B0000; font-weight: 600; margin: 0; font-size: 1.1rem;">Review Administratif</h5>
+                            <small style="color: #6c757d; font-size: 0.875rem;">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ \Carbon\Carbon::parse($adminReview->updated_at)->format('d M Y H:i') }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    @if(!empty($checklistChecked) && is_array($checklistChecked))
+                    <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
+                        <h6 style="color: #8B0000; font-weight: 600; margin-bottom: 1rem; font-size: 1rem;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Kesalahan Administratif yang Ditemukan:
+                        </h6>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            @foreach($checklistChecked as $checkedItem)
+                                @php
+                                    $itemText = is_string($checkedItem) ? $checkedItem : (isset($checkedItem['text']) ? $checkedItem['text'] : '');
+                                @endphp
+                                @if(!empty($itemText))
+                                    <div style="display: flex; align-items: flex-start; padding: 0.75rem; background: white; border-radius: 6px; border-left: 3px solid #dc3545;">
+                                        <i class="fas fa-times-circle text-danger me-2" style="margin-top: 0.2rem; flex-shrink: 0;"></i>
+                                        <span style="color: #333; line-height: 1.5;">{{ $itemText }}</span>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                    
+                    @if($adminReview->note_administratif)
+                    <div style="background: #f8f9fa; border-left: 4px solid #8B0000; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+                        <h6 style="color: #8B0000; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                            <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
+                        </h6>
+                        <div style="color: #495057; line-height: 1.6;">
+                            <p class="mb-0">{{ $adminReview->note_administratif }}</p>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
+                
+                <!-- Hasil Semi Final -->
+                @if($hasilSemiFinal)
+                <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #28a745; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div>
+                            <h5 style="color: #28a745; font-weight: 600; margin: 0; font-size: 1.1rem;">Hasil Semi Final - Tingkat Universitas</h5>
+                            <small style="color: #6c757d; font-size: 0.875rem;">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ \Carbon\Carbon::parse($hasilSemiFinal->updated_at)->format('d M Y H:i') }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    @if($hasilSemiFinal->status_final == 'lolos_tingkat_universitas')
+                        <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: 2px solid #28a745; border-radius: 8px; padding: 1rem 1.5rem; color: #155724; font-size: 1.1rem; text-align: center; margin-bottom: 1rem;">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Lolos Tingkat Universitas</strong>
+                        </div>
+                    @else
+                        <div style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); border: 2px solid #dc3545; border-radius: 8px; padding: 1rem 1.5rem; color: #721c24; font-size: 1.1rem; text-align: center; margin-bottom: 1rem;">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>Tidak Lolos Tingkat Universitas</strong>
+                        </div>
+                    @endif
+                    
+                    @if($hasilSemiFinal->catatan_final)
+                    <div style="background: #f8f9fa; border-left: 4px solid #28a745; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+                        <h6 style="color: #28a745; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                            <i class="fas fa-sticky-note me-2"></i>Catatan:
+                        </h6>
+                        <div style="color: #495057; line-height: 1.6;">
+                            <p class="mb-0">{{ $hasilSemiFinal->catatan_final }}</p>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
+                
+                <!-- Review Substantif (Catatan Saja) -->
+                @if($substantifReviews->count() > 0)
+                    @foreach($substantifReviews as $index => $review)
+                    <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #6c757d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div>
+                                <h5 style="color: #6c757d; font-weight: 600; margin: 0; font-size: 1.1rem;">Review Substantif - Reviewer {{ $index + 1 }}</h5>
+                                <small style="color: #6c757d; font-size: 0.875rem;">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ \Carbon\Carbon::parse($review->updated_at)->format('d M Y H:i') }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; border-left: 4px solid #6c757d; border-radius: 6px; padding: 1rem;">
+                            <h6 style="color: #6c757d; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                                <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
+                            </h6>
+                            <div style="color: #495057; line-height: 1.6;">
+                                <p class="mb-0">{{ $review->note_substantif }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                @endif
+            </div>
+            @endif
+
             <!-- Informasi Tim -->
             <div class="info-section">
                 <h5><i class="fas fa-users me-2"></i>Anggota Tim ({{ $proposal->semuaAnggotaTim->count() }} orang)</h5>
@@ -774,9 +980,13 @@
         <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
             <i class="fas fa-edit me-2"></i>Revisi Proposal
         </a>
-        @elseif($proposal->status === 'revisi_submitted')
+        @elseif($proposal->status === 'revisi_akhir')
+        <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
+            <i class="fas fa-edit me-2"></i>Revisi Akhir Proposal
+        </a>
+        @elseif($proposal->status === 'revisi_submitted' || $proposal->status === 'validasi_akhir_dosen_univ')
         <span class="btn btn-info btn-action disabled">
-            <i class="fas fa-clock me-2"></i>Menunggu Hasil Final
+            <i class="fas fa-clock me-2"></i>Menunggu Validasi
         </span>
         @elseif(in_array($proposal->status, ['draft', 'pending']))
         <a href="{{ route('mahasiswa.proposal.edit', $proposal->id_proposal) }}" class="btn btn-warning btn-action">

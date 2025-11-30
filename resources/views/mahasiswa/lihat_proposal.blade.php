@@ -1144,9 +1144,13 @@
                             <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit me-1"></i>Revisi
                             </a>
-                            @elseif($proposal->status === 'revisi_submitted')
+                            @elseif($proposal->status === 'revisi_akhir')
+                            <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit me-1"></i>Revisi Akhir
+                            </a>
+                            @elseif($proposal->status === 'revisi_submitted' || $proposal->status === 'validasi_akhir_dosen_univ')
                             <span class="btn btn-info btn-sm disabled">
-                                <i class="fas fa-clock me-1"></i>Menunggu Hasil Final
+                                <i class="fas fa-clock me-1"></i>Menunggu Validasi
                             </span>
                             @endif
                         </div>
@@ -1393,7 +1397,12 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.data) {
-                    document.getElementById('modalBody').innerHTML = generateFinalReviewHTML(data.data, data.proposal_info);
+                    document.getElementById('modalBody').innerHTML = generateFinalReviewHTML(
+                        data.data, 
+                        data.proposal_info, 
+                        data.dosen_universitas,
+                        data.hasil_semi_final
+                    );
                 } else {
                     document.getElementById('modalBody').innerHTML = `
                         <div class="text-center">
@@ -1552,10 +1561,35 @@
         return html;
     }
 
-    function generateFinalReviewHTML(finalResult, proposalInfo) {
-        const statusClass = finalResult.status_final === 'lolos' ? 'success' : 'danger';
-        const statusText = finalResult.status_final === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS';
-        const statusIcon = finalResult.status_final === 'lolos' ? 'trophy' : 'times-circle';
+    function generateFinalReviewHTML(finalResult, proposalInfo, dosenUniversitas = null, hasilSemiFinal = null) {
+        // Tentukan status berdasarkan hasil final dari Pimpinan PT
+        let statusClass = 'secondary';
+        let statusText = 'BELUM DINILAI';
+        let statusIcon = 'clock';
+        
+        if (finalResult) {
+            // Status PIMNAS
+            const statusPimnas = finalResult.status_pimnas;
+            const statusPendanaan = finalResult.status_pendanaan;
+            
+            if (statusPimnas === 'lolos' && statusPendanaan === 'lolos') {
+                statusClass = 'success';
+                statusText = 'LOLOS PIMNAS & PENDANAAN';
+                statusIcon = 'trophy';
+            } else if (statusPimnas === 'lolos' && statusPendanaan === 'tidak_lolos') {
+                statusClass = 'warning';
+                statusText = 'LOLOS PIMNAS (TIDAK PENDANAAN)';
+                statusIcon = 'trophy';
+            } else if (statusPimnas === 'tidak_lolos' && statusPendanaan === 'lolos') {
+                statusClass = 'info';
+                statusText = 'TIDAK LOLOS PIMNAS (LOLOS PENDANAAN)';
+                statusIcon = 'money-bill-wave';
+            } else {
+                statusClass = 'danger';
+                statusText = 'TIDAK LOLOS';
+                statusIcon = 'times-circle';
+            }
+        }
         
         return `
             <div class="review-section">
@@ -1566,18 +1600,63 @@
                     <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
                 </div>
                 
+                ${dosenUniversitas ? `
+                <div class="card mb-3" style="border-left: 4px solid #667eea;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user-tie me-2"></i>
+                            Dosen Pendamping Universitas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Nama:</strong> ${dosenUniversitas.nama_dosen}</p>
+                        ${dosenUniversitas.no_hp_dosen ? `<p><strong>No. HP:</strong> ${dosenUniversitas.no_hp_dosen}</p>` : ''}
+                        ${dosenUniversitas.email_dosen ? `<p><strong>Email:</strong> ${dosenUniversitas.email_dosen}</p>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${hasilSemiFinal ? `
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            Hasil Semi Final
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'success' : 'danger'}">
+                                ${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'Lolos Tingkat Universitas' : 'Tidak Lolos Tingkat Universitas'}
+                            </span>
+                        </p>
+                        <p><strong>Nilai:</strong> ${hasilSemiFinal.nilai ? parseFloat(hasilSemiFinal.nilai).toFixed(2) : 'N/A'}</p>
+                        ${hasilSemiFinal.catatan_final ? `<p><strong>Catatan:</strong> ${hasilSemiFinal.catatan_final}</p>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
                 <div class="card">
                     <div class="card-header bg-${statusClass} text-white">
                         <i class="fas fa-${statusIcon} me-2"></i>
-                        <strong>Hasil Final</strong>
+                        <strong>Hasil Final (Pimpinan PT)</strong>
                     </div>
                     <div class="card-body">
+                        ${finalResult ? `
                         <div class="row mb-3">
-                            <div class="col-md-4">
-                                <div class="alert alert-${statusClass}">
+                            <div class="col-md-6">
+                                <div class="alert alert-${finalResult.status_pimnas === 'lolos' ? 'success' : 'danger'}">
                                     <h5 class="alert-heading">
-                                        <i class="fas fa-${statusIcon} me-2"></i>
-                                        Status: ${statusText}
+                                        <i class="fas fa-${finalResult.status_pimnas === 'lolos' ? 'trophy' : 'times-circle'} me-2"></i>
+                                        Status PIMNAS: ${finalResult.status_pimnas === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}
+                                    </h5>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-${finalResult.status_pendanaan === 'lolos' ? 'success' : 'danger'}">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-${finalResult.status_pendanaan === 'lolos' ? 'money-bill-wave' : 'times-circle'} me-2"></i>
+                                        Status Pendanaan: ${finalResult.status_pendanaan === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}
                                     </h5>
                                 </div>
                             </div>
@@ -1589,27 +1668,45 @@
                                     </h5>
                                 </div>
                             </div>
-                            ${finalResult.dana_yang_dapat_diberikan ? `
+                            ${finalResult.dana_yang_didapatkan && finalResult.dana_yang_didapatkan > 0 ? `
                             <div class="col-md-4">
                                 <div class="alert alert-success">
                                     <h5 class="alert-heading">
                                         <i class="fas fa-money-bill-wave me-2"></i>
-                                        Dana yang Dapat Diberikan: Rp ${formatRupiah(finalResult.dana_yang_dapat_diberikan)}
+                                        Dana yang Didapatkan: Rp ${formatRupiah(finalResult.dana_yang_didapatkan)}
                                     </h5>
                                 </div>
                             </div>
                             ` : ''}
+                            <div class="col-md-4">
+                                <div class="alert alert-secondary">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        Tanggal: ${new Date(finalResult.created_at).toLocaleDateString('id-ID', { 
+                                            year: 'numeric', 
+                                            month: 'long', 
+                                            day: 'numeric' 
+                                        })}
+                                    </h5>
+                                </div>
+                            </div>
                         </div>
                         
+                        ${finalResult.catatan_final ? `
                         <div class="mb-3">
                             <h6><i class="fas fa-comment me-2"></i>Catatan Final:</h6>
                             <p class="mb-0">
-                                ${finalResult.catatan_final || 'Tidak ada catatan final.'}
+                                ${finalResult.catatan_final}
                             </p>
                         </div>
-                        
-                        ${finalResult.pt ? `
                         ` : ''}
+                        ` : `
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada hasil final</h6>
+                            <p class="text-muted">Hasil final akan muncul di sini setelah Pimpinan PT melakukan penilaian.</p>
+                        </div>
+                        `}
                     </div>
                 </div>
             </div>

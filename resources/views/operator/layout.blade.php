@@ -304,6 +304,14 @@
                     <i class="fas fa-chevron-down float-end mt-1"></i>
                 </a>
                 <ul class="submenu" id="pkm">
+                    @php
+                        $operatorUser = Auth::guard('operator')->user();
+                        $isPimpinanPT = $operatorUser && $operatorUser->role === 'pimpinan_pt';
+                        $isOperator = $operatorUser && $operatorUser->role === 'operator';
+                    @endphp
+                    
+                    @if($isOperator)
+                        <!-- Menu untuk Operator (bukan Pimpinan PT) -->
                     <li><a href="{{ route('operator.dashboard') }}" class="@if(request()->routeIs('operator.dashboard')) active @endif">
                         <i class="fas fa-home me-2"></i>Beranda
                     </a></li>
@@ -313,12 +321,33 @@
                     <li><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
                         <i class="fas fa-cogs me-2"></i>Ruang Kontrol
                     </a></li>
-                    <li><a href="{{ route('operator.hasil.final') }}" class="@if(request()->routeIs('operator.hasil.final')) active @endif">
-                        <i class="fas fa-trophy me-2"></i>Hasil Final
+                        <li><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
+                            <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
                     </a></li>
                     <li><a href="{{ route('operator.manage.accounts') }}" class="@if(request()->routeIs('operator.manage.accounts')) active @endif">
                         <i class="fas fa-id-card me-2"></i>Manajemen Akun
                     </a></li>
+                    @elseif($isPimpinanPT)
+                        <!-- Menu untuk Pimpinan PT (memiliki semua menu operator + Hasil Final + Manajemen Akun Pimpinan PT) -->
+                        <li><a href="{{ route('operator.dashboard') }}" class="@if(request()->routeIs('operator.dashboard')) active @endif">
+                            <i class="fas fa-home me-2"></i>Beranda
+                        </a></li>
+                        <li><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
+                            <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
+                        </a></li>
+                        <li><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
+                            <i class="fas fa-cogs me-2"></i>Ruang Kontrol
+                        </a></li>
+                        <li><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
+                            <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                        </a></li>
+                        <li><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
+                            <i class="fas fa-trophy me-2"></i>Hasil Final
+                        </a></li>
+                        <li><a href="{{ route('pimpinan_pt.manage.accounts') }}" class="@if(request()->routeIs('pimpinan_pt.manage.accounts*')) active @endif">
+                            <i class="fas fa-id-card me-2"></i>Manajemen Akun
+                        </a></li>
+                    @endif
                 </ul>
             </li>
         </ul>

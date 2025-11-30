@@ -13,7 +13,7 @@ class Proposal extends Model
 
     protected $fillable = [
             'judul_proposal', 'judul', 'tanggal_pengajuan', 'skim', 'status_validasi',
-        'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen', 'team_id',
+        'status_final', 'status', 'catatan', 'id_mahasiswa', 'id_dosen', 'id_dosen_pendamping_universitas', 'team_id',
         'dosen_pembimbing', 'dana_diajukan', 'tahun_ajaran', 'tanggal_validasi',
         'id_reviewer_administratif', 'id_reviewer_substantif_1', 'id_reviewer_substantif_2',
         'path_review_dosen', 'nama_file_review_dosen', 'tanggal_review_dosen',
@@ -66,6 +66,12 @@ class Proposal extends Model
         return $this->belongsTo(Dosen::class, 'id_dosen', 'id_dosen');
     }
 
+    // Relasi One-to-Many ke Dosen (Relasi Dosen Pendamping Universitas)
+    public function dosenPendampingUniversitas()
+    {
+        return $this->belongsTo(Dosen::class, 'id_dosen_pendamping_universitas', 'id_dosen');
+    }
+
     // Relasi ke Reviewer Administratif
     public function reviewerAdministratif()
     {
@@ -102,7 +108,13 @@ class Proposal extends Model
         return $this->hasMany(NilaiSubstantif::class, 'id_proposal', 'id_proposal');
     }
 
-    // Relasi One-to-One ke HasilFinal
+    // Relasi One-to-One ke HasilSemiFinal
+    public function hasilSemiFinal()
+    {
+        return $this->hasOne(HasilSemiFinal::class, 'id_proposal', 'id_proposal');
+    }
+
+    // Relasi One-to-One ke HasilFinal (Pimpinan PT)
     public function hasilFinal()
     {
         return $this->hasOne(HasilFinal::class, 'id_proposal', 'id_proposal');
@@ -173,11 +185,21 @@ class Proposal extends Model
             'review_administratif' => 'Review Administratif',
             'review_substantif' => 'Review Substantif',
             'revisi' => 'Revisi',
+            'hasil_semi_final' => 'Hasil Semi Final',
+            'revisi_akhir' => 'Revisi Akhir',
+            'validasi_akhir_dosen_univ' => 'Validasi Akhir Dosen Universitas',
+            'pimpinan_pt' => 'Pimpinan PT',
+            'lolos_tingkat_universitas' => 'Lolos Tingkat Universitas',
+            'tidak_lolos_tingkat_universitas' => 'Tidak Lolos Tingkat Universitas',
+            'lolos_pimnas' => 'Lolos PIMNAS',
+            'tidak_lolos_pimnas' => 'Tidak Lolos PIMNAS',
+            'lolos_pendanaan' => 'Lolos Pendanaan',
+            'tidak_lolos_pendanaan' => 'Tidak Lolos Pendanaan',
             'lolos' => 'Lolos',
             'tidak_lolos' => 'Tidak Lolos'
         ];
 
-        return $labels[$this->status] ?? $this->status;
+        return $labels[$this->status] ?? ucfirst(str_replace('_', ' ', $this->status));
     }
 
     // Method untuk mendapatkan skim label

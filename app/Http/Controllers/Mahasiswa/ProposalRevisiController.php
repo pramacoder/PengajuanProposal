@@ -133,14 +133,28 @@ class ProposalRevisiController extends Controller
         }
 
         try {
-            // Upload file revisi
+            // Hapus file revisi sebelumnya jika ada (hanya 1 file revisi aktif per proposal)
+            $revisiLama = ProposalRevisi::where('id_proposal', $proposal->id_proposal)
+                ->first();
+            
+            if ($revisiLama) {
+                // Hapus file fisik dari storage
+                if (Storage::disk('public')->exists($revisiLama->path_file)) {
+                    Storage::disk('public')->delete($revisiLama->path_file);
+                }
+                
+                // Hapus data dari database
+                $revisiLama->delete();
+            }
+
+            // Upload file revisi baru
             $file = $request->file('file_revisi');
             $originalName = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension();
             $fileName = 'revisi_' . $proposal->id_proposal . '_' . time() . '_' . Str::random(10) . '.' . $extension;
             $path = $file->storeAs('proposal_revisi', $fileName, 'public');
 
-            // Simpan data revisi
+            // Simpan data revisi baru
             $revisi = new ProposalRevisi();
             $revisi->id_proposal = $proposal->id_proposal;
             $revisi->nama_file = $originalName;
@@ -148,7 +162,11 @@ class ProposalRevisiController extends Controller
             $revisi->tanggal_submit = now();
             $revisi->save();
 
-            return redirect()->route('mahasiswa.revisi.index')->with('success', 'File revisi berhasil diupload.');
+            $message = $revisiLama 
+                ? 'File revisi berhasil diupload. File revisi sebelumnya telah digantikan.' 
+                : 'File revisi berhasil diupload.';
+
+            return redirect()->route('mahasiswa.revisi.index')->with('success', $message);
         } catch (\Exception $e) {
             return redirect()->route('mahasiswa.revisi.index')->with('error', 'Gagal mengupload file revisi: ' . $e->getMessage());
         }

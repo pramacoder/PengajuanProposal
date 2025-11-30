@@ -31,7 +31,10 @@ class DosenPembimbingController extends Controller
             'nilaiAdministratif',
             'nilaiSubstantif',
             'hasilFinal',
-            'dosen'
+            'dosen',
+            'proposalRevisi' => function($query) {
+                $query->orderBy('tanggal_submit', 'desc');
+            }
         ])->findOrFail($id);
 
         // Pastikan proposal ini dari mahasiswa bimbingan dosen
@@ -39,7 +42,37 @@ class DosenPembimbingController extends Controller
             abort(403, 'Anda tidak memiliki akses ke proposal ini.');
         }
 
-        return view('dosen.pembimbing.detail_proposal', compact('proposal'));
+        // Tentukan file proposal yang harus ditampilkan
+        // Prioritas: revisi akhir > revisi biasa > proposal awal
+        $fileProposal = null;
+        $jenisFile = 'proposal_awal';
+        
+        // Cek revisi akhir (file dengan path mengandung 'revisi_akhir')
+        $revisiAkhir = $proposal->proposalRevisi->filter(function($revisi) {
+            return strpos($revisi->path_file, 'revisi_akhir') !== false;
+        })->first();
+        
+        if ($revisiAkhir) {
+            $fileProposal = $revisiAkhir;
+            $jenisFile = 'revisi_akhir';
+        } else {
+            // Cek revisi biasa (file dengan path mengandung 'revisi' tapi bukan 'revisi_akhir')
+            $revisiBiasa = $proposal->proposalRevisi->filter(function($revisi) {
+                return strpos($revisi->path_file, 'revisi') !== false && 
+                       strpos($revisi->path_file, 'revisi_akhir') === false;
+            })->first();
+            
+            if ($revisiBiasa) {
+                $fileProposal = $revisiBiasa;
+                $jenisFile = 'revisi';
+            } else if ($proposal->dokumen && $proposal->dokumen->path_file) {
+                // Gunakan file proposal awal
+                $fileProposal = $proposal->dokumen;
+                $jenisFile = 'proposal_awal';
+            }
+        }
+
+        return view('dosen.pembimbing.detail_proposal', compact('proposal', 'fileProposal', 'jenisFile'));
     }
 
     /**

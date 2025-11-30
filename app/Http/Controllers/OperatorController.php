@@ -10,6 +10,7 @@ use App\Models\Dosen;
 use App\Models\Reviewer;
 use App\Models\RuangKontrol;
 use App\Models\HasilFinal;
+use App\Models\HasilSemiFinal;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\Dokumen;
@@ -706,11 +707,11 @@ class OperatorController extends Controller
                 ]);
             } else {
                 // Jika ID tidak dikirim, cari jadwal aktif untuk tahun ajaran tersebut
-                $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
-                    ->where('is_active', true)
-                    ->first();
-                
-                if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
+                ->where('is_active', true)
+                ->first();
+            
+            if (!$ruangKontrol) {
                     // Jika tidak ada yang aktif, cari jadwal yang tidak aktif untuk tahun ajaran tersebut
                     $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
                         ->orderBy('created_at', 'desc')
@@ -719,30 +720,30 @@ class OperatorController extends Controller
                 
                 if (!$ruangKontrol) {
                     // Buat record baru jika benar-benar belum ada jadwal untuk tahun ajaran tersebut
-                    $ruangKontrol = RuangKontrol::create([
-                        'status_pendaftaran' => $statusPendaftaran,
-                        'status_perbaikan' => $statusPerbaikan,
-                        'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
-                        'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
-                        'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                        'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                        'tahun_ajaran' => $tahunAjaran,
-                        'nama_history' => $request->nama_history ?? 'Jadwal ' . $tahunAjaran,
-                        'is_active' => true,
-                        'id_pt' => auth('operator')->id()
-                    ]);
-                } else {
+                $ruangKontrol = RuangKontrol::create([
+                    'status_pendaftaran' => $statusPendaftaran,
+                    'status_perbaikan' => $statusPerbaikan,
+                    'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                    'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                    'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                    'tahun_ajaran' => $tahunAjaran,
+                    'nama_history' => $request->nama_history ?? 'Jadwal ' . $tahunAjaran,
+                    'is_active' => true,
+                    'id_pt' => auth('operator')->id()
+                ]);
+            } else {
                     // Update jadwal yang sudah ada (hanya status, tidak membuat history)
-                    $ruangKontrol->update([
-                        'status_pendaftaran' => $statusPendaftaran,
-                        'status_perbaikan' => $statusPerbaikan,
-                        'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
-                        'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
-                        'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                        'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                $ruangKontrol->update([
+                    'status_pendaftaran' => $statusPendaftaran,
+                    'status_perbaikan' => $statusPerbaikan,
+                    'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                    'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                    'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
                         'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history,
                         'is_active' => true // Pastikan jadwal aktif
-                    ]);
+                ]);
                 }
             }
             
@@ -1160,17 +1161,36 @@ class OperatorController extends Controller
             'user_id' => auth('operator')->id()
         ]);
 
-        $request->validate([
+        try {
+            // Validasi dengan pesan error yang jelas
+            $validated = $request->validate([
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_final' => 'required|in:lolos,tidak_lolos',
             'catatan_final' => 'nullable|string',
-            'nilai' => 'required|numeric|min:0|max:100',
-            'skor' => 'required|array',
-            'skor.*' => 'required|numeric|min:0|max:10',
-            'dana_yang_dapat_diberikan' => 'nullable|numeric|min:0'
-        ]);
+                'nilai' => 'required|numeric|min:0|max:100',
+                'skor' => 'required|array|min:1',
+                'skor.*' => 'required|numeric|min:0|max:10',
+                'dana_yang_dapat_diberikan' => 'nullable|numeric|min:0'
+            ], [
+                'proposal_id.required' => 'ID proposal wajib diisi',
+                'proposal_id.exists' => 'Proposal tidak ditemukan',
+                'status_final.required' => 'Status final wajib dipilih',
+                'status_final.in' => 'Status final harus Lolos atau Tidak Lolos',
+                'nilai.required' => 'Nilai final wajib diisi',
+                'nilai.numeric' => 'Nilai final harus berupa angka',
+                'nilai.min' => 'Nilai final minimal 0',
+                'nilai.max' => 'Nilai final maksimal 100',
+                'skor.required' => 'Skor penilaian wajib diisi',
+                'skor.array' => 'Skor penilaian harus berupa array',
+                'skor.min' => 'Minimal ada 1 skor penilaian',
+                'skor.*.required' => 'Semua skor penilaian wajib diisi',
+                'skor.*.numeric' => 'Skor penilaian harus berupa angka',
+                'skor.*.min' => 'Skor penilaian minimal 0',
+                'skor.*.max' => 'Skor penilaian maksimal 10',
+                'dana_yang_dapat_diberikan.numeric' => 'Dana yang dapat diberikan harus berupa angka',
+                'dana_yang_dapat_diberikan.min' => 'Dana yang dapat diberikan minimal 0'
+            ]);
 
-        try {
             DB::beginTransaction();
             
             $proposal = Proposal::findOrFail($request->proposal_id);
@@ -1184,6 +1204,11 @@ class OperatorController extends Controller
             // Ambil skor per kriteria
             $skorPerKriteria = $request->input('skor', []);
             
+            // Jika skor dikirim sebagai JSON string, decode terlebih dahulu
+            if (is_string($skorPerKriteria)) {
+                $skorPerKriteria = json_decode($skorPerKriteria, true) ?? [];
+            }
+            
             // Normalize skor: convert string keys to integers and sort
             $normalizedSkor = [];
             foreach ($skorPerKriteria as $key => $value) {
@@ -1194,29 +1219,58 @@ class OperatorController extends Controller
             
             // Validasi jumlah skor harus sesuai dengan jumlah kriteria yang bisa di-score
             if (count($normalizedSkor) !== $actualCriteriaCount) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Jumlah skor tidak sesuai dengan jumlah kriteria penilaian. Diharapkan: ' . $actualCriteriaCount . ', Diterima: ' . count($normalizedSkor)
+                    'message' => 'Jumlah skor tidak sesuai dengan jumlah kriteria penilaian. Diharapkan: ' . $actualCriteriaCount . ', Diterima: ' . count($normalizedSkor) . '. Pastikan semua kriteria penilaian telah diisi.'
+                ], 422);
+            }
+            
+            // Validasi catatan final minimal 50 karakter jika diisi
+            if ($request->filled('catatan_final') && strlen(trim($request->catatan_final)) < 50) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Catatan final minimal 50 karakter. Teks yang Anda berikan di catatan kurang dari 50 karakter.'
                 ], 422);
             }
             
             // Update status proposal
             $proposal->update(['status' => $request->status_final]);
             
+            // Cek apakah model HasilFinal masih mendukung field status_final dan dana_yang_dapat_diberikan
+            // Jika tidak, kita perlu menggunakan model yang berbeda atau menyesuaikan
+            try {
             // Update atau buat hasil final
+                // Catatan: Model HasilFinal sekarang untuk Pimpinan PT, jadi mungkin perlu menggunakan model lain
+                // Tapi untuk sementara kita coba dulu dengan model HasilFinal
             HasilFinal::updateOrCreate(
                 ['id_proposal' => $request->proposal_id],
                 [
                     'status_final' => $request->status_final,
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
-                    'skor_per_kriteria' => $normalizedSkor,
-                    'dana_yang_dapat_diberikan' => $request->input('dana_yang_dapat_diberikan'),
+                        'skor_per_kriteria' => $normalizedSkor,
+                        'dana_yang_dapat_diberikan' => $request->input('dana_yang_dapat_diberikan', 0),
                     'id_pt' => auth('operator')->id()
                 ]
             );
+            } catch (\Exception $modelError) {
+                DB::rollBack();
+                \Log::error('Error saving HasilFinal model', [
+                    'error' => $modelError->getMessage(),
+                    'trace' => $modelError->getTraceAsString(),
+                    'proposal_id' => $request->proposal_id
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal menyimpan data hasil final. Error: ' . $modelError->getMessage() . '. Silakan hubungi administrator.'
+                ], 500);
+            }
             
-            // Kirim notifikasi ke mahasiswa dan dosen
+            // Kirim notifikasi ke mahasiswa dan dosen (jika service tersedia)
+            try {
             $notificationService = new NotificationService();
             $notificationService->notifyHasilFinal(
                 $proposal,
@@ -1224,6 +1278,13 @@ class OperatorController extends Controller
                 $request->nilai,
                 $request->catatan_final
             );
+            } catch (\Exception $notifError) {
+                // Log error notifikasi tapi jangan gagalkan proses
+                \Log::warning('Error sending notification', [
+                    'error' => $notifError->getMessage(),
+                    'proposal_id' => $request->proposal_id
+                ]);
+            }
             
             DB::commit();
             
@@ -1233,7 +1294,9 @@ class OperatorController extends Controller
             
             \Log::info('Hasil final updated successfully', [
                 'proposal_id' => $request->proposal_id,
-                'status_final' => $request->status_final
+                'status_final' => $request->status_final,
+                'nilai' => $request->nilai,
+                'skor_count' => count($normalizedSkor)
             ]);
             
             return response()->json([
@@ -1241,17 +1304,36 @@ class OperatorController extends Controller
                 'message' => 'Hasil final berhasil diperbarui'
             ]);
             
-        } catch (\Exception $e) {
-            DB::rollback();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             
-            \Log::error('Error updating hasil final', [
-                'error' => $e->getMessage(),
+            $errors = $e->errors();
+            $firstError = collect($errors)->flatten()->first();
+            
+            \Log::warning('Validation error in updateHasilFinal', [
+                'errors' => $errors,
                 'proposal_id' => $request->proposal_id
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => $firstError ?? 'Validasi gagal. Silakan periksa kembali data yang diinput.',
+                'errors' => $errors
+            ], 422);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error updating hasil final', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'proposal_id' => $request->proposal_id,
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage() . '. Silakan hubungi administrator jika masalah berlanjut.'
             ], 500);
         }
     }
@@ -1268,6 +1350,51 @@ class OperatorController extends Controller
             return Storage::disk('public')->download($revisi->path_file, $revisi->nama_file);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengunduh file revisi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Menampilkan PDF revisi secara langsung untuk iframe
+     */
+    public function viewRevisi($id)
+    {
+        try {
+            $revisi = ProposalRevisi::findOrFail($id);
+            
+            $pathFile = $revisi->path_file;
+            
+            // Cek apakah path_file sudah termasuk 'public/' atau tidak
+            if (strpos($pathFile, 'public/') === 0) {
+                $path = storage_path('app/' . $pathFile);
+            } else {
+                $path = storage_path('app/public/' . $pathFile);
+            }
+            
+            \Log::info('View PDF Revisi (Operator)', [
+                'revisi_id' => $id,
+                'path_file' => $pathFile,
+                'full_path' => $path,
+                'file_exists' => file_exists($path)
+            ]);
+            
+            if (!file_exists($path)) {
+                $altPath = storage_path('app/' . $pathFile);
+                if (file_exists($altPath)) {
+                    $path = $altPath;
+                } else {
+                    abort(404, 'File revisi tidak ditemukan: ' . $path);
+                }
+            }
+            
+            return response()->file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $revisi->nama_file . '"'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in viewRevisi: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            abort(500, 'Terjadi kesalahan saat memuat PDF revisi: ' . $e->getMessage());
         }
     }
 
@@ -1335,6 +1462,190 @@ class OperatorController extends Controller
         }
 
         return view('operator.detail_hasil_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2'));
+    }
+
+    /**
+     * Hasil Semi Final - List proposal yang sudah selesai review substantif
+     */
+    public function hasilSemiFinal()
+    {
+        $tahun = request('tahun', '2025');
+        $filter = request('filter', 'all');
+        $statusRevisi = request('status_revisi', 'all');
+        
+        // Ambil proposal yang sudah selesai review substantif (status "revisi" atau sudah direvisi)
+        $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilSemiFinal', 'proposalRevisi'])
+            ->whereIn('status', ['revisi', 'hasil_semi_final'])
+            ->whereYear('tanggal_pengajuan', $tahun)
+            ->when($filter !== 'all', function($query) use ($filter) {
+                $query->where('skim', $filter);
+            })
+            ->when($statusRevisi !== 'all', function($query) use ($statusRevisi) {
+                switch($statusRevisi) {
+                    case 'belum':
+                        $query->whereDoesntHave('proposalRevisi');
+                        break;
+                    case 'sudah':
+                        $query->whereHas('proposalRevisi');
+                        break;
+                }
+            })
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+        
+        return view('operator.hasil_semi_final', compact('proposals', 'tahun', 'filter', 'statusRevisi'));
+    }
+
+    /**
+     * Detail Hasil Semi Final
+     */
+    public function detailHasilSemiFinal($id)
+    {
+        $cacheKey = "operator_detail_hasil_semi_final_{$id}";
+        
+        $proposal = Cache::remember($cacheKey, 300, function() use ($id) {
+            return Proposal::with([
+                'mahasiswa', 
+                'dosen', 
+                'semuaAnggotaTim', 
+                'dokumen', 
+                'hasilSemiFinal',
+                'nilaiSubstantif.reviewer',
+                'proposalRevisi' => function($query) {
+                    $query->orderBy('tanggal_submit', 'desc');
+                }
+            ])->findOrFail($id);
+        });
+
+        // Ambil kriteria penilaian substantif berdasarkan skim proposal
+        $criteria = \App\Helpers\ProposalHelper::getSubstantifCriteria($proposal->skim);
+        
+        // Ambil nilai substantif dari 2 reviewer
+        $nilaiSubstantif1 = null;
+        $nilaiSubstantif2 = null;
+        
+        if ($proposal->id_reviewer_substantif_1) {
+            $nilaiSubstantif1 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
+        }
+        
+        if ($proposal->id_reviewer_substantif_2) {
+            $nilaiSubstantif2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
+        }
+
+        // Ambil semua dosen untuk dropdown pilih dosen universitas
+        $dosens = Dosen::where('is_active', true)->orderBy('nama_dosen')->get();
+
+        return view('operator.detail_hasil_semi_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'dosens'));
+    }
+
+    /**
+     * Update Hasil Semi Final
+     */
+    public function updateHasilSemiFinal(Request $request)
+    {
+        \Log::info('UpdateHasilSemiFinal called', [
+            'request_data' => $request->all(),
+            'user_id' => auth('operator')->id()
+        ]);
+
+        $request->validate([
+            'proposal_id' => 'required|exists:proposals,id_proposal',
+            'status_final' => 'required|in:lolos_tingkat_universitas,tidak_lolos_tingkat_universitas',
+            'catatan_final' => 'nullable|string',
+            'nilai' => 'required|numeric|min:0|max:100',
+            'skor' => 'required|array',
+            'skor.*' => 'required|numeric|min:0|max:10',
+            'id_dosen_pendamping_universitas' => 'required_if:status_final,lolos_tingkat_universitas|exists:dosens,id_dosen'
+        ]);
+
+        try {
+            DB::beginTransaction();
+            
+            $proposal = Proposal::findOrFail($request->proposal_id);
+            
+            // Ambil kriteria untuk validasi jumlah skor
+            $criteria = \App\Helpers\ProposalHelper::getSubstantifCriteria($proposal->skim);
+            
+            // Hitung jumlah kriteria yang sebenarnya (hanya yang bisa di-score, bukan header)
+            $actualCriteriaCount = \App\Helpers\ProposalHelper::countActualCriteria($criteria);
+            
+            // Ambil skor per kriteria
+            $skorPerKriteria = $request->input('skor', []);
+            
+            // Normalize skor: convert string keys to integers and sort
+            $normalizedSkor = [];
+            foreach ($skorPerKriteria as $key => $value) {
+                $index = (int) $key;
+                $normalizedSkor[$index] = (float) $value;
+            }
+            ksort($normalizedSkor);
+            
+            // Validasi jumlah skor harus sesuai dengan jumlah kriteria yang bisa di-score
+            if (count($normalizedSkor) !== $actualCriteriaCount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jumlah skor tidak sesuai dengan jumlah kriteria penilaian. Diharapkan: ' . $actualCriteriaCount . ', Diterima: ' . count($normalizedSkor)
+                ], 422);
+            }
+            
+            // Update proposal
+            $updateData = [
+                'status' => 'revisi_akhir',
+                'status_final' => 'revisi_akhir'
+            ];
+            
+            // Jika lolos tingkat universitas, set dosen pendamping universitas
+            if ($request->status_final === 'lolos_tingkat_universitas') {
+                $updateData['id_dosen_pendamping_universitas'] = $request->id_dosen_pendamping_universitas;
+            }
+            
+            $proposal->update($updateData);
+            
+            // Update atau buat hasil semi final
+            HasilSemiFinal::updateOrCreate(
+                ['id_proposal' => $request->proposal_id],
+                [
+                    'status_final' => $request->status_final,
+                    'catatan_final' => $request->catatan_final,
+                    'nilai' => $request->nilai,
+                    'skor_per_kriteria' => $normalizedSkor,
+                    'id_pt' => auth('operator')->id()
+                ]
+            );
+            
+            // Kirim notifikasi ke mahasiswa dan dosen
+            $notificationService = new NotificationService();
+            // TODO: Buat method notifyHasilSemiFinal jika diperlukan
+            
+            DB::commit();
+            
+            // Clear cache for this proposal
+            $cacheKey = "operator_detail_hasil_semi_final_{$request->proposal_id}";
+            Cache::forget($cacheKey);
+            
+            \Log::info('Hasil semi final updated successfully', [
+                'proposal_id' => $request->proposal_id,
+                'status_final' => $request->status_final
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Hasil semi final berhasil diperbarui'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error updating hasil semi final', [
+                'error' => $e->getMessage(),
+                'proposal_id' => $request->proposal_id
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Manajemen Akun

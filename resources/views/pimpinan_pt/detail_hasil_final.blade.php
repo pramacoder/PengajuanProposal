@@ -1,6 +1,6 @@
 @extends('operator.layout')
 
-@section('title', 'Detail Hasil Final - Operator')
+@section('title', 'Detail Hasil Final - Pimpinan PT')
 
 @section('styles')
 <style>
@@ -149,8 +149,8 @@
     <!-- Back Button -->
     <div class="row mb-4">
         <div class="col-12">
-            <a href="{{ route('operator.hasil.final') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Kembali ke Hasil Final
+            <a href="{{ route('pimpinan_pt.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
             </a>
         </div>
     </div>
@@ -223,7 +223,7 @@
     </div>
 
     <!-- PDF Proposal Viewer Section -->
-    @if($proposal->dokumen && $proposal->dokumen->path_file)
+    @if($fileProposal && $fileProposal->path_file)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card card-custom">
@@ -231,6 +231,13 @@
                     <h5 class="mb-0">
                         <i class="fas fa-file-pdf me-2"></i>
                         Dokumen Proposal
+                        @if($jenisFile === 'revisi_akhir')
+                            <span class="badge bg-warning ms-2">Revisi Akhir</span>
+                        @elseif($jenisFile === 'revisi')
+                            <span class="badge bg-info ms-2">Revisi</span>
+                        @else
+                            <span class="badge bg-secondary ms-2">Proposal Awal</span>
+                        @endif
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -238,13 +245,19 @@
                         <div class="pdf-header">
                             <h5 class="pdf-title">
                                 <i class="fas fa-file-pdf me-2"></i>
-                                <span id="pdfProposalTitle">{{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}</span>
+                                <span id="pdfProposalTitle">
+                                    @if($jenisFile === 'revisi_akhir' || $jenisFile === 'revisi')
+                                        {{ $fileProposal->nama_file }}
+                                    @else
+                                        {{ $fileProposal->file_proposal ?? 'Proposal PDF' }}
+                                    @endif
+                                </span>
                             </h5>
                             <div class="pdf-controls">
                                 <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm me-2">
                                     <i class="fas fa-expand me-1"></i>Fullscreen
                                 </button>
-                                <a href="{{ route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
                                    class="btn btn-outline-primary btn-sm" 
                                    target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
@@ -254,7 +267,7 @@
                         <div id="pdfProposalViewer" class="pdf-loading">
                             <div class="spinner"></div>
                             <iframe id="proposalPdfIframe" 
-                                    src="{{ route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                    src="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
                                     class="pdf-iframe" 
                                     style="display: none;">
                             </iframe>
@@ -275,8 +288,8 @@
     </div>
     @endif
 
-    <!-- File Revisi Section -->
-    @if($proposal->proposalRevisi->count() > 0)
+    <!-- File Revisi Akhir Section -->
+    @if($revisiAkhirList->count() > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card card-custom">
@@ -287,8 +300,12 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Catatan:</strong> Hanya menampilkan file revisi akhir yang sudah dikumpulkan mahasiswa.
+                    </div>
                     <div class="list-group">
-                        @foreach($proposal->proposalRevisi as $revisi)
+                        @foreach($revisiAkhirList as $revisi)
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
                                 <i class="fas fa-file-pdf text-danger me-2"></i>
@@ -299,7 +316,7 @@
                             </div>
                             <div>
                                 <button class="btn btn-sm btn-outline-info me-2 view-pdf-btn" 
-                                        data-pdf-url="{{ route('operator.revisi.view', $revisi->id_revisi) }}"
+                                        data-pdf-url="{{ route('operator.revisi.download', $revisi->id_revisi) }}"
                                         data-pdf-name="{{ $revisi->nama_file }}">
                                     <i class="fas fa-eye me-1"></i>Lihat
                                 </button>
@@ -343,8 +360,8 @@
     <!-- Form Hasil Final -->
     <!-- Tabel Penilaian Substantif dari 2 Reviewer -->
     @if($nilaiSubstantif1 || $nilaiSubstantif2)
-    <div class="row mb-4">
-        <div class="col-12">
+        <div class="row mb-4">
+            <div class="col-12">
                 <h5 class="mb-3">
                     <i class="fas fa-clipboard-list me-2"></i>
                     Referensi Penilaian Substantif dari Reviewer
@@ -497,10 +514,10 @@
                                 </div>
                             @endif
                         </div>
-        </div>
-    </div>
-    @endif
-
+                    </div>
+                </div>
+            @endif
+            
             @if($nilaiSubstantif2)
                 <div class="col-md-6 mb-4">
                     <div class="card">
@@ -668,26 +685,37 @@
                         <div class="alert alert-info mb-3">
                             <h6><i class="fas fa-info-circle me-2"></i>Hasil Final Sudah Ditentukan</h6>
                             <div class="row">
-                                <div class="col-md-4">
-                                    <p><strong>Status:</strong> 
-                                        <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }}">
-                                            {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                                <div class="col-md-3">
+                                    <p><strong>Status PIMNAS:</strong> 
+                                        <span class="badge bg-{{ $proposal->hasilFinal->status_pimnas == 'lolos' ? 'success' : 'danger' }}">
+                                            {{ $proposal->hasilFinal->status_pimnas == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
                                         </span>
                                     </p>
+                                </div>
+                                <div class="col-md-3">
+                                    <p><strong>Status Pendanaan:</strong> 
+                                        <span class="badge bg-{{ $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'success' : 'danger' }}">
+                                            {{ $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3">
                                     <p><strong>Nilai:</strong> 
                                         <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
                                     </p>
                                 </div>
-                                <div class="col-md-4">
-                                    @if($proposal->hasilFinal->dana_yang_dapat_diberikan)
-                                        <p><strong>Dana yang Dapat Diberikan:</strong> 
-                                            <span class="badge bg-success fs-6">Rp {{ number_format($proposal->hasilFinal->dana_yang_dapat_diberikan, 0, ',', '.') }}</span>
+                                <div class="col-md-3">
+                                    @if($proposal->hasilFinal->dana_yang_didapatkan)
+                                        <p><strong>Dana yang Didapatkan:</strong> 
+                                            <span class="badge bg-success fs-6">Rp {{ number_format($proposal->hasilFinal->dana_yang_didapatkan, 0, ',', '.') }}</span>
                                         </p>
                                     @endif
+                                </div>
+                                <div class="col-md-6">
                                     <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
                                 </div>
-                                <div class="col-md-4">
-                            @if($proposal->hasilFinal->catatan_final)
+                                <div class="col-md-6">
+                                    @if($proposal->hasilFinal->catatan_final)
                                         <p><strong>Catatan:</strong> {{ Str::limit($proposal->hasilFinal->catatan_final, 100) }}</p>
                                     @endif
                                 </div>
@@ -704,7 +732,7 @@
                     @endif
 
                     <!-- Form for input/update -->
-                    <form id="hasilFinalForm" action="{{ route('operator.update.hasil.final') }}" method="POST" 
+                    <form id="hasilFinalForm" action="{{ route('pimpinan_pt.update.hasil.final') }}" method="POST" 
                           @if($proposal->hasilFinal) style="display: none;" @endif>
                         @csrf
                         <input type="hidden" name="proposal_id" value="{{ $proposal->id_proposal }}">
@@ -892,17 +920,27 @@
                         </div>
                         
                         <div class="row mt-4">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label class="form-label required-field">Status Final</label>
-                                    <select class="form-select" name="status_final" required>
-                                        <option value="">Pilih status final</option>
-                                        <option value="lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_final == 'lolos' ? 'selected' : '' }}>Lolos</option>
-                                        <option value="tidak_lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_final == 'tidak_lolos' ? 'selected' : '' }}>Tidak Lolos</option>
+                                    <label class="form-label required-field">Status PIMNAS <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="status_pimnas" id="statusPimnasSelect" required>
+                                        <option value="">Pilih status PIMNAS</option>
+                                        <option value="lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_pimnas == 'lolos' ? 'selected' : '' }}>Lolos</option>
+                                        <option value="tidak_lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_pimnas == 'tidak_lolos' ? 'selected' : '' }}>Tidak Lolos</option>
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label required-field">Status Pendanaan <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="status_pendanaan" id="statusPendanaanSelect" required>
+                                        <option value="">Pilih status pendanaan</option>
+                                        <option value="lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'selected' : '' }}>Lolos</option>
+                                        <option value="tidak_lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'tidak_lolos' ? 'selected' : '' }}>Tidak Lolos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label class="form-label required-field">Nilai Final (Otomatis dari Penilaian)</label>
                                     <input type="number" class="form-control" name="nilai" id="nilaiFinalInput"
@@ -913,17 +951,20 @@
                                     <div class="form-text">Nilai akan terisi otomatis berdasarkan penilaian di atas</div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
-                                    <label class="form-label">Dana yang Dapat Diberikan</label>
+                                    <label class="form-label" id="danaLabel">Dana yang Didapatkan</label>
                                     <div class="input-group">
                                         <span class="input-group-text">Rp</span>
-                                        <input type="number" class="form-control" name="dana_yang_dapat_diberikan" id="danaFinalInput"
-                                               value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_yang_dapat_diberikan ?? '') : '' }}"
-                                               min="0" step="0.01"
-                                               placeholder="0">
+                                        <input type="number" class="form-control" name="dana_yang_didapatkan" id="danaFinalInput"
+                                               value="{{ $proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'lolos' ? ($proposal->hasilFinal->dana_yang_didapatkan ?? '0') : '0' }}"
+                                               min="0" 
+                                               max="15000000"
+                                               step="0.01"
+                                               placeholder="0"
+                                               @if($proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'tidak_lolos') disabled @endif>
                                     </div>
-                                    <div class="form-text">Dana yang dapat diberikan kepada proposal ini</div>
+                                    <div class="form-text" id="danaHelpText">Dana yang didapatkan per proposal (jika lolos pendanaan, maksimal Rp 15.000.000)</div>
                                 </div>
                             </div>
                         </div>
@@ -954,17 +995,20 @@
 
 @section('scripts')
 @php
-    $hasRevisi = $proposal->proposalRevisi->count() > 0;
-    $firstRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
-    $firstRevisiUrl = $firstRevisi ? route('operator.revisi.view', $firstRevisi->id_revisi) : null;
+    $hasRevisiAkhir = $revisiAkhirList->count() > 0;
+    $firstRevisiAkhir = $hasRevisiAkhir ? $revisiAkhirList->first() : null;
+    $firstRevisiAkhirUrl = $firstRevisiAkhir ? route('operator.revisi.download', $firstRevisiAkhir->id_revisi) : null;
     $successMessage = session('success');
     $errorMessage = session('error');
     
     // Prepare JSON strings
     $pageDataJson = json_encode([
-        'hasRevisi' => $hasRevisi,
-        'firstRevisi' => $firstRevisi,
-        'firstRevisiUrl' => $firstRevisiUrl,
+        'hasRevisiAkhir' => $hasRevisiAkhir,
+        'firstRevisiAkhir' => $firstRevisiAkhir ? [
+            'id_revisi' => $firstRevisiAkhir->id_revisi,
+            'nama_file' => $firstRevisiAkhir->nama_file
+        ] : null,
+        'firstRevisiAkhirUrl' => $firstRevisiAkhirUrl,
         'successMessage' => $successMessage,
         'errorMessage' => $errorMessage
     ]);
@@ -1261,13 +1305,13 @@
         // Initialize download functionality for revisi
         initializeDownload();
         
-        // Pre-load first revision PDF if available
-        if (pageData.hasRevisi && pageData.firstRevisi) {
-            console.log('Pre-loading first revision PDF:', pageData.firstRevisi.nama_file);
+        // Pre-load first revision akhir PDF if available
+        if (pageData.hasRevisiAkhir && pageData.firstRevisiAkhir) {
+            console.log('Pre-loading first revision akhir PDF:', pageData.firstRevisiAkhir.nama_file);
             // Pre-load the PDF URL for faster display
             const link = document.createElement('link');
             link.rel = 'prefetch';
-            link.href = pageData.firstRevisiUrl;
+            link.href = pageData.firstRevisiAkhirUrl;
             document.head.appendChild(link);
         }
         
@@ -1281,6 +1325,76 @@
         }
     });
 
+    // Conditional field for dana_yang_didapatkan
+    function toggleDanaField() {
+        const statusPendanaan = document.getElementById('statusPendanaanSelect');
+        const danaField = document.getElementById('danaFinalInput');
+        const danaLabel = document.getElementById('danaLabel');
+        const danaHelpText = document.getElementById('danaHelpText');
+        
+        if (statusPendanaan && danaField) {
+            if (statusPendanaan.value === 'lolos') {
+                // Jika lolos pendanaan: enable field, set required, set max 15.000.000
+                danaField.removeAttribute('disabled');
+                danaField.setAttribute('required', 'required');
+                danaField.setAttribute('max', '15000000');
+                danaField.setAttribute('min', '0');
+                danaField.style.backgroundColor = '';
+                danaField.style.cursor = '';
+                
+                if (danaLabel) {
+                    danaLabel.innerHTML = 'Dana yang Didapatkan <span class="text-danger">*</span>';
+                }
+                if (danaHelpText) {
+                    danaHelpText.textContent = 'Dana yang didapatkan per proposal (jika lolos pendanaan, maksimal Rp 15.000.000)';
+                    danaHelpText.style.color = '';
+                }
+            } else if (statusPendanaan.value === 'tidak_lolos') {
+                // Jika tidak lolos pendanaan: disable field, set value = 0, remove required
+                danaField.setAttribute('disabled', 'disabled');
+                danaField.removeAttribute('required');
+                danaField.value = '0';
+                danaField.style.backgroundColor = '#e9ecef';
+                danaField.style.cursor = 'not-allowed';
+                
+                if (danaLabel) {
+                    danaLabel.innerHTML = 'Dana yang Didapatkan';
+                }
+                if (danaHelpText) {
+                    danaHelpText.textContent = 'Dana otomatis menjadi 0 jika tidak lolos pendanaan';
+                    danaHelpText.style.color = '#6c757d';
+                }
+            } else {
+                // Jika belum dipilih: enable field tapi tidak required
+                danaField.removeAttribute('disabled');
+                danaField.removeAttribute('required');
+                danaField.setAttribute('max', '15000000');
+                danaField.style.backgroundColor = '';
+                danaField.style.cursor = '';
+                
+                if (danaLabel) {
+                    danaLabel.innerHTML = 'Dana yang Didapatkan';
+                }
+                if (danaHelpText) {
+                    danaHelpText.textContent = 'Dana yang didapatkan per proposal (jika lolos pendanaan, maksimal Rp 15.000.000)';
+                    danaHelpText.style.color = '';
+                }
+            }
+        }
+    }
+    
+    // Initialize conditional field
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusPendanaanSelect = document.getElementById('statusPendanaanSelect');
+        if (statusPendanaanSelect) {
+            statusPendanaanSelect.addEventListener('change', toggleDanaField);
+            // Initialize on page load with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                toggleDanaField();
+            }, 100);
+        }
+    });
+
     // Form submission
     document.getElementById('hasilFinalForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -1288,37 +1402,53 @@
         const submitBtn = document.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         
+        // Validate status pendanaan and dana
+        const statusPendanaan = document.getElementById('statusPendanaanSelect').value;
+        const danaInput = document.getElementById('danaFinalInput');
+        
+        if (statusPendanaan === 'lolos') {
+            // Jika lolos, dana wajib diisi dan maksimal 15.000.000
+            if (!danaInput.value || parseFloat(danaInput.value) <= 0) {
+                showToast('Dana yang didapatkan wajib diisi jika status pendanaan adalah Lolos', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
+            if (parseFloat(danaInput.value) > 15000000) {
+                showToast('Dana yang didapatkan tidak boleh melebihi Rp 15.000.000', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
+        } else if (statusPendanaan === 'tidak_lolos') {
+            // Jika tidak lolos, pastikan dana = 0
+            danaInput.value = '0';
+        }
+        
         // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
         submitBtn.disabled = true;
         
-        // Create FormData from form
         const formData = new FormData(this);
         
-        // Validasi client-side sebelum submit
-        const catatanFinal = formData.get('catatan_final');
-        if (catatanFinal && catatanFinal.trim().length > 0 && catatanFinal.trim().length < 50) {
-            showToast('Catatan final minimal 50 karakter. Teks yang Anda berikan di catatan kurang dari 50 karakter.', 'error');
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            return;
-        }
-        
-        // Validasi skor
-        const skorInputs = document.querySelectorAll('.skor-final-input');
-        let hasEmptySkor = false;
-        skorInputs.forEach(input => {
-            if (!input.value || input.value === '') {
-                hasEmptySkor = true;
+        // Handle dana_yang_didapatkan based on status_pendanaan
+        const statusPendanaanValue = document.getElementById('statusPendanaanSelect').value;
+        if (statusPendanaanValue === 'tidak_lolos') {
+            // Force dana to 0 if tidak lolos
+            formData.set('dana_yang_didapatkan', '0');
+        } else if (statusPendanaanValue === 'lolos') {
+            // Ensure dana is within valid range (0-15000000)
+            const danaValue = parseFloat(formData.get('dana_yang_didapatkan')) || 0;
+            if (danaValue > 15000000) {
+                formData.set('dana_yang_didapatkan', '15000000');
+            } else if (danaValue < 0) {
+                formData.set('dana_yang_didapatkan', '0');
             }
-        });
-        
-        if (hasEmptySkor) {
-            showToast('Semua skor penilaian wajib diisi (0-10)', 'error');
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            return;
         }
+        
+        // Remove existing skor entries from formData
+        formData.delete('skor[]');
+        formData.delete('skor');
         
         // Collect skor data manually to ensure correct format
         const skorData = {};
@@ -1333,37 +1463,19 @@
             }
         });
         
-        // Remove existing skor entries from formData
-        formData.delete('skor[]');
-        formData.delete('skor');
-        
         // Append skor as array (Laravel will handle it)
         Object.keys(skorData).forEach(key => {
             formData.append(`skor[${key}]`, skorData[key]);
         });
         
-        // Pastikan action URL benar
-        const formAction = this.getAttribute('action');
-        console.log('Form action:', formAction);
-        
-        fetch(formAction, {
+        fetch(this.action, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json'
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
         })
-        .then(async response => {
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-                return response.json();
-            } else {
-                // Jika response bukan JSON, mungkin ada error HTML
-                const text = await response.text();
-                throw new Error('Server mengembalikan response yang tidak valid. Status: ' + response.status);
-            }
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
                 showToast('Hasil final berhasil diperbarui!', 'success');
@@ -1372,29 +1484,12 @@
                     location.reload();
                 }, 1500);
             } else {
-                // Tampilkan error dengan detail jika ada
-                let errorMessage = data.message || 'Terjadi kesalahan';
-                
-                // Jika ada errors object, tambahkan detail
-                if (data.errors) {
-                    const errorDetails = Object.values(data.errors).flat().join(', ');
-                    errorMessage += '. Detail: ' + errorDetails;
-                }
-                
-                showToast('Gagal memperbarui hasil final: ' + errorMessage, 'error');
+                showToast('Gagal memperbarui hasil final: ' + (data.message || 'Terjadi kesalahan'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            let errorMessage = 'Terjadi kesalahan saat menyimpan hasil final';
-            
-            if (error.message) {
-                errorMessage += ': ' + error.message;
-            } else {
-                errorMessage += '. Silakan coba lagi atau hubungi administrator.';
-            }
-            
-            showToast(errorMessage, 'error');
+            showToast('Terjadi kesalahan saat menyimpan hasil final: ' + error.message, 'error');
         })
         .finally(() => {
             // Reset button state

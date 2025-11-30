@@ -36,6 +36,12 @@ class Dosen extends Authenticatable
         return $this->hasMany(Proposal::class, 'id_dosen');
     }
 
+    // Relasi One-to-Many ke Proposal (sebagai Dosen Pendamping Universitas)
+    public function proposalsUniversitas()
+    {
+        return $this->hasMany(Proposal::class, 'id_dosen_pendamping_universitas', 'id_dosen');
+    }
+
     // Relasi One-to-Many ke Mahasiswa (sebagai Dosen Pembimbing)
     public function mahasiswaBimbingan()
     {

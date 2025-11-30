@@ -12,6 +12,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\ReviewerController;
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\PimpinanPTController;
 
 // Route untuk autentikasi
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -89,6 +90,8 @@ Route::middleware(['auth:mahasiswa'])->group(function () {
     Route::get('/mahasiswa/proposal/{id}/review/final', [ProposalController::class, 'getFinalReview'])->name('mahasiswa.proposal.review.final');
 Route::get('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'showRevisiForm'])->name('mahasiswa.proposal.revisi')->middleware('check.phase:perbaikan');
 Route::post('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'submitRevisi'])->name('mahasiswa.proposal.revisi.submit')->middleware('check.phase:perbaikan');
+Route::get('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class, 'showRevisiAkhirForm'])->name('mahasiswa.proposal.revisi.akhir');
+Route::post('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class, 'submitRevisiAkhir'])->name('mahasiswa.proposal.revisi.akhir.submit');
     
     // Route untuk revisi proposal
     Route::get('/mahasiswa/revisi', [App\Http\Controllers\Mahasiswa\ProposalRevisiController::class, 'index'])->name('mahasiswa.revisi.index')->middleware('check.phase:perbaikan');
@@ -148,6 +151,17 @@ Route::middleware(['auth:dosen'])->group(function () {
     // Route untuk mendapatkan data review
     Route::get('/dosen/review-data/{id}', [DosenController::class, 'getReviewData'])->name('dosen.review.data');
     
+    // Route untuk Dosen Universitas (Menu Khusus)
+    Route::prefix('dosen/universitas')->name('dosen.universitas.')->group(function () {
+        Route::get('/dashboard', [DosenController::class, 'dashboardUniversitas'])->name('dashboard');
+        Route::get('/validasi-akhir', [DosenController::class, 'validasiAkhirProposal'])->name('validasi.akhir');
+        Route::get('/validasi-akhir/{id}/detail', [DosenController::class, 'detailValidasiAkhir'])->name('validasi.akhir.detail');
+        Route::post('/validasi-akhir/{id}/submit', [DosenController::class, 'submitValidasiAkhir'])->name('validasi.akhir.submit');
+        Route::get('/proposal/{id}/view-pdf', [DosenController::class, 'viewPdfUniversitas'])->name('proposal.view.pdf');
+        Route::get('/revisi-akhir/{id}/view-pdf', [DosenController::class, 'viewPdfRevisiAkhir'])->name('revisi.akhir.view.pdf');
+        Route::get('/revisi-akhir/{id}/download', [DosenController::class, 'downloadRevisiAkhir'])->name('revisi.akhir.download');
+    });
+    
     // Route untuk notifikasi dosen
     Route::get('/dosen/notifications', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('dosen.notifications.get');
     Route::post('/dosen/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('dosen.notifications.mark-read');
@@ -203,8 +217,14 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::get('/operator/proposal/{id}/detail', [OperatorController::class, 'proposalDetail'])->name('operator.proposal.detail');
     Route::post('/operator/update-hasil-final', [OperatorController::class, 'updateHasilFinal'])->name('operator.update.hasil.final')->middleware('check.phase:perbaikan');
     Route::get('/operator/revisi/{id}/download', [OperatorController::class, 'downloadRevisi'])->name('operator.revisi.download');
+    Route::get('/operator/revisi/{id}/view', [OperatorController::class, 'viewRevisi'])->name('operator.revisi.view');
     Route::get('/operator/detail-hasil-final/{id}', [OperatorController::class, 'detailHasilFinal'])->name('operator.detail.hasil.final');
     Route::get('/operator/proposal/{id}/view-pdf', [OperatorController::class, 'viewPdf'])->name('operator.proposal.view.pdf');
+    
+    // Route untuk hasil semi final
+    Route::get('/operator/hasil-semi-final', [OperatorController::class, 'hasilSemiFinal'])->name('operator.hasil.semi.final')->middleware('check.phase:perbaikan');
+    Route::get('/operator/detail-hasil-semi-final/{id}', [OperatorController::class, 'detailHasilSemiFinal'])->name('operator.detail.hasil.semi.final');
+    Route::post('/operator/update-hasil-semi-final', [OperatorController::class, 'updateHasilSemiFinal'])->name('operator.update.hasil.semi.final')->middleware('check.phase:perbaikan');
     
     // Manajemen Akun (Mahasiswa, Dosen, Reviewer, Operator)
     Route::get('/operator/akun', [OperatorController::class, 'manageAccounts'])->name('operator.manage.accounts');
@@ -217,6 +237,21 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::get('/operator/notifications', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('operator.notifications.get');
     Route::post('/operator/notifications/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('operator.notifications.mark-read');
     Route::post('/operator/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('operator.notifications.mark-all-read');
+    
+    // Route untuk Pimpinan PT (menggunakan guard operator dengan role pimpinan_pt)
+    Route::prefix('pimpinan-pt')->name('pimpinan_pt.')->group(function () {
+        Route::get('/dashboard', [PimpinanPTController::class, 'dashboard'])->name('dashboard');
+        Route::get('/detail-hasil-final/{id}', [PimpinanPTController::class, 'detailHasilFinal'])->name('detail.hasil.final');
+        Route::post('/update-hasil-final', [PimpinanPTController::class, 'updateHasilFinal'])->name('update.hasil.final');
+        Route::get('/proposal/{id}/view-pdf', [PimpinanPTController::class, 'viewPdf'])->name('proposal.view.pdf');
+        
+        // Manajemen Akun Pimpinan PT (dapat mengelola semua jenis user)
+        Route::get('/akun', [PimpinanPTController::class, 'manageAccounts'])->name('manage.accounts');
+        Route::post('/akun/{type}', [PimpinanPTController::class, 'storeAccount'])->name('accounts.store');
+        Route::put('/akun/{type}/{id}', [PimpinanPTController::class, 'updateAccount'])->name('accounts.update');
+        Route::delete('/akun/{type}/{id}', [PimpinanPTController::class, 'deleteAccount'])->name('accounts.delete');
+        Route::post('/akun/mahasiswa/bulk-delete', [PimpinanPTController::class, 'bulkDeleteMahasiswa'])->name('accounts.mahasiswa.bulk-delete');
+    });
 });
 
 

@@ -283,9 +283,28 @@
             background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             padding: 1.5rem 0;
             overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scroll */
             transition: transform 0.3s ease;
             z-index: 1000;
             box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Custom scrollbar for sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
         }
 
         .sidebar-title {
@@ -311,6 +330,7 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            padding-bottom: 2rem; /* Add padding at bottom to prevent menu items from being cut off */
         }
 
         .sidebar-menu > li {
@@ -359,7 +379,7 @@
         }
 
         .sidebar-menu .submenu.show {
-            max-height: 300px;
+            max-height: 1000px; /* Increased to accommodate more menu items */
         }
 
         .sidebar-menu .submenu li {
@@ -399,7 +419,7 @@
 
         /* Auto-expand submenu if any child is active - Fallback for browsers without :has() support */
         .sidebar-menu .submenu.show {
-            max-height: 300px;
+            max-height: 1000px; /* Increased to accommodate more menu items */
         }
 
         /* Menu toggle styling */
@@ -782,25 +802,12 @@
                         <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.revisi.index') }}" class="@if(request()->routeIs('mahasiswa.revisi.*')) active @endif">
                             <i class="fas fa-edit me-2"></i>Revisi Proposal
                         </a></li>
+                        <li class="menu-mahasiswa"><a href="#" class="@if(request()->routeIs('mahasiswa.proposal.revisi.akhir*')) active @endif" onclick="event.preventDefault(); alert('Pilih proposal yang perlu direvisi dari halaman Lihat Proposal');">
+                            <i class="fas fa-file-edit me-2"></i>Revisi Akhir
+                        </a></li>
                     @endif
                     
                     @if(Auth::guard('dosen')->check())
-                        <!-- Menu Dosen Pembimbing -->
-                        <li class="menu-dosen">
-                            <a href="#" class="menu-toggle" data-target="pembimbingMahasiswa">
-                                <i class="fas fa-chalkboard-teacher me-2"></i>Pembimbing Mhs
-                                <i class="fas fa-chevron-down float-end"></i>
-                            </a>
-                            <ul class="submenu" id="pembimbingMahasiswa">
-                                <li><a href="{{ route('dosen.pembimbing.dashboard') }}" class="@if(request()->routeIs('dosen.pembimbing.dashboard')) active @endif">
-                                    <i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Pembimbing
-                                </a></li>
-                                <li><a href="{{ route('dosen.pembimbing.mahasiswa.bimbingan') }}" class="@if(request()->routeIs('dosen.pembimbing.mahasiswa.bimbingan')) active @endif">
-                                    <i class="fas fa-users me-2"></i>Mahasiswa Bimbingan
-                                </a></li>
-                            </ul>
-                        </li>
-                        
                         <!-- Menu Dosen Pendamping -->
                         <li class="menu-dosen">
                             <a href="#" class="menu-toggle" data-target="pendampingProposal">
@@ -822,6 +829,22 @@
                                 </a></li>
                             </ul>
                         </li>
+                        
+                        <!-- Menu Dosen Universitas (Pendamping Universitas) -->
+                        <li class="menu-dosen">
+                            <a href="#" class="menu-toggle" data-target="dosenUniversitas">
+                                <i class="fas fa-user-graduate me-2"></i>Pendamping Univ
+                                <i class="fas fa-chevron-down float-end"></i>
+                            </a>
+                            <ul class="submenu" id="dosenUniversitas">
+                                <li><a href="{{ route('dosen.universitas.dashboard') }}" class="@if(request()->routeIs('dosen.universitas.dashboard')) active @endif">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a></li>
+                                <li><a href="{{ route('dosen.universitas.validasi.akhir') }}" class="@if(request()->routeIs('dosen.universitas.validasi.akhir*')) active @endif">
+                                    <i class="fas fa-check-double me-2"></i>Validasi Akhir
+                                </a></li>
+                            </ul>
+                        </li>
                     @endif
                     
                     @if(Auth::guard('reviewer')->check())
@@ -837,15 +860,41 @@
                     @endif
                     
                     @if(Auth::guard('operator')->check())
+                        @php
+                            $operatorUser = Auth::guard('operator')->user();
+                            $isPimpinanPT = $operatorUser && $operatorUser->role === 'pimpinan_pt';
+                            $isOperator = $operatorUser && $operatorUser->role === 'operator';
+                        @endphp
+                        
+                        @if($isOperator)
+                            <!-- Menu untuk Operator (bukan Pimpinan PT) -->
                         <li class="menu-operator"><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
                             <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
                         </a></li>
                         <li class="menu-operator"><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
                             <i class="fas fa-cogs me-2"></i>Ruang Kontrol
                         </a></li>
-                        <li class="menu-operator"><a href="{{ route('operator.hasil.final') }}" class="@if(request()->routeIs('operator.hasil.final')) active @endif">
+                            <li class="menu-operator"><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
+                                <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                            </a></li>
+                        @elseif($isPimpinanPT)
+                            <!-- Menu untuk Pimpinan PT (memiliki semua menu operator + Hasil Final + Manajemen Akun Pimpinan PT) -->
+                            <li class="menu-operator"><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
+                                <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
+                            </a></li>
+                            <li class="menu-operator"><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
+                                <i class="fas fa-cogs me-2"></i>Ruang Kontrol
+                            </a></li>
+                            <li class="menu-operator"><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
+                                <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                            </a></li>
+                            <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
                             <i class="fas fa-trophy me-2"></i>Hasil Final
                         </a></li>
+                            <li class="menu-operator"><a href="{{ route('pimpinan_pt.manage.accounts') }}" class="@if(request()->routeIs('pimpinan_pt.manage.accounts*')) active @endif">
+                                <i class="fas fa-id-card me-2"></i>Manajemen Akun
+                            </a></li>
+                        @endif
                     @endif
                 </ul>
             </li>

@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             ProdiSeeder::class,
             ReviewerSeeder::class,
             PtSeeder::class,
+            PimpinanPTSeeder::class,
             DosenSeeder::class,
             MahasiswaSeeder::class,
             

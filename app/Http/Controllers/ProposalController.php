@@ -446,9 +446,19 @@ class ProposalController extends Controller
     {
         $user = auth()->guard('mahasiswa')->user();
         
-        $proposal = Proposal::with(['semuaAnggotaTim', 'dosen', 'dokumen', 'mahasiswa', 'proposalRevisi' => function($query) {
+        $proposal = Proposal::with([
+                'semuaAnggotaTim', 
+                'dosen', 
+                'dosenPendampingUniversitas', 
+                'dokumen', 
+                'mahasiswa', 
+                'nilaiAdministratif.reviewer',
+                'nilaiSubstantif.reviewer',
+                'hasilSemiFinal',
+                'proposalRevisi' => function($query) {
                 $query->orderBy('tanggal_submit', 'desc');
-            }])
+                }
+            ])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
@@ -471,26 +481,69 @@ class ProposalController extends Controller
     public function download($id, $jenis)
     {
         $proposal = Proposal::where('id_proposal', $id)
-            ->where('id_mahasiswa', auth()->user()->id_mahasiswa)
-            ->with('dokumen')
+            ->with(['dokumen', 'proposalRevisi' => function($query) {
+                $query->orderBy('tanggal_submit', 'desc');
+            }])
             ->firstOrFail();
 
-        if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
-            return back()->with('error', 'Dokumen tidak ditemukan.');
+        // Tentukan file yang harus didownload berdasarkan jenis
+        if ($jenis === 'proposal') {
+            // Prioritas: revisi akhir > revisi biasa > proposal awal
+            $fileToDownload = null;
+            $filename = null;
+            
+            // Cek revisi akhir (file dengan path mengandung 'revisi_akhir')
+            $revisiAkhir = $proposal->proposalRevisi->filter(function($revisi) {
+                return strpos($revisi->path_file, 'revisi_akhir') !== false;
+            })->first();
+            
+            if ($revisiAkhir) {
+                $fileToDownload = $revisiAkhir->path_file;
+                $filename = $revisiAkhir->nama_file;
+            } else {
+                // Cek revisi biasa (file dengan path mengandung 'revisi' tapi bukan 'revisi_akhir')
+                $revisiBiasa = $proposal->proposalRevisi->filter(function($revisi) {
+                    return strpos($revisi->path_file, 'revisi') !== false && 
+                           strpos($revisi->path_file, 'revisi_akhir') === false;
+                })->first();
+                
+                if ($revisiBiasa) {
+                    $fileToDownload = $revisiBiasa->path_file;
+                    $filename = $revisiBiasa->nama_file;
+                } else if ($proposal->dokumen && $proposal->dokumen->path_file) {
+                    // Gunakan file proposal awal
+                    $fileToDownload = $proposal->dokumen->path_file;
+                    $filename = $proposal->dokumen->path_file_original 
+                        ? basename($proposal->dokumen->path_file_original)
+                        : basename($fileToDownload);
+                }
+            }
+            
+            if (!$fileToDownload) {
+                return back()->with('error', 'Dokumen tidak ditemukan.');
+            }
+            
+            if (!Storage::disk('public')->exists($fileToDownload)) {
+                return back()->with('error', 'File tidak ditemukan.');
+            }
+            
+            return Storage::disk('public')->download($fileToDownload, $filename);
+        } else if ($jenis === 'lampiran') {
+            // Download lampiran (tidak berubah)
+            if (!$proposal->dokumen || !$proposal->dokumen->file_lampiran) {
+                return back()->with('error', 'Lampiran tidak ditemukan.');
+            }
+            
+            $path = $proposal->dokumen->file_lampiran;
+            
+            if (!Storage::disk('public')->exists($path)) {
+                return back()->with('error', 'File tidak ditemukan.');
+            }
+            
+            return Storage::disk('public')->download($path, basename($path));
         }
-
-        $path = $proposal->dokumen->path_file;
         
-        if (!Storage::disk('public')->exists($path)) {
-            return back()->with('error', 'File tidak ditemukan.');
-        }
-
-        // Get original filename or use path basename
-        $filename = $proposal->dokumen->path_file_original 
-            ? basename($proposal->dokumen->path_file_original)
-            : basename($path);
-
-        return Storage::disk('public')->download($path, $filename);
+        return back()->with('error', 'Jenis dokumen tidak valid.');
     }
 
     /**
@@ -663,7 +716,8 @@ class ProposalController extends Controller
         try {
             $user = auth()->guard('mahasiswa')->user();
             
-            $proposal = Proposal::where('id_proposal', $id)
+            $proposal = Proposal::with(['dosenPendampingUniversitas', 'hasilSemiFinal'])
+                ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     // Proposal yang dibuat oleh mahasiswa ini
                     $query->where('id_mahasiswa', $user->id_mahasiswa)
@@ -675,12 +729,24 @@ class ProposalController extends Controller
                 ->firstOrFail();
 
             $finalResult = HasilFinal::where('id_proposal', $id)
-                ->with('pt')
+                ->with('pimpinanPt')
                 ->first();
+
+            // Siapkan data dosen universitas
+            $dosenUniversitas = null;
+            if ($proposal->dosenPendampingUniversitas) {
+                $dosenUniversitas = [
+                    'nama_dosen' => $proposal->dosenPendampingUniversitas->nama_dosen,
+                    'no_hp_dosen' => $proposal->dosenPendampingUniversitas->no_hp_dosen,
+                    'email_dosen' => $proposal->dosenPendampingUniversitas->email_dosen
+                ];
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => $finalResult,
+                'dosen_universitas' => $dosenUniversitas,
+                'hasil_semi_final' => $proposal->hasilSemiFinal,
                 'proposal_info' => [
                     'judul' => $proposal->judul_proposal,
                     'skim' => $proposal->skim,
@@ -955,7 +1021,16 @@ class ProposalController extends Controller
         $user = auth()->guard('mahasiswa')->user();
         
         // Ambil proposal berdasarkan ID
-        $proposal = Proposal::with(['mahasiswa', 'dosen', 'semuaAnggotaTim', 'dokumen'])
+        $proposal = Proposal::with([
+            'mahasiswa', 
+            'dosen', 
+            'semuaAnggotaTim', 
+            'dokumen',
+            'nilaiAdministratif.reviewer',
+            'nilaiSubstantif.reviewer',
+            'hasilSemiFinal',
+            'dosenPendampingUniversitas'
+        ])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
@@ -1084,6 +1159,147 @@ class ProposalController extends Controller
             DB::rollback();
             
             \Log::error('Error in submitRevisi', [
+                'proposal_id' => $id,
+                'user_id' => $user->id_mahasiswa ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Menampilkan form revisi akhir proposal
+     */
+    public function showRevisiAkhirForm($id)
+    {
+        $user = auth()->guard('mahasiswa')->user();
+        
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+        }
+
+        // Ambil proposal
+        $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas', 'hasilSemiFinal'])
+            ->where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                          $memberQuery->where('nim', $user->nim);
+                      });
+            })
+            ->firstOrFail();
+
+        // Cek apakah status proposal sudah revisi_akhir
+        if ($proposal->status !== 'revisi_akhir') {
+            return redirect()->route('mahasiswa.proposal.index')
+                ->with('error', 'Proposal belum siap untuk revisi akhir. Status saat ini: ' . ucfirst(str_replace('_', ' ', $proposal->status)));
+        }
+
+        // Ambil data revisi akhir yang sudah ada (berdasarkan path file yang mengandung 'revisi_akhir')
+        $revisiAkhir = ProposalRevisi::where('id_proposal', $proposal->id_proposal)
+            ->where('path_file', 'like', '%revisi_akhir%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('mahasiswa.revisi_akhir_proposal', compact('proposal', 'user', 'revisiAkhir'));
+    }
+
+    /**
+     * Submit revisi akhir proposal
+     */
+    public function submitRevisiAkhir(Request $request, $id)
+    {
+        try {
+            // Cek user yang sedang login dari guard mahasiswa
+            if (!auth()->guard('mahasiswa')->check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan login terlebih dahulu.'
+                ], 401);
+            }
+
+            $user = auth()->guard('mahasiswa')->user();
+            
+            // Ambil proposal berdasarkan ID
+            $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas'])
+                ->where('id_proposal', $id)
+                ->where(function($query) use ($user) {
+                    // Proposal yang dibuat oleh mahasiswa ini
+                    $query->where('id_mahasiswa', $user->id_mahasiswa)
+                          // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                          ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
+                              $memberQuery->where('nim', $user->nim);
+                          });
+                })
+                ->firstOrFail();
+
+            // Cek apakah status proposal sudah revisi_akhir
+            if ($proposal->status !== 'revisi_akhir') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proposal belum siap untuk revisi akhir.'
+                ], 400);
+            }
+
+            // Validasi file revisi akhir
+            $request->validate([
+                'revisi_file' => 'required|file|mimes:pdf|max:5120', // 5MB max
+            ], [
+                'revisi_file.required' => 'File revisi akhir proposal wajib diupload.',
+                'revisi_file.file' => 'File revisi harus berupa file.',
+                'revisi_file.mimes' => 'File revisi harus berformat PDF.',
+                'revisi_file.max' => 'Ukuran file revisi maksimal 5MB.',
+            ]);
+
+            DB::beginTransaction();
+
+            // Upload file revisi akhir (disimpan di folder berbeda)
+            $revisiFile = $request->file('revisi_file');
+            $fileName = 'revisi_akhir_' . time() . '_' . $revisiFile->getClientOriginalName();
+            $filePath = $revisiFile->storeAs('proposals/revisi_akhir', $fileName, 'public');
+
+            // Create record di tabel proposal_revisi
+            $proposalRevisi = $proposal->proposalRevisi()->create([
+                'nama_file' => $fileName,
+                'path_file' => $filePath,
+                'tanggal_submit' => now(),
+            ]);
+
+            // Update status proposal menjadi 'validasi_akhir_dosen_univ'
+            $proposal->update([
+                'status' => 'validasi_akhir_dosen_univ',
+                'status_final' => 'validasi_akhir_dosen_univ',
+                'updated_at' => now(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Revisi akhir proposal berhasil diupload! Proposal akan divalidasi oleh dosen pendamping universitas.',
+                'data' => [
+                    'proposal_id' => $proposal->id_proposal,
+                    'file_name' => $fileName,
+                    'file_size' => $revisiFile->getSize(),
+                    'status' => 'validasi_akhir_dosen_univ'
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $e->errors()),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            \Log::error('Error in submitRevisiAkhir', [
                 'proposal_id' => $id,
                 'user_id' => $user->id_mahasiswa ?? 'unknown',
                 'error' => $e->getMessage(),

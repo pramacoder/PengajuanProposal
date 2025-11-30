@@ -59,16 +59,23 @@
         subtitle="UNIVERSITAS UDAYANA"
         description="Selamat datang di dashboard reviewer PKM" />
     
-    <!-- Year Filter -->
+    <!-- Tahun Ajaran Filter -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <select class="form-select" id="tahunFilter">
-                @for($year = date('Y'); $year >= 2020; $year--)
-                    <option value="{{ $year }}" {{ $tahun == $year ? 'selected' : '' }}>
-                        Tahun {{ $year }}
+            <form method="GET" action="{{ route('reviewer.dashboard') }}" class="d-inline">
+                <div class="input-group">
+                    <label class="input-group-text" for="tahun_ajaran">
+                        <i class="fas fa-calendar me-2"></i>Tahun Ajaran
+                    </label>
+                    <select name="tahun_ajaran" id="tahun_ajaran" class="form-select" onchange="this.form.submit()" style="min-width: 150px;">
+                        @foreach($tahunAjaranList as $tahunAjaran)
+                            <option value="{{ $tahunAjaran }}" {{ $tahunAjaranTerpilih == $tahunAjaran ? 'selected' : '' }}>
+                                {{ $tahunAjaran }}
                     </option>
-                @endfor
+                        @endforeach
             </select>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -329,12 +336,6 @@
 
 @push('scripts')
 <script>
-    // Filter tahun
-    document.getElementById('tahunFilter').addEventListener('change', function() {
-        const tahun = this.value;
-        window.location.href = `{{ route('reviewer.dashboard') }}?tahun=${tahun}`;
-    });
-
     // DataTable initialization
     $(document).ready(function() {
         $('#dataTable').DataTable({

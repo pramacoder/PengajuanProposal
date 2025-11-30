@@ -90,13 +90,20 @@
     </div>
 
     <!-- Dokumen Proposal -->
-    @if($proposal->dokumen)
+    @if($fileProposal)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-file-pdf me-2"></i>Dokumen Proposal
+                        @if($jenisFile === 'revisi_akhir')
+                            <span class="badge bg-warning ms-2">Revisi Akhir</span>
+                        @elseif($jenisFile === 'revisi')
+                            <span class="badge bg-info ms-2">Revisi</span>
+                        @else
+                            <span class="badge bg-secondary ms-2">Proposal Awal</span>
+                        @endif
                     </h5>
                 </div>
                 <div class="card-body">
@@ -106,16 +113,40 @@
                             <table class="table table-borderless">
                                 <tr>
                                     <td width="30%"><strong>Nama File:</strong></td>
-                                    <td>{{ $proposal->dokumen->file_proposal ?: 'proposal.pdf' }}</td>
+                                    <td>
+                                        @if($jenisFile === 'revisi_akhir' || $jenisFile === 'revisi')
+                                            {{ $fileProposal->nama_file }}
+                                        @else
+                                            {{ $fileProposal->file_proposal ?: 'proposal.pdf' }}
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Tanggal Upload:</strong></td>
-                                    <td>{{ \Carbon\Carbon::parse($proposal->dokumen->created_at)->format('d F Y, H:i') }}</td>
+                                    <td>
+                                        @if($jenisFile === 'revisi_akhir' || $jenisFile === 'revisi')
+                                            {{ \Carbon\Carbon::parse($fileProposal->tanggal_submit)->format('d F Y, H:i') }}
+                                        @else
+                                            {{ \Carbon\Carbon::parse($fileProposal->created_at)->format('d F Y, H:i') }}
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Jenis:</strong></td>
+                                    <td>
+                                        @if($jenisFile === 'revisi_akhir')
+                                            <span class="badge bg-warning">Revisi Akhir</span>
+                                        @elseif($jenisFile === 'revisi')
+                                            <span class="badge bg-info">Revisi</span>
+                                        @else
+                                            <span class="badge bg-secondary">Proposal Awal</span>
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td><strong>Status:</strong></td>
                                     <td>
-                                        @if($proposal->dokumen->path_file)
+                                        @if($fileProposal->path_file)
                                             <span class="badge bg-success">Tersedia</span>
                                         @else
                                             <span class="badge bg-warning">Belum Upload</span>
@@ -127,10 +158,10 @@
                         <div class="col-md-6">
                             <h6 class="fw-bold text-primary mb-3">Aksi</h6>
                             <div class="d-grid gap-2">
-                                @if($proposal->dokumen->path_file)
-                                    <a  
+                                @if($fileProposal->path_file)
+                                    <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
                                        class="btn btn-outline-primary" target="_blank">
-                                        <i class="fas fa-download me-2"></i>Download Proposal pada Preview Proposal
+                                        <i class="fas fa-download me-2"></i>Download Proposal
                                     </a>
                                 @else
                                     <div class="alert alert-warning">
@@ -139,7 +170,7 @@
                                     </div>
                                 @endif
                                 
-                                @if($proposal->dokumen->file_lampiran)
+                                @if($proposal->dokumen && $proposal->dokumen->file_lampiran)
                                     <a href="{{ route('mahasiswa.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'lampiran']) }}" 
                                        class="btn btn-outline-secondary" target="_blank">
                                         <i class="fas fa-download me-2"></i>Download Lampiran
@@ -154,7 +185,7 @@
     </div>
 
     <!-- PDF Viewer -->
-    @if($proposal->dokumen && $proposal->dokumen->path_file)
+    @if($fileProposal && $fileProposal->path_file)
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card">
@@ -369,9 +400,9 @@
     }
 </style>
 
-<script>
+    <script>
     document.addEventListener('DOMContentLoaded', function() {
-        @if($proposal->dokumen && $proposal->dokumen->path_file)
+        @if($fileProposal && $fileProposal->path_file)
             loadPDFDocument();
         @endif
 
@@ -381,7 +412,13 @@
 
     function loadPDFDocument() {
         const pdfViewer = document.getElementById('pdfViewer');
-        const pdfUrl = '{{ $proposal->dokumen ? asset('storage/' . $proposal->dokumen->path_file) : "" }}';
+        @php
+            $pdfUrl = '';
+            if ($fileProposal && $fileProposal->path_file) {
+                $pdfUrl = asset('storage/' . $fileProposal->path_file);
+            }
+        @endphp
+        const pdfUrl = '{{ $pdfUrl }}';
         
         if (!pdfUrl) {
             pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen proposal tidak ditemukan.</p></div>';

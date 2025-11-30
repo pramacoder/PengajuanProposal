@@ -56,11 +56,12 @@ class ReviewerController extends Controller
     public function dashboard()
     {
         $reviewer = Auth::user();
-        $tahun = request('tahun', date('Y'));
+        $tahunAjaranTerpilih = request('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        $tahunAjaranList = TahunAjaranHelper::getListTahunAjaran();
         
         \Log::info('Reviewer accessing dashboard', [
             'reviewer_id' => $reviewer->id_reviewer,
-            'tahun' => $tahun
+            'tahun_ajaran' => $tahunAjaranTerpilih
         ]);
         
         // Ambil semua proposal yang ditugaskan ke reviewer ini (administratif atau substantif)
@@ -72,7 +73,7 @@ class ReviewerController extends Controller
                       ->orWhere('id_reviewer_substantif_2', $reviewer->id_reviewer);
             })
             ->where('status_validasi', 'valid')
-            ->whereYear('created_at', $tahun)
+            ->where('tahun_ajaran', $tahunAjaranTerpilih)
             ->orderBy('updated_at', 'desc')
             ->get();
             
@@ -121,17 +122,18 @@ class ReviewerController extends Controller
             'pending_review' => $pendingReview
         ]);
 
-        return view('reviewer.dashboard', compact('proposals', 'totalAssigned', 'completedReview', 'pendingReview', 'tahun'));
+        return view('reviewer.dashboard', compact('proposals', 'totalAssigned', 'completedReview', 'pendingReview', 'tahunAjaranTerpilih', 'tahunAjaranList'));
     }
 
     public function reviewAdministratif()
     {
         $reviewer = Auth::user();
-        $tahun = request('tahun', date('Y'));
+        $tahunAjaranTerpilih = request('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        $tahunAjaranList = TahunAjaranHelper::getListTahunAjaran();
         
         \Log::info('Reviewer accessing administratif review page', [
             'reviewer_id' => $reviewer->id_reviewer,
-            'tahun' => $tahun
+            'tahun_ajaran' => $tahunAjaranTerpilih
         ]);
         
         // Ambil proposal yang ditugaskan untuk review administratif
@@ -139,7 +141,7 @@ class ReviewerController extends Controller
         $proposals = Proposal::with(['mahasiswa', 'dosen', 'nilaiAdministratif'])
             ->where('id_reviewer_administratif', $reviewer->id_reviewer)
             ->where('status_validasi', 'valid')
-            ->whereYear('created_at', $tahun)
+            ->where('tahun_ajaran', $tahunAjaranTerpilih)
             ->orderBy('created_at', 'desc')
             ->get();
             
@@ -156,17 +158,18 @@ class ReviewerController extends Controller
             })
         ]);
 
-        return view('reviewer.review_administratif', compact('proposals', 'tahun'));
+        return view('reviewer.review_administratif', compact('proposals', 'tahunAjaranTerpilih', 'tahunAjaranList'));
     }
 
     public function reviewSubstantif()
     {
         $reviewer = Auth::user();
-        $tahun = request('tahun', date('Y'));
+        $tahunAjaranTerpilih = request('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        $tahunAjaranList = TahunAjaranHelper::getListTahunAjaran();
         
         \Log::info('Reviewer accessing substantif review page', [
             'reviewer_id' => $reviewer->id_reviewer,
-            'tahun' => $tahun
+            'tahun_ajaran' => $tahunAjaranTerpilih
         ]);
         
         // Ambil proposal yang ditugaskan untuk review substantif
@@ -177,7 +180,7 @@ class ReviewerController extends Controller
                       ->orWhere('id_reviewer_substantif_2', $reviewer->id_reviewer);
             })
             ->where('status_validasi', 'valid')
-            ->whereYear('created_at', $tahun)
+            ->where('tahun_ajaran', $tahunAjaranTerpilih)
             ->orderBy('created_at', 'desc')
             ->get();
             
@@ -198,7 +201,7 @@ class ReviewerController extends Controller
             })
         ]);
 
-        return view('reviewer.review_substantif', compact('proposals', 'tahun'));
+        return view('reviewer.review_substantif', compact('proposals', 'tahunAjaranTerpilih', 'tahunAjaranList'));
     }
 
     public function detailProposalSubstantif($id)
@@ -608,7 +611,7 @@ class ReviewerController extends Controller
                 'skor' => 'required|array',
                 'skor.*' => 'required|numeric|min:0|max:10'
             ];
-            
+
             // Validasi input
             $request->validate($validationRules);
 
@@ -816,11 +819,11 @@ class ReviewerController extends Controller
                 // Gunakan DB transaction untuk memastikan data tersimpan dengan benar
                 DB::beginTransaction();
                 
-                $nilaiSubstantif = NilaiSubstantif::updateOrCreate(
-                    [
-                        'id_proposal' => $id,
-                        'id_reviewer' => $reviewer->id_reviewer
-                    ],
+            $nilaiSubstantif = NilaiSubstantif::updateOrCreate(
+            [
+                'id_proposal' => $id,
+                'id_reviewer' => $reviewer->id_reviewer
+            ],
                     $dataToSave
                 );
                 
@@ -907,7 +910,7 @@ class ReviewerController extends Controller
             // Verifikasi data yang tersimpan
             $savedSkor = $nilaiSubstantif->skor_per_kriteria;
             $savedSkorArray = is_array($savedSkor) ? $savedSkor : json_decode($savedSkor, true);
-            
+
             \Log::info('Nilai substantif saved successfully', [
                 'nilai_id' => $nilaiSubstantif->id,
                 'proposal_id' => $id,
@@ -1166,7 +1169,7 @@ class ReviewerController extends Controller
             
             // Cek apakah semua review sudah selesai (untuk status review_completed)
         if ($adminReviewer && $substantifReviewer1 && $substantifReviewer2) {
-// Cek review substantif
+                // Cek review substantif
             $substantifReview1 = $proposal->nilaiSubstantif->where('id_reviewer', $substantifReviewer1)->first();
             $substantifReview2 = $proposal->nilaiSubstantif->where('id_reviewer', $substantifReviewer2)->first();
                 
