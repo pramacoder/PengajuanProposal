@@ -18,7 +18,8 @@ class ProposalRevisi extends Model
         'id_proposal',
         'nama_file',
         'path_file',
-        'tanggal_submit'
+        'tanggal_submit',
+        'jenis_revisi'
     ];
 
     protected $casts = [

@@ -61,6 +61,9 @@ return new class extends Migration
             'tidak_lolos_pimnas',
             'lolos_pendanaan',
             'tidak_lolos_pendanaan',
+            'lolos_pimnas_pendanaan',
+            'lolos_pimnas_tidak_pendanaan',
+            'tidak_lolos_pimnas_lolos_pendanaan',
             'lolos',
             'tidak_lolos',
             'revisi_submitted'

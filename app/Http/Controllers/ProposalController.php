@@ -455,6 +455,7 @@ class ProposalController extends Controller
                 'nilaiAdministratif.reviewer',
                 'nilaiSubstantif.reviewer',
                 'hasilSemiFinal',
+                'hasilFinal',
                 'proposalRevisi' => function($query) {
                 $query->orderBy('tanggal_submit', 'desc');
                 }
@@ -481,69 +482,26 @@ class ProposalController extends Controller
     public function download($id, $jenis)
     {
         $proposal = Proposal::where('id_proposal', $id)
-            ->with(['dokumen', 'proposalRevisi' => function($query) {
-                $query->orderBy('tanggal_submit', 'desc');
-            }])
+            ->where('id_mahasiswa', auth()->user()->id_mahasiswa)
+            ->with('dokumen')
             ->firstOrFail();
 
-        // Tentukan file yang harus didownload berdasarkan jenis
-        if ($jenis === 'proposal') {
-            // Prioritas: revisi akhir > revisi biasa > proposal awal
-            $fileToDownload = null;
-            $filename = null;
-            
-            // Cek revisi akhir (file dengan path mengandung 'revisi_akhir')
-            $revisiAkhir = $proposal->proposalRevisi->filter(function($revisi) {
-                return strpos($revisi->path_file, 'revisi_akhir') !== false;
-            })->first();
-            
-            if ($revisiAkhir) {
-                $fileToDownload = $revisiAkhir->path_file;
-                $filename = $revisiAkhir->nama_file;
-            } else {
-                // Cek revisi biasa (file dengan path mengandung 'revisi' tapi bukan 'revisi_akhir')
-                $revisiBiasa = $proposal->proposalRevisi->filter(function($revisi) {
-                    return strpos($revisi->path_file, 'revisi') !== false && 
-                           strpos($revisi->path_file, 'revisi_akhir') === false;
-                })->first();
-                
-                if ($revisiBiasa) {
-                    $fileToDownload = $revisiBiasa->path_file;
-                    $filename = $revisiBiasa->nama_file;
-                } else if ($proposal->dokumen && $proposal->dokumen->path_file) {
-                    // Gunakan file proposal awal
-                    $fileToDownload = $proposal->dokumen->path_file;
-                    $filename = $proposal->dokumen->path_file_original 
-                        ? basename($proposal->dokumen->path_file_original)
-                        : basename($fileToDownload);
-                }
-            }
-            
-            if (!$fileToDownload) {
-                return back()->with('error', 'Dokumen tidak ditemukan.');
-            }
-            
-            if (!Storage::disk('public')->exists($fileToDownload)) {
-                return back()->with('error', 'File tidak ditemukan.');
-            }
-            
-            return Storage::disk('public')->download($fileToDownload, $filename);
-        } else if ($jenis === 'lampiran') {
-            // Download lampiran (tidak berubah)
-            if (!$proposal->dokumen || !$proposal->dokumen->file_lampiran) {
-                return back()->with('error', 'Lampiran tidak ditemukan.');
-            }
-            
-            $path = $proposal->dokumen->file_lampiran;
-            
-            if (!Storage::disk('public')->exists($path)) {
-                return back()->with('error', 'File tidak ditemukan.');
-            }
-            
-            return Storage::disk('public')->download($path, basename($path));
+        if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+            return back()->with('error', 'Dokumen tidak ditemukan.');
         }
+
+        $path = $proposal->dokumen->path_file;
         
-        return back()->with('error', 'Jenis dokumen tidak valid.');
+        if (!Storage::disk('public')->exists($path)) {
+            return back()->with('error', 'File tidak ditemukan.');
+        }
+
+        // Get original filename or use path basename
+        $filename = $proposal->dokumen->path_file_original 
+            ? basename($proposal->dokumen->path_file_original)
+            : basename($path);
+
+        return Storage::disk('public')->download($path, $filename);
     }
 
     /**
@@ -1128,6 +1086,7 @@ class ProposalController extends Controller
                 'nama_file' => $fileName,
                 'path_file' => $filePath,
                 'tanggal_submit' => now(),
+                'jenis_revisi' => 'revisi_biasa', // Revisi biasa untuk hasil semi final
             ]);
 
             // Update status proposal menjadi 'revisi_submitted'
@@ -1268,6 +1227,7 @@ class ProposalController extends Controller
                 'nama_file' => $fileName,
                 'path_file' => $filePath,
                 'tanggal_submit' => now(),
+                'jenis_revisi' => 'revisi_akhir', // Revisi akhir untuk hasil final
             ]);
 
             // Update status proposal menjadi 'validasi_akhir_dosen_univ'

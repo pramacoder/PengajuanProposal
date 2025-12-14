@@ -643,6 +643,7 @@
                 $checklistConfig = \App\Helpers\ProposalHelper::getReviewChecklist($proposal->skim);
                 $checklistChecked = $adminReview && $adminReview->checklist ? $adminReview->checklist : [];
                 $hasilSemiFinal = $proposal->hasilSemiFinal;
+                $hasilFinal = $proposal->hasilFinal;
                 
                 // Collect substantive reviews
                 $substantifReviews = collect();
@@ -663,7 +664,7 @@
                     }
                 }
                 
-                $hasAnyReview = $adminReview || $hasilSemiFinal || $substantifReviews->count() > 0;
+                $hasAnyReview = $adminReview || $hasilSemiFinal || $hasilFinal || $substantifReviews->count() > 0;
             @endphp
             
             @if($hasAnyReview)
@@ -757,6 +758,89 @@
                         </h6>
                         <div style="color: #495057; line-height: 1.6;">
                             <p class="mb-0">{{ $hasilSemiFinal->catatan_final }}</p>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
+                
+                <!-- Hasil Final -->
+                @if($hasilFinal)
+                <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #9c27b0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(156, 39, 176, 0.15);">
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <div>
+                            <h5 style="color: #9c27b0; font-weight: 600; margin: 0; font-size: 1.1rem;">Hasil Final - Keputusan Pimpinan PT</h5>
+                            <small style="color: #6c757d; font-size: 0.875rem;">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ \Carbon\Carbon::parse($hasilFinal->updated_at)->format('d M Y H:i') }}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <!-- Status PIMNAS -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; border-left: 4px solid {{ $hasilFinal->status_pimnas == 'lolos' ? '#28a745' : '#dc3545' }};">
+                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
+                                <i class="fas fa-flag me-1"></i>Status PIMNAS
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: {{ $hasilFinal->status_pimnas == 'lolos' ? '#28a745' : '#dc3545' }};">
+                                @if($hasilFinal->status_pimnas == 'lolos')
+                                    <i class="fas fa-check-circle me-1"></i>Lolos
+                                @else
+                                    <i class="fas fa-times-circle me-1"></i>Tidak Lolos
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <!-- Status Pendanaan -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; border-left: 4px solid {{ $hasilFinal->status_pendanaan == 'lolos' ? '#28a745' : '#dc3545' }};">
+                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
+                                <i class="fas fa-money-bill-wave me-1"></i>Status Pendanaan
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: {{ $hasilFinal->status_pendanaan == 'lolos' ? '#28a745' : '#dc3545' }};">
+                                @if($hasilFinal->status_pendanaan == 'lolos')
+                                    <i class="fas fa-check-circle me-1"></i>Lolos
+                                @else
+                                    <i class="fas fa-times-circle me-1"></i>Tidak Lolos
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <!-- Nilai -->
+                        @if($hasilFinal->nilai)
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; padding: 1rem; border-left: 4px solid #2196f3;">
+                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
+                                <i class="fas fa-star me-1"></i>Nilai Akhir
+                            </div>
+                            <div style="font-size: 1.3rem; font-weight: 700; color: #1976d2;">
+                                {{ number_format($hasilFinal->nilai, 2) }}
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Dana yang Didapatkan -->
+                        @if($hasilFinal->status_pendanaan == 'lolos' && $hasilFinal->dana_yang_didapatkan)
+                        <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; padding: 1rem; border-left: 4px solid #4caf50;">
+                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
+                                <i class="fas fa-coins me-1"></i>Dana yang Didapatkan
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: #2e7d32;">
+                                Rp {{ number_format($hasilFinal->dana_yang_didapatkan, 0, ',', '.') }}
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                    
+                    @if($hasilFinal->catatan_final)
+                    <div style="background: #f8f9fa; border-left: 4px solid #9c27b0; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+                        <h6 style="color: #9c27b0; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                            <i class="fas fa-sticky-note me-2"></i>Catatan Pimpinan PT:
+                        </h6>
+                        <div style="color: #495057; line-height: 1.6;">
+                            <p class="mb-0">{{ $hasilFinal->catatan_final }}</p>
                         </div>
                     </div>
                     @endif

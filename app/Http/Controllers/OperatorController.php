@@ -1461,7 +1461,15 @@ class OperatorController extends Controller
             $nilaiSubstantif2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
         }
 
-        return view('operator.detail_hasil_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2'));
+        // Ambil proposal terbaru dari mahasiswa yang sama (selain proposal yang sedang dilihat)
+        $latestProposals = Proposal::with(['dokumen', 'hasilFinal'])
+            ->where('id_mahasiswa', $proposal->id_mahasiswa)
+            ->where('id_proposal', '!=', $proposal->id_proposal)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('operator.detail_hasil_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'latestProposals'));
     }
 
     /**
@@ -1512,7 +1520,9 @@ class OperatorController extends Controller
                 'hasilSemiFinal',
                 'nilaiSubstantif.reviewer',
                 'proposalRevisi' => function($query) {
-                    $query->orderBy('tanggal_submit', 'desc');
+                    // Prioritas: revisi_biasa dulu (untuk hasil semi final), baru revisi_akhir
+                    $query->orderByRaw("CASE WHEN jenis_revisi = 'revisi_biasa' THEN 0 ELSE 1 END")
+                          ->orderBy('tanggal_submit', 'desc');
                 }
             ])->findOrFail($id);
         });
@@ -1535,7 +1545,15 @@ class OperatorController extends Controller
         // Ambil semua dosen untuk dropdown pilih dosen universitas
         $dosens = Dosen::where('is_active', true)->orderBy('nama_dosen')->get();
 
-        return view('operator.detail_hasil_semi_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'dosens'));
+        // Ambil proposal terbaru dari mahasiswa yang sama (selain proposal yang sedang dilihat)
+        $latestProposals = Proposal::with(['dokumen', 'hasilSemiFinal'])
+            ->where('id_mahasiswa', $proposal->id_mahasiswa)
+            ->where('id_proposal', '!=', $proposal->id_proposal)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('operator.detail_hasil_semi_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'dosens', 'latestProposals'));
     }
 
     /**
@@ -1651,40 +1669,73 @@ class OperatorController extends Controller
     // Manajemen Akun
     public function manageAccounts(Request $request)
     {
-        // Filter untuk Mahasiswa
-        $query = Mahasiswa::query();
-        
-        // Filter berdasarkan Fakultas
-        if ($request->filled('filter_fakultas')) {
-            $fakultas = Fakultas::find($request->filter_fakultas);
-            if ($fakultas) {
-                $query->where('fakultas_mhs', $fakultas->nama_fakultas);
-            }
-        }
-        
-        // Filter berdasarkan Prodi
-        if ($request->filled('filter_prodi')) {
-            $prodi = Prodi::find($request->filter_prodi);
-            if ($prodi) {
-                $query->where('prodi_mhs', $prodi->nama_prodi);
-            }
-        }
-        
-        // Filter berdasarkan NIM (search)
-        if ($request->filled('filter_nim')) {
-            $query->where('nim', 'like', '%' . $request->filter_nim . '%');
-        }
-        
-        $mahasiswas = $query->orderBy('created_at', 'desc')->get();
-        
-        // Data lainnya tetap sama
-        $dosens = Dosen::orderBy('created_at', 'desc')->limit(100)->get();
-        $reviewers = Reviewer::orderBy('created_at', 'desc')->limit(100)->get();
-        $operators = PT::orderBy('created_at', 'desc')->limit(100)->get();
         $fakultas = Fakultas::orderBy('nama_fakultas')->get();
         $prodis = Prodi::orderBy('nama_prodi')->get();
         
-        return view('operator.manajemen_akun', compact('mahasiswas', 'dosens', 'reviewers', 'operators', 'fakultas', 'prodis'));
+        // Cek apakah ada filter yang diterapkan
+        $hasFilter = $request->filled('filter_fakultas') || 
+                     $request->filled('filter_prodi') || 
+                     $request->filled('filter_nim') || 
+                     $request->filled('filter_nama') ||
+                     $request->filled('filter_nama_dosen') ||
+                     $request->filled('filter_nama_reviewer') ||
+                     $request->filled('filter_nama_operator');
+        
+        // Filter untuk Mahasiswa
+        $mahasiswaQuery = Mahasiswa::query();
+        
+        if ($hasFilter) {
+            // Filter berdasarkan Fakultas
+            if ($request->filled('filter_fakultas')) {
+                $fakultasModel = Fakultas::find($request->filter_fakultas);
+                if ($fakultasModel) {
+                    $mahasiswaQuery->where('fakultas_mhs', $fakultasModel->nama_fakultas);
+                }
+            }
+            
+            // Filter berdasarkan Prodi
+            if ($request->filled('filter_prodi')) {
+                $prodiModel = Prodi::find($request->filter_prodi);
+                if ($prodiModel) {
+                    $mahasiswaQuery->where('prodi_mhs', $prodiModel->nama_prodi);
+                }
+            }
+            
+            // Filter berdasarkan NIM (search)
+            if ($request->filled('filter_nim')) {
+                $mahasiswaQuery->where('nim', 'like', '%' . $request->filter_nim . '%');
+            }
+            
+            // Filter berdasarkan Nama
+            if ($request->filled('filter_nama')) {
+                $mahasiswaQuery->where('nama_mhs', 'like', '%' . $request->filter_nama . '%');
+            }
+        }
+        
+        $mahasiswas = $hasFilter ? $mahasiswaQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Dosen
+        $dosenQuery = Dosen::query();
+        if ($hasFilter && $request->filled('filter_nama_dosen')) {
+            $dosenQuery->where('nama_dosen', 'like', '%' . $request->filter_nama_dosen . '%');
+        }
+        $dosens = $hasFilter ? $dosenQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Reviewer
+        $reviewerQuery = Reviewer::query();
+        if ($hasFilter && $request->filled('filter_nama_reviewer')) {
+            $reviewerQuery->where('nama_reviewer', 'like', '%' . $request->filter_nama_reviewer . '%');
+        }
+        $reviewers = $hasFilter ? $reviewerQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Operator
+        $operatorQuery = PT::query();
+        if ($hasFilter && $request->filled('filter_nama_operator')) {
+            $operatorQuery->where('nama_pt', 'like', '%' . $request->filter_nama_operator . '%');
+        }
+        $operators = $hasFilter ? $operatorQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        return view('operator.manajemen_akun', compact('mahasiswas', 'dosens', 'reviewers', 'operators', 'fakultas', 'prodis', 'hasFilter'));
     }
     
     // Bulk Delete Mahasiswa

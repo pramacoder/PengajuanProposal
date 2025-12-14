@@ -16,13 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ]);
         
         // Pastikan CSRF token tersedia untuk semua request
         $middleware->alias([
-            'csrf' => \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+            'csrf' => \App\Http\Middleware\VerifyCsrfToken::class,
             'ruang.kontrol' => \App\Http\Middleware\CheckRuangKontrol::class,
             'check.phase' => \App\Http\Middleware\CheckActivePhase::class,
         ]);

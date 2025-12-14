@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Proposal;
 use App\Models\HasilFinal;
 use App\Models\HasilSemiFinal;
@@ -73,7 +74,17 @@ class PimpinanPTController extends Controller
             'hasilSemiFinal',
             'nilaiSubstantif.reviewer',
             'proposalRevisi' => function($query) {
-                $query->orderBy('tanggal_submit', 'desc');
+                // Prioritas: revisi_akhir dulu, baru revisi_biasa
+                // Cek apakah kolom jenis_revisi ada di database
+                if (Schema::hasColumn('proposal_revisi', 'jenis_revisi')) {
+                    $query->orderByRaw("CASE WHEN jenis_revisi = 'revisi_akhir' THEN 0 ELSE 1 END")
+                          ->orderBy('tanggal_submit', 'desc');
+                } else {
+                    // Fallback jika kolom belum ada (migration belum dijalankan)
+                    // Gunakan filter path_file sebagai fallback
+                    $query->orderByRaw("CASE WHEN path_file LIKE '%revisi_akhir%' THEN 0 ELSE 1 END")
+                          ->orderBy('tanggal_submit', 'desc');
+                }
             }
         ])
             ->where(function($query) use ($pimpinanPT) {
@@ -83,41 +94,6 @@ class PimpinanPTController extends Controller
                       });
             })
             ->findOrFail($id);
-
-        // Tentukan file proposal yang harus ditampilkan
-        // Prioritas: revisi akhir > revisi biasa > proposal awal
-        $fileProposal = null;
-        $jenisFile = 'proposal_awal';
-        
-        // Cek revisi akhir (file dengan path mengandung 'revisi_akhir')
-        $revisiAkhir = $proposal->proposalRevisi->filter(function($revisi) {
-            return strpos($revisi->path_file, 'revisi_akhir') !== false;
-        })->first();
-        
-        if ($revisiAkhir) {
-            $fileProposal = $revisiAkhir;
-            $jenisFile = 'revisi_akhir';
-        } else {
-            // Cek revisi biasa (file dengan path mengandung 'revisi' tapi bukan 'revisi_akhir')
-            $revisiBiasa = $proposal->proposalRevisi->filter(function($revisi) {
-                return strpos($revisi->path_file, 'revisi') !== false && 
-                       strpos($revisi->path_file, 'revisi_akhir') === false;
-            })->first();
-            
-            if ($revisiBiasa) {
-                $fileProposal = $revisiBiasa;
-                $jenisFile = 'revisi';
-            } else if ($proposal->dokumen && $proposal->dokumen->path_file) {
-                // Gunakan file proposal awal
-                $fileProposal = $proposal->dokumen;
-                $jenisFile = 'proposal_awal';
-            }
-        }
-
-        // Ambil hanya revisi akhir untuk ditampilkan di section "File Revisi yang Dikumpulkan"
-        $revisiAkhirList = $proposal->proposalRevisi->filter(function($revisi) {
-            return strpos($revisi->path_file, 'revisi_akhir') !== false;
-        });
 
         // Ambil kriteria penilaian substantif berdasarkan skim proposal
         $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
@@ -134,7 +110,15 @@ class PimpinanPTController extends Controller
             $nilaiSubstantif2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
         }
 
-        return view('pimpinan_pt.detail_hasil_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'pimpinanPT', 'fileProposal', 'jenisFile', 'revisiAkhirList'));
+        // Ambil proposal terbaru dari mahasiswa yang sama (selain proposal yang sedang dilihat)
+        $latestProposals = Proposal::with(['dokumen', 'hasilFinal'])
+            ->where('id_mahasiswa', $proposal->id_mahasiswa)
+            ->where('id_proposal', '!=', $proposal->id_proposal)
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->limit(5)
+            ->get();
+
+        return view('pimpinan_pt.detail_hasil_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'pimpinanPT', 'latestProposals'));
     }
 
     /**
@@ -161,7 +145,7 @@ class PimpinanPTController extends Controller
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_pimnas' => 'required|in:lolos,tidak_lolos',
             'status_pendanaan' => 'required|in:lolos,tidak_lolos',
-            'dana_yang_didapatkan' => 'required_if:status_pendanaan,lolos|nullable|numeric|min:0',
+            'dana_yang_didapatkan' => 'required_if:status_pendanaan,lolos|nullable|numeric|min:0|max:15000000',
             'catatan_final' => 'nullable|string',
             'nilai' => 'required|numeric|min:0|max:100',
             'skor' => 'required|array',
@@ -232,13 +216,31 @@ class PimpinanPTController extends Controller
                 'status_final' => $statusFinal
             ]);
             
+            // Handle dana_yang_didapatkan
+            $danaYangDidapatkan = 0;
+            if ($request->status_pendanaan === 'lolos') {
+                $danaInput = $request->input('dana_yang_didapatkan', 0);
+                // Convert to numeric if string (remove any formatting)
+                if (is_string($danaInput)) {
+                    $danaInput = preg_replace('/[^0-9.]/', '', $danaInput);
+                }
+                $danaYangDidapatkan = (float) $danaInput;
+                // Ensure it's within valid range
+                if ($danaYangDidapatkan < 0) {
+                    $danaYangDidapatkan = 0;
+                }
+                if ($danaYangDidapatkan > 15000000) {
+                    $danaYangDidapatkan = 15000000;
+                }
+            }
+            
             // Update atau buat hasil final
             HasilFinal::updateOrCreate(
                 ['id_proposal' => $request->proposal_id],
                 [
                     'status_pimnas' => $request->status_pimnas,
                     'status_pendanaan' => $request->status_pendanaan,
-                    'dana_yang_didapatkan' => $request->input('dana_yang_didapatkan', 0),
+                    'dana_yang_didapatkan' => $danaYangDidapatkan,
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
                     'skor_per_kriteria' => $normalizedSkor,
@@ -263,17 +265,34 @@ class PimpinanPTController extends Controller
                 'message' => 'Hasil final berhasil diperbarui'
             ]);
             
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
             
-            Log::error('Error updating hasil final by Pimpinan PT', [
-                'error' => $e->getMessage(),
+            Log::error('Validation error updating hasil final by Pimpinan PT', [
+                'errors' => $e->errors(),
                 'proposal_id' => $request->proposal_id
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => 'Validasi gagal: ' . implode(', ', array_map(function($errors) {
+                    return implode(', ', $errors);
+                }, $e->errors())),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error updating hasil final by Pimpinan PT', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'proposal_id' => $request->proposal_id,
+                'request_data' => $request->except(['_token', 'skor'])
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan hasil final: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -293,7 +312,17 @@ class PimpinanPTController extends Controller
             }
 
             $proposal = Proposal::with(['dokumen', 'proposalRevisi' => function($query) {
-                $query->orderBy('tanggal_submit', 'desc');
+                // Prioritas: revisi_akhir dulu, baru revisi_biasa
+                // Cek apakah kolom jenis_revisi ada di database
+                if (Schema::hasColumn('proposal_revisi', 'jenis_revisi')) {
+                    $query->orderByRaw("CASE WHEN jenis_revisi = 'revisi_akhir' THEN 0 ELSE 1 END")
+                          ->orderBy('tanggal_submit', 'desc');
+                } else {
+                    // Fallback jika kolom belum ada (migration belum dijalankan)
+                    // Gunakan filter path_file sebagai fallback
+                    $query->orderByRaw("CASE WHEN path_file LIKE '%revisi_akhir%' THEN 0 ELSE 1 END")
+                      ->orderBy('tanggal_submit', 'desc');
+                }
             }])
                 ->where(function($query) use ($pimpinanPT) {
                     $query->where('status', 'pimpinan_pt')
@@ -303,70 +332,54 @@ class PimpinanPTController extends Controller
                 })
                 ->findOrFail($id);
 
-            // Tentukan file proposal yang harus ditampilkan
-            // Prioritas: revisi akhir > revisi biasa > proposal awal
-            $fileToView = null;
-            
-            // Cek revisi akhir (file dengan path mengandung 'revisi_akhir')
-            $revisiAkhir = $proposal->proposalRevisi->filter(function($revisi) {
-                return strpos($revisi->path_file, 'revisi_akhir') !== false;
-            })->first();
+            // Prioritas: Ambil revisi terakhir (terbaru berdasarkan tanggal_submit) jika ada, jika tidak ambil dokumen original
+            $revisiAkhir = $proposal->proposalRevisi->first();
             
             if ($revisiAkhir) {
-                $fileToView = $revisiAkhir;
-            } else {
-                // Cek revisi biasa (file dengan path mengandung 'revisi' tapi bukan 'revisi_akhir')
-                $revisiBiasa = $proposal->proposalRevisi->filter(function($revisi) {
-                    return strpos($revisi->path_file, 'revisi') !== false && 
-                           strpos($revisi->path_file, 'revisi_akhir') === false;
-                })->first();
+                // Gunakan revisi akhir
+                $pathFile = $revisiAkhir->path_file;
                 
-                if ($revisiBiasa) {
-                    $fileToView = $revisiBiasa;
-                } else if ($proposal->dokumen && $proposal->dokumen->path_file) {
-                    // Gunakan file proposal awal
-                    $fileToView = $proposal->dokumen;
-                }
-            }
-            
-            if ($fileToView) {
-                // Tentukan path file berdasarkan jenis
-                if ($fileToView instanceof \App\Models\ProposalRevisi) {
-                    // File revisi
-                    $pathFile = $fileToView->path_file;
-                    
-                    // Cek apakah path_file sudah termasuk 'public/' atau tidak
-                    if (strpos($pathFile, 'public/') === 0) {
-                        $path = storage_path('app/' . $pathFile);
-                    } else {
-                        $path = storage_path('app/public/' . $pathFile);
-                    }
-                    
-                    Log::info('View PDF Revisi (Pimpinan PT)', [
-                        'proposal_id' => $id,
-                        'revisi_id' => $fileToView->id_revisi,
-                        'path_file' => $pathFile,
-                        'full_path' => $path,
-                        'file_exists' => file_exists($path)
-                    ]);
+                // Cek apakah path_file sudah termasuk 'public/' atau tidak
+                if (strpos($pathFile, 'public/') === 0) {
+                    $path = storage_path('app/' . $pathFile);
                 } else {
-                    // File dokumen proposal awal
-                    $pathFile = $fileToView->path_file;
-                    
-                    // Cek apakah path_file sudah termasuk 'public/' atau tidak
-                    if (strpos($pathFile, 'public/') === 0) {
-                        $path = storage_path('app/' . $pathFile);
+                    $path = storage_path('app/public/' . $pathFile);
+                }
+                
+                Log::info('View PDF Revisi Akhir (Pimpinan PT)', [
+                    'proposal_id' => $id,
+                    'revisi_id' => $revisiAkhir->id_revisi,
+                    'path_file' => $pathFile,
+                    'full_path' => $path,
+                    'file_exists' => file_exists($path)
+                ]);
+                
+                if (!file_exists($path)) {
+                    $altPath = storage_path('app/' . $pathFile);
+                    if (file_exists($altPath)) {
+                        $path = $altPath;
                     } else {
-                        $path = storage_path('app/public/' . $pathFile);
+                        abort(404, 'File revisi akhir tidak ditemukan: ' . $path);
                     }
-                    
-                    Log::info('View PDF Proposal Awal (Pimpinan PT)', [
-                        'proposal_id' => $id,
-                        'dokumen_id' => $fileToView->id_dokumen,
-                        'path_file' => $pathFile,
-                        'full_path' => $path,
-                        'file_exists' => file_exists($path)
-                    ]);
+                }
+                
+                return response()->file($path, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . $revisiAkhir->nama_file . '"'
+                ]);
+            } else {
+                // Gunakan dokumen original
+                if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+                    abort(404, 'Dokumen tidak ditemukan.');
+                }
+
+                $pathFile = $proposal->dokumen->path_file;
+                
+                // Cek apakah path_file sudah termasuk 'public/' atau tidak
+                if (strpos($pathFile, 'public/') === 0) {
+                    $path = storage_path('app/' . $pathFile);
+                } else {
+                    $path = storage_path('app/public/' . $pathFile);
                 }
                 
                 if (!file_exists($path)) {
@@ -377,18 +390,11 @@ class PimpinanPTController extends Controller
                         abort(404, 'File tidak ditemukan: ' . $path);
                     }
                 }
-                
-                // Tentukan nama file untuk response
-                $fileName = $fileToView instanceof \App\Models\ProposalRevisi 
-                    ? $fileToView->nama_file 
-                    : basename($path);
-                
+
                 return response()->file($path, [
                     'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="' . $fileName . '"'
+                    'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
                 ]);
-            } else {
-                abort(404, 'Dokumen proposal tidak ditemukan.');
             }
         } catch (\Exception $e) {
             Log::error('Error in viewPdf (Pimpinan PT): ' . $e->getMessage(), [
@@ -410,41 +416,81 @@ class PimpinanPTController extends Controller
             abort(403, 'Akses ditolak. Hanya Pimpinan PT yang dapat mengakses halaman ini.');
         }
 
-        // Filter untuk Mahasiswa
-        $query = Mahasiswa::query();
+        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
+        $prodis = Prodi::orderBy('nama_prodi')->get();
         
+        // Cek apakah ada filter yang diterapkan
+        $hasFilter = $request->filled('filter_fakultas') || 
+                     $request->filled('filter_prodi') || 
+                     $request->filled('filter_nim') || 
+                     $request->filled('filter_nama') ||
+                     $request->filled('filter_nama_dosen') ||
+                     $request->filled('filter_nama_reviewer') ||
+                     $request->filled('filter_nama_operator') ||
+                     $request->filled('filter_nama_pimpinan_pt');
+
+        // Filter untuk Mahasiswa
+        $mahasiswaQuery = Mahasiswa::query();
+        
+        if ($hasFilter) {
         // Filter berdasarkan Fakultas
         if ($request->filled('filter_fakultas')) {
-            $fakultas = Fakultas::find($request->filter_fakultas);
-            if ($fakultas) {
-                $query->where('fakultas_mhs', $fakultas->nama_fakultas);
+                $fakultasModel = Fakultas::find($request->filter_fakultas);
+                if ($fakultasModel) {
+                    $mahasiswaQuery->where('fakultas_mhs', $fakultasModel->nama_fakultas);
             }
         }
         
         // Filter berdasarkan Prodi
         if ($request->filled('filter_prodi')) {
-            $prodi = Prodi::find($request->filter_prodi);
-            if ($prodi) {
-                $query->where('prodi_mhs', $prodi->nama_prodi);
+                $prodiModel = Prodi::find($request->filter_prodi);
+                if ($prodiModel) {
+                    $mahasiswaQuery->where('prodi_mhs', $prodiModel->nama_prodi);
             }
         }
         
         // Filter berdasarkan NIM (search)
         if ($request->filled('filter_nim')) {
-            $query->where('nim', 'like', '%' . $request->filter_nim . '%');
+                $mahasiswaQuery->where('nim', 'like', '%' . $request->filter_nim . '%');
         }
         
-        $mahasiswas = $query->orderBy('created_at', 'desc')->get();
+            // Filter berdasarkan Nama
+            if ($request->filled('filter_nama')) {
+                $mahasiswaQuery->where('nama_mhs', 'like', '%' . $request->filter_nama . '%');
+            }
+        }
         
-        // Data lainnya
-        $dosens = Dosen::orderBy('created_at', 'desc')->limit(100)->get();
-        $reviewers = Reviewer::orderBy('created_at', 'desc')->limit(100)->get();
-        $operators = PT::where('role', 'operator')->orderBy('created_at', 'desc')->limit(100)->get();
-        $pimpinanPTs = PT::where('role', 'pimpinan_pt')->orderBy('created_at', 'desc')->limit(100)->get();
-        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
-        $prodis = Prodi::orderBy('nama_prodi')->get();
+        $mahasiswas = $hasFilter ? $mahasiswaQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Dosen
+        $dosenQuery = Dosen::query();
+        if ($hasFilter && $request->filled('filter_nama_dosen')) {
+            $dosenQuery->where('nama_dosen', 'like', '%' . $request->filter_nama_dosen . '%');
+        }
+        $dosens = $hasFilter ? $dosenQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Reviewer
+        $reviewerQuery = Reviewer::query();
+        if ($hasFilter && $request->filled('filter_nama_reviewer')) {
+            $reviewerQuery->where('nama_reviewer', 'like', '%' . $request->filter_nama_reviewer . '%');
+        }
+        $reviewers = $hasFilter ? $reviewerQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Operator
+        $operatorQuery = PT::where('role', 'operator');
+        if ($hasFilter && $request->filled('filter_nama_operator')) {
+            $operatorQuery->where('nama_pt', 'like', '%' . $request->filter_nama_operator . '%');
+        }
+        $operators = $hasFilter ? $operatorQuery->orderBy('created_at', 'desc')->get() : collect();
+        
+        // Filter untuk Pimpinan PT
+        $pimpinanPTQuery = PT::where('role', 'pimpinan_pt');
+        if ($hasFilter && $request->filled('filter_nama_pimpinan_pt')) {
+            $pimpinanPTQuery->where('nama_pt', 'like', '%' . $request->filter_nama_pimpinan_pt . '%');
+        }
+        $pimpinanPTs = $hasFilter ? $pimpinanPTQuery->orderBy('created_at', 'desc')->get() : collect();
 
-        return view('pimpinan_pt.manajemen_akun', compact('mahasiswas', 'dosens', 'reviewers', 'operators', 'pimpinanPTs', 'fakultas', 'prodis'));
+        return view('pimpinan_pt.manajemen_akun', compact('mahasiswas', 'dosens', 'reviewers', 'operators', 'pimpinanPTs', 'fakultas', 'prodis', 'hasFilter'));
     }
 
     /**

@@ -91,7 +91,11 @@
                         <div class="card-body">
                             <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterForm">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Nama</label>
+                                        <input type="text" name="filter_nama" id="filterNama" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama') }}">
+                                    </div>
+                                    <div class="col-md-3">
                                         <label class="form-label">Fakultas</label>
                                         <select name="filter_fakultas" id="filterFakultas" class="form-select">
                                             <option value="">Semua Fakultas</option>
@@ -100,7 +104,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label">Prodi</label>
                                         <select name="filter_prodi" id="filterProdi" class="form-select">
                                             <option value="">Semua Prodi</option>
@@ -109,8 +113,8 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label">NIM (Search)</label>
+                                    <div class="col-md-3">
+                                        <label class="form-label">NIM</label>
                                         <input type="text" name="filter_nim" id="filterNim" class="form-control" placeholder="Cari berdasarkan NIM..." value="{{ request('filter_nim') }}">
                                     </div>
                                     <div class="col-12">
@@ -136,6 +140,12 @@
                             </div>
                         </div>
 
+                    @if(!isset($hasFilter) || !$hasFilter)
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data mahasiswa.
+                        </div>
+                    @else
                     <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead class="table-dark">
@@ -195,11 +205,39 @@
                             </tbody>
                         </table>
                     </div>
+                    @endif
                     </form>
                 </div>
 
                 <!-- Dosen -->
                 <div class="tab-pane fade" id="dosen" role="tabpanel">
+                    <!-- Filter Section -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Dosen</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterDosenForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nama</label>
+                                        <input type="text" name="filter_nama_dosen" id="filterNamaDosen" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_dosen') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
+                                        <a href="{{ route('pimpinan_pt.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if(!isset($hasFilter) || !$hasFilter)
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data dosen.
+                        </div>
+                    @else
                     <form class="row g-3 mb-4" method="POST" action="{{ route('pimpinan_pt.accounts.store', 'dosen') }}">
                         @csrf
                         <div class="col-md-4">
@@ -274,10 +312,38 @@
                             </tbody>
                         </table>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Reviewer -->
                 <div class="tab-pane fade" id="reviewer" role="tabpanel">
+                    <!-- Filter Section -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Reviewer</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterReviewerForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nama</label>
+                                        <input type="text" name="filter_nama_reviewer" id="filterNamaReviewer" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_reviewer') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
+                                        <a href="{{ route('pimpinan_pt.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if(!isset($hasFilter) || !$hasFilter)
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data reviewer.
+                        </div>
+                    @else
                     <form class="row g-3 mb-4" method="POST" action="{{ route('pimpinan_pt.accounts.store', 'reviewer') }}">
                         @csrf
                         <div class="col-md-4">
@@ -345,10 +411,38 @@
                             </tbody>
                         </table>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Operator -->
                 <div class="tab-pane fade" id="operator" role="tabpanel">
+                    <!-- Filter Section -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Operator</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterOperatorForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nama</label>
+                                        <input type="text" name="filter_nama_operator" id="filterNamaOperator" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_operator') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
+                                        <a href="{{ route('pimpinan_pt.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if(!isset($hasFilter) || !$hasFilter)
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data operator.
+                        </div>
+                    @else
                     <form class="row g-3 mb-4" method="POST" action="{{ route('pimpinan_pt.accounts.store', 'operator') }}">
                         @csrf
                         <div class="col-md-4">
@@ -416,10 +510,38 @@
                             </tbody>
                         </table>
                     </div>
+                    @endif
                 </div>
 
                 <!-- Pimpinan PT -->
                 <div class="tab-pane fade" id="pimpinan-pt" role="tabpanel">
+                    <!-- Filter Section -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Pimpinan PT</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterPimpinanPTForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nama</label>
+                                        <input type="text" name="filter_nama_pimpinan_pt" id="filterNamaPimpinanPT" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_pimpinan_pt') }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
+                                        <a href="{{ route('pimpinan_pt.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if(!isset($hasFilter) || !$hasFilter)
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data pimpinan PT.
+                        </div>
+                    @else
                     <form class="row g-3 mb-4" method="POST" action="{{ route('pimpinan_pt.accounts.store', 'pimpinan_pt') }}">
                         @csrf
                         <div class="col-md-4">
@@ -491,6 +613,7 @@
                             </tbody>
                         </table>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

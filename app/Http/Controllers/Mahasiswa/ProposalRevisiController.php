@@ -160,6 +160,7 @@ class ProposalRevisiController extends Controller
             $revisi->nama_file = $originalName;
             $revisi->path_file = $path;
             $revisi->tanggal_submit = now();
+            $revisi->jenis_revisi = 'revisi_biasa'; // Revisi biasa untuk hasil semi final
             $revisi->save();
 
             $message = $revisiLama 

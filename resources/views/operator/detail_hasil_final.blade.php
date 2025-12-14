@@ -193,7 +193,7 @@
 
     <!-- Mahasiswa Information -->
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <div class="card card-custom">
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
@@ -217,6 +217,47 @@
                             <p><strong>Nama:</strong> {{ $proposal->dosen_pembimbing }}</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Proposal Terbaru Mahasiswa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($latestProposals->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($latestProposals as $latest)
+                                <div class="list-group-item px-0 py-2 border-bottom">
+                                    <h6 class="mb-1" style="font-size: 0.9rem;">
+                                        <a href="{{ route('operator.detail.hasil.final', $latest->id_proposal) }}" class="text-decoration-none">
+                                            {{ Str::limit($latest->judul_proposal, 50) }}
+                                        </a>
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="text-muted">
+                                            <span class="badge bg-secondary">{{ $latest->skim }}</span>
+                                            <span class="badge bg-{{ $latest->status == 'lolos' ? 'success' : ($latest->status == 'revisi' ? 'warning' : 'danger') }}">
+                                                {{ ucfirst($latest->status) }}
+                                            </span>
+                                        </small>
+                                        <small class="text-muted">
+                                            {{ \Carbon\Carbon::parse($latest->tanggal_pengajuan)->format('d M Y') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Tidak ada proposal lain dari mahasiswa ini.
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>

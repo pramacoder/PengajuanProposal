@@ -695,46 +695,44 @@
         </form>
     </div>
 
-    <!-- File Revisi Aktif -->
+    <!-- Daftar File Revisi -->
     @if($revisi->count() > 0)
     <div class="revisi-section">
         <h4 class="section-title">
-            <i class="fas fa-file-pdf me-2"></i>File Revisi
+            <i class="fas fa-history me-2"></i>Riwayat File Revisi
         </h4>
         
-        @php
-            $revisiAktif = $revisi->first(); // Ambil file revisi terbaru (hanya ada 1)
-        @endphp
-        
-        <div class="revisi-item">
-            <div class="d-flex align-items-start">
-                <div class="file-icon me-3">
-                    <i class="fas fa-file-pdf"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="mb-1">{{ $revisiAktif->nama_file }}</h6>
-                    <p class="text-muted mb-2">
-                        <small>
-                            <i class="fas fa-calendar me-1"></i>
-                            {{ \Carbon\Carbon::parse($revisiAktif->tanggal_submit)->format('d M Y H:i') }}
-                        </small>
-                    </p>
-                    <div class="alert alert-info mb-2">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <small>Jika Anda mengupload file revisi baru, file ini akan otomatis digantikan.</small>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('mahasiswa.revisi.download', $revisiAktif->id_revisi) }}" 
-                           class="btn btn-download btn-action">
-                            <i class="fas fa-download me-1"></i>Download
-                        </a>
-                        <button type="button" class="btn btn-delete btn-action" 
-                                onclick="deleteRevisi({{ $revisiAktif->id_revisi }})">
-                            <i class="fas fa-trash me-1"></i>Hapus
-                        </button>
+        <div class="row">
+            @foreach($revisi as $item)
+            <div class="col-md-6 mb-3">
+                <div class="revisi-item">
+                    <div class="d-flex align-items-start">
+                        <div class="file-icon me-3">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ $item->nama_file }}</h6>
+                            <p class="text-muted mb-2">
+                                <small>
+                                    <i class="fas fa-calendar me-1"></i>
+                                    {{ \Carbon\Carbon::parse($item->tanggal_submit)->format('d M Y H:i') }}
+                                </small>
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('mahasiswa.revisi.download', $item->id_revisi) }}" 
+                                   class="btn btn-download btn-action">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
+                                <button type="button" class="btn btn-delete btn-action" 
+                                        onclick="deleteRevisi({{ $item->id_revisi }})">
+                                    <i class="fas fa-trash me-1"></i>Hapus
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+            @endforeach
         </div>
     </div>
     @endif
@@ -872,80 +870,30 @@
 
     function deleteRevisi(id) {
         deleteId = id;
-        const modalElement = document.getElementById('deleteModal');
-        if (modalElement) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
-        } else {
-            console.error('Modal tidak ditemukan');
-            if (confirm('Apakah Anda yakin ingin menghapus file revisi ini?')) {
-                submitDelete(id);
-            }
-        }
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
     }
 
-    function submitDelete(id) {
-        if (!id) {
-            console.error('ID tidak valid');
-            return;
-        }
-
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `{{ url('/mahasiswa/revisi') }}/${id}`;
-        
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = '_token';
-        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        if (csrfMeta) {
-            csrfToken.value = csrfMeta.getAttribute('content');
-        } else {
-            console.error('CSRF token tidak ditemukan');
-            showToast('CSRF token tidak ditemukan. Silakan refresh halaman.', 'error');
-            return;
-        }
-        
-        const methodField = document.createElement('input');
-        methodField.type = 'hidden';
-        methodField.name = '_method';
-        methodField.value = 'DELETE';
-        
-        form.appendChild(csrfToken);
-        form.appendChild(methodField);
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    // Initialize delete confirmation on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const confirmDeleteBtn = document.getElementById('confirmDelete');
-        if (confirmDeleteBtn) {
-            // Remove existing event listeners if any
-            const newConfirmDeleteBtn = confirmDeleteBtn.cloneNode(true);
-            confirmDeleteBtn.parentNode.replaceChild(newConfirmDeleteBtn, confirmDeleteBtn);
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (deleteId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/mahasiswa/revisi/${deleteId}`;
             
-            newConfirmDeleteBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (deleteId) {
-                    // Close modal first
-                    const modalElement = document.getElementById('deleteModal');
-                    if (modalElement) {
-                        const modal = bootstrap.Modal.getInstance(modalElement);
-                        if (modal) {
-                            modal.hide();
-                        }
-                    }
-                    // Submit delete
-                    setTimeout(() => {
-                        submitDelete(deleteId);
-                    }, 300);
-                } else {
-                    showToast('ID file tidak valid', 'error');
-                }
-            });
-        } else {
-            console.warn('Tombol confirmDelete tidak ditemukan');
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            const methodField = document.createElement('input');
+            methodField.type = 'hidden';
+            methodField.name = '_method';
+            methodField.value = 'DELETE';
+            
+            form.appendChild(csrfToken);
+            form.appendChild(methodField);
+            document.body.appendChild(form);
+            form.submit();
         }
     });
 

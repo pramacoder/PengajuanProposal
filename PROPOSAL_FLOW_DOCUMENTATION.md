@@ -2,7 +2,7 @@
 
 ## 🎯 Overview
 
-Dokumen ini menjelaskan alur lengkap dokumen proposal PDF dari upload oleh mahasiswa hingga diakses oleh berbagai role pengguna (Mahasiswa, Dosen, Reviewer, Operator, Pimpinan PT) dalam sistem pengajuan proposal PKM.
+Dokumen ini menjelaskan alur lengkap dokumen proposal PDF dari upload oleh mahasiswa hingga diakses oleh berbagai role pengguna (Dosen, Reviewer, Operator) dalam sistem pengajuan proposal PKM.
 
 ---
 
@@ -218,191 +218,237 @@ review_administratif → review_substantif → revisi
 
 ### **FASE 5: REVISI OLEH MAHASISWA** 🔄
 
-#### **5.1. Upload Revisi**
+#### **5.1. Upload Revisi (Revisi Pertama)**
 **User:** Mahasiswa  
 **Lokasi:** `/mahasiswa/proposal/{id}/revisi`  
 **Controller:** `ProposalRevisiController@store`
 
 **Proses:**
-1. Mahasiswa melihat catatan review
-2. Upload file revisi (jika diperlukan)
+1. Mahasiswa melihat catatan review dari reviewer substantif
+2. Upload file revisi pertama (jika diperlukan)
 3. File revisi disimpan di: `storage/app/public/proposal_revisi/`
-4. Status tetap `revisi` atau berubah sesuai keputusan operator
+4. File name format: `revisi_[timestamp]_[original_name].pdf`
+5. Status proposal tetap `revisi` atau berubah sesuai keputusan operator
+6. **Revisi pertama ini digunakan untuk penilaian Hasil Semi Final**
+
+**Catatan:**
+- Mahasiswa dapat melakukan beberapa kali revisi (revisi 1, revisi 2, dll)
+- Semua file revisi disimpan di tabel `proposal_revisi`
+- Revisi terakhir (berdasarkan `tanggal_submit`) yang digunakan untuk penilaian
 
 ---
 
-### **FASE 6: HASIL FINAL** 🎯
+### **FASE 6: HASIL SEMI FINAL OLEH OPERATOR** 🎯
 
-#### **6.1. Penilaian Hasil Final oleh Operator**
+#### **6.1. Penilaian Hasil Semi Final oleh Operator**
 **User:** Operator  
-**Lokasi:** `/operator/detail-hasil-final/{id}`  
-**Controller:** `OperatorController@detailHasilFinal` dan `updateHasilFinal`
+**Lokasi:** `/operator/detail-hasil-semi-final/{id}`  
+**Controller:** `OperatorController@detailHasilSemiFinal` dan `updateHasilSemiFinal`
 
 **Proses:**
-1. Operator membuka halaman detail hasil final
+1. Operator membuka halaman detail hasil semi final
 2. **PDF proposal** ditampilkan di bagian atas untuk referensi:
-   - **Prioritas PDF**: Jika ada revisi akhir, tampilkan revisi akhir; jika tidak, tampilkan dokumen original
-   - **Revisi akhir**: File yang diupload mahasiswa setelah hasil final operator (status: `revisi_akhir`)
-   - **Dokumen original**: File proposal pertama kali diupload
+   - **Prioritas**: Menampilkan revisi terakhir dari `proposal_revisi` (jika ada)
+   - Jika tidak ada revisi, tampilkan dokumen original
 3. **Tabel referensi** menampilkan penilaian dari 2 reviewer substantif:
    - Tabel Reviewer Substantif 1 (dengan nama reviewer)
    - Tabel Reviewer Substantif 2 (dengan nama reviewer)
    - Menampilkan: Kriteria, Bobot, Skor, Nilai, Total, dan Nilai Akhir
-4. **Form penilaian final** dengan struktur yang sama seperti review substantif:
+4. **Form penilaian semi final** dengan struktur yang sama seperti review substantif:
    - Kriteria dinamis sesuai skim proposal
    - Struktur hierarkis (kriteria utama + sub-kriteria)
    - Operator memberikan skor 0-10 untuk setiap kriteria
    - Perhitungan nilai otomatis: Nilai = Bobot × Skor
    - Nilai akhir = Total Nilai / 10
 5. Operator mengisi:
-   - **Status Final**: Lolos / Tidak Lolos
+   - **Status Final**: Lolos Tingkat Universitas / Tidak Lolos Tingkat Universitas
    - **Nilai Final**: Terisi otomatis dari penilaian (readonly)
    - **Dana yang Dapat Diberikan**: Input manual oleh operator (opsional)
    - **Catatan Final**: Catatan untuk mahasiswa (minimal 50 karakter jika diisi)
+   - **Dosen Pendamping Universitas**: Dipilih jika status "Lolos Tingkat Universitas"
 6. Submit → Data disimpan:
-   - `status_final`: lolos / tidak_lolos
+   - `status_final`: lolos_tingkat_universitas / tidak_lolos_tingkat_universitas
    - `nilai` (decimal): Nilai akhir (0-100.00)
    - `skor_per_kriteria` (JSON): Array skor per kriteria dari operator
    - `dana_yang_dapat_diberikan` (decimal): Dana yang dapat diberikan
    - `catatan_final` (text): Catatan untuk mahasiswa
-   - `id_pt` (foreign key): ID PT yang melakukan penilaian
-7. Status proposal berubah sesuai `status_final`:
-   - Jika `lolos` → Status: `revisi_akhir` (mahasiswa perlu upload revisi akhir)
-   - Jika `tidak_lolos` → Status: `tidak_lolos`
+   - `id_dosen_pendamping_universitas`: ID dosen yang ditugaskan (jika lolos)
+   - `id_pt`: ID operator yang melakukan penilaian
+7. Status proposal berubah:
+   - Jika `lolos_tingkat_universitas` → Status menjadi `revisi_akhir`
+   - Jika `tidak_lolos_tingkat_universitas` → Status menjadi `tidak_lolos`
 
 **Catatan Penting:**
-- Review administratif **tidak mempengaruhi** nilai substantif maupun hasil final
+- Review administratif **tidak mempengaruhi** nilai substantif maupun hasil semi final
 - Penilaian operator **independen** dari penilaian reviewer substantif
 - Tabel reviewer substantif hanya sebagai **referensi** untuk operator
-- **Validasi**: `catatan_final` minimal 50 karakter jika diisi
-- **PDF Revisi**: Jika ada revisi akhir, sistem akan menampilkan revisi akhir terlebih dahulu
+- Data disimpan di tabel `hasil_semi_finals`
+- **Revisi yang digunakan**: Revisi terakhir dari `proposal_revisi` (revisi pertama, revisi kedua, dll)
 
-#### **6.2. Pengumuman Hasil**
-**User:** Operator / Dosen  
-**Lokasi:** `/operator/hasil_final`  
-**Controller:** `OperatorController@hasilFinal`
+---
 
-**Status Final:**
-- `lolos` → Proposal disetujui
-- `tidak_lolos` → Proposal ditolak
+### **FASE 7: REVISI AKHIR OLEH MAHASISWA** 🔄
 
-#### **6.3. Revisi Akhir oleh Mahasiswa** (Jika Lolos dari Operator)
+#### **7.1. Upload Revisi Akhir**
 **User:** Mahasiswa  
 **Lokasi:** `/mahasiswa/proposal/{id}/revisi-akhir`  
 **Controller:** `ProposalController@showRevisiAkhirForm` dan `submitRevisiAkhir`
 
 **Proses:**
-1. Mahasiswa melihat hasil final dari operator (status: `lolos`)
-2. Status proposal berubah ke `revisi_akhir`
-3. Mahasiswa upload file revisi akhir:
-   - File disimpan di: `storage/app/public/proposals/revisi_akhir/`
-   - Format: PDF (maksimal 5MB)
-   - Nama file: `revisi_akhir_[timestamp]_[original_name].pdf`
-4. Submit revisi akhir → Status berubah ke `validasi_akhir_dosen_univ`
-5. Data disimpan di tabel `proposal_revisi`:
-   - `id_proposal` (Foreign Key)
-   - `path_file` (Path ke file revisi akhir)
-   - `nama_file` (Nama file revisi akhir)
-   - `tanggal_submit` (Timestamp upload)
+1. Mahasiswa melihat notifikasi bahwa proposal perlu revisi akhir
+2. Status proposal: `revisi_akhir`
+3. Upload file revisi akhir (maksimal 5MB, format PDF only)
+4. File revisi akhir disimpan di: `storage/app/public/proposals/revisi_akhir/`
+5. File name format: `revisi_akhir_[timestamp]_[original_name].pdf`
+6. Submit → Status proposal berubah ke `validasi_akhir_dosen_univ`
 
-**Catatan:**
-- Revisi akhir hanya bisa diupload jika status proposal adalah `revisi_akhir`
-- Setelah upload, proposal akan divalidasi oleh dosen pendamping universitas
+**Perbedaan dengan Revisi Biasa (Revisi Pertama):**
+- **Revisi Biasa (Revisi Pertama)**: 
+  - Disimpan di `proposal_revisi/`
+  - Status `revisi`
+  - Digunakan untuk penilaian **Hasil Semi Final** oleh Operator
+- **Revisi Akhir**: 
+  - Disimpan di `proposals/revisi_akhir/`
+  - Status `revisi_akhir` → `validasi_akhir_dosen_univ`
+  - Digunakan untuk penilaian **Hasil Final** oleh Pimpinan PT
+- Revisi akhir **diprioritaskan** saat view PDF oleh Dosen Universitas dan Pimpinan PT
 
-#### **6.4. Validasi Akhir oleh Dosen Universitas**
+**Kode:**
+```php
+// app/Http/Controllers/ProposalController.php
+$filePath = $revisiFile->storeAs('proposals/revisi_akhir', $fileName, 'public');
+$proposal->update([
+    'status' => 'validasi_akhir_dosen_univ',
+    'status_final' => 'validasi_akhir_dosen_univ'
+]);
+```
+
+---
+
+### **FASE 8: VALIDASI AKHIR OLEH DOSEN UNIVERSITAS** ✅
+
+#### **8.1. Validasi Akhir Proposal**
 **User:** Dosen Pendamping Universitas  
-**Lokasi:** `/dosen/validasi-akhir`  
+**Lokasi:** `/dosen/universitas/validasi-akhir`  
 **Controller:** `DosenController@validasiAkhirProposal` dan `detailValidasiAkhir`
 
 **Proses:**
-1. Dosen melihat daftar proposal yang perlu divalidasi akhir (status: `validasi_akhir_dosen_univ`)
-2. Klik detail proposal untuk melihat dokumen revisi akhir
-3. **PDF revisi akhir** ditampilkan menggunakan iframe:
-   - Prioritas: Tampilkan revisi akhir jika ada
-   - Jika tidak ada revisi akhir, tampilkan dokumen original
-4. Dosen melakukan validasi:
-   - **Set Valid** → Status berubah ke `pimpinan_pt` (siap untuk penilaian Pimpinan PT)
-   - **Set Tidak Valid** → Status kembali ke `revisi_akhir` (mahasiswa perlu perbaiki lagi)
-5. View PDF Revisi Akhir:
-   - Route: `/dosen/revisi-akhir/{id}/view-pdf`
-   - Controller: `DosenController@viewPdfRevisiAkhir`
-   - PDF ditampilkan inline di browser
+1. Dosen Universitas melihat daftar proposal yang perlu divalidasi akhir
+2. Status proposal: `validasi_akhir_dosen_univ`
+3. Klik detail proposal untuk melihat dokumen
+4. **PDF ditampilkan dengan prioritas:**
+   - Jika ada **revisi akhir** → Tampilkan revisi akhir
+   - Jika tidak ada → Tampilkan dokumen original
+5. Dosen Universitas melakukan validasi:
+   - **Set Valid** → Status berubah ke `pimpinan_pt`
+   - **Set Tidak Valid** → Status berubah ke `revisi_akhir` (kembali ke mahasiswa)
+6. Jika ditolak, dosen dapat upload file review (opsional PDF)
 
-**Catatan:**
-- Validasi akhir dilakukan oleh dosen pendamping universitas
-- Jika valid, proposal akan dinilai oleh Pimpinan PT
-- Jika tidak valid, mahasiswa perlu upload revisi lagi
+**View PDF:**
+```php
+// app/Http/Controllers/DosenController.php
+$proposal = Proposal::with(['proposalRevisi' => function($query) {
+    $query->where('path_file', 'like', '%revisi_akhir%')
+          ->orderBy('tanggal_submit', 'desc');
+}])->findOrFail($id);
 
-#### **6.5. Penilaian Hasil Final oleh Pimpinan PT**
+// Prioritas: Revisi akhir jika ada, jika tidak ambil dokumen original
+$revisiAkhir = $proposal->proposalRevisi->first();
+```
+
+**Status setelah validasi:**
+- Jika `valid` → Proposal masuk ke Pimpinan PT untuk penilaian final
+- Jika `tidak_valid` → Proposal kembali ke mahasiswa untuk revisi akhir ulang
+
+---
+
+### **FASE 9: HASIL FINAL OLEH PIMPINAN PT** 🏆
+
+#### **9.1. Penilaian Hasil Final oleh Pimpinan PT**
 **User:** Pimpinan PT  
-**Lokasi:** `/pimpinan-pt/dashboard` dan `/pimpinan-pt/detail-hasil-final/{id}`  
-**Controller:** `PimpinanPTController@dashboard`, `detailHasilFinal`, dan `updateHasilFinal`
+**Lokasi:** `/pimpinan-pt/detail-hasil-final/{id}`  
+**Controller:** `PimpinanPTController@detailHasilFinal` dan `updateHasilFinal`
 
 **Proses:**
-1. Pimpinan PT melihat dashboard proposal yang perlu dinilai (status: `pimpinan_pt`)
-2. Klik detail proposal untuk melihat hasil final
-3. **PDF revisi akhir** ditampilkan di bagian atas:
-   - Prioritas: Tampilkan revisi akhir jika ada
-   - Jika tidak ada revisi akhir, tampilkan dokumen original
-   - Route: `/pimpinan-pt/proposal/{id}/view-pdf`
-4. **Tabel referensi** menampilkan penilaian dari 2 reviewer substantif (sama seperti operator)
-5. **Form penilaian final** dengan struktur yang sama seperti review substantif:
+1. Pimpinan PT melihat daftar proposal yang perlu dinilai final
+2. Status proposal: `pimpinan_pt`
+3. Klik detail proposal untuk melihat dokumen
+4. **PDF ditampilkan dengan prioritas:**
+   - Jika ada **revisi akhir** (dari `proposals/revisi_akhir/`) → Tampilkan revisi akhir
+   - Jika tidak ada revisi akhir, cek **revisi terakhir** dari `proposal_revisi/` → Tampilkan revisi terakhir
+   - Jika tidak ada revisi sama sekali → Tampilkan dokumen original
+5. **Tabel referensi** menampilkan penilaian dari 2 reviewer substantif (sama seperti operator)
+6. **Form penilaian final** dengan struktur yang sama seperti review substantif:
    - Kriteria dinamis sesuai skim proposal
    - Struktur hierarkis (kriteria utama + sub-kriteria)
    - Pimpinan PT memberikan skor 0-10 untuk setiap kriteria
    - Perhitungan nilai otomatis: Nilai = Bobot × Skor
    - Nilai akhir = Total Nilai / 10
-6. Pimpinan PT mengisi:
+7. Pimpinan PT mengisi:
    - **Status PIMNAS**: Lolos / Tidak Lolos
    - **Status Pendanaan**: Lolos / Tidak Lolos
    - **Dana yang Didapatkan**: 
-     - Jika status pendanaan "tidak lolos" → Otomatis 0, field disabled
-     - Jika status pendanaan "lolos" → Input manual, maksimal Rp 15.000.000
-   - **Catatan Final**: Catatan untuk mahasiswa (opsional)
+     - Jika `status_pendanaan` = `lolos` → Input 0-15,000,000 (wajib)
+     - Jika `status_pendanaan` = `tidak_lolos` → Otomatis 0 (tidak bisa diubah)
    - **Nilai Final**: Terisi otomatis dari penilaian (readonly)
-7. Submit → Data disimpan:
+   - **Catatan Final**: Catatan untuk mahasiswa
+8. Submit → Data disimpan:
    - `status_pimnas`: lolos / tidak_lolos
    - `status_pendanaan`: lolos / tidak_lolos
-   - `dana_yang_didapatkan` (decimal): Dana yang didapatkan (0 jika tidak lolos, max 15.000.000 jika lolos)
+   - `dana_yang_didapatkan` (decimal): 0-15,000,000 (jika lolos pendanaan), 0 (jika tidak)
    - `nilai` (decimal): Nilai akhir (0-100.00)
    - `skor_per_kriteria` (JSON): Array skor per kriteria dari Pimpinan PT
    - `catatan_final` (text): Catatan untuk mahasiswa
-   - `id_pimpinan_pt` (foreign key): ID PT yang melakukan penilaian
-8. Status proposal berubah sesuai kombinasi status:
-   - Jika `status_pimnas` = `lolos` dan `status_pendanaan` = `lolos` → Status: `lolos_pimnas_pendanaan`
-   - Jika `status_pimnas` = `lolos` dan `status_pendanaan` = `tidak_lolos` → Status: `lolos_pimnas_tidak_pendanaan`
-   - Jika `status_pimnas` = `tidak_lolos` dan `status_pendanaan` = `lolos` → Status: `tidak_lolos_pimnas_lolos_pendanaan`
-   - Jika keduanya `tidak_lolos` → Status: `tidak_lolos`
+   - `id_pimpinan_pt`: ID Pimpinan PT yang melakukan penilaian
+9. Status proposal berubah:
+   - Jika `status_pimnas` = `lolos` dan `status_pendanaan` = `lolos` → `lolos_pimnas_pendanaan`
+   - Jika `status_pimnas` = `lolos` dan `status_pendanaan` = `tidak_lolos` → `lolos_pimnas_tidak_pendanaan`
+   - Jika `status_pimnas` = `tidak_lolos` dan `status_pendanaan` = `lolos` → `tidak_lolos_pimnas_lolos_pendanaan`
+   - Jika keduanya `tidak_lolos` → `tidak_lolos`
 
 **Catatan Penting:**
-- Penilaian Pimpinan PT **independen** dari penilaian operator
-- **Validasi dana**: Jika status pendanaan "tidak lolos", dana otomatis 0 dan tidak bisa diubah
-- **Validasi dana**: Jika status pendanaan "lolos", dana maksimal Rp 15.000.000
-- **PDF Revisi**: Sistem akan menampilkan revisi akhir terlebih dahulu jika ada
+- Penilaian Pimpinan PT **independen** dari penilaian operator dan reviewer
+- Tabel reviewer substantif hanya sebagai **referensi**
+- Data disimpan di tabel `hasil_finals`
+- Field `dana_yang_didapatkan` memiliki validasi khusus berdasarkan `status_pendanaan`
 
-#### **6.6. Manajemen Akun oleh Pimpinan PT**
+**Validasi:**
+```php
+// app/Http/Controllers/PimpinanPTController.php
+'dana_yang_didapatkan' => 'required_if:status_pendanaan,lolos|nullable|numeric|min:0|max:15000000'
+```
+
+#### **9.2. Manajemen Akun oleh Pimpinan PT**
 **User:** Pimpinan PT  
 **Lokasi:** `/pimpinan-pt/akun`  
-**Controller:** `PimpinanPTController@manageAccounts`, `storeAccount`, `updateAccount`, `deleteAccount`
+**Controller:** `PimpinanPTController@manageAccounts`
 
 **Fitur:**
-- ✅ Mengelola semua jenis user: Mahasiswa, Dosen, Reviewer, Operator, Pimpinan PT
-- ✅ Create, Update, Delete akun
-- ✅ Bulk delete untuk mahasiswa
-- ✅ Filter dan pencarian akun
-- ✅ Sama seperti manajemen akun operator
+- Pimpinan PT dapat mengelola semua jenis user:
+  - Mahasiswa
+  - Dosen
+  - Reviewer
+  - Operator
+  - Pimpinan PT
+- Fitur CRUD lengkap untuk semua user types
+- Bulk delete untuk mahasiswa
 
-#### **6.7. Akses Hasil oleh Mahasiswa**
+---
+
+### **FASE 10: PENGUMUMAN HASIL FINAL** 📢
+
+#### **10.1. Akses Hasil oleh Mahasiswa**
 **User:** Mahasiswa  
 **Lokasi:** `/mahasiswa/proposal` → Popup "Hasil Final"  
 **Fitur:**
-- Lihat status final dari Pimpinan PT:
+- Lihat status final:
   - Status PIMNAS (Lolos/Tidak Lolos)
   - Status Pendanaan (Lolos/Tidak Lolos)
 - Lihat nilai final
-- **Lihat dana yang didapatkan** (jika status pendanaan "lolos")
+- **Lihat dana yang didapatkan** (jika status pendanaan = lolos)
 - Lihat catatan final
 - Download dokumen proposal
+- Download dokumen revisi (jika ada)
 - Download dokumen revisi akhir (jika ada)
 
 ---
@@ -480,47 +526,50 @@ review_administratif → review_substantif → revisi
 ┌─────────────────────────────────────────────────────────────┐
 │                    OPERATOR                                 │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │ 7. Hasil Final                                       │  │
-│  │    → View PDF (prioritas: revisi akhir > original)   │  │
+│  │ 7. Hasil Semi Final                                  │  │
+│  │    → View PDF proposal untuk referensi                │  │
 │  │    → Lihat penilaian 2 reviewer substantif            │  │
-│  │    → Form penilaian final (sama seperti substantif)   │  │
-│  │    → Input: Status, Nilai, Dana, Catatan              │  │
-│  │    → Status: lolos → revisi_akhir                    │  │
-│  │    → Status: tidak_lolos → tidak_lolos              │  │
+│  │    → Form penilaian final (sama seperti substantif) │  │
+│  │    → Input: Status, Nilai, Dana, Catatan, Dosen Univ│  │
+│  │    → Status: lolos_tingkat_universitas / tidak_lolos │  │
+│  │    → Jika lolos → Status: revisi_akhir              │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    MAHASISWA                                │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │ 8. Revisi Akhir (jika lolos)                         │  │
+│  │ 8. Revisi Akhir                                      │  │
 │  │    → Upload revisi akhir:                            │  │
 │  │      proposals/revisi_akhir/[file].pdf              │  │
-│  │    → Status: validasi_akhir_dosen_univ             │  │
+│  │    → Status: validasi_akhir_dosen_univ              │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    DOSEN UNIVERSITAS                       │
+│                    DOSEN UNIVERSITAS                        │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ 9. Validasi Akhir                                    │  │
-│  │    → View PDF revisi akhir                           │  │
-│  │    → Valid → Status: pimpinan_pt                    │  │
-│  │    → Tidak Valid → Status: revisi_akhir              │  │
+│  │    → View PDF: Prioritas revisi akhir jika ada        │  │
+│  │    → Validasi: valid / tidak_valid                    │  │
+│  │    → Jika valid → Status: pimpinan_pt               │  │
+│  │    → Jika tidak valid → Status: revisi_akhir        │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    PIMPINAN PT                              │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │ 10. Hasil Final Pimpinan PT                          │  │
-│  │     → View PDF revisi akhir (prioritas)              │  │
+│  │ 10. Hasil Final                                      │  │
+│  │     → View PDF: Prioritas revisi akhir jika ada       │  │
 │  │     → Lihat penilaian 2 reviewer substantif           │  │
-│  │     → Form penilaian final                            │  │
+│  │     → Form penilaian final (sama seperti substantif)  │  │
 │  │     → Input: Status PIMNAS, Status Pendanaan,         │  │
-│  │              Dana (max 15.000.000), Catatan          │  │
-│  │     → Status: lolos_pimnas_pendanaan /               │  │
-│  │              tidak_lolos / dll                       │  │
+│  │              Dana (0-15M jika lolos), Nilai, Catatan  │  │
+│  │     → Status: lolos_pimnas_pendanaan /                │  │
+│  │              lolos_pimnas_tidak_pendanaan /           │  │
+│  │              tidak_lolos_pimnas_lolos_pendanaan /     │  │
+│  │              tidak_lolos                              │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
                           ↓
@@ -530,8 +579,8 @@ review_administratif → review_substantif → revisi
 │  │ 11. Lihat Hasil Final                                │  │
 │  │     → Status PIMNAS, Status Pendanaan                │  │
 │  │     → Nilai final                                    │  │
-│  │     → Dana yang didapatkan (jika lolos)              │  │
-│  │     → Catatan final                                   │  │
+│  │     → Dana yang didapatkan (jika lolos pendanaan)    │  │
+│  │     → Catatan final                                  │  │
 │  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -562,16 +611,23 @@ review_administratif → review_substantif → revisi
 - ✅ Bisa akses semua proposal
 - ✅ Bisa view dan download semua PDF
 - ✅ Bisa assign reviewer
-- ✅ Bisa set hasil final
-- ✅ Bisa melihat revisi akhir jika ada
-- ✅ Bisa mengelola semua jenis akun (Mahasiswa, Dosen, Reviewer, Operator, Pimpinan PT)
+- ✅ Bisa set hasil semi final
+- ✅ Bisa assign Dosen Pendamping Universitas
 
-### **5. Pimpinan PT**
-- ✅ Bisa akses proposal yang sudah divalidasi dosen universitas (status: `pimpinan_pt`)
-- ✅ Bisa view dan download PDF (prioritas: revisi akhir > original)
-- ✅ Bisa set hasil final (status PIMNAS, status pendanaan, dana)
-- ✅ Bisa mengelola semua jenis akun (Mahasiswa, Dosen, Reviewer, Operator, Pimpinan PT)
-- ❌ Tidak bisa akses proposal yang belum divalidasi dosen universitas
+### **5. Dosen Pendamping Universitas**
+- ✅ Bisa akses proposal yang di-assign kepadanya untuk validasi akhir
+- ✅ Bisa view PDF dengan prioritas revisi akhir jika ada
+- ✅ Bisa validasi akhir proposal
+- ✅ Bisa upload file review (opsional)
+- ❌ Tidak bisa akses proposal yang tidak di-assign
+
+### **6. Pimpinan PT**
+- ✅ Bisa akses proposal dengan status `pimpinan_pt` dan proposal yang sudah dinilai
+- ✅ Bisa view PDF dengan prioritas revisi akhir jika ada
+- ✅ Bisa melakukan penilaian final dengan status PIMNAS dan pendanaan
+- ✅ Bisa mengelola semua jenis user (Mahasiswa, Dosen, Reviewer, Operator, Pimpinan PT)
+- ✅ Bisa mengakses semua menu operator
+- ❌ Tidak bisa menghapus akun sendiri
 
 ---
 
@@ -582,16 +638,22 @@ storage/app/public/
 ├── proposals/              # File proposal utama
 │   ├── proposal_1.pdf
 │   ├── proposal_2.pdf
-│   ├── revisi_akhir/      # File revisi akhir (setelah hasil final operator)
-│   │   ├── revisi_akhir_1234567890_proposal_1.pdf
+│   ├── revisi_akhir/      # File revisi akhir (prioritas tinggi)
+│   │   ├── revisi_akhir_[timestamp]_[name].pdf
 │   │   └── ...
-│   └── ...
-├── proposal_revisi/        # File revisi proposal (setelah review substantif)
+│   └── review_akhir/       # File review dari dosen universitas (opsional)
+│       └── ...
+├── proposal_revisi/        # File revisi proposal (revisi biasa)
 │   ├── revisi_1.pdf
 │   └── ...
 └── persetujuan/            # File persetujuan (jika ada)
     └── ...
 ```
+
+**Prioritas View PDF:**
+1. **Revisi Akhir** (`proposals/revisi_akhir/`) - Diprioritaskan oleh Dosen Universitas dan Pimpinan PT
+2. **Dokumen Original** (`proposals/`) - Fallback jika tidak ada revisi akhir
+3. **Revisi Biasa** (`proposal_revisi/`) - Untuk referensi historis
 
 **Symlink:** `public/storage` → `storage/app/public`
 
@@ -630,23 +692,27 @@ Storage::url($proposal->dokumen->path_file);
 
 ## 📊 STATUS PROPOSAL & AKSES DOKUMEN
 
-| Status | Mahasiswa | Dosen | Reviewer | Operator | Pimpinan PT |
-|--------|-----------|-------|----------|----------|-------------|
-| `submitted` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ❌ |
-| `pending` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ❌ |
-| `valid` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ❌ |
-| `tidak_valid` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ❌ |
-| `review_administratif` | ✅ View/Download | ✅ View/Download | ✅ (Assigned) | ✅ View/Download | ❌ |
-| `review_substantif` | ✅ View/Download | ✅ View/Download | ✅ (Assigned) | ✅ View/Download | ❌ |
-| `revisi` | ✅ View/Download | ✅ View/Download | ✅ (Assigned) | ✅ View/Download | ❌ |
-| `revisi_akhir` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ❌ |
-| `validasi_akhir_dosen_univ` | ✅ View/Download | ✅ (Assigned) | ❌ | ✅ View/Download | ❌ |
-| `pimpinan_pt` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
-| `lolos` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
-| `tidak_lolos` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
-| `lolos_pimnas_pendanaan` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
-| `lolos_pimnas_tidak_pendanaan` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
-| `tidak_lolos_pimnas_lolos_pendanaan` | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
+| Status | Mahasiswa | Dosen Pendamping | Dosen Universitas | Reviewer | Operator | Pimpinan PT |
+|--------|-----------|------------------|-------------------|----------|----------|-------------|
+| `submitted` | ✅ View/Download | ✅ View/Download | ❌ | ❌ | ✅ View/Download | ❌ |
+| `pending` | ✅ View/Download | ✅ View/Download | ❌ | ❌ | ✅ View/Download | ❌ |
+| `valid` | ✅ View/Download | ✅ View/Download | ❌ | ❌ | ✅ View/Download | ❌ |
+| `tidak_valid` | ✅ View/Download | ✅ View/Download | ❌ | ❌ | ✅ View/Download | ❌ |
+| `review_administratif` | ✅ View/Download | ✅ View/Download | ❌ | ✅ (Assigned) | ✅ View/Download | ❌ |
+| `review_substantif` | ✅ View/Download | ✅ View/Download | ❌ | ✅ (Assigned) | ✅ View/Download | ❌ |
+| `revisi` | ✅ View/Download | ✅ View/Download | ❌ | ✅ (Assigned) | ✅ View/Download | ❌ |
+| `revisi_akhir` | ✅ View/Download | ✅ View/Download | ❌ | ❌ | ✅ View/Download | ❌ |
+| `validasi_akhir_dosen_univ` | ✅ View/Download | ✅ View/Download | ✅ (Assigned) | ❌ | ✅ View/Download | ❌ |
+| `pimpinan_pt` | ✅ View/Download | ✅ View/Download | ✅ (Assigned) | ❌ | ✅ View/Download | ✅ View/Download |
+| `lolos_pimnas_pendanaan` | ✅ View/Download | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
+| `lolos_pimnas_tidak_pendanaan` | ✅ View/Download | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
+| `tidak_lolos_pimnas_lolos_pendanaan` | ✅ View/Download | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
+| `tidak_lolos` | ✅ View/Download | ✅ View/Download | ✅ View/Download | ❌ | ✅ View/Download | ✅ View/Download |
+
+**Catatan:**
+- **Prioritas PDF**: Dosen Universitas dan Pimpinan PT melihat **revisi akhir** jika ada, jika tidak baru melihat dokumen original
+- **Dosen Pendamping**: Dosen yang melakukan validasi awal proposal
+- **Dosen Universitas**: Dosen yang melakukan validasi akhir sebelum masuk ke Pimpinan PT
 
 ---
 
@@ -679,86 +745,58 @@ Storage::url($proposal->dokumen->path_file);
   - `nilai_akhir` (decimal): Nilai akhir setelah konversi (0-100.00)
   - `note_substantif` (text): Catatan review (min 50 karakter)
 
-### **3. Hasil Final oleh Operator**
+### **3. Hasil Semi Final oleh Operator**
 - **Form penilaian sama seperti review substantif**
 - **Referensi:** Menampilkan 2 tabel penilaian dari reviewer substantif
-- **PDF Prioritas:** Tampilkan revisi akhir jika ada, jika tidak tampilkan dokumen original
 - **Input operator:**
   - Skor 0-10 per kriteria (form dinamis sesuai skim)
-  - Status final: Lolos / Tidak Lolos
+  - Status final: Lolos Tingkat Universitas / Tidak Lolos
   - Nilai final: Otomatis dari penilaian (readonly)
   - **Dana yang dapat diberikan:** Input manual (opsional)
+  - **Dosen Pendamping Universitas:** Dipilih jika lolos tingkat universitas
   - Catatan final: Catatan untuk mahasiswa (minimal 50 karakter jika diisi)
-- **Data disimpan:**
-  - `status_final`: lolos / tidak_lolos
+- **Data disimpan di tabel `hasil_semi_finals`:**
+  - `status_final`: lolos_tingkat_universitas / tidak_lolos
   - `nilai` (decimal): Nilai akhir (0-100.00)
   - `skor_per_kriteria` (JSON): Array skor dari operator
   - `dana_yang_dapat_diberikan` (decimal): Dana yang dapat diberikan
   - `catatan_final` (text): Catatan untuk mahasiswa
-  - `id_pt` (foreign key): ID PT yang melakukan penilaian
-- **Status setelah penilaian:**
-  - Jika `lolos` → Status proposal: `revisi_akhir` (mahasiswa perlu upload revisi akhir)
-  - Jika `tidak_lolos` → Status proposal: `tidak_lolos`
+  - `id_pt`: ID operator yang melakukan penilaian
 
-### **4. Revisi Akhir oleh Mahasiswa**
-- **Trigger:** Proposal lolos dari penilaian operator (status: `revisi_akhir`)
-- **Upload file revisi akhir:**
-  - Lokasi: `storage/app/public/proposals/revisi_akhir/`
-  - Format: PDF (maksimal 5MB)
-  - Nama file: `revisi_akhir_[timestamp]_[original_name].pdf`
-- **Data disimpan:**
-  - Tabel: `proposal_revisi`
-  - `path_file`: Path ke file revisi akhir
-  - `nama_file`: Nama file revisi akhir
-  - `tanggal_submit`: Timestamp upload
-- **Status setelah upload:** `validasi_akhir_dosen_univ`
-
-### **5. Validasi Akhir oleh Dosen Universitas**
-- **User:** Dosen Pendamping Universitas
-- **Proses:**
-  - View PDF revisi akhir (prioritas: revisi akhir > original)
-  - Validasi proposal revisi akhir
-  - Jika valid → Status: `pimpinan_pt`
-  - Jika tidak valid → Status: `revisi_akhir` (mahasiswa perlu perbaiki lagi)
-
-### **6. Hasil Final oleh Pimpinan PT**
+### **4. Hasil Final oleh Pimpinan PT**
 - **Form penilaian sama seperti review substantif**
 - **Referensi:** Menampilkan 2 tabel penilaian dari reviewer substantif
-- **PDF Prioritas:** Tampilkan revisi akhir jika ada, jika tidak tampilkan dokumen original
 - **Input Pimpinan PT:**
   - Skor 0-10 per kriteria (form dinamis sesuai skim)
-  - **Status PIMNAS**: Lolos / Tidak Lolos
-  - **Status Pendanaan**: Lolos / Tidak Lolos
-  - **Dana yang Didapatkan**: 
-    - Jika status pendanaan "tidak lolos" → Otomatis 0, field disabled
-    - Jika status pendanaan "lolos" → Input manual, maksimal Rp 15.000.000
-  - Catatan final: Catatan untuk mahasiswa (opsional)
+  - **Status PIMNAS:** Lolos / Tidak Lolos
+  - **Status Pendanaan:** Lolos / Tidak Lolos
+  - **Dana yang Didapatkan:**
+    - Jika `status_pendanaan` = `lolos` → Input 0-15,000,000 (wajib, editable)
+    - Jika `status_pendanaan` = `tidak_lolos` → Otomatis 0 (tidak bisa diubah)
   - Nilai final: Otomatis dari penilaian (readonly)
-- **Data disimpan:**
+  - Catatan final: Catatan untuk mahasiswa
+- **Data disimpan di tabel `hasil_finals`:**
   - `status_pimnas`: lolos / tidak_lolos
   - `status_pendanaan`: lolos / tidak_lolos
-  - `dana_yang_didapatkan` (decimal): Dana yang didapatkan (0 jika tidak lolos, max 15.000.000 jika lolos)
+  - `dana_yang_didapatkan` (decimal): 0-15,000,000 (jika lolos pendanaan), 0 (jika tidak)
   - `nilai` (decimal): Nilai akhir (0-100.00)
   - `skor_per_kriteria` (JSON): Array skor dari Pimpinan PT
   - `catatan_final` (text): Catatan untuk mahasiswa
-  - `id_pimpinan_pt` (foreign key): ID PT yang melakukan penilaian
-- **Status setelah penilaian:**
-  - Kombinasi status menghasilkan status final yang lebih spesifik:
-    - `lolos_pimnas_pendanaan`: Lolos PIMNAS dan Pendanaan
-    - `lolos_pimnas_tidak_pendanaan`: Lolos PIMNAS tapi tidak pendanaan
-    - `tidak_lolos_pimnas_lolos_pendanaan`: Tidak lolos PIMNAS tapi lolos pendanaan
-    - `tidak_lolos`: Tidak lolos keduanya
+  - `id_pimpinan_pt`: ID Pimpinan PT yang melakukan penilaian
+- **Status proposal final:**
+  - `lolos_pimnas_pendanaan`: Lolos PIMNAS dan Lolos Pendanaan
+  - `lolos_pimnas_tidak_pendanaan`: Lolos PIMNAS tapi Tidak Lolos Pendanaan
+  - `tidak_lolos_pimnas_lolos_pendanaan`: Tidak Lolos PIMNAS tapi Lolos Pendanaan
+  - `tidak_lolos`: Tidak Lolos keduanya
 
-### **7. Tampilan Hasil Final untuk Mahasiswa**
+### **5. Tampilan Hasil Final untuk Mahasiswa**
 - **Popup "Hasil Final"** di halaman lihat proposal
 - **Menampilkan:**
   - Status PIMNAS (Lolos/Tidak Lolos)
   - Status Pendanaan (Lolos/Tidak Lolos)
   - Nilai final
-  - **Dana yang didapatkan** (jika status pendanaan "lolos")
+  - **Dana yang didapatkan** (jika status pendanaan = lolos, range 0-15,000,000)
   - Catatan final
-  - Download dokumen proposal
-  - Download dokumen revisi akhir (jika ada)
 
 ---
 
@@ -766,15 +804,15 @@ Storage::url($proposal->dokumen->path_file);
 
 ### **Flow Dokumen:**
 1. **Upload** → Mahasiswa upload PDF ke `storage/app/public/proposals/`
-2. **Validasi** → Dosen view & validasi proposal
+2. **Validasi** → Dosen Pendamping view & validasi proposal
 3. **Assignment** → Operator assign reviewer
 4. **Review Administratif** → Reviewer mengisi checklist dinamis sesuai skim
 5. **Review Substantif** → 2 reviewer memberikan skor 0-10 per kriteria (dinamis sesuai skim)
 6. **Revisi** → Mahasiswa upload revisi (jika perlu)
-7. **Hasil Final Operator** → Operator melakukan penilaian final dengan form dinamis, input dana, dan set status
-8. **Revisi Akhir** → Jika lolos, mahasiswa upload revisi akhir ke `storage/app/public/proposals/revisi_akhir/`
-9. **Validasi Akhir** → Dosen universitas validasi revisi akhir
-10. **Hasil Final Pimpinan PT** → Pimpinan PT melakukan penilaian final (status PIMNAS, status pendanaan, dana max 15.000.000)
+7. **Hasil Semi Final** → Operator melakukan penilaian semi final dengan form dinamis, input dana, dan assign Dosen Universitas
+8. **Revisi Akhir** → Mahasiswa upload revisi akhir (jika lolos tingkat universitas)
+9. **Validasi Akhir** → Dosen Universitas validasi akhir proposal, prioritas view revisi akhir jika ada
+10. **Hasil Final** → Pimpinan PT melakukan penilaian final dengan form dinamis, input status PIMNAS, status pendanaan, dan dana (0-15M jika lolos pendanaan)
 11. **Akses Hasil** → Mahasiswa melihat hasil final termasuk status PIMNAS, status pendanaan, dan dana yang didapatkan
 
 ### **Akses Dokumen:**
@@ -786,14 +824,12 @@ Storage::url($proposal->dokumen->path_file);
 ### **Sistem Penilaian:**
 - ✅ **Checklist administratif dinamis** berdasarkan skim proposal
 - ✅ **Kriteria substantif dinamis** dengan struktur hierarkis
-- ✅ **Perhitungan nilai otomatis** untuk review substantif dan hasil final
+- ✅ **Perhitungan nilai otomatis** untuk review substantif, hasil semi final, dan hasil final
 - ✅ **Dua reviewer substantif** memberikan penilaian terpisah
-- ✅ **Operator melakukan penilaian final** dengan referensi dari reviewer
-- ✅ **Field dana yang dapat diberikan** untuk tracking anggaran (operator)
-- ✅ **Pimpinan PT melakukan penilaian final** dengan status PIMNAS dan status pendanaan terpisah
-- ✅ **Field dana yang didapatkan** dengan validasi: 0 jika tidak lolos, max 15.000.000 jika lolos
-- ✅ **Revisi akhir** setelah penilaian operator (jika lolos)
-- ✅ **Validasi akhir** oleh dosen universitas sebelum penilaian Pimpinan PT
+- ✅ **Operator melakukan penilaian semi final** dengan referensi dari reviewer
+- ✅ **Dosen Universitas melakukan validasi akhir** dengan prioritas view revisi akhir
+- ✅ **Pimpinan PT melakukan penilaian final** dengan status PIMNAS dan pendanaan terpisah
+- ✅ **Field dana yang dapat diberikan** (operator) dan **dana yang didapatkan** (Pimpinan PT, 0-15M jika lolos pendanaan)
 
 ### **Keamanan:**
 - ✅ File disimpan di `storage/app/public/` (public disk)
@@ -802,9 +838,6 @@ Storage::url($proposal->dokumen->path_file);
 - ✅ Validasi format dan ukuran file
 - ✅ Validasi skor 0-10 di frontend dan backend
 - ✅ Validasi jumlah kriteria sesuai dengan skim
-- ✅ Validasi catatan final minimal 50 karakter jika diisi
-- ✅ Validasi dana yang didapatkan: 0 jika tidak lolos, max 15.000.000 jika lolos
-- ✅ Prioritas PDF: Revisi akhir ditampilkan terlebih dahulu jika ada
 
 ---
 
@@ -814,12 +847,10 @@ Storage::url($proposal->dokumen->path_file);
 **Perubahan Utama:**
 - Sistem penilaian administratif dinamis berdasarkan skim
 - Sistem penilaian substantif dinamis dengan scoring 0-10
-- Hasil final operator dengan form penilaian dinamis dan field dana
-- **Revisi akhir** oleh mahasiswa setelah penilaian operator (jika lolos)
-- **Validasi akhir** oleh dosen universitas
-- **Hasil final Pimpinan PT** dengan status PIMNAS dan status pendanaan terpisah
-- **Field dana yang didapatkan** dengan validasi: 0 jika tidak lolos, max 15.000.000 jika lolos
-- **Manajemen akun** oleh Pimpinan PT untuk semua jenis user
-- **Prioritas PDF**: Revisi akhir ditampilkan terlebih dahulu jika ada
-- **Validasi catatan final**: Minimal 50 karakter jika diisi
+- Hasil semi final oleh Operator dengan assign Dosen Universitas
+- Revisi akhir oleh Mahasiswa (terpisah dari revisi biasa)
+- Validasi akhir oleh Dosen Universitas dengan prioritas view revisi akhir
+- Hasil final oleh Pimpinan PT dengan status PIMNAS dan pendanaan terpisah
+- Field dana yang didapatkan (0-15M) dengan validasi berdasarkan status pendanaan
+- Manajemen akun oleh Pimpinan PT untuk semua user types
 

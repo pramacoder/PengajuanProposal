@@ -193,7 +193,7 @@
 
     <!-- Mahasiswa Information -->
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <div class="card card-custom">
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
@@ -220,17 +220,69 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Proposal Terbaru Mahasiswa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($latestProposals->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($latestProposals as $latest)
+                                <div class="list-group-item px-0 py-2 border-bottom">
+                                    <h6 class="mb-1" style="font-size: 0.9rem;">
+                                        <a href="{{ route('operator.detail.hasil.semi.final', $latest->id_proposal) }}" class="text-decoration-none">
+                                            {{ Str::limit($latest->judul_proposal, 50) }}
+                                        </a>
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="text-muted">
+                                            <span class="badge bg-secondary">{{ $latest->skim }}</span>
+                                            <span class="badge bg-{{ $latest->status == 'lolos' ? 'success' : ($latest->status == 'revisi' ? 'warning' : 'danger') }}">
+                                                {{ ucfirst($latest->status) }}
+                                            </span>
+                                        </small>
+                                        <small class="text-muted">
+                                            {{ \Carbon\Carbon::parse($latest->tanggal_pengajuan)->format('d M Y') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Tidak ada proposal lain dari mahasiswa ini.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- PDF Proposal Viewer Section -->
-    @if($proposal->dokumen && $proposal->dokumen->path_file)
+    @php
+        // Ambil revisi terakhir (jenis_revisi = 'revisi_biasa') untuk hasil semi final
+        $latestRevisi = $proposal->proposalRevisi->where('jenis_revisi', 'revisi_biasa')->first();
+        $hasRevisi = $latestRevisi !== null;
+        $displayDocument = $hasRevisi ? $latestRevisi : ($proposal->dokumen ?? null);
+    @endphp
+    
+    @if($displayDocument)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card card-custom">
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
                         <i class="fas fa-file-pdf me-2"></i>
+                        @if($hasRevisi)
+                            Dokumen Revisi Terakhir
+                        @else
                         Dokumen Proposal
+                        @endif
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -238,23 +290,43 @@
                         <div class="pdf-header">
                             <h5 class="pdf-title">
                                 <i class="fas fa-file-pdf me-2"></i>
-                                <span id="pdfProposalTitle">{{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}</span>
+                                <span id="pdfProposalTitle">
+                                    @if($hasRevisi)
+                                        {{ $latestRevisi->nama_file }}
+                                    @else
+                                        {{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}
+                                    @endif
+                                </span>
+                                @if($hasRevisi)
+                                    <br><small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Diupload: {{ \Carbon\Carbon::parse($latestRevisi->tanggal_submit)->format('d M Y H:i') }}
+                                    </small>
+                                @endif
                             </h5>
                             <div class="pdf-controls">
                                 <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm me-2">
                                     <i class="fas fa-expand me-1"></i>Fullscreen
                                 </button>
+                                @if($hasRevisi)
+                                    <a href="{{ route('operator.revisi.download', $latestRevisi->id_revisi) }}" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       target="_blank">
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </a>
+                                @else
                                 <a href="{{ route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
                                    class="btn btn-outline-primary btn-sm" 
                                    target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
                                 </a>
+                                @endif
                             </div>
                         </div>
                         <div id="pdfProposalViewer" class="pdf-loading">
                             <div class="spinner"></div>
                             <iframe id="proposalPdfIframe" 
-                                    src="{{ route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                    src="{{ $hasRevisi ? route('operator.revisi.view', $latestRevisi->id_revisi) : route('operator.proposal.view.pdf', $proposal->id_proposal) }}" 
                                     class="pdf-iframe" 
                                     style="display: none;">
                             </iframe>

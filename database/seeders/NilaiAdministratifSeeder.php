@@ -247,7 +247,7 @@ class NilaiAdministratifSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Proposal 14-20 (2024/2025) tidak memiliki nilai administratif karena masih dalam proses
+            
         ];
 
         DB::table('nilai_administratifs')->insert($nilaiAdministratifs);

@@ -193,7 +193,7 @@
 
     <!-- Mahasiswa Information -->
     <div class="row mb-4">
-        <div class="col-12">
+        <div class="col-md-8">
             <div class="card card-custom">
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
@@ -220,23 +220,67 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Proposal Terbaru Mahasiswa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if($latestProposals->count() > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($latestProposals as $latest)
+                                <div class="list-group-item px-0 py-2 border-bottom">
+                                    <h6 class="mb-1" style="font-size: 0.9rem;">
+                                        <a href="{{ route('pimpinan_pt.detail.hasil.final', $latest->id_proposal) }}" class="text-decoration-none">
+                                            {{ Str::limit($latest->judul_proposal, 50) }}
+                                        </a>
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <small class="text-muted">
+                                            <span class="badge bg-secondary">{{ $latest->skim }}</span>
+                                            <span class="badge bg-{{ $latest->status == 'lolos' ? 'success' : ($latest->status == 'revisi' ? 'warning' : 'danger') }}">
+                                                {{ ucfirst($latest->status) }}
+                                            </span>
+                                        </small>
+                                        <small class="text-muted">
+                                            {{ \Carbon\Carbon::parse($latest->tanggal_pengajuan)->format('d M Y') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Tidak ada proposal lain dari mahasiswa ini.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- PDF Proposal Viewer Section -->
-    @if($fileProposal && $fileProposal->path_file)
+    @php
+        $latestRevisi = $proposal->proposalRevisi->first(); // Revisi terakhir (sudah di-order desc di controller)
+        $hasRevisi = $latestRevisi !== null;
+        $displayDocument = $hasRevisi ? $latestRevisi : ($proposal->dokumen ?? null);
+    @endphp
+    
+    @if($displayDocument)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card card-custom">
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
                         <i class="fas fa-file-pdf me-2"></i>
-                        Dokumen Proposal
-                        @if($jenisFile === 'revisi_akhir')
-                            <span class="badge bg-warning ms-2">Revisi Akhir</span>
-                        @elseif($jenisFile === 'revisi')
-                            <span class="badge bg-info ms-2">Revisi</span>
+                        @if($hasRevisi)
+                            Dokumen Revisi Terakhir
                         @else
-                            <span class="badge bg-secondary ms-2">Proposal Awal</span>
+                            Dokumen Proposal
                         @endif
                     </h5>
                 </div>
@@ -246,28 +290,42 @@
                             <h5 class="pdf-title">
                                 <i class="fas fa-file-pdf me-2"></i>
                                 <span id="pdfProposalTitle">
-                                    @if($jenisFile === 'revisi_akhir' || $jenisFile === 'revisi')
-                                        {{ $fileProposal->nama_file }}
+                                    @if($hasRevisi)
+                                        {{ $latestRevisi->nama_file }}
                                     @else
-                                        {{ $fileProposal->file_proposal ?? 'Proposal PDF' }}
+                                        {{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}
                                     @endif
                                 </span>
+                                @if($hasRevisi)
+                                    <br><small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Diupload: {{ \Carbon\Carbon::parse($latestRevisi->tanggal_submit)->format('d M Y H:i') }}
+                                    </small>
+                                @endif
                             </h5>
                             <div class="pdf-controls">
                                 <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm me-2">
                                     <i class="fas fa-expand me-1"></i>Fullscreen
                                 </button>
-                                <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
-                                   class="btn btn-outline-primary btn-sm" 
-                                   target="_blank">
-                                    <i class="fas fa-download me-1"></i>Download
-                                </a>
+                                @if($hasRevisi)
+                                    <a href="{{ route('operator.revisi.download', $latestRevisi->id_revisi) }}" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       target="_blank">
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </a>
+                                @else
+                                    <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       target="_blank">
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </a>
+                                @endif
                             </div>
                         </div>
                         <div id="pdfProposalViewer" class="pdf-loading">
                             <div class="spinner"></div>
                             <iframe id="proposalPdfIframe" 
-                                    src="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                    src="{{ $hasRevisi ? route('operator.revisi.view', $latestRevisi->id_revisi) : route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
                                     class="pdf-iframe" 
                                     style="display: none;">
                             </iframe>
@@ -288,8 +346,8 @@
     </div>
     @endif
 
-    <!-- File Revisi Akhir Section -->
-    @if($revisiAkhirList->count() > 0)
+    <!-- File Revisi Section -->
+    @if($proposal->proposalRevisi->count() > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card card-custom">
@@ -300,12 +358,8 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info mb-3">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Catatan:</strong> Hanya menampilkan file revisi akhir yang sudah dikumpulkan mahasiswa.
-                    </div>
                     <div class="list-group">
-                        @foreach($revisiAkhirList as $revisi)
+                        @foreach($proposal->proposalRevisi as $revisi)
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
                                 <i class="fas fa-file-pdf text-danger me-2"></i>
@@ -995,20 +1049,18 @@
 
 @section('scripts')
 @php
-    $hasRevisiAkhir = $revisiAkhirList->count() > 0;
-    $firstRevisiAkhir = $hasRevisiAkhir ? $revisiAkhirList->first() : null;
-    $firstRevisiAkhirUrl = $firstRevisiAkhir ? route('operator.revisi.download', $firstRevisiAkhir->id_revisi) : null;
+    $hasRevisi = $proposal->proposalRevisi->count() > 0;
+    // Ambil revisi terakhir (yang sudah di-order by tanggal_submit desc di controller)
+    $latestRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
+    $latestRevisiUrl = $latestRevisi ? route('operator.revisi.download', $latestRevisi->id_revisi) : null;
     $successMessage = session('success');
     $errorMessage = session('error');
     
     // Prepare JSON strings
     $pageDataJson = json_encode([
-        'hasRevisiAkhir' => $hasRevisiAkhir,
-        'firstRevisiAkhir' => $firstRevisiAkhir ? [
-            'id_revisi' => $firstRevisiAkhir->id_revisi,
-            'nama_file' => $firstRevisiAkhir->nama_file
-        ] : null,
-        'firstRevisiAkhirUrl' => $firstRevisiAkhirUrl,
+        'hasRevisi' => $hasRevisi,
+        'latestRevisi' => $latestRevisi,
+        'latestRevisiUrl' => $latestRevisiUrl,
         'successMessage' => $successMessage,
         'errorMessage' => $errorMessage
     ]);
@@ -1305,13 +1357,13 @@
         // Initialize download functionality for revisi
         initializeDownload();
         
-        // Pre-load first revision akhir PDF if available
-        if (pageData.hasRevisiAkhir && pageData.firstRevisiAkhir) {
-            console.log('Pre-loading first revision akhir PDF:', pageData.firstRevisiAkhir.nama_file);
+        // Pre-load latest revision PDF if available
+        if (pageData.hasRevisi && pageData.latestRevisi) {
+            console.log('Pre-loading latest revision PDF:', pageData.latestRevisi.nama_file);
             // Pre-load the PDF URL for faster display
             const link = document.createElement('link');
             link.rel = 'prefetch';
-            link.href = pageData.firstRevisiAkhirUrl;
+            link.href = pageData.latestRevisiUrl;
             document.head.appendChild(link);
         }
         
