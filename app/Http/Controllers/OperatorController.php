@@ -1610,6 +1610,7 @@ class OperatorController extends Controller
             'user_id' => auth('operator')->id()
         ]);
 
+        // Validasi dasar
         $request->validate([
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_final' => 'required|in:lolos_tingkat_universitas,tidak_lolos_tingkat_universitas',
@@ -1617,8 +1618,21 @@ class OperatorController extends Controller
             'nilai' => 'required|numeric|min:0|max:100',
             'skor' => 'required|array',
             'skor.*' => 'required|numeric|min:0|max:10',
-            'id_dosen_pendamping_universitas' => 'required_if:status_final,lolos_tingkat_universitas|exists:dosens,id_dosen'
         ]);
+
+        // Validasi dosen universitas hanya jika status lolos
+        if ($request->status_final === 'lolos_tingkat_universitas') {
+            $request->validate([
+                'id_dosen_pendamping_universitas' => 'required|exists:dosens,id_dosen'
+            ]);
+        } else {
+            // Jika tidak lolos, pastikan dosen universitas tidak dikirim atau null
+            if ($request->filled('id_dosen_pendamping_universitas')) {
+                $request->validate([
+                    'id_dosen_pendamping_universitas' => 'nullable|exists:dosens,id_dosen'
+                ]);
+            }
+        }
 
         try {
             DB::beginTransaction();
@@ -1650,15 +1664,21 @@ class OperatorController extends Controller
                 ], 422);
             }
             
-            // Update proposal
-            $updateData = [
-                'status' => 'revisi_akhir',
-                'status_final' => 'revisi_akhir'
-            ];
-            
-            // Jika lolos tingkat universitas, set dosen pendamping universitas
+            // Update proposal berdasarkan status
             if ($request->status_final === 'lolos_tingkat_universitas') {
-                $updateData['id_dosen_pendamping_universitas'] = $request->id_dosen_pendamping_universitas;
+                // Jika lolos, set status ke revisi_akhir dan assign dosen universitas
+                $updateData = [
+                    'status' => 'revisi_akhir',
+                    'status_final' => 'revisi_akhir',
+                    'id_dosen_pendamping_universitas' => $request->id_dosen_pendamping_universitas
+                ];
+            } else {
+                // Jika tidak lolos, set status ke tidak_lolos
+                $updateData = [
+                    'status' => 'tidak_lolos',
+                    'status_final' => 'tidak_lolos_tingkat_universitas',
+                    'id_dosen_pendamping_universitas' => null // Hapus dosen universitas jika ada
+                ];
             }
             
             $proposal->update($updateData);

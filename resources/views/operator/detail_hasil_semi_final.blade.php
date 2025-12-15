@@ -1397,28 +1397,82 @@
         
         const formData = new FormData(this);
         
+        // Hapus field dosen universitas jika status tidak lolos
+        const statusFinal = formData.get('status_final');
+        if (statusFinal === 'tidak_lolos_tingkat_universitas') {
+            formData.delete('id_dosen_pendamping_universitas');
+        }
+        
+        // Validasi client-side
+        const catatanFinal = formData.get('catatan_final');
+        if (catatanFinal && catatanFinal.trim().length > 0 && catatanFinal.trim().length < 50) {
+            showToast('Catatan final minimal 50 karakter jika diisi', 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        // Validasi skor
+        const skorInputs = document.querySelectorAll('.skor-final-input');
+        let allSkorFilled = true;
+        skorInputs.forEach(input => {
+            const index = parseInt(input.dataset.index);
+            if (index >= 0 && (!input.value || input.value === '')) {
+                allSkorFilled = false;
+            }
+        });
+        
+        if (!allSkorFilled) {
+            showToast('Semua skor harus diisi', 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
         fetch(this.action, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
             }
         })
-        .then(response => response.json())
+        .then(async response => {
+            const data = await response.json();
+            
+            if (!response.ok) {
+                // Handle validation errors
+                if (response.status === 422 && data.errors) {
+                    const errorMessages = [];
+                    Object.keys(data.errors).forEach(key => {
+                        errorMessages.push(...data.errors[key]);
+                    });
+                    showToast('Validasi gagal: ' + errorMessages.join(', '), 'error');
+                } else {
+                    showToast('Gagal memperbarui hasil semi final: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                }
+                throw new Error(data.message || 'Validation failed');
+            }
+            
+            return data;
+        })
         .then(data => {
             if (data.success) {
-                showToast('Hasil final berhasil diperbarui!', 'success');
+                showToast('Hasil semi final berhasil diperbarui!', 'success');
                 // Optionally reload the page or update the UI
                 setTimeout(() => {
                     location.reload();
                 }, 1500);
             } else {
-                showToast('Gagal memperbarui hasil final: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                showToast('Gagal memperbarui hasil semi final: ' + (data.message || 'Terjadi kesalahan'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Terjadi kesalahan saat menyimpan hasil final: ' + error.message, 'error');
+            // Error sudah ditangani di .then() sebelumnya
+            if (!error.message.includes('Validation failed')) {
+                showToast('Terjadi kesalahan saat menyimpan hasil semi final: ' + error.message, 'error');
+            }
         })
         .finally(() => {
             // Reset button state
