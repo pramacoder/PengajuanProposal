@@ -280,7 +280,7 @@
                         @if($hasRevisi)
                             Dokumen Revisi Terakhir
                         @else
-                            Dokumen Proposal
+                        Dokumen Proposal
                         @endif
                     </h5>
                 </div>
@@ -309,10 +309,10 @@
                                 </button>
                                 @if($hasRevisi)
                                     <a href="{{ route('operator.revisi.download', $latestRevisi->id_revisi) }}" 
-                                       class="btn btn-outline-primary btn-sm" 
-                                       target="_blank">
-                                        <i class="fas fa-download me-1"></i>Download
-                                    </a>
+                                   class="btn btn-outline-primary btn-sm" 
+                                   target="_blank">
+                                    <i class="fas fa-download me-1"></i>Download
+                                </a>
                                 @else
                                     <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
                                        class="btn btn-outline-primary btn-sm" 

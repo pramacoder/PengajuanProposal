@@ -134,19 +134,19 @@
                             </div>
                             <div class="text-muted">
                                 Total: <strong>{{ $mahasiswas->count() }}</strong> mahasiswa
-                            </div>
+                        </div>
                         </div>
 
                     @if(!isset($hasFilter) || !$hasFilter)
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data mahasiswa.
-                        </div>
+                            </div>
                     @else
-                    <div class="table-responsive">
+                        <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead class="table-dark">
-                                <tr>
+                                    <tr>
                                         <th width="50">
                                             <input type="checkbox" id="selectAll" class="form-check-input">
                                         </th>
@@ -157,77 +157,77 @@
                                     <th>Fakultas</th>
                                     <th>Aktif</th>
                                     <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     @forelse($mahasiswas as $m)
-                                <tr>
+                                    <tr>
                                         <td>
                                             <input type="checkbox" name="ids[]" value="{{ $m->id_mahasiswa }}" class="form-check-input mahasiswa-checkbox">
                                         </td>
-                                    <td>{{ $m->nim }}</td>
-                                    <td>{{ $m->nama_mhs }}</td>
+                                        <td>{{ $m->nim }}</td>
+                                        <td>{{ $m->nama_mhs }}</td>
                                     <td>{{ $m->email_mhs }}</td>
                                     <td>{{ $m->prodi_mhs }}</td>
                                     <td>{{ $m->fakultas_mhs }}</td>
-                                    <td>
+                                        <td>
                                         <span class="badge bg-{{ $m->is_active ? 'success' : 'secondary' }}">{{ $m->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                    </td>
-                                    <td class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
-                                                data-id="{{ $m->id_mahasiswa }}"
-                                                data-nama="{{ $m->nama_mhs }}"
-                                                data-nim="{{ $m->nim }}"
-                                                data-email="{{ $m->email_mhs }}"
-                                                data-no-hp="{{ $m->no_hp_mhs }}"
-                                                data-fakultas="{{ $m->fakultas_mhs }}"
-                                                data-prodi="{{ $m->prodi_mhs }}"
-                                                data-is-active="{{ $m->is_active ? '1' : '0' }}"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editMahasiswaModal">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form method="POST" action="{{ route('operator.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
+                                                    data-id="{{ $m->id_mahasiswa }}"
+                                                    data-nama="{{ $m->nama_mhs }}"
+                                                    data-nim="{{ $m->nim }}"
+                                                    data-email="{{ $m->email_mhs }}"
+                                                    data-no-hp="{{ $m->no_hp_mhs }}"
+                                                    data-fakultas="{{ $m->fakultas_mhs }}"
+                                                    data-prodi="{{ $m->prodi_mhs }}"
+                                                    data-is-active="{{ $m->is_active ? '1' : '0' }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editMahasiswaModal">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="POST" action="{{ route('operator.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
                                     @empty
                                     <tr>
                                         <td colspan="8" class="text-center">Tidak ada data mahasiswa</td>
                                     </tr>
                                     @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                                    @endif
                     </form>
-                </div>
-
+                            </div>
+                            
                 <!-- Dosen -->
                 <div class="tab-pane fade" id="dosen" role="tabpanel">
                     <!-- Filter Section -->
                     <div class="card mb-3 border-primary">
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Dosen</h6>
-                        </div>
+                                </div>
                         <div class="card-body">
                             <form method="GET" action="{{ route('operator.manage.accounts') }}" id="filterDosenForm">
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label">Nama</label>
                                         <input type="text" name="filter_nama_dosen" id="filterNamaDosen" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_dosen') }}">
-                                    </div>
+                                </div>
                                     <div class="col-12">
                                         <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
                                         <a href="{{ route('operator.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
-                                    </div>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
+                    </form>
+                        </div>
+                </div>
 
                     @if(!isset($hasFilter) || !$hasFilter)
                         <div class="alert alert-info">
