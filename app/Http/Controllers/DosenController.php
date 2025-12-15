@@ -13,6 +13,7 @@ use App\Models\HasilSemiFinal;
 use App\Models\Mahasiswa;
 use App\Models\Dosen;
 use App\Models\ProposalRevisi;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 
@@ -120,6 +121,19 @@ class DosenController extends Controller
             }
 
             $proposal->save();
+
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = new NotificationService();
+                $statusValidasi = $request->action === 'valid' ? 'valid' : 'tidak_valid';
+                $notificationService->notifyValidasiDosen(
+                    $proposal,
+                    $statusValidasi,
+                    $request->catatan ?? null
+                );
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi validasi dosen: ' . $e->getMessage());
+            }
 
             // Log proposal data setelah update
             \Log::info('Proposal setelah update', [
@@ -523,6 +537,19 @@ class DosenController extends Controller
             }
 
             $proposal->save();
+
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = new NotificationService();
+                $statusValidasi = $request->action === 'valid' ? 'valid' : 'tidak_valid';
+                $notificationService->notifyValidasiAkhirDosen(
+                    $proposal,
+                    $statusValidasi,
+                    $request->catatan ?? null
+                );
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi validasi akhir dosen: ' . $e->getMessage());
+            }
 
             DB::commit();
 

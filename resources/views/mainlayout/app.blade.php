@@ -186,6 +186,86 @@
             padding: 0.25rem 0.5rem;
         }
 
+        /* Negative Notification Styles (Penolakan) */
+        .notification-item.negative {
+            background-color: #fee;
+            border-left: 4px solid #dc3545;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .notification-item.negative:hover {
+            background-color: #fdd;
+        }
+
+        .notification-item.negative.unread {
+            background-color: #fee;
+            border-left: 4px solid #dc3545;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1);
+        }
+
+        .notification-item.negative.unread:hover {
+            background-color: #fdd;
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.15);
+        }
+
+        .notification-item.negative .notification-icon-small {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        .notification-item.negative .notification-title {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .notification-item.negative .notification-message {
+            color: #721c24;
+            font-weight: 500;
+        }
+
+        .notification-item.negative .notification-time {
+            color: #a94442;
+        }
+
+        .notification-item.negative .catatan-box {
+            background-color: #fff;
+            border: 1px solid #dc3545;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+            color: #721c24;
+        }
+
+        .notification-item.negative .catatan-box strong {
+            color: #dc3545;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .notification-item.negative .action-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .notification-item.negative .action-button:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+
         .empty-notifications {
             text-align: center;
             padding: 2rem;
@@ -1246,7 +1326,13 @@
 
                     if (response.ok) {
                         const data = await response.json();
-                        this.notifications = data.notifications || [];
+                        // Format notifications untuk memastikan semua field ada
+                        this.notifications = (data.notifications || []).map(notif => ({
+                            ...notif,
+                            unread: notif.unread !== undefined ? notif.unread : !notif.read_at,
+                            data: notif.data || {},
+                            proposal_id: notif.proposal_id || (notif.data?.proposal_id || null)
+                        }));
                         this.updateNotificationCount();
                         this.renderNotifications();
                     } else {
@@ -1324,28 +1410,48 @@
                         return;
                     }
 
-                    container.innerHTML = this.notifications.map(notification => `
-                        <div class="notification-item ${notification.unread ? 'unread' : ''}" data-id="${notification.id}">
-                            <div class="notification-content">
-                                <div class="notification-icon-small ${notification.type}">
-                                    <i class="fas fa-${this.getIconForType(notification.type)}"></i>
-                                </div>
-                                <div class="notification-text">
-                                    <div class="notification-title">${notification.title}</div>
-                                    <div class="notification-message">${notification.message}</div>
-                                    <div class="notification-time">${notification.time}</div>
-                                    <div class="notification-actions">
-                                        ${notification.actions.map(action => `
-                                            <button class="btn btn-sm btn-outline-${this.getButtonStyle(notification.type)}" 
-                                                    onclick="notificationSystem.handleAction(${notification.id}, '${action}')">
-                                                ${action}
+                    container.innerHTML = this.notifications.map(notification => {
+                        // Cek apakah notifikasi negatif (penolakan)
+                        const isNegative = notification.data?.is_negative || false;
+                        const hasCatatan = notification.data?.catatan || notification.data?.catatan_final || notification.data?.catatan_operator || notification.data?.catatan_dosen;
+                        const proposalId = notification.data?.proposal_id || notification.proposal_id;
+                        const action = notification.data?.action;
+                        
+                        return `
+                            <div class="notification-item ${notification.unread ? 'unread' : ''} ${isNegative ? 'negative' : ''}" data-id="${notification.id}">
+                                <div class="notification-content">
+                                    <div class="notification-icon-small ${notification.type}">
+                                        <i class="fas fa-${this.getIconForType(notification.type)}"></i>
+                                    </div>
+                                    <div class="notification-text">
+                                        <div class="notification-title">${this.escapeHtml(notification.title)}</div>
+                                        <div class="notification-message">${this.escapeHtml(notification.message)}</div>
+                                        ${hasCatatan ? `
+                                            <div class="catatan-box">
+                                                <strong>Catatan:</strong> ${this.escapeHtml(hasCatatan)}
+                                            </div>
+                                        ` : ''}
+                                        <div class="notification-time">${notification.time || notification.created_at || ''}</div>
+                                        ${action && proposalId ? `
+                                            <button class="action-button" 
+                                                    onclick="event.stopPropagation(); notificationSystem.handleAction(${notification.id}, '${action}', ${proposalId})">
+                                                ${this.getActionText(action)}
                                             </button>
-                                        `).join('')}
+                                        ` : notification.actions && notification.actions.length > 0 ? `
+                                            <div class="notification-actions">
+                                                ${notification.actions.map(action => `
+                                                    <button class="btn btn-sm btn-outline-${isNegative ? 'danger' : this.getButtonStyle(notification.type)}" 
+                                                            onclick="event.stopPropagation(); notificationSystem.handleAction(${notification.id}, '${action}')">
+                                                        ${action}
+                                                    </button>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
 
                     // Add click event to mark as read
                     container.querySelectorAll('.notification-item').forEach(item => {
@@ -1509,7 +1615,7 @@
                 }
             }
 
-            handleAction(id, action) {
+            handleAction(id, action, proposalId = null) {
                 try {
                     const notification = this.notifications.find(n => n.id === id);
                     if (!notification) {
@@ -1517,16 +1623,50 @@
                         return;
                     }
 
-                    // Handle different actions
+                    // Jika ada proposalId, gunakan action URL
+                    if (proposalId && action) {
+                        const url = this.getActionUrl(action, proposalId);
+                        if (url && url !== '#') {
+                            window.location.href = url;
+                            return;
+                        }
+                    }
+
+                    // Handle different actions (fallback untuk action lama)
                     switch (action) {
                         case 'Lihat Detail':
-                            this.showNotificationDetail(notification);
+                        case 'view_proposal':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('view_proposal', proposalId);
+                            } else {
+                                this.showNotificationDetail(notification);
+                            }
                             break;
                         case 'Download':
                             this.downloadDocument(notification);
                             break;
                         case 'Revisi':
-                            this.openRevisionForm(notification);
+                        case 'revisi_proposal':
+                        case 'upload_revisi':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('upload_revisi', proposalId);
+                            } else {
+                                this.openRevisionForm(notification);
+                            }
+                            break;
+                        case 'upload_revisi_akhir':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('upload_revisi_akhir', proposalId);
+                            } else {
+                                this.openRevisionForm(notification);
+                            }
+                            break;
+                        case 'view_hasil_final':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('view_hasil_final', proposalId);
+                            } else {
+                                this.showNotificationDetail(notification);
+                            }
                             break;
                         case 'Ajukan Ulang':
                             this.resubmitProposal(notification);
@@ -1537,6 +1677,36 @@
                 } catch (error) {
                     console.error('Error handling notification action:', error);
                 }
+            }
+
+            getActionUrl(action, proposalId) {
+                const baseUrl = window.location.origin;
+                const routes = {
+                    'view_proposal': `/mahasiswa/proposal/${proposalId}`,
+                    'revisi_proposal': `/mahasiswa/proposal/${proposalId}/revisi`,
+                    'upload_revisi': `/mahasiswa/proposal/${proposalId}/revisi`,
+                    'upload_revisi_akhir': `/mahasiswa/proposal/${proposalId}/revisi-akhir`,
+                    'view_hasil_final': `/mahasiswa/proposal/${proposalId}`
+                };
+                return routes[action] || '#';
+            }
+
+            getActionText(action) {
+                const texts = {
+                    'view_proposal': 'Lihat Proposal',
+                    'revisi_proposal': 'Revisi Proposal',
+                    'upload_revisi': 'Upload Revisi',
+                    'upload_revisi_akhir': 'Upload Revisi Akhir',
+                    'view_hasil_final': 'Lihat Hasil Final'
+                };
+                return texts[action] || 'Lihat Detail';
+            }
+
+            escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
 
             showNotificationDetail(notification) {

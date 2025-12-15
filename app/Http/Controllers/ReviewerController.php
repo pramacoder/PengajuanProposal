@@ -10,6 +10,7 @@ use App\Models\Dosen;
 use App\Models\RuangKontrol;
 use App\Helpers\TahunAjaranHelper;
 use App\Helpers\ProposalHelper;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -535,6 +536,23 @@ class ReviewerController extends Controller
 
         // Cek apakah semua review administratif sudah selesai
             $this->updateProposalStatus($proposal);
+            
+            // Kirim notifikasi jika review administratif selesai
+            try {
+                $adminCompleted = $this->isAdminReviewCompleted($proposal->fresh());
+                if ($adminCompleted) {
+                    $notificationService = new NotificationService();
+                    // Review administratif dianggap lolos jika ada checklist (tidak kosong)
+                    $lolos = !empty($kesalahanAdministratif) && count($kesalahanAdministratif) > 0;
+                    $notificationService->notifyReviewAdministratifSelesai(
+                        $proposal->fresh(),
+                        $lolos,
+                        $catatan
+                    );
+                }
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi review administratif: ' . $e->getMessage());
+            }
 
         if ($request->expectsJson() || $request->ajax()) {
         return response()->json([
@@ -1210,8 +1228,20 @@ class ReviewerController extends Controller
                     // Buka fase perbaikan secara otomatis
                     $this->openRevisionPhase();
                     
-                    // Kirim notifikasi khusus untuk proposal ini
-                    $this->notifyProposalReadyForRevision($proposal);
+                    // Kirim notifikasi review substantif selesai
+                    try {
+                        $notificationService = new NotificationService();
+                        $nilaiReviewer = [
+                            'reviewer1' => $substantifReview1->nilai_akhir ?? null,
+                            'reviewer2' => $substantifReview2->nilai_akhir ?? null
+                        ];
+                        $notificationService->notifyReviewSubstantifSelesai(
+                            $proposal->fresh(),
+                            $nilaiReviewer
+                        );
+                    } catch (\Exception $e) {
+                        \Log::error('Gagal mengirim notifikasi review substantif: ' . $e->getMessage());
+                    }
                     
                     \Log::info('Proposal status updated to revisi', [
                         'proposal_id' => $proposal->id_proposal,

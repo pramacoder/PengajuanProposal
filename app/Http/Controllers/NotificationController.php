@@ -47,8 +47,10 @@ class NotificationController extends Controller
                                            'title' => $notification->title,
                                            'message' => $notification->message,
                                            'time' => $notification->time_ago,
+                                           'unread' => $notification->isUnread(),
                                            'actions' => $this->getNotificationActions($notification),
-                                           'data' => $notification->data,
+                                           'data' => $notification->data ?? [],
+                                           'proposal_id' => $notification->proposal_id,
                                            'created_at' => $notification->created_at->toISOString()
                                        ];
                                    });

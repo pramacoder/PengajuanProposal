@@ -335,6 +335,14 @@ class OperatorController extends Controller
             
             DB::commit();
             
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = new NotificationService();
+                $notificationService->notifyReviewerAssigned($proposal);
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi assign reviewer: ' . $e->getMessage());
+            }
+            
             \Log::info('Reviewer assignment completed successfully', [
                 'proposal_id' => $request->proposal_id,
                 'reviewers' => [
@@ -695,6 +703,9 @@ class OperatorController extends Controller
                     ], 422);
                 }
                 
+                // Simpan status lama untuk cek perubahan
+                $oldStatusPendaftaran = $ruangKontrol->status_pendaftaran;
+                
                 // Update jadwal yang sudah ada (hanya status, tidak membuat history)
                 $ruangKontrol->update([
                     'status_pendaftaran' => $statusPendaftaran,
@@ -705,6 +716,16 @@ class OperatorController extends Controller
                     'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
                     'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history
                 ]);
+                
+                // Kirim notifikasi jika pendaftaran dibuka
+                if ($statusPendaftaran === 'terbuka' && $oldStatusPendaftaran !== 'terbuka') {
+                    try {
+                        $notificationService = new NotificationService();
+                        $notificationService->notifyRuangKontrolDibuka($ruangKontrol->fresh());
+                    } catch (\Exception $e) {
+                        \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
+                    }
+                }
             } else {
                 // Jika ID tidak dikirim, cari jadwal aktif untuk tahun ajaran tersebut
             $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
@@ -732,7 +753,20 @@ class OperatorController extends Controller
                     'is_active' => true,
                     'id_pt' => auth('operator')->id()
                 ]);
+                
+                // Kirim notifikasi jika pendaftaran dibuka saat create
+                if ($statusPendaftaran === 'terbuka') {
+                    try {
+                        $notificationService = new NotificationService();
+                        $notificationService->notifyRuangKontrolDibuka($ruangKontrol);
+                    } catch (\Exception $e) {
+                        \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
+                    }
+                }
             } else {
+                    // Simpan status lama untuk cek perubahan
+                    $oldStatusPendaftaran = $ruangKontrol->status_pendaftaran;
+                    
                     // Update jadwal yang sudah ada (hanya status, tidak membuat history)
                 $ruangKontrol->update([
                     'status_pendaftaran' => $statusPendaftaran,
@@ -744,6 +778,16 @@ class OperatorController extends Controller
                         'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history,
                         'is_active' => true // Pastikan jadwal aktif
                 ]);
+                
+                // Kirim notifikasi jika pendaftaran dibuka
+                if ($statusPendaftaran === 'terbuka' && $oldStatusPendaftaran !== 'terbuka') {
+                    try {
+                        $notificationService = new NotificationService();
+                        $notificationService->notifyRuangKontrolDibuka($ruangKontrol->fresh());
+                    } catch (\Exception $e) {
+                        \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
+                    }
+                }
                 }
             }
             
@@ -1620,20 +1664,31 @@ class OperatorController extends Controller
             $proposal->update($updateData);
             
             // Update atau buat hasil semi final
-            HasilSemiFinal::updateOrCreate(
+            $hasilSemiFinal = HasilSemiFinal::updateOrCreate(
                 ['id_proposal' => $request->proposal_id],
                 [
                     'status_final' => $request->status_final,
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
                     'skor_per_kriteria' => $normalizedSkor,
+                    'dana_yang_dapat_diberikan' => $request->dana_yang_dapat_diberikan ?? null,
                     'id_pt' => auth('operator')->id()
                 ]
             );
             
-            // Kirim notifikasi ke mahasiswa dan dosen
-            $notificationService = new NotificationService();
-            // TODO: Buat method notifyHasilSemiFinal jika diperlukan
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = new NotificationService();
+                $notificationService->notifyHasilSemiFinal(
+                    $proposal,
+                    $request->status_final,
+                    $request->nilai,
+                    $request->catatan_final ?? null,
+                    $request->dana_yang_dapat_diberikan ?? null
+                );
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi hasil semi final: ' . $e->getMessage());
+            }
             
             DB::commit();
             

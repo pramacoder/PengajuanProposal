@@ -12,6 +12,7 @@ use App\Models\HasilFinal;
 use App\Models\RuangKontrol;
 use App\Helpers\ProposalHelper;
 use App\Helpers\TahunAjaranHelper;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -393,6 +394,14 @@ class ProposalController extends Controller
             }
 
             DB::commit();
+
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = new NotificationService();
+                $notificationService->notifyProposalUploaded($proposal);
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi proposal uploaded: ' . $e->getMessage());
+            }
 
             return redirect()->route('mahasiswa.proposal.index')
                 ->with('success', 'Proposal berhasil diajukan! Silakan tunggu validasi dari dosen pendamping.');

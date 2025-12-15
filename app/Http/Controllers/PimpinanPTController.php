@@ -248,9 +248,34 @@ class PimpinanPTController extends Controller
                 ]
             );
             
-            // TODO: Kirim notifikasi ke mahasiswa dan dosen
-            // $notificationService = new NotificationService();
-            // $notificationService->notifyHasilFinal(...);
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = new \App\Services\NotificationService();
+                $danaYangDidapatkan = 0;
+                if ($request->status_pendanaan === 'lolos') {
+                    $danaInput = $request->input('dana_yang_didapatkan', 0);
+                    if (is_string($danaInput)) {
+                        $danaInput = preg_replace('/[^0-9.]/', '', $danaInput);
+                    }
+                    $danaYangDidapatkan = (float) $danaInput;
+                    if ($danaYangDidapatkan < 0) {
+                        $danaYangDidapatkan = 0;
+                    }
+                    if ($danaYangDidapatkan > 15000000) {
+                        $danaYangDidapatkan = 15000000;
+                    }
+                }
+                $notificationService->notifyHasilFinalLengkap(
+                    $proposal->fresh(),
+                    $request->status_pimnas,
+                    $request->status_pendanaan,
+                    $request->nilai,
+                    $danaYangDidapatkan,
+                    $request->catatan_final ?? null
+                );
+            } catch (\Exception $e) {
+                Log::error('Gagal mengirim notifikasi hasil final: ' . $e->getMessage());
+            }
             
             DB::commit();
             
