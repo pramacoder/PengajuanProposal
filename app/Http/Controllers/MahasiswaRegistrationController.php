@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Mahasiswa;
-use App\Models\Dosen;
+use App\Models\User;
 use App\Services\EmailService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -19,17 +18,11 @@ class MahasiswaRegistrationController extends Controller
         $this->emailService = $emailService;
     }
 
-    /**
-     * Tampilkan form registrasi mahasiswa
-     */
     public function showRegistrationForm()
     {
         return view('auth.register_mahasiswa');
     }
 
-    /**
-     * Proses request kredensial login
-     */
     public function register(Request $request)
     {
         $request->validate([
@@ -42,64 +35,56 @@ class MahasiswaRegistrationController extends Controller
         ]);
 
         try {
-            // Cari data mahasiswa berdasarkan NIM
-            $mahasiswa = Mahasiswa::where('nim', $request->nim)->first();
-            
+            $mahasiswa = User::where('role', 'mahasiswa')
+                ->where('identifier', $request->nim)
+                ->first();
+
             if (!$mahasiswa) {
                 return redirect()->back()
                     ->withInput()
                     ->with('error', 'NIM tidak ditemukan dalam database. Silakan hubungi administrator.');
             }
 
-            // Cari data dosen berdasarkan NUPTK
-            $dosen = Dosen::where('nuptk', $request->nuptk_dosen)->first();
-            
+            $dosen = User::where('role', 'dosen')
+                ->where('identifier', $request->nuptk_dosen)
+                ->first();
+
             if (!$dosen) {
                 return redirect()->back()
                     ->withInput()
                     ->with('error', 'NUPTK dosen tidak ditemukan dalam database. Silakan hubungi administrator.');
             }
 
-            // Update relasi dosen pembimbing
-            $mahasiswa->update([
-                'id_dosen_pembimbing' => $dosen->id_dosen
-            ]);
+            $metadata = $mahasiswa->metadata ?? [];
+            $metadata['id_dosen_pembimbing'] = $dosen->id;
+            $mahasiswa->update(['metadata' => $metadata]);
 
-            // Gunakan password default yang konsisten untuk semua user
-            // Password ini akan sama untuk semua user baru dan akan direset melalui fitur reset password
             $defaultPassword = 'password123';
-            
-            // Set password default jika belum ada
+
             if (!$mahasiswa->password) {
                 $mahasiswa->update(['password' => Hash::make($defaultPassword)]);
             }
-            
+
             if (!$dosen->password) {
                 $dosen->update(['password' => Hash::make($defaultPassword)]);
             }
-            
-            // Gunakan password default untuk dikirim ke email
-            $passwordMahasiswa = $defaultPassword;
-            $passwordDosen = $defaultPassword;
 
-            // Kirim email kredensial ke mahasiswa (ke Gmail yang diinput)
             $this->emailService->sendRegistrationEmail(
-                $request->email_mahasiswa, // Gmail yang diinput mahasiswa
-                $request->nama_mahasiswa, // Nama yang diinput mahasiswa
-                $mahasiswa->nim,
-                $passwordMahasiswa,
+                $request->email_mahasiswa,
+                $request->nama_mahasiswa,
+                $mahasiswa->identifier,
+                $defaultPassword,
                 'mahasiswa',
-                $mahasiswa->email_mhs // Email login yang sebenarnya
+                $mahasiswa->email
             );
 
-            // Kirim email kredensial ke dosen (ke Gmail yang diinput)
             $this->emailService->sendRegistrationEmail(
-                $request->email_dosen, // Gmail yang diinput dosen
-                $request->nama_dosen, // Nama yang diinput dosen
-                $dosen->nuptk,
-                $passwordDosen,
+                $request->email_dosen,
+                $request->nama_dosen,
+                $dosen->identifier,
+                $defaultPassword,
                 'dosen',
-                $dosen->email_dosen // Email login yang sebenarnya
+                $dosen->email
             );
 
             return redirect()->route('login')

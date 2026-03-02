@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Sistem Proposal PKM - Operator')</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -228,53 +229,14 @@
                             </span>
                         </div>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" style="min-width: 280px;">
-                        <div class="dropdown-header">
-                            <i class="fas fa-user-circle me-2"></i>Profil Operator
-                        </div>
-                        
-                        <!-- User Info Section -->
-                        <div class="px-3 py-3">
-                            @php
-                                $userInfo = \App\Helpers\UserHelper::getUserProfileInfo();
-                            @endphp
-                            <div class="d-flex align-items-center">
-                                <div class="bg-primary rounded-circle p-3 me-3">
-                                    <i class="fas fa-user-tie text-white"></i>
-                                </div>
-                                <div>
-                                    <div class="fw-bold">{{ $userInfo['name'] }}</div>
-                                    <div class="text-muted">{{ $userInfo['role'] }}</div>
-                                    @if($userInfo['email'])
-                                        <div class="text-muted small">{{ $userInfo['email'] }}</div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="dropdown-divider"></div>
-                        
-                        <!-- Action Menu -->
-                        <a class="dropdown-item" href="#">
-                            <i class="fas fa-user me-2"></i>Detail Profil
-                        </a>
-                        <a class="dropdown-item" href="#">
-                            <i class="fas fa-edit me-2"></i>Edit Profil
-                        </a>
-                        <a class="dropdown-item" href="#">
-                            <i class="fas fa-key me-2"></i>Ubah Password
-                        </a>
-                        
-                        <div class="dropdown-divider"></div>
-                        
-                        <!-- Logout -->
-                        <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                    </div>
+                    <x-user-profile-dropdown
+                        headerTitle="Profil Operator"
+                        menuClass="dropdown-menu dropdown-menu-end"
+                        menuStyle="min-width: 280px;"
+                        menuItemClass="dropdown-item"
+                        infoTextClass="text-muted small"
+                        logoutFormId="logout-form-operator"
+                    />
                 </div>
             </div>
         </div>
@@ -288,58 +250,48 @@
         
         <ul class="sidebar-menu">
             <li>
-                <a href="#" class="menu-toggle" data-target="pkkOrmawa">
-                    <i class="fas fa-users me-2"></i>PKK ORMAWA
-                    <i class="fas fa-chevron-down float-end mt-1"></i>
-                </a>
-                <ul class="submenu" id="pkkOrmawa">
-                    <li><a href="#"><i class="fas fa-plus me-2"></i>Ajukan Proposal PKK</a></li>
-                    <li><a href="#"><i class="fas fa-eye me-2"></i>Lihat Proposal PKK</a></li>
-                </ul>
-            </li>
-            
-            <li>
                 <a href="#" class="menu-toggle" data-target="pkm" id="pkmMenu">
                     <i class="fas fa-lightbulb me-2"></i>PKM
                     <i class="fas fa-chevron-down float-end mt-1"></i>
                 </a>
                 <ul class="submenu" id="pkm">
                     @php
-                        $operatorUser = Auth::guard('operator')->user();
+                        $operatorUser = auth()->user();
                         $isPimpinanPT = $operatorUser && $operatorUser->role === 'pimpinan_pt';
                         $isOperator = $operatorUser && $operatorUser->role === 'operator';
                     @endphp
                     
                     @if($isOperator)
-                        <!-- Menu untuk Operator (bukan Pimpinan PT) -->
                     <li><a href="{{ route('operator.dashboard') }}" class="@if(request()->routeIs('operator.dashboard')) active @endif">
                         <i class="fas fa-home me-2"></i>Beranda
                     </a></li>
                     <li><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
                         <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
                     </a></li>
+                    <li><a href="{{ route('operator.pilih.reviewer.seleksi') }}" class="@if(request()->routeIs('operator.pilih.reviewer.seleksi')) active @endif">
+                        <i class="fas fa-user-check me-2"></i>Pilih Reviewer Seleksi
+                    </a></li>
                     <li><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
                         <i class="fas fa-cogs me-2"></i>Ruang Kontrol
                     </a></li>
-                        <li><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
-                            <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                    <li><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
+                        <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                    </a></li>
+                    <li><a href="{{ route('operator.hasil.final') }}" class="@if(request()->routeIs('operator.hasil.final*') || request()->routeIs('operator.detail.hasil.final')) active @endif">
+                        <i class="fas fa-trophy me-2"></i>Hasil Final
+                    </a></li>
+                    <li><a href="{{ route('operator.form.penilaian.index') }}" class="@if(request()->routeIs('operator.form.penilaian.*')) active @endif">
+                        <i class="fas fa-file-alt me-2"></i>Form Penilaian
+                    </a></li>
+                    <li><a href="{{ route('operator.laporan.simbelmawa.index') }}" class="@if(request()->routeIs('operator.laporan.simbelmawa.*')) active @endif">
+                        <i class="fas fa-chart-bar me-2"></i>Laporan SIMBELMAWA
                     </a></li>
                     <li><a href="{{ route('operator.manage.accounts') }}" class="@if(request()->routeIs('operator.manage.accounts')) active @endif">
                         <i class="fas fa-id-card me-2"></i>Manajemen Akun
                     </a></li>
                     @elseif($isPimpinanPT)
-                        <!-- Menu untuk Pimpinan PT (memiliki semua menu operator + Hasil Final + Manajemen Akun Pimpinan PT) -->
-                        <li><a href="{{ route('operator.dashboard') }}" class="@if(request()->routeIs('operator.dashboard')) active @endif">
+                        <li><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard')) active @endif">
                             <i class="fas fa-home me-2"></i>Beranda
-                        </a></li>
-                        <li><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
-                            <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
-                        </a></li>
-                        <li><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
-                            <i class="fas fa-cogs me-2"></i>Ruang Kontrol
-                        </a></li>
-                        <li><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
-                            <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
                         </a></li>
                         <li><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
                             <i class="fas fa-trophy me-2"></i>Hasil Final
@@ -355,38 +307,7 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Flash Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('warning'))
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ session('warning') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('info'))
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                <i class="fas fa-info-circle me-2"></i>
-                {{ session('info') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
+        <x-flash-messages />
 
         @yield('content')
     </div>
@@ -397,90 +318,26 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Sidebar Toggle
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.toggle('show');
-            overlay.classList.toggle('show');
-        });
+        function applyIndonesianNumberFormatting() {
+            if (window.AppUI?.applyIndonesianNumberFormatting) {
+                window.AppUI.applyIndonesianNumberFormatting(document);
+            }
+        }
 
-        // Close sidebar when overlay is clicked
-        document.getElementById('sidebarOverlay').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
-        });
-
-        // Menu Toggle
-        document.querySelectorAll('.menu-toggle').forEach(function(toggle) {
-            toggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const targetId = this.getAttribute('data-target');
-                const submenu = document.getElementById(targetId);
-                const chevron = this.querySelector('.fa-chevron-down, .fa-chevron-up');
-                
-                submenu.classList.toggle('show');
-                
-                if (submenu.classList.contains('show')) {
-                    chevron.classList.remove('fa-chevron-down');
-                    chevron.classList.add('fa-chevron-up');
-                } else {
-                    chevron.classList.remove('fa-chevron-up');
-                    chevron.classList.add('fa-chevron-down');
-                }
-            });
-        });
-
-        // Show Toast Notification
         function showToast(message, type = 'info', duration = 3000) {
-            const toastContainer = document.getElementById('toastContainer');
-            
-            const toast = document.createElement('div');
-            toast.className = `toast toast-custom show`;
-            toast.style.cssText = `
-                min-width: 300px;
-                margin-bottom: 10px;
-            `;
-            
-            const icon = type === 'success' ? 'check-circle' : 
-                        type === 'error' ? 'times-circle' : 
-                        type === 'warning' ? 'exclamation-triangle' : 'info-circle';
-            
-            const color = type === 'success' ? '#28a745' : 
-                         type === 'error' ? '#dc3545' : 
-                         type === 'warning' ? '#ffc107' : '#17a2b8';
-            
-            toast.innerHTML = `
-                <div class="toast-header">
-                    <i class="fas fa-${icon} me-2" style="color: ${color}"></i>
-                    <strong class="me-auto">Notifikasi</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            // Auto remove after duration
-            setTimeout(() => {
-                if (toast && toast.parentNode) {
-                    toast.remove();
-                }
-            }, duration);
+            if (window.AppUI?.showToast) {
+                window.AppUI.showToast(message, type, duration);
+            }
         }
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Operator layout loaded successfully');
+            window.AppUI?.initSidebarInteractions?.();
+            applyIndonesianNumberFormatting();
         });
     </script>
+    @stack('scripts')
     @yield('scripts')
 </body>
 </html>

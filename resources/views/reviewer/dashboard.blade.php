@@ -53,6 +53,10 @@
 
 @section('content')
 <div class="container-fluid reviewer-compact">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <x-page-header 
         title="Beranda Reviewer" 

@@ -8,14 +8,14 @@ use App\Models\ProposalRevisi;
 use App\Models\RuangKontrol;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\StorageHelper;
 use Illuminate\Support\Str;
 
 class ProposalRevisiController extends Controller
 {
     public function index()
     {
-        $mahasiswa = Auth::guard('mahasiswa')->user();
+        $mahasiswa = auth()->user();
         
         if (!$mahasiswa) {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
@@ -43,13 +43,11 @@ class ProposalRevisiController extends Controller
         // Cek dengan berbagai cara untuk menemukan proposal mahasiswa
         $proposal = Proposal::where(function($query) use ($mahasiswa) {
             // Ketua tim berdasarkan nim
-            $query->where('ketua_nim', $mahasiswa->nim)
-                  // ATAU anggota tim lain via relasi semuaAnggotaTim (berbasis team_id)
-                  ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
-                      $memberQuery->where('nim', $mahasiswa->nim);
-                  })
+            $query->where('ketua_nim', $mahasiswa->identifier)
+                  // ATAU anggota tim lain (berbasis team_id)
+                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
                   // ATAU sebagai mahasiswa pengaju
-                  ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+                  ->orWhere('id_mahasiswa', $mahasiswa->id);
         })
         ->where('status', 'revisi')
         ->first();
@@ -57,11 +55,9 @@ class ProposalRevisiController extends Controller
         if (!$proposal) {
             // Jika tidak ada proposal dengan status revisi, cek apakah ada proposal yang sedang direview
             $proposalInReview = Proposal::where(function($query) use ($mahasiswa) {
-                $query->where('ketua_nim', $mahasiswa->nim)
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
-                          $memberQuery->where('nim', $mahasiswa->nim);
-                      })
-                      ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+                $query->where('ketua_nim', $mahasiswa->identifier)
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                      ->orWhere('id_mahasiswa', $mahasiswa->id);
             })
             ->whereIn('status', ['review_administratif', 'review_substantif', 'review_completed'])
             ->first();
@@ -83,7 +79,7 @@ class ProposalRevisiController extends Controller
 
     public function store(Request $request)
     {
-        $mahasiswa = Auth::guard('mahasiswa')->user();
+        $mahasiswa = auth()->user();
         
         if (!$mahasiswa) {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
@@ -119,11 +115,9 @@ class ProposalRevisiController extends Controller
 
         // Ambil proposal mahasiswa yang berstatus revisi
         $proposal = Proposal::where(function($query) use ($mahasiswa) {
-            $query->where('ketua_nim', $mahasiswa->nim)
-                  ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
-                      $memberQuery->where('nim', $mahasiswa->nim);
-                  })
-                  ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+            $query->where('ketua_nim', $mahasiswa->identifier)
+                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                  ->orWhere('id_mahasiswa', $mahasiswa->id);
         })
         ->where('status', 'revisi')
         ->first();
@@ -139,8 +133,8 @@ class ProposalRevisiController extends Controller
             
             if ($revisiLama) {
                 // Hapus file fisik dari storage
-                if (Storage::disk('public')->exists($revisiLama->path_file)) {
-                    Storage::disk('public')->delete($revisiLama->path_file);
+                if (StorageHelper::exists($revisiLama->path_file)) {
+                    StorageHelper::delete($revisiLama->path_file);
                 }
                 
                 // Hapus data dari database
@@ -152,7 +146,7 @@ class ProposalRevisiController extends Controller
             $originalName = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension();
             $fileName = 'revisi_' . $proposal->id_proposal . '_' . time() . '_' . Str::random(10) . '.' . $extension;
-            $path = $file->storeAs('proposal_revisi', $fileName, 'public');
+            $path = StorageHelper::store('proposal_revisi', $file, $fileName);
 
             // Simpan data revisi baru
             $revisi = new ProposalRevisi();
@@ -175,7 +169,7 @@ class ProposalRevisiController extends Controller
 
     public function download($id)
     {
-        $mahasiswa = Auth::guard('mahasiswa')->user();
+        $mahasiswa = auth()->user();
         
         if (!$mahasiswa) {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
@@ -186,11 +180,9 @@ class ProposalRevisiController extends Controller
         // Cek apakah revisi ini milik proposal mahasiswa yang login
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
             ->where(function($query) use ($mahasiswa) {
-                $query->where('ketua_nim', $mahasiswa->nim)
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
-                          $memberQuery->where('nim', $mahasiswa->nim);
-                      })
-                      ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+                $query->where('ketua_nim', $mahasiswa->identifier)
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                      ->orWhere('id_mahasiswa', $mahasiswa->id);
             })
             ->first();
 
@@ -198,16 +190,16 @@ class ProposalRevisiController extends Controller
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'File revisi tidak ditemukan.');
         }
 
-        if (!Storage::disk('public')->exists($revisi->path_file)) {
+        if (!StorageHelper::exists($revisi->path_file)) {
             return redirect()->route('mahasiswa.revisi.index')->with('error', 'File revisi tidak ditemukan di server.');
         }
 
-        return Storage::disk('public')->download($revisi->path_file, $revisi->nama_file);
+        return StorageHelper::download($revisi->path_file);
     }
 
     public function destroy($id)
     {
-        $mahasiswa = Auth::guard('mahasiswa')->user();
+        $mahasiswa = auth()->user();
         
         if (!$mahasiswa) {
             return redirect()->route('mahasiswa.proposal.index')->with('error', 'Data mahasiswa tidak ditemukan.');
@@ -236,11 +228,9 @@ class ProposalRevisiController extends Controller
         // Cek apakah revisi ini milik proposal mahasiswa yang login
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
             ->where(function($query) use ($mahasiswa) {
-                $query->where('ketua_nim', $mahasiswa->nim)
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($mahasiswa) {
-                          $memberQuery->where('nim', $mahasiswa->nim);
-                      })
-                      ->orWhere('id_mahasiswa', $mahasiswa->id_mahasiswa);
+                $query->where('ketua_nim', $mahasiswa->identifier)
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                      ->orWhere('id_mahasiswa', $mahasiswa->id);
             })
             ->first();
 
@@ -250,8 +240,8 @@ class ProposalRevisiController extends Controller
 
         try {
             // Hapus file dari storage
-            if (Storage::disk('public')->exists($revisi->path_file)) {
-                Storage::disk('public')->delete($revisi->path_file);
+            if (StorageHelper::exists($revisi->path_file)) {
+                StorageHelper::delete($revisi->path_file);
             }
 
             // Hapus data dari database

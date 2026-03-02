@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('reviewer.dashboard')],
+        ['label' => 'Review Substantif', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <x-page-header 
         title="Review Substantif" 

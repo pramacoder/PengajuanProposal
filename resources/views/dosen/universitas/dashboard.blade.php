@@ -5,6 +5,10 @@
 @section('dosen_content')
 <div class="row">
     <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Beranda', 'active' => true],
+        ]" />
+
         <div class="card card-custom">
             <div class="card-header card-header-custom">
                 <h5 class="mb-0">
@@ -50,7 +54,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h4 class="card-title">{{ $proposalsValidasi->count() }}</h4>
+                                        <h4 class="card-title">@formatId($proposalsValidasi->count())</h4>
                                         <p class="card-text">Perlu Validasi Akhir</p>
                                     </div>
                                     <div class="align-self-center">
@@ -65,7 +69,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h4 class="card-title">{{ $proposalsValid->count() }}</h4>
+                                        <h4 class="card-title">@formatId($proposalsValid->count())</h4>
                                         <p class="card-text">Sudah Valid</p>
                                     </div>
                                     <div class="align-self-center">
@@ -80,7 +84,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h4 class="card-title">{{ $proposals->count() }}</h4>
+                                        <h4 class="card-title">@formatId($proposals->count())</h4>
                                         <p class="card-text">Total Proposal</p>
                                     </div>
                                     <div class="align-self-center">

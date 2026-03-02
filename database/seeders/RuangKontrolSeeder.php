@@ -4,52 +4,43 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\RuangKontrol;
-use App\Models\PT;
+use App\Models\User;
+use App\Helpers\TahunAjaranHelper;
 
 class RuangKontrolSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Get first PT (operator) to assign to ruang kontrol
-        $pt = PT::first();
-        
-        if (!$pt) {
-            $this->command->warn('No PT found. Please run PtSeeder first.');
+        $operator = User::where('role', 'operator')->first();
+
+        if (!$operator) {
+            $this->command->warn('No operator found. Please run PtSeeder first.');
             return;
         }
 
-        // Check if ruang kontrol already exists
-        $existingRuangKontrol = RuangKontrol::first();
-        
-        if ($existingRuangKontrol) {
-            $this->command->info('Ruang Kontrol already exists. Updating...');
-            $existingRuangKontrol->update([
-                'status_pendaftaran' => 'tertutup',
+        $tahunAjaran = TahunAjaranHelper::getTahunAjaranTerbaru();
+
+        RuangKontrol::updateOrCreate(
+            ['tahun_ajaran' => $tahunAjaran],
+            [
+                'nama_history' => 'Jadwal Utama ' . $tahunAjaran,
+                'status_pendaftaran' => 'terbuka',
+                'status_review' => 'tertutup',
                 'status_perbaikan' => 'tertutup',
-                'tanggal_pendaftaran_mulai' => null,
-                'tanggal_pendaftaran_selesai' => null,
-                'tanggal_perbaikan_mulai' => null,
-                'tanggal_perbaikan_selesai' => null,
-                'id_pt' => $pt->id_pt
-            ]);
-        } else {
-            $this->command->info('Creating new Ruang Kontrol...');
-            RuangKontrol::create([
-                'status_pendaftaran' => 'tertutup',
-                'status_perbaikan' => 'tertutup',
-                'tanggal_pendaftaran_mulai' => null,
-                'tanggal_pendaftaran_selesai' => null,
-                'tanggal_perbaikan_mulai' => null,
-                'tanggal_perbaikan_selesai' => null,
-                'id_pt' => $pt->id_pt
-            ]);
-        }
-        
-        $this->command->info('Ruang Kontrol seeded successfully.');
+                'status_penilaian_akhir' => 'tertutup',
+                'tanggal_pendaftaran_mulai' => now()->startOfMonth(),
+                'tanggal_pendaftaran_selesai' => now()->addMonths(2)->endOfMonth(),
+                'tanggal_review_mulai' => now()->addMonths(3)->startOfMonth(),
+                'tanggal_review_selesai' => now()->addMonths(4)->endOfMonth(),
+                'tanggal_perbaikan_mulai' => now()->addMonths(5)->startOfMonth(),
+                'tanggal_perbaikan_selesai' => now()->addMonths(6)->endOfMonth(),
+                'tanggal_penilaian_akhir_mulai' => now()->addMonths(7)->startOfMonth(),
+                'tanggal_penilaian_akhir_selesai' => now()->addMonths(8)->endOfMonth(),
+                'is_active' => true,
+                'id_pt' => $operator->id,
+            ]
+        );
+
+        $this->command->info("Ruang Kontrol seeded for {$tahunAjaran} with 4 phases.");
     }
 }
-
-

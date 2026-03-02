@@ -141,6 +141,12 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('operator.dashboard')],
+        ['label' => 'Hasil Final', 'url' => route('operator.hasil.final')],
+        ['label' => 'Detail Proposal', 'active' => true],
+    ]" />
+
     <!-- Header Section -->
     <x-page-header 
         title="DETAIL HASIL FINAL" 
@@ -172,7 +178,7 @@
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
-                                    <p><strong>Dana Diajukan:</strong> Rp {{ number_format($proposal->dana_diajukan, 0, ',', '.') }}</p>
+                                    <p><strong>Dana Diajukan:</strong> @rupiahId($proposal->dana_diajukan)</p>
                                     <p><strong>Tahun Ajaran:</strong> {{ $proposal->tahun_ajaran }}</p>
                                 </div>
                                 <div class="col-md-6">
@@ -499,21 +505,21 @@
                                                     @if($item['is_header'])
                                                         <span class="text-muted">-</span>
                                                     @else
-                                                        {{ number_format($item['bobot'], 2) }}
+                                                        @formatId($item['bobot'], 2)
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
                                                     @if($item['is_header'])
                                                         <span class="text-muted">-</span>
                                                     @else
-                                                        {{ is_numeric($skorValue) ? number_format($skorValue, 1) : $skorValue }}
+                                                        @if(is_numeric($skorValue))@formatId($skorValue, 1)@else{{ $skorValue }}@endif
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
                                                     @if($item['is_header'])
                                                         <span class="text-muted">-</span>
                                                     @else
-                                                        {{ is_numeric($nilai) ? number_format($nilai, 2) : $nilai }}
+                                                        @if(is_numeric($nilai))@formatId($nilai, 2)@else{{ $nilai }}@endif
                                                     @endif
                                                 </td>
                                             </tr>
@@ -523,11 +529,11 @@
                                         <tr>
                                             <td colspan="3" class="text-end fw-bold">Total</td>
                                             <td class="text-center fw-bold">-</td>
-                                            <td class="text-center fw-bold">{{ number_format($nilaiSubstantif1->total_nilai ?? 0, 2) }}</td>
+                                            <td class="text-center fw-bold">@formatId($nilaiSubstantif1->total_nilai ?? 0, 2)</td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
-                                            <td class="text-center fw-bold text-primary">{{ number_format($nilaiSubstantif1->nilai_akhir ?? 0, 2) }}</td>
+                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif1->nilai_akhir ?? 0, 2)</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -649,21 +655,21 @@
                                                     @if($item['is_header'])
                                                         <span class="text-muted">-</span>
                                                     @else
-                                                        {{ number_format($item['bobot'], 2) }}
+                                                        @formatId($item['bobot'], 2)
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
                                                     @if($item['is_header'])
                                                         <span class="text-muted">-</span>
                                                     @else
-                                                        {{ is_numeric($skorValue) ? number_format($skorValue, 1) : $skorValue }}
+                                                        @if(is_numeric($skorValue))@formatId($skorValue, 1)@else{{ $skorValue }}@endif
                                                     @endif
                                                 </td>
                                                 <td class="text-center">
                                                     @if($item['is_header'])
                                                         <span class="text-muted">-</span>
                                                     @else
-                                                        {{ is_numeric($nilai) ? number_format($nilai, 2) : $nilai }}
+                                                        @if(is_numeric($nilai))@formatId($nilai, 2)@else{{ $nilai }}@endif
                                                     @endif
                                                 </td>
                                             </tr>
@@ -673,11 +679,11 @@
                                         <tr>
                                             <td colspan="3" class="text-end fw-bold">Total</td>
                                             <td class="text-center fw-bold">-</td>
-                                            <td class="text-center fw-bold">{{ number_format($nilaiSubstantif2->total_nilai ?? 0, 2) }}</td>
+                                            <td class="text-center fw-bold">@formatId($nilaiSubstantif2->total_nilai ?? 0, 2)</td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
-                                            <td class="text-center fw-bold text-primary">{{ number_format($nilaiSubstantif2->nilai_akhir ?? 0, 2) }}</td>
+                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif2->nilai_akhir ?? 0, 2)</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -716,13 +722,13 @@
                                         </span>
                                     </p>
                                     <p><strong>Nilai:</strong> 
-                                        <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                        <span class="badge bg-primary fs-6">@formatId($proposal->hasilFinal->nilai, 2)</span>
                                     </p>
                                 </div>
                                 <div class="col-md-4">
                                     @if($proposal->hasilFinal->dana_yang_dapat_diberikan)
                                         <p><strong>Dana yang Dapat Diberikan:</strong> 
-                                            <span class="badge bg-success fs-6">Rp {{ number_format($proposal->hasilFinal->dana_yang_dapat_diberikan, 0, ',', '.') }}</span>
+                                            <span class="badge bg-success fs-6">@rupiahId($proposal->hasilFinal->dana_yang_dapat_diberikan)</span>
                                         </p>
                                     @endif
                                     <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
@@ -878,7 +884,7 @@
                                                         @if($item['is_header'])
                                                             <span class="text-muted">-</span>
                                                         @else
-                                                            {{ number_format($item['bobot'], 2) }}
+                                                            @formatId($item['bobot'], 2)
                                                         @endif
                                                     </td>
                                                     <td>
@@ -902,7 +908,7 @@
                                                             <span class="text-muted">-</span>
                                                         @else
                                                             <span class="nilai-final-display fw-bold" data-index="{{ $item['index'] }}">
-                                                                {{ $nilai > 0 ? number_format($nilai, 2) : '0.00' }}
+                                                                @if($nilai > 0)@formatId($nilai, 2)@else 0,00 @endif
                                                             </span>
                                                         @endif
                                                     </td>
@@ -959,9 +965,9 @@
                                     <label class="form-label">Dana yang Dapat Diberikan</label>
                                     <div class="input-group">
                                         <span class="input-group-text">Rp</span>
-                                        <input type="number" class="form-control" name="dana_yang_dapat_diberikan" id="danaFinalInput"
+                                        <input type="text" class="form-control js-format-id-int" name="dana_yang_dapat_diberikan" id="danaFinalInput"
                                                value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_yang_dapat_diberikan ?? '') : '' }}"
-                                               min="0" step="0.01"
+                                               inputmode="numeric"
                                                placeholder="0">
                                     </div>
                                     <div class="form-text">Dana yang dapat diberikan kepada proposal ini</div>
@@ -998,16 +1004,12 @@
     $hasRevisi = $proposal->proposalRevisi->count() > 0;
     $firstRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
     $firstRevisiUrl = $firstRevisi ? route('operator.revisi.view', $firstRevisi->id_revisi) : null;
-    $successMessage = session('success');
-    $errorMessage = session('error');
     
     // Prepare JSON strings
     $pageDataJson = json_encode([
         'hasRevisi' => $hasRevisi,
         'firstRevisi' => $firstRevisi,
-        'firstRevisiUrl' => $firstRevisiUrl,
-        'successMessage' => $successMessage,
-        'errorMessage' => $errorMessage
+        'firstRevisiUrl' => $firstRevisiUrl
     ]);
 @endphp
 <script>
@@ -1312,14 +1314,6 @@
             document.head.appendChild(link);
         }
         
-        // Show success/error messages
-        if (pageData.successMessage) {
-            showToast(pageData.successMessage, 'success');
-        }
-
-        if (pageData.errorMessage) {
-            showToast(pageData.errorMessage, 'error');
-        }
     });
 
     // Form submission
@@ -1444,36 +1438,8 @@
         });
     });
 
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        `;
-        toast.textContent = message;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.transform = 'translateX(0)';
-        }, 100);
-        
-        setTimeout(() => {
-            toast.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                document.body.removeChild(toast);
-            }, 300);
-        }, 3000);
+    function showToast(message, type = 'info', duration = 3000) {
+        window.AppUI?.showToast?.(message, type, duration);
     }
 </script>
 @endsection

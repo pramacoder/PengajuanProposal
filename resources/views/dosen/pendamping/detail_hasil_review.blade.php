@@ -5,6 +5,12 @@
 @section('dosen_content')
 <div class="row">
     <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Dashboard Dosen', 'url' => route('dosen.dashboard')],
+            ['label' => 'Hasil Review', 'url' => route('dosen.hasil.review')],
+            ['label' => 'Detail Hasil Review', 'active' => true],
+        ]" />
+
         <div class="card card-custom">
             <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">

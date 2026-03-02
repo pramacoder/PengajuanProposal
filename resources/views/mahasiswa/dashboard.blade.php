@@ -4,13 +4,17 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800">
                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard Mahasiswa
             </h1>
-            <p class="text-muted">Selamat datang, {{ auth()->guard('mahasiswa')->user()->nama_mhs }}</p>
+            <p class="text-muted">Selamat datang, {{ auth()->user()->name }}</p>
         </div>
         
         <div class="d-flex align-items-center">
@@ -27,16 +31,13 @@
         </div>
     </div>
 
-    <!-- Alert untuk proposal yang sudah terdaftar -->
-    @if($totalProposals > 0)
-        @php
-            $existingProposal = $proposals->first();
-        @endphp
+    <!-- Alert untuk proposal yang benar-benar masih memblokir pengajuan baru -->
+    @if(isset($blockingProposal) && $blockingProposal)
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <div class="d-flex align-items-center">
                 <i class="fas fa-info-circle me-3 fa-2x"></i>
                 <div>
-                    <h5 class="mb-1">Anda sudah terdaftar dalam proposal tahun {{ $existingProposal->tahun_ajaran ?? '2024/2025' }}: "{{ $existingProposal->judul_proposal }}"</h5>
+                    <h5 class="mb-1">Anda sudah terdaftar dalam proposal tahun {{ $blockingProposal->tahun_ajaran ?? \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru() }}: "{{ $blockingProposal->judul_proposal }}"</h5>
                     <p class="mb-0">Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.</p>
                 </div>
             </div>

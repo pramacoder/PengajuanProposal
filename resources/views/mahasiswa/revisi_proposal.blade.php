@@ -341,6 +341,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+        ['label' => 'Revisi Proposal', 'active' => true],
+    ]" />
+
     <x-page-header 
         title="Revisi Proposal PKM" 
     />
@@ -350,9 +355,7 @@
             <i class="fas fa-info-circle me-3 fa-2x"></i>
             <div>
                 <h5 class="mb-1">Status Perbaikan: 
-                    <span class="badge bg-success status-badge">
-                        {{ ucfirst($ruangKontrol ? $ruangKontrol->status_perbaikan : 'tertutup') }}
-                    </span>
+                    <x-status-badge class="status-badge" :status="$ruangKontrol ? $ruangKontrol->status_perbaikan : 'tertutup'" />
                 </h5>
                 @if(!$ruangKontrol)
                     <p class="mb-0 text-warning">
@@ -401,11 +404,11 @@
                 <h5 class="text-primary">{{ $proposal->judul_proposal }}</h5>
                 <p class="text-muted mb-2">
                     <strong>Skim:</strong> {{ $proposal->skim }} | 
-                    <strong>Dana:</strong> Rp {{ number_format($proposal->dana_diajukan, 0, ',', '.') }}
+                    <strong>Dana:</strong> @rupiahId($proposal->dana_diajukan)
                 </p>
                 <p class="text-muted mb-0">
                     <strong>Status:</strong> 
-                    <span class="badge bg-warning">{{ ucfirst($proposal->status) }}</span>
+                    <x-status-badge :status="$proposal->status" :label="$proposal->status_label" />
                 </p>
             </div>
             <div class="col-md-4 text-end">
@@ -661,6 +664,11 @@
                     <i class="fas fa-folder-open me-2"></i>Pilih File
                 </button>
             </div>
+            @error('file_revisi')
+                <div class="invalid-feedback d-block mt-2">
+                    {{ $message }}
+                </div>
+            @enderror
             
             <div class="file-info" id="revisiFileInfo">
                 <div class="d-flex justify-content-between align-items-center">
@@ -905,23 +913,10 @@
     });
 
     // Show toast notification
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} position-fixed`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        toast.innerHTML = `
-            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-            <strong>${type === 'error' ? 'Error' : type === 'success' ? 'Sukses' : type === 'warning' ? 'Peringatan' : 'Info'}:</strong> ${message}
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 5000);
+    function showToast(message, type = 'info', duration = 3000) {
+        if (window.AppUI?.showToast) {
+            window.AppUI.showToast(message, type, duration);
+        }
     }
 
     // Initialize on page load

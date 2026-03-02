@@ -4,18 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Proposal;
 use App\Models\ProposalRevisi;
-// use App\Models\Team; // Model Team sudah dihapus
-use App\Models\Dosen;
+use App\Models\User;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\HasilFinal;
 use App\Models\RuangKontrol;
 use App\Helpers\ProposalHelper;
+use App\Helpers\StorageHelper;
 use App\Helpers\TahunAjaranHelper;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ProposalController extends Controller
 {
@@ -25,20 +24,20 @@ class ProposalController extends Controller
     public function dashboard()
     {
         // Cek user yang sedang login dari guard mahasiswa
-        if (!auth()->guard('mahasiswa')->check()) {
+        if (!auth()->check()) {
             return redirect('/login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
         }
 
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
         // Ambil proposal mahasiswa
         $proposals = Proposal::where(function($query) use ($user) {
             // Proposal yang dibuat oleh mahasiswa ini
-            $query->where('id_mahasiswa', $user->id_mahasiswa)
+            $query->where('id_mahasiswa', $user->id)
                   // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                  ->orWhere('team_id', $user->team_id);
+                      ->orWhere('team_id', $user->getTeamId());
         })
-        ->with(['mahasiswa', 'dosen', 'dokumen', 'semuaAnggotaTim'])
+        ->with(['mahasiswa', 'dosen', 'dokumen'])
         ->orderBy('created_at', 'desc')
         ->get();
 
@@ -65,6 +64,9 @@ class ProposalController extends Controller
                 ->first();
         }
 
+        // Proposal aktif yang benar-benar memblokir pengajuan baru (proposal ditolak tidak termasuk)
+        $blockingProposal = ProposalHelper::checkStudentInProposal($user->identifier, null, $tahunAjaranTerbaru);
+
         return view('mahasiswa.dashboard', compact(
             'proposals', 
             'totalProposals', 
@@ -73,7 +75,8 @@ class ProposalController extends Controller
             'approved',
             'revision',
             'proposalForRevision',
-            'ruangKontrol'
+            'ruangKontrol',
+            'blockingProposal'
         ));
     }
 
@@ -82,16 +85,16 @@ class ProposalController extends Controller
      */
     public function create(Request $request)
     {
-        $dosens = Dosen::all();
+        $dosens = User::dosen()->get();
         $fakultas = \App\Models\Fakultas::orderBy('nama_fakultas')->get();
         
         // Cek user yang sedang login dari guard mahasiswa
-        if (auth()->guard('mahasiswa')->check()) {
-            $user = auth()->guard('mahasiswa')->user();
+        if (auth()->check()) {
+            $user = auth()->user();
             
             // Cek apakah mahasiswa sudah memiliki proposal di tahun akademik yang sama
-            $tahunAjaran = $request->input('tahun_ajaran', '2024/2025');
-            $existingProposal = \App\Helpers\ProposalHelper::checkStudentInProposal($user->nim, null, $tahunAjaran);
+            $tahunAjaran = $request->input('tahun_ajaran', \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru());
+            $existingProposal = \App\Helpers\ProposalHelper::checkStudentInProposal($user->identifier, null, $tahunAjaran);
             if ($existingProposal) {
                 return redirect()->route('mahasiswa.proposal.index')
                     ->with('warning', "Anda sudah terdaftar dalam proposal tahun {$tahunAjaran}: \"{$existingProposal->judul}\". Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.");
@@ -124,6 +127,9 @@ class ProposalController extends Controller
     {
         try {
             DB::beginTransaction();
+            $request->merge([
+                'dana_diajukan' => ProposalHelper::parseAngka($request->input('dana_diajukan')),
+            ]);
 
             // Validasi data proposal menggunakan ProposalHelper
             $validator = ProposalHelper::validateProposalData($request->all());
@@ -209,8 +215,8 @@ class ProposalController extends Controller
                 // Hapus file proposal lama (file koreksi dari dosen)
                 if ($existingProposal->dokumen && $existingProposal->dokumen->path_file) {
                     $oldFilePath = $existingProposal->dokumen->path_file;
-                    if (Storage::disk('public')->exists($oldFilePath)) {
-                        Storage::disk('public')->delete($oldFilePath);
+                    if (StorageHelper::exists($oldFilePath)) {
+                        StorageHelper::delete($oldFilePath);
                         \Log::info('Old proposal file deleted', [
                             'proposal_id' => $existingProposal->id_proposal,
                             'file_path' => $oldFilePath
@@ -220,8 +226,8 @@ class ProposalController extends Controller
                     // Jika ada backup file asli, hapus juga
                     if ($existingProposal->dokumen->path_file_original) {
                         $originalFilePath = $existingProposal->dokumen->path_file_original;
-                        if (Storage::disk('public')->exists($originalFilePath)) {
-                            Storage::disk('public')->delete($originalFilePath);
+                        if (StorageHelper::exists($originalFilePath)) {
+                            StorageHelper::delete($originalFilePath);
                             \Log::info('Original proposal file deleted', [
                                 'proposal_id' => $existingProposal->id_proposal,
                                 'file_path' => $originalFilePath
@@ -231,8 +237,8 @@ class ProposalController extends Controller
                 }
                 
                 // Hapus review PDF dosen jika ada
-                if ($existingProposal->path_review_dosen && Storage::disk('public')->exists($existingProposal->path_review_dosen)) {
-                    Storage::disk('public')->delete($existingProposal->path_review_dosen);
+                if ($existingProposal->path_review_dosen && StorageHelper::exists($existingProposal->path_review_dosen)) {
+                    StorageHelper::delete($existingProposal->path_review_dosen);
                 }
             } else if ($existingProposal) {
                 // Jika proposal lama masih aktif (bukan ditolak), tidak boleh membuat proposal baru
@@ -259,7 +265,7 @@ class ProposalController extends Controller
                         ->withInput();
                 }
                 
-                $proposalFile = $file->store('proposals', 'public');
+                $proposalFile = StorageHelper::store('proposals', $file);
             }
 
             // Set dana untuk PKM Insentif
@@ -290,7 +296,7 @@ class ProposalController extends Controller
                 'status_validasi' => 'pending',
                 'status_final' => 'submitted',
                 'status' => 'submitted',
-                'id_mahasiswa' => auth()->guard('mahasiswa')->user()->id_mahasiswa,
+                'id_mahasiswa' => auth()->user()->id,
                 'id_dosen' => $this->getDosenIdByName($request->dosen_pembimbing),
                 
                 // Data ketua tim (wajib)
@@ -397,7 +403,7 @@ class ProposalController extends Controller
 
             // Kirim notifikasi ke mahasiswa
             try {
-                $notificationService = new NotificationService();
+                $notificationService = app(NotificationService::class);
                 $notificationService->notifyProposalUploaded($proposal);
             } catch (\Exception $e) {
                 \Log::error('Gagal mengirim notifikasi proposal uploaded: ' . $e->getMessage());
@@ -410,8 +416,8 @@ class ProposalController extends Controller
             DB::rollback();
             
             // Hapus file jika ada error
-            if ($proposalFile && Storage::disk('public')->exists($proposalFile)) {
-                Storage::disk('public')->delete($proposalFile);
+            if ($proposalFile && StorageHelper::exists($proposalFile)) {
+                StorageHelper::delete($proposalFile);
             }
             
             return back()
@@ -425,21 +431,20 @@ class ProposalController extends Controller
      */
     public function index()
     {
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
         // Ambil proposal yang dimiliki oleh mahasiswa yang login (sebagai pengaju)
         // ATAU proposal di mana mahasiswa terdaftar sebagai anggota tim
-        $proposals = Proposal::with(['semuaAnggotaTim', 'dosen', 'dokumen', 'proposalRevisi', 'hasilFinal'])
+        $proposals = Proposal::with(['dosen', 'dokumen', 'proposalRevisi', 'hasilFinal'])
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                $query->where('id_mahasiswa', $user->id)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhere('team_id', $user->team_id);
+                      ->orWhere('team_id', $user->getTeamId());
             })
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Hitung statistik
         $totalProposals = $proposals->count();
         $pendingValidation = $proposals->where('status_validasi', 'pending')->count();
         $underReview = $proposals->where('status_validasi', 'valid')->where('status_final', '!=', 'approved')->count();
@@ -453,10 +458,9 @@ class ProposalController extends Controller
      */
     public function show($id)
     {
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
         $proposal = Proposal::with([
-                'semuaAnggotaTim', 
                 'dosen', 
                 'dosenPendampingUniversitas', 
                 'dokumen', 
@@ -472,13 +476,12 @@ class ProposalController extends Controller
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                $query->where('id_mahasiswa', $user->id)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhere('team_id', $user->team_id);
+                      ->orWhere('team_id', $user->getTeamId());
             })
             ->firstOrFail();
 
-        // Ambil data tim
         $ketua = $proposal->ketuaTim;
         $anggota = $proposal->anggotaTim;
 
@@ -491,7 +494,7 @@ class ProposalController extends Controller
     public function download($id, $jenis)
     {
         $proposal = Proposal::where('id_proposal', $id)
-            ->where('id_mahasiswa', auth()->user()->id_mahasiswa)
+            ->where('id_mahasiswa', auth()->user()->id)
             ->with('dokumen')
             ->firstOrFail();
 
@@ -501,7 +504,7 @@ class ProposalController extends Controller
 
         $path = $proposal->dokumen->path_file;
         
-        if (!Storage::disk('public')->exists($path)) {
+        if (!StorageHelper::exists($path)) {
             return back()->with('error', 'File tidak ditemukan.');
         }
 
@@ -510,7 +513,7 @@ class ProposalController extends Controller
             ? basename($proposal->dokumen->path_file_original)
             : basename($path);
 
-        return Storage::disk('public')->download($path, $filename);
+        return StorageHelper::download($path);
     }
 
     /**
@@ -520,25 +523,18 @@ class ProposalController extends Controller
     {
         try {
             $proposal = Proposal::where('id_proposal', $id)
-                ->where('id_mahasiswa', auth()->user()->id_mahasiswa)
+                ->where('id_mahasiswa', auth()->user()->id)
                 ->with('dokumen')
                 ->firstOrFail();
 
-            if (!$proposal->dokumen) {
+            if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
                 abort(404, 'Dokumen tidak ditemukan.');
             }
 
-            $path = storage_path('app/' . $proposal->dokumen->path_file);
-            
-            if (!file_exists($path)) {
-                abort(404, 'File tidak ditemukan: ' . $path);
-            }
+            $path = $proposal->dokumen->path_file;
+            $filename = basename($path);
 
-            // Return PDF dengan content-type yang tepat untuk iframe
-            return response()->file($path, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
-            ]);
+            return StorageHelper::response($path, $filename);
         } catch (\Exception $e) {
             \Log::error('Error in viewPdf: ' . $e->getMessage());
             abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
@@ -549,7 +545,7 @@ class ProposalController extends Controller
     {
         try {
             $proposal = Proposal::where('id_proposal', $id)
-                ->where('id_mahasiswa', auth()->user()->id_mahasiswa)
+                ->where('id_mahasiswa', auth()->user()->id)
                 ->firstOrFail();
 
             // Ambil review administratif terbaru saja (hanya 1)
@@ -606,7 +602,7 @@ class ProposalController extends Controller
     {
         try {
             $proposal = Proposal::where('id_proposal', $id)
-                ->where('id_mahasiswa', auth()->user()->id_mahasiswa)
+                ->where('id_mahasiswa', auth()->user()->id)
                 ->firstOrFail();
 
             // Ambil review substantif terbaru dari setiap reviewer (maksimal 2)
@@ -681,17 +677,15 @@ class ProposalController extends Controller
     public function getFinalReview($id)
     {
         try {
-            $user = auth()->guard('mahasiswa')->user();
+            $user = auth()->user();
             
             $proposal = Proposal::with(['dosenPendampingUniversitas', 'hasilSemiFinal'])
                 ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     // Proposal yang dibuat oleh mahasiswa ini
-                    $query->where('id_mahasiswa', $user->id_mahasiswa)
+                    $query->where('id_mahasiswa', $user->id)
                           // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                          ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                              $memberQuery->where('nim', $user->nim);
-                          });
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
                 })
                 ->firstOrFail();
 
@@ -734,17 +728,14 @@ class ProposalController extends Controller
      */
     public function edit($id)
     {
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
-        $proposal = Proposal::with(['semuaAnggotaTim'])
-            ->where('id_proposal', $id)
+        $proposal = Proposal::where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                $query->where('id_mahasiswa', $user->id)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                          $memberQuery->where('nim', $user->nim);
-                      });
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -754,7 +745,7 @@ class ProposalController extends Controller
                 ->with('error', 'Proposal tidak dapat diedit karena sudah diproses.');
         }
 
-        $dosens = Dosen::all();
+        $dosens = User::dosen()->get();
         
         return view('mahasiswa.edit_proposal', compact('proposal', 'dosens'));
     }
@@ -764,16 +755,17 @@ class ProposalController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
+        $request->merge([
+            'dana_diajukan' => ProposalHelper::parseAngka($request->input('dana_diajukan')),
+        ]);
         
         $proposal = Proposal::where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                $query->where('id_mahasiswa', $user->id)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                          $memberQuery->where('nim', $user->nim);
-                      });
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -870,16 +862,14 @@ class ProposalController extends Controller
      */
     public function destroy($id)
     {
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
         $proposal = Proposal::where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                $query->where('id_mahasiswa', $user->id)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                          $memberQuery->where('nim', $user->nim);
-                      });
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -894,8 +884,8 @@ class ProposalController extends Controller
 
             // Hapus dokumen terkait
             if ($proposal->dokumen) {
-                if ($proposal->dokumen->path_file && Storage::disk('public')->exists($proposal->dokumen->path_file)) {
-                    Storage::disk('public')->delete($proposal->dokumen->path_file);
+                if ($proposal->dokumen->path_file && StorageHelper::exists($proposal->dokumen->path_file)) {
+                    StorageHelper::delete($proposal->dokumen->path_file);
                 }
                 $proposal->dokumen->delete();
             }
@@ -924,12 +914,11 @@ class ProposalController extends Controller
      */
     private function getDosenIdByName($namaDosen)
     {
-        // Extract nama dosen dari format "Nama, Gelar"
         $nama = explode(',', $namaDosen)[0];
-        
-        $dosen = Dosen::where('nama_dosen', 'LIKE', "%{$nama}%")->first();
-        
-        return $dosen ? $dosen->id_dosen : null;
+
+        $dosen = User::dosen()->where('name', 'LIKE', "%{$nama}%")->first();
+
+        return $dosen ? $dosen->id : null;
     }
 
     /**
@@ -953,8 +942,8 @@ class ProposalController extends Controller
      */
     public function getStudentByNim($nim)
     {
-        $mahasiswa = \App\Models\Mahasiswa::where('nim', $nim)->first();
-        
+        $mahasiswa = User::where('role', 'mahasiswa')->where('identifier', $nim)->first();
+
         if (!$mahasiswa) {
             return response()->json([
                 'success' => false,
@@ -965,12 +954,12 @@ class ProposalController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'nama' => $mahasiswa->nama_mhs,
-                'nim' => $mahasiswa->nim,
-                'prodi' => $mahasiswa->prodi_mhs,
-                'fakultas' => $mahasiswa->fakultas_mhs,
-                'email' => $mahasiswa->email_mhs,
-                'no_hp' => $mahasiswa->no_hp_mhs,
+                'nama' => $mahasiswa->name,
+                'nim' => $mahasiswa->identifier,
+                'prodi' => $mahasiswa->getProdiName(),
+                'fakultas' => $mahasiswa->getFakultasName(),
+                'email' => $mahasiswa->email,
+                'no_hp' => $mahasiswa->phone,
             ]
         ]);
     }
@@ -981,17 +970,16 @@ class ProposalController extends Controller
     public function showRevisiForm($id)
     {
         // Cek user yang sedang login dari guard mahasiswa
-        if (!auth()->guard('mahasiswa')->check()) {
+        if (!auth()->check()) {
             return redirect('/login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
         }
 
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
         // Ambil proposal berdasarkan ID
         $proposal = Proposal::with([
             'mahasiswa', 
             'dosen', 
-            'semuaAnggotaTim', 
             'dokumen',
             'nilaiAdministratif.reviewer',
             'nilaiSubstantif.reviewer',
@@ -1001,11 +989,9 @@ class ProposalController extends Controller
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 // Proposal yang dibuat oleh mahasiswa ini
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
+                $query->where('id_mahasiswa', $user->id)
                       // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                          $memberQuery->where('nim', $user->nim);
-                      });
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -1043,25 +1029,23 @@ class ProposalController extends Controller
     {
         try {
             // Cek user yang sedang login dari guard mahasiswa
-            if (!auth()->guard('mahasiswa')->check()) {
+            if (!auth()->check()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Silakan login terlebih dahulu.'
                 ], 401);
             }
 
-            $user = auth()->guard('mahasiswa')->user();
+            $user = auth()->user();
             
             // Ambil proposal berdasarkan ID
             $proposal = Proposal::with(['dokumen'])
                 ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     // Proposal yang dibuat oleh mahasiswa ini
-                    $query->where('id_mahasiswa', $user->id_mahasiswa)
+                    $query->where('id_mahasiswa', $user->id)
                           // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                          ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                              $memberQuery->where('nim', $user->nim);
-                          });
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
                 })
                 ->firstOrFail();
 
@@ -1088,7 +1072,7 @@ class ProposalController extends Controller
             // Upload file revisi
             $revisiFile = $request->file('revisi_file');
             $fileName = 'revisi_' . time() . '_' . $revisiFile->getClientOriginalName();
-            $filePath = $revisiFile->storeAs('proposals/revisi', $fileName, 'public');
+            $filePath = StorageHelper::store('proposals/revisi', $revisiFile, $fileName);
 
             // Create record di tabel proposal_revisi
             $proposalRevisi = $proposal->proposalRevisi()->create([
@@ -1128,7 +1112,7 @@ class ProposalController extends Controller
             
             \Log::error('Error in submitRevisi', [
                 'proposal_id' => $id,
-                'user_id' => $user->id_mahasiswa ?? 'unknown',
+                'user_id' => $user->id ?? 'unknown',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -1145,7 +1129,7 @@ class ProposalController extends Controller
      */
     public function showRevisiAkhirForm($id)
     {
-        $user = auth()->guard('mahasiswa')->user();
+        $user = auth()->user();
         
         if (!$user) {
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
@@ -1155,10 +1139,8 @@ class ProposalController extends Controller
         $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas', 'hasilSemiFinal'])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
-                $query->where('id_mahasiswa', $user->id_mahasiswa)
-                      ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                          $memberQuery->where('nim', $user->nim);
-                      });
+                $query->where('id_mahasiswa', $user->id)
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -1184,25 +1166,23 @@ class ProposalController extends Controller
     {
         try {
             // Cek user yang sedang login dari guard mahasiswa
-            if (!auth()->guard('mahasiswa')->check()) {
+            if (!auth()->check()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Silakan login terlebih dahulu.'
                 ], 401);
             }
 
-            $user = auth()->guard('mahasiswa')->user();
+            $user = auth()->user();
             
             // Ambil proposal berdasarkan ID
             $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas'])
                 ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     // Proposal yang dibuat oleh mahasiswa ini
-                    $query->where('id_mahasiswa', $user->id_mahasiswa)
+                    $query->where('id_mahasiswa', $user->id)
                           // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                          ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                              $memberQuery->where('nim', $user->nim);
-                          });
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
                 })
                 ->firstOrFail();
 
@@ -1229,7 +1209,7 @@ class ProposalController extends Controller
             // Upload file revisi akhir (disimpan di folder berbeda)
             $revisiFile = $request->file('revisi_file');
             $fileName = 'revisi_akhir_' . time() . '_' . $revisiFile->getClientOriginalName();
-            $filePath = $revisiFile->storeAs('proposals/revisi_akhir', $fileName, 'public');
+            $filePath = StorageHelper::store('proposals/revisi_akhir', $revisiFile, $fileName);
 
             // Create record di tabel proposal_revisi
             $proposalRevisi = $proposal->proposalRevisi()->create([
@@ -1270,7 +1250,7 @@ class ProposalController extends Controller
             
             \Log::error('Error in submitRevisiAkhir', [
                 'proposal_id' => $id,
-                'user_id' => $user->id_mahasiswa ?? 'unknown',
+                'user_id' => $user->id ?? 'unknown',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

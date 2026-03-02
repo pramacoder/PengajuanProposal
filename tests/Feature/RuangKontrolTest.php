@@ -4,8 +4,7 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use App\Models\RuangKontrol;
-use App\Models\Mahasiswa;
-use App\Models\PT;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class RuangKontrolTest extends TestCase
@@ -14,24 +13,24 @@ class RuangKontrolTest extends TestCase
 
     public function test_operator_can_access_ruang_kontrol()
     {
-        $operator = PT::factory()->create();
-        
-        $response = $this->actingAs($operator, 'operator')
+        $operator = User::factory()->create(['role' => 'operator', 'identifier' => 'OP001']);
+
+        $response = $this->actingAs($operator)
             ->get('/operator/ruang-kontrol');
-        
+
         $response->assertStatus(200);
         $response->assertViewIs('operator.ruang_kontrol');
     }
 
     public function test_operator_can_update_ruang_kontrol_status()
     {
-        $operator = PT::factory()->create();
+        $operator = User::factory()->create(['role' => 'operator', 'identifier' => 'OP002']);
         $ruangKontrol = RuangKontrol::factory()->create([
             'status_pendaftaran' => 'tertutup',
             'status_perbaikan' => 'tertutup'
         ]);
 
-        $response = $this->actingAs($operator, 'operator')
+        $response = $this->actingAs($operator)
             ->postJson('/operator/update-ruang-kontrol', [
                 'status_pendaftaran' => 'terbuka',
                 'status_perbaikan' => 'tertutup',
@@ -52,12 +51,12 @@ class RuangKontrolTest extends TestCase
 
     public function test_mahasiswa_cannot_access_proposal_create_when_pendaftaran_closed()
     {
-        $mahasiswa = Mahasiswa::factory()->create();
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa', 'identifier' => '2501234567']);
         RuangKontrol::factory()->create([
             'status_pendaftaran' => 'tertutup'
         ]);
 
-        $response = $this->actingAs($mahasiswa, 'mahasiswa')
+        $response = $this->actingAs($mahasiswa)
             ->get('/mahasiswa/proposal/create');
 
         $response->assertStatus(302);
@@ -66,14 +65,14 @@ class RuangKontrolTest extends TestCase
 
     public function test_mahasiswa_can_access_proposal_create_when_pendaftaran_open()
     {
-        $mahasiswa = Mahasiswa::factory()->create();
+        $mahasiswa = User::factory()->create(['role' => 'mahasiswa', 'identifier' => '2501234568']);
         RuangKontrol::factory()->create([
             'status_pendaftaran' => 'terbuka',
             'tanggal_pendaftaran_mulai' => '2025-01-01',
             'tanggal_pendaftaran_selesai' => '2025-12-31'
         ]);
 
-        $response = $this->actingAs($mahasiswa, 'mahasiswa')
+        $response = $this->actingAs($mahasiswa)
             ->get('/mahasiswa/proposal/create');
 
         $response->assertStatus(200);

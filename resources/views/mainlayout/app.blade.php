@@ -593,19 +593,19 @@
         }
         
         /* Hide menu items based on user type using CSS */
-        @if(Auth::guard('mahasiswa')->check())
+        @if(auth()->check() && auth()->user()->role === 'mahasiswa')
         .menu-dosen, .menu-reviewer, .menu-operator {
             display: none !important;
         }
-        @elseif(Auth::guard('dosen')->check())
+        @elseif(auth()->check() && auth()->user()->role === 'dosen')
         .menu-mahasiswa, .menu-reviewer, .menu-operator {
             display: none !important;
         }
-        @elseif(Auth::guard('reviewer')->check())
+        @elseif(auth()->check() && auth()->user()->role === 'reviewer')
         .menu-mahasiswa, .menu-dosen, .menu-operator {
             display: none !important;
         }
-        @elseif(Auth::guard('operator')->check())
+        @elseif(auth()->check() && in_array(auth()->user()->role, ['operator', 'pimpinan_pt']))
         .menu-mahasiswa, .menu-dosen, .menu-reviewer {
             display: none !important;
         }
@@ -755,86 +755,14 @@
                             </span>
                         </div>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end user-profile-dropdown" style="min-width: 280px;">
-                        <div class="dropdown-header">
-                            <i class="fas fa-user-circle me-2"></i>Profil Pengguna
-                        </div>
-                        
-                        <!-- User Info Section -->
-                        <div class="user-info-section px-3 py-3">
-                            @php
-                                $userInfo = \App\Helpers\UserHelper::getUserProfileInfo();
-                                $userIcon = \App\Helpers\UserHelper::getUserIcon();
-                                $avatarColor = \App\Helpers\UserHelper::getUserAvatarColor();
-                            @endphp
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar {{ $avatarColor }} me-3">
-                                    <i class="{{ $userIcon }}"></i>
-                                </div>
-                                <div class="user-details">
-                                    <div class="user-name">{{ $userInfo['name'] }}</div>
-                                    <div class="user-info">{{ $userInfo['role'] }}</div>
-                                    @if($userInfo['email'])
-                                        <div class="user-info">{{ $userInfo['email'] }}</div>
-                                    @endif
-                                    @if($userInfo['phone'])
-                                        <div class="user-info">{{ $userInfo['phone'] }}</div>
-                                    @endif
-                                    @foreach($userInfo['additional_info'] as $label => $value)
-                                        @if($value)
-                                            <div class="user-info">{{ $label }}: {{ $value }}</div>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="dropdown-divider"></div>
-                        
-                        <!-- Action Menu -->
-                        @if(Auth::guard('mahasiswa')->check())
-                            <a class="dropdown-item profile-menu-item" href="{{ route('mahasiswa.profile') }}">
-                                <i class="fas fa-user"></i>Detail Profil
-                            </a>
-                        @elseif(Auth::guard('dosen')->check())
-                            <a class="dropdown-item profile-menu-item" href="{{ route('dosen.profile') }}">
-                                <i class="fas fa-user"></i>Detail Profil
-                            </a>
-                            <a class="dropdown-item profile-menu-item" href="{{ route('dosen.profile') }}">
-                                <i class="fas fa-edit"></i>Edit Profil
-                            </a>
-                        @elseif(Auth::guard('reviewer')->check())
-                            <a class="dropdown-item profile-menu-item" href="{{ route('reviewer.profile') }}">
-                                <i class="fas fa-user"></i>Detail Profil
-                            </a>
-                            <a class="dropdown-item profile-menu-item" href="{{ route('reviewer.profile') }}">
-                                <i class="fas fa-edit"></i>Edit Profil
-                            </a>
-                        @elseif(Auth::guard('operator')->check())
-                            <a class="dropdown-item profile-menu-item" href="{{ route('operator.profile') }}">
-                                <i class="fas fa-user"></i>Detail Profil
-                            </a>
-                            <a class="dropdown-item profile-menu-item" href="{{ route('operator.profile') }}">
-                                <i class="fas fa-edit"></i>Edit Profil
-                            </a>
-                        @endif
-                        <a class="dropdown-item profile-menu-item" href="#">
-                            <i class="fas fa-key"></i>Ubah Password
-                        </a>
-                        <a class="dropdown-item profile-menu-item" href="#">
-                            <i class="fas fa-cog"></i>Pengaturan
-                        </a>
-                        
-                        <div class="dropdown-divider"></div>
-                        
-                        <!-- Logout -->
-                        <a class="dropdown-item profile-menu-item text-danger" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="fas fa-sign-out-alt"></i>Logout
-                        </a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                    </div>
+                    <x-user-profile-dropdown
+                        headerTitle="Profil Pengguna"
+                        menuClass="dropdown-menu dropdown-menu-end user-profile-dropdown"
+                        menuStyle="min-width: 280px;"
+                        menuItemClass="dropdown-item profile-menu-item"
+                        infoTextClass="user-info"
+                        logoutFormId="logout-form-main"
+                    />
                 </div>
             </div>
         </div>
@@ -851,25 +779,12 @@
         
         <ul class="sidebar-menu">
             <li>
-                <a href="#" class="menu-toggle" data-target="pkkOrmawa">
-                    <i class="fas fa-users me-2"></i>PKK ORMAWA
-                    <i class="fas fa-chevron-down float-end mt-1"></i>
-                </a>
-                <ul class="submenu" id="pkkOrmawa">
-                    @if(Auth::guard('mahasiswa')->check())
-                        <li class="menu-mahasiswa"><a href="#"><i class="fas fa-plus me-2"></i>Ajukan Proposal PKK</a></li>
-                        <li class="menu-mahasiswa"><a href="#"><i class="fas fa-eye me-2"></i>Lihat Proposal PKK</a></li>
-                    @endif
-                </ul>
-            </li>
-            
-            <li>
                 <a href="#" class="menu-toggle" data-target="pkm" id="pkmMenu">
                     <i class="fas fa-lightbulb me-2"></i>PKM
                     <i class="fas fa-chevron-down float-end mt-1"></i>
                 </a>
                 <ul class="submenu" id="pkm">
-                    @if(Auth::guard('mahasiswa')->check())
+                    @if(auth()->check() && auth()->user()->role === 'mahasiswa')
                         <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.dashboard') }}" class="@if(request()->routeIs('mahasiswa.dashboard')) active @endif">
                             <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a></li>
@@ -882,16 +797,16 @@
                         <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.revisi.index') }}" class="@if(request()->routeIs('mahasiswa.revisi.*')) active @endif">
                             <i class="fas fa-edit me-2"></i>Revisi Proposal
                         </a></li>
-                        <li class="menu-mahasiswa"><a href="#" class="@if(request()->routeIs('mahasiswa.proposal.revisi.akhir*')) active @endif" onclick="event.preventDefault(); alert('Pilih proposal yang perlu direvisi dari halaman Lihat Proposal');">
+                        <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.proposal.index') }}" class="@if(request()->routeIs('mahasiswa.proposal.revisi.akhir*')) active @endif">
                             <i class="fas fa-file-edit me-2"></i>Revisi Akhir
                         </a></li>
                     @endif
                     
-                    @if(Auth::guard('dosen')->check())
+                    @if(auth()->check() && auth()->user()->role === 'dosen')
                         <!-- Menu Dosen Pendamping -->
                         <li class="menu-dosen">
                             <a href="#" class="menu-toggle" data-target="pendampingProposal">
-                                <i class="fas fa-user-check me-2"></i>Pendamping Prpsl
+                                <i class="fas fa-user-check me-2"></i>Pendamping Proposal
                                 <i class="fas fa-chevron-down float-end"></i>
                             </a>
                             <ul class="submenu" id="pendampingProposal">
@@ -909,6 +824,10 @@
                                 </a></li>
                             </ul>
                         </li>
+
+                        <li class="menu-dosen"><a href="{{ route('dosen.pembimbing.dashboard') }}" class="@if(request()->routeIs('dosen.pembimbing.*')) active @endif">
+                            <i class="fas fa-user-graduate me-2"></i>Pembimbing
+                        </a></li>
                         
                         <!-- Menu Dosen Universitas (Pendamping Universitas) -->
                         <li class="menu-dosen">
@@ -927,7 +846,7 @@
                         </li>
                     @endif
                     
-                    @if(Auth::guard('reviewer')->check())
+                    @if(auth()->check() && auth()->user()->role === 'reviewer')
                         <li class="menu-reviewer"><a href="{{ route('reviewer.dashboard') }}" class="@if(request()->routeIs('reviewer.dashboard')) active @endif">
                             <i class="fas fa-home me-2"></i>Beranda
                         </a></li>
@@ -937,40 +856,47 @@
                         <li class="menu-reviewer"><a href="{{ route('reviewer.review.substantif') }}" class="@if(request()->routeIs('reviewer.review.substantif')) active @endif">
                             <i class="fas fa-user-check me-2"></i>Review Substantif
                         </a></li>
+                        <li class="menu-reviewer"><a href="{{ route('reviewer.review.substantif.seleksi') }}" class="@if(request()->routeIs('reviewer.review.substantif.seleksi')) active @endif">
+                            <i class="fas fa-award me-2"></i>Review Substantif Seleksi
+                        </a></li>
                     @endif
                     
-                    @if(Auth::guard('operator')->check())
+                    @if(auth()->check() && in_array(auth()->user()->role, ['operator', 'pimpinan_pt']))
                         @php
-                            $operatorUser = Auth::guard('operator')->user();
-                            $isPimpinanPT = $operatorUser && $operatorUser->role === 'pimpinan_pt';
-                            $isOperator = $operatorUser && $operatorUser->role === 'operator';
+                            $operatorUser = auth()->user();
+                            $isPimpinanPT = $operatorUser->role === 'pimpinan_pt';
+                            $isOperator = $operatorUser->role === 'operator';
                         @endphp
                         
                         @if($isOperator)
-                            <!-- Menu untuk Operator (bukan Pimpinan PT) -->
                         <li class="menu-operator"><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
                             <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
+                        </a></li>
+                        <li class="menu-operator"><a href="{{ route('operator.pilih.reviewer.seleksi') }}" class="@if(request()->routeIs('operator.pilih.reviewer.seleksi')) active @endif">
+                            <i class="fas fa-user-check me-2"></i>Pilih Reviewer Seleksi
                         </a></li>
                         <li class="menu-operator"><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
                             <i class="fas fa-cogs me-2"></i>Ruang Kontrol
                         </a></li>
-                            <li class="menu-operator"><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
-                                <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
-                            </a></li>
-                        @elseif($isPimpinanPT)
-                            <!-- Menu untuk Pimpinan PT (memiliki semua menu operator + Hasil Final + Manajemen Akun Pimpinan PT) -->
-                            <li class="menu-operator"><a href="{{ route('operator.pilih.reviewer') }}" class="@if(request()->routeIs('operator.pilih.reviewer')) active @endif">
-                                <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
-                            </a></li>
-                            <li class="menu-operator"><a href="{{ route('operator.ruang.kontrol') }}" class="@if(request()->routeIs('operator.ruang.kontrol')) active @endif">
-                                <i class="fas fa-cogs me-2"></i>Ruang Kontrol
-                            </a></li>
-                            <li class="menu-operator"><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
-                                <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
-                            </a></li>
-                            <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
+                        <li class="menu-operator"><a href="{{ route('operator.hasil.semi.final') }}" class="@if(request()->routeIs('operator.hasil.semi.final*')) active @endif">
+                            <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                        </a></li>
+                        <li class="menu-operator"><a href="{{ route('operator.hasil.final') }}" class="@if(request()->routeIs('operator.hasil.final*') || request()->routeIs('operator.detail.hasil.final')) active @endif">
                             <i class="fas fa-trophy me-2"></i>Hasil Final
                         </a></li>
+                        <li class="menu-operator"><a href="{{ route('operator.form.penilaian.index') }}" class="@if(request()->routeIs('operator.form.penilaian.*')) active @endif">
+                            <i class="fas fa-file-alt me-2"></i>Form Penilaian
+                        </a></li>
+                        <li class="menu-operator"><a href="{{ route('operator.laporan.simbelmawa.index') }}" class="@if(request()->routeIs('operator.laporan.simbelmawa.*')) active @endif">
+                            <i class="fas fa-chart-bar me-2"></i>Laporan SIMBELMAWA
+                        </a></li>
+                        @elseif($isPimpinanPT)
+                            <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard')) active @endif">
+                                <i class="fas fa-home me-2"></i>Beranda
+                            </a></li>
+                            <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
+                                <i class="fas fa-trophy me-2"></i>Hasil Final
+                            </a></li>
                             <li class="menu-operator"><a href="{{ route('pimpinan_pt.manage.accounts') }}" class="@if(request()->routeIs('pimpinan_pt.manage.accounts*')) active @endif">
                                 <i class="fas fa-id-card me-2"></i>Manajemen Akun
                             </a></li>
@@ -984,38 +910,7 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Flash Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('warning'))
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ session('warning') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('info'))
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                <i class="fas fa-info-circle me-2"></i>
-                {{ session('info') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
+        <x-flash-messages />
 
         @yield('content')
     </div>
@@ -1023,7 +918,7 @@
 
 
     <!-- Review Modal -->
-    @if(Auth::guard('reviewer')->check() || Auth::guard('operator')->check())
+    @if(auth()->check() && in_array(auth()->user()->role, ['reviewer', 'operator', 'pimpinan_pt']))
     <div class="modal fade" id="reviewModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -1048,68 +943,11 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Sidebar Toggle
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.toggle('show');
-            overlay.classList.toggle('show');
-        });
-
-        // Close sidebar when overlay is clicked
-        document.getElementById('sidebarOverlay').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
-        });
-
-        // Menu Toggle
-        document.querySelectorAll('.menu-toggle').forEach(function(toggle) {
-            toggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const targetId = this.getAttribute('data-target');
-                const submenu = document.getElementById(targetId);
-                const chevron = this.querySelector('.fa-chevron-down');
-                
-                // Toggle submenu
-                submenu.classList.toggle('show');
-                
-                // Toggle active class on parent
-                this.classList.toggle('active');
-                
-                // Rotate chevron
-                if (chevron) {
-                    chevron.style.transform = submenu.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
-                }
-            });
-        });
-
-        // Auto-expand submenu if any child is active
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.submenu').forEach(function(submenu) {
-                const hasActiveChild = submenu.querySelector('.active');
-                if (hasActiveChild) {
-                    submenu.classList.add('show');
-                    const parentToggle = submenu.parentElement.querySelector('.menu-toggle');
-                    const chevron = parentToggle.querySelector('.fa-chevron-down');
-                    
-                    if (parentToggle) {
-                        parentToggle.classList.add('active');
-                        parentToggle.style.backgroundColor = 'rgba(255,255,255,0.1)';
-                        parentToggle.style.borderRight = '2px solid rgba(255,255,255,0.3)';
-                        
-                        // Rotate chevron
-                        if (chevron) {
-                            chevron.style.transform = 'rotate(180deg)';
-                        }
-                    }
-                }
-            });
-        });
+        function applyIndonesianNumberFormatting() {
+            if (window.AppUI?.applyIndonesianNumberFormatting) {
+                window.AppUI.applyIndonesianNumberFormatting(document);
+            }
+        }
 
         // Show Review Modal
         function showReviewModal(type) {
@@ -1204,42 +1042,9 @@
 
         // Show Toast Notification
         function showToast(message, type = 'info', duration = 3000) {
-            const toastContainer = document.getElementById('toastContainer');
-            
-            const toast = document.createElement('div');
-            toast.className = `toast toast-custom show`;
-            toast.style.cssText = `
-                min-width: 300px;
-                margin-bottom: 10px;
-            `;
-            
-            const icon = type === 'success' ? 'check-circle' : 
-                        type === 'error' ? 'times-circle' : 
-                        type === 'warning' ? 'exclamation-triangle' : 'info-circle';
-            
-            const color = type === 'success' ? '#28a745' : 
-                         type === 'error' ? '#dc3545' : 
-                         type === 'warning' ? '#ffc107' : '#17a2b8';
-            
-            toast.innerHTML = `
-                <div class="toast-header">
-                    <i class="fas fa-${icon} me-2" style="color: ${color}"></i>
-                    <strong class="me-auto">Notifikasi</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            // Auto remove after duration
-            setTimeout(() => {
-                if (toast && toast.parentNode) {
-                    toast.remove();
-                }
-            }, duration);
+            if (window.AppUI?.showToast) {
+                window.AppUI.showToast(message, type, duration);
+            }
         }
 
         // Notification System
@@ -1807,6 +1612,8 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Layout loaded successfully');
+            window.AppUI?.initSidebarInteractions?.();
+            applyIndonesianNumberFormatting();
             
             // Initialize notification system only once
             if (!window.notificationSystem) {
@@ -1839,6 +1646,7 @@
         };
         document.head.appendChild(pdfViewerScript);
     </script>
+    @stack('scripts')
     @yield('scripts')
 </body>
 </html> 

@@ -9,6 +9,11 @@ use Illuminate\Validation\Rule;
 
 class ProposalHelper
 {
+    public static function parseAngka(string|int|float|null $value): float
+    {
+        return NumberFormatHelper::parse($value);
+    }
+
     /**
      * Validasi data proposal sesuai aturan sistem PKM
      */
@@ -146,7 +151,6 @@ class ProposalHelper
         $errors = [];
         $nims = [];
 
-        // Collect all NIMs
         if (!empty($data['ketua_nim'])) $nims[] = $data['ketua_nim'];
         if (!empty($data['anggota1_nim'])) $nims[] = $data['anggota1_nim'];
         if (!empty($data['anggota2_nim'])) $nims[] = $data['anggota2_nim'];
@@ -154,41 +158,48 @@ class ProposalHelper
         if (!empty($data['anggota4_nim'])) $nims[] = $data['anggota4_nim'];
 
         foreach ($nims as $nim) {
-            // Cari mahasiswa dengan NIM tersebut
-            $mahasiswa = \App\Models\Mahasiswa::where('nim', $nim)
-                ->whereNotNull('team_id')
+            $user = \App\Models\User::where('role', 'mahasiswa')
+                ->where('identifier', $nim)
+                ->whereRaw("(metadata->>'team_id') IS NOT NULL")
                 ->first();
-            
-            if ($mahasiswa && $mahasiswa->team_id) {
-                // Cari proposal yang terkait dengan team_id
-                $query = \App\Models\Proposal::where('team_id', $mahasiswa->team_id);
-            
-            if ($excludeProposalId) {
-                    $query->where('id_proposal', '!=', $excludeProposalId);
-            }
 
-            if ($tahunAjaran) {
+            if ($user && $user->getTeamId()) {
+                $query = \App\Models\Proposal::where('team_id', $user->getTeamId());
+
+                if ($excludeProposalId) {
+                    $query->where('id_proposal', '!=', $excludeProposalId);
+                }
+
+                if ($tahunAjaran) {
                     $query->where('tahun_ajaran', $tahunAjaran);
                 }
-                
-                // Hanya cek proposal yang MASIH AKTIF (belum ditolak atau tidak lolos)
-                // Proposal yang ditolak atau tidak lolos TIDAK menghalangi pengajuan baru
+
+                // Proposal yang ditolak dosen (status_validasi/status = tidak_valid) TIDAK boleh memblokir
                 $query->where(function($q) {
-                    $q->where(function($subQ) {
-                        // Case 1: Proposal sudah masuk ke tahap review
-                        $subQ->whereIn('status_final', ['review_administratif', 'review_substantif', 'revisi', 'lolos']);
-                    })->orWhere(function($subQ) {
-                        // Case 2: Proposal masih dalam proses validasi
-                        $subQ->whereIn('status_validasi', ['pending', 'valid'])
-                             ->whereIn('status_final', ['draft', 'submitted']);
-                    });
+                    $q->whereIn('status_validasi', ['pending', 'valid'])
+                      ->orWhereIn('status', [
+                          'review_administratif',
+                          'review_substantif',
+                          'revisi',
+                          'lolos',
+                          'tidak_lolos',
+                          'validasi_akhir_dosen_univ',
+                          'pimpinan_pt',
+                          'revisi_akhir',
+                      ]);
+                })->where(function ($q) {
+                    $q->whereNull('status')
+                      ->orWhere('status', '!=', 'tidak_valid');
+                })->where(function ($q) {
+                    $q->whereNull('status_validasi')
+                      ->orWhere('status_validasi', '!=', 'tidak_valid');
                 });
-                
+
                 $proposal = $query->first();
 
                 if ($proposal) {
                     $tahunInfo = $tahunAjaran ? " tahun {$tahunAjaran}" : "";
-                    $memberType = $mahasiswa->is_ketua ? "Ketua" : "Anggota";
+                    $memberType = $user->isKetuaTim() ? "Ketua" : "Anggota";
                     $errors[] = "{$memberType} dengan NIM {$nim} sudah terdaftar dalam proposal{$tahunInfo}: \"{$proposal->judul}\"";
                 }
             }
@@ -241,16 +252,16 @@ class ProposalHelper
      */
     public static function checkStudentInProposal($nim, $excludeProposalId = null, $tahunAjaran = null)
     {
-        $mahasiswa = \App\Models\Mahasiswa::where('nim', $nim)
-            ->whereNotNull('team_id')
+        $user = \App\Models\User::where('role', 'mahasiswa')
+            ->where('identifier', $nim)
+            ->whereRaw("(metadata->>'team_id') IS NOT NULL")
             ->first();
-        
-        if (!$mahasiswa) {
+
+        if (!$user) {
             return null;
         }
-        
-        // Cek proposal berdasarkan team_id
-        $proposalQuery = Proposal::where('team_id', $mahasiswa->team_id);
+
+        $proposalQuery = Proposal::where('team_id', $user->getTeamId());
         
         if ($excludeProposalId) {
             $proposalQuery->where('id_proposal', '!=', $excludeProposalId);
@@ -266,16 +277,26 @@ class ProposalHelper
         // 3. Proposal masih dalam proses → Mahasiswa tidak bisa ajukan proposal baru
         // 4. Proposal sudah lolos → Mahasiswa tidak bisa ajukan proposal baru
         
-        // Hanya proposal yang menghalangi pengajuan baru:
+        // Hanya proposal yang menghalangi pengajuan baru.
+        // Proposal dengan status penolakan dosen (tidak_valid) tidak memblokir pengajuan ulang.
         $proposalQuery->where(function($query) {
-            $query->where(function($subQuery) {
-                // Case 2: Proposal setelah review - menghalangi pengajuan baru
-                $subQuery->whereIn('status_final', ['review_administratif', 'review_substantif', 'revisi', 'lolos', 'tidak_lolos']);
-            })->orWhere(function($subQuery) {
-                // Case 3: Proposal masih dalam proses - menghalangi pengajuan baru
-                $subQuery->whereIn('status_validasi', ['pending', 'valid'])
-                         ->whereIn('status_final', ['draft', 'submitted']);
-            });
+            $query->whereIn('status_validasi', ['pending', 'valid'])
+                  ->orWhereIn('status', [
+                      'review_administratif',
+                      'review_substantif',
+                      'revisi',
+                      'lolos',
+                      'tidak_lolos',
+                      'validasi_akhir_dosen_univ',
+                      'pimpinan_pt',
+                      'revisi_akhir',
+                  ]);
+        })->where(function ($q) {
+            $q->whereNull('status')
+              ->orWhere('status', '!=', 'tidak_valid');
+        })->where(function ($q) {
+            $q->whereNull('status_validasi')
+              ->orWhere('status_validasi', '!=', 'tidak_valid');
         });
         
         return $proposalQuery->first();
@@ -291,7 +312,9 @@ class ProposalHelper
             return 0;
         }
         
-        return \App\Models\Mahasiswa::where('team_id', $proposal->team_id)->count();
+        return \App\Models\User::where('role', 'mahasiswa')
+            ->whereRaw("metadata->>'team_id' = ?", [(string) $proposal->team_id])
+            ->count();
     }
 
     /**
@@ -629,63 +652,68 @@ class ProposalHelper
             return self::createTeamData($proposalId, $data);
         }
 
-        // Hapus anggota tim yang ada (set team_id = null)
-        \App\Models\Mahasiswa::where('team_id', $proposal->team_id)->update(['team_id' => null, 'is_ketua' => false]);
-        
-        // Buat anggota tim baru
+        $teamMembers = \App\Models\User::where('role', 'mahasiswa')
+            ->whereRaw("metadata->>'team_id' = ?", [(string) $proposal->team_id])
+            ->get();
+
+        foreach ($teamMembers as $member) {
+            $metadata = $member->metadata ?? [];
+            unset($metadata['team_id'], $metadata['is_ketua']);
+            $member->update(['metadata' => $metadata]);
+        }
+
         return self::createTeamData($proposalId, $data);
     }
 
-    /**
-     * Helper method untuk membuat atau update mahasiswa
-     */
     private static function createOrUpdateMahasiswa($data)
     {
         try {
-        $mahasiswa = \App\Models\Mahasiswa::where('nim', $data['nim'])->first();
-        
-        if ($mahasiswa) {
-            // Update mahasiswa yang sudah ada
-            $mahasiswa->update([
-                'nama_mhs' => $data['nama_mhs'],
-                'prodi_mhs' => $data['prodi_mhs'],
-                'fakultas_mhs' => $data['fakultas_mhs'],
-                'email_mhs' => $data['email_mhs'],
-                'no_hp_mhs' => $data['no_hp_mhs'],
+            $user = \App\Models\User::where('role', 'mahasiswa')
+                ->where('identifier', $data['nim'])
+                ->first();
+
+            $metadata = [
+                'prodi_name' => $data['prodi_mhs'],
+                'fakultas_name' => $data['fakultas_mhs'],
                 'team_id' => $data['team_id'],
                 'is_ketua' => $data['is_ketua'],
-            ]);
-                
-                Log::info('Mahasiswa updated', [
+            ];
+
+            if ($user) {
+                $existingMeta = $user->metadata ?? [];
+                $user->update([
+                    'name' => $data['nama_mhs'],
+                    'email' => $data['email_mhs'],
+                    'phone' => $data['no_hp_mhs'],
+                    'metadata' => array_merge($existingMeta, $metadata),
+                ]);
+
+                Log::info('User (mahasiswa) updated for team', [
                     'nim' => $data['nim'],
                     'team_id' => $data['team_id'],
                     'is_ketua' => $data['is_ketua']
                 ]);
-        } else {
-            // Buat mahasiswa baru
-            $mahasiswa = \App\Models\Mahasiswa::create([
-                'nim' => $data['nim'],
-                'nama_mhs' => $data['nama_mhs'],
-                'prodi_mhs' => $data['prodi_mhs'],
-                'fakultas_mhs' => $data['fakultas_mhs'],
-                'email_mhs' => $data['email_mhs'],
-                'no_hp_mhs' => $data['no_hp_mhs'],
-                'password' => bcrypt('default123'), // Password default
-                'role' => 'mahasiswa',
-                'is_active' => true,
-                'team_id' => $data['team_id'],
-                'is_ketua' => $data['is_ketua'],
-            ]);
-                
-                Log::info('Mahasiswa created', [
+            } else {
+                $user = \App\Models\User::create([
+                    'identifier' => $data['nim'],
+                    'name' => $data['nama_mhs'],
+                    'email' => $data['email_mhs'],
+                    'phone' => $data['no_hp_mhs'],
+                    'password' => bcrypt('default123'),
+                    'role' => 'mahasiswa',
+                    'is_active' => true,
+                    'metadata' => $metadata,
+                ]);
+
+                Log::info('User (mahasiswa) created for team', [
                     'nim' => $data['nim'],
                     'team_id' => $data['team_id'],
                     'is_ketua' => $data['is_ketua']
                 ]);
-        }
-        
-        return $mahasiswa;
-            
+            }
+
+            return $user;
+
         } catch (\Exception $e) {
             Log::error('Error in createOrUpdateMahasiswa', [
                 'nim' => $data['nim'],

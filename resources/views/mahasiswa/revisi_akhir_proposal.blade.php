@@ -129,6 +129,11 @@
 
 @section('content')
 <div class="container-fluid py-4">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+        ['label' => 'Revisi Akhir', 'active' => true],
+    ]" />
+
     <div class="row">
         <div class="col-12">
             <!-- Header -->

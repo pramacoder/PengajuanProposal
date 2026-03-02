@@ -969,6 +969,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+        ['label' => 'Lihat Proposal', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <x-page-header 
         title="Data Proposal PKM" 
@@ -1063,11 +1068,11 @@
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Dana Diajukan</span>
-                                <span class="info-value">Rp {{ number_format($proposal->dana_diajukan, 0, ',', '.') }}</span>
+                                <span class="info-value">@rupiahId($proposal->dana_diajukan)</span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Jumlah Anggota</span>
-                                <span class="info-value">{{ $proposal->semuaAnggotaTim->count() }} orang</span>
+                                <span class="info-value">@formatId($proposal->semuaAnggotaTim->count()) orang</span>
                             </div>
                             @if($proposal->proposalRevisi->count() > 0)
                             <div class="info-row">

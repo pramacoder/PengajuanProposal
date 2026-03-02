@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Dashboard Pembimbing', 'url' => route('dosen.pembimbing.dashboard')],
+        ['label' => 'Mahasiswa Bimbingan', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">

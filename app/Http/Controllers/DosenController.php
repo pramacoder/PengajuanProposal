@@ -10,11 +10,10 @@ use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\HasilFinal;
 use App\Models\HasilSemiFinal;
-use App\Models\Mahasiswa;
-use App\Models\Dosen;
+use App\Models\User;
 use App\Models\ProposalRevisi;
 use App\Services\NotificationService;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\StorageHelper;
 use Illuminate\Support\Facades\DB;
 
 class DosenController extends Controller
@@ -22,13 +21,13 @@ class DosenController extends Controller
     // Method test untuk memastikan authentication berfungsi
     public function test()
     {
-        if (Auth::guard('dosen')->check()) {
-            $dosen = Auth::guard('dosen')->user();
+        if (auth()->check()) {
+            $dosen = auth()->user();
             return response()->json([
                 'status' => 'success',
                 'message' => 'Dosen berhasil login',
                 'data' => [
-                    'id' => $dosen->id_dosen,
+                    'id' => $dosen->id,
                     'nama' => $dosen->nama_dosen,
                     'email' => $dosen->email_dosen,
                     'role' => $dosen->role
@@ -51,11 +50,11 @@ class DosenController extends Controller
     // 1.1 Validasi Proposal
     public function validasiProposal()
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         
         // Ambil proposal yang belum divalidasi dan terikat dengan dosen ini
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'mahasiswa.prodi', 'mahasiswa.fakultas'])
-            ->where('id_dosen', $dosen->id_dosen)
+            ->where('id_dosen', $dosen->id)
             ->where('status_validasi', 'pending')
             ->orderBy('tanggal_pengajuan', 'desc')
             ->get();
@@ -66,9 +65,9 @@ class DosenController extends Controller
     // Detail proposal untuk validasi
     public function detailProposal($id)
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         $proposal = Proposal::with(['mahasiswa', 'dokumen', 'mahasiswa.prodi', 'mahasiswa.fakultas'])
-            ->where('id_dosen', $dosen->id_dosen)
+            ->where('id_dosen', $dosen->id)
             ->findOrFail($id);
 
         return view('dosen.detail_proposal', compact('proposal', 'dosen'));
@@ -83,9 +82,9 @@ class DosenController extends Controller
                 'proposal_id' => $id,
                 'action' => $request->action,
                 'catatan' => $request->catatan,
-                'dosen_id' => Auth::guard('dosen')->id(),
-                'current_guard' => Auth::getDefaultDriver(),
-                'is_dosen_authenticated' => Auth::guard('dosen')->check(),
+                'dosen_id' => auth()->id(),
+                'is_authenticated' => auth()->check(),
+                'user_role' => auth()->user()?->role,
                 'session_id' => session()->getId()
             ]);
 
@@ -94,8 +93,8 @@ class DosenController extends Controller
                 'catatan' => 'required_if:action,tolak'
             ]);
 
-            $dosen = Auth::guard('dosen')->user();
-            $proposal = Proposal::where('id_dosen', $dosen->id_dosen)
+            $dosen = auth()->user();
+            $proposal = Proposal::where('id_dosen', $dosen->id)
                 ->findOrFail($id);
 
             // Log proposal data sebelum update
@@ -124,7 +123,7 @@ class DosenController extends Controller
 
             // Kirim notifikasi ke mahasiswa
             try {
-                $notificationService = new NotificationService();
+                $notificationService = app(NotificationService::class);
                 $statusValidasi = $request->action === 'valid' ? 'valid' : 'tidak_valid';
                 $notificationService->notifyValidasiDosen(
                     $proposal,
@@ -147,26 +146,21 @@ class DosenController extends Controller
             \Log::info('Redirecting after validasi', [
                 'route' => 'dosen.validasi.proposal',
                 'message' => $message,
-                'dosen_id' => $dosen->id_dosen
+                'dosen_id' => $dosen->id
             ]);
 
             // Log redirect info
             \Log::info('Redirecting after validasi', [
                 'route' => 'dosen.validasi.proposal',
                 'message' => $message,
-                'dosen_id' => $dosen->id_dosen
+                'dosen_id' => $dosen->id
             ]);
 
             // Log session info sebelum redirect
             \Log::info('Session info before redirect', [
                 'session_id' => session()->getId(),
                 'session_data' => session()->all(),
-                'auth_guards' => [
-                    'dosen' => Auth::guard('dosen')->check(),
-                    'mahasiswa' => Auth::guard('mahasiswa')->check(),
-                    'operator' => Auth::guard('operator')->check(),
-                    'reviewer' => Auth::guard('reviewer')->check()
-                ]
+                'auth_user_role' => auth()->user()?->role
             ]);
 
             // Redirect dengan URL yang eksplisit untuk memastikan tidak ada masalah route
@@ -191,11 +185,11 @@ class DosenController extends Controller
     // 1.2 Hasil Review
     public function hasilReview()
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         
         // Debug: Log informasi dosen yang login
         \Log::info('Dosen yang login:', [
-            'id_dosen' => $dosen->id_dosen,
+            'id_dosen' => $dosen->id,
             'nama_dosen' => $dosen->nama_dosen,
             'email_dosen' => $dosen->email_dosen
         ]);
@@ -203,7 +197,7 @@ class DosenController extends Controller
         // Ambil proposal yang sudah divalidasi oleh dosen ini (tidak hanya yang sedang review)
         // Query yang lebih fleksibel untuk menampilkan semua proposal yang sudah divalidasi
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif'])
-            ->where('id_dosen', $dosen->id_dosen)
+            ->where('id_dosen', $dosen->id)
             ->where('status_validasi', 'valid')
             ->whereNotIn('status', ['pending', 'tidak_valid']) // Exclude proposal yang belum divalidasi atau tidak valid
             ->orderBy('tanggal_pengajuan', 'desc')
@@ -211,7 +205,7 @@ class DosenController extends Controller
 
         // Debug: Log jumlah proposal yang ditemukan
         \Log::info('Proposal yang ditemukan untuk dosen:', [
-            'dosen_id' => $dosen->id_dosen,
+            'dosen_id' => $dosen->id,
             'total_proposals' => $proposals->count(),
             'proposals' => $proposals->map(function($proposal) {
                 return [
@@ -228,11 +222,11 @@ class DosenController extends Controller
         // Jika tidak ada proposal, coba cek semua proposal yang terkait dengan dosen ini
         if ($proposals->count() == 0) {
             $allProposals = Proposal::with(['mahasiswa'])
-                ->where('id_dosen', $dosen->id_dosen)
+                ->where('id_dosen', $dosen->id)
                 ->get();
                 
             \Log::info('Semua proposal untuk dosen (untuk debugging):', [
-                'dosen_id' => $dosen->id_dosen,
+                'dosen_id' => $dosen->id,
                 'total_all_proposals' => $allProposals->count(),
                 'all_proposals' => $allProposals->map(function($proposal) {
                     return [
@@ -252,7 +246,7 @@ class DosenController extends Controller
                 $submittedProposals = $allProposals->whereIn('status', ['submitted', 'review_administratif', 'review_substantif', 'revisi']);
                 
                 \Log::info('Analisis proposal untuk dosen:', [
-                    'dosen_id' => $dosen->id_dosen,
+                    'dosen_id' => $dosen->id,
                     'valid_proposals_count' => $validProposals->count(),
                     'submitted_proposals_count' => $submittedProposals->count(),
                     'valid_proposals' => $validProposals->map(function($proposal) {
@@ -279,7 +273,7 @@ class DosenController extends Controller
     // Detail hasil review
     public function detailHasilReview($id)
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         $proposal = Proposal::with([
             'mahasiswa', 
             'dokumen', 
@@ -287,7 +281,7 @@ class DosenController extends Controller
             'nilaiSubstantif',
             'nilaiSubstantif.reviewer'
         ])
-            ->where('id_dosen', $dosen->id_dosen)
+            ->where('id_dosen', $dosen->id)
             ->findOrFail($id);
 
         return view('dosen.pendamping.detail_hasil_review', compact('proposal', 'dosen'));
@@ -296,18 +290,18 @@ class DosenController extends Controller
     // 1.3 Hasil Final
     public function hasilFinal()
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         
         // Debug: Log informasi dosen yang login
         \Log::info('Dosen yang login (Hasil Final):', [
-            'id_dosen' => $dosen->id_dosen,
+            'id_dosen' => $dosen->id,
             'nama_dosen' => $dosen->nama_dosen,
             'email_dosen' => $dosen->email_dosen
         ]);
         
         // Ambil proposal yang sudah selesai review dan ada hasil final (hanya yang terikat dengan dosen ini)
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'hasilFinal'])
-            ->where('id_dosen', $dosen->id_dosen)
+            ->where('id_dosen', $dosen->id)
             ->where('status_validasi', 'valid')
             ->whereIn('status', ['lolos', 'tidak_lolos'])
             ->orderBy('tanggal_pengajuan', 'desc')
@@ -315,7 +309,7 @@ class DosenController extends Controller
 
         // Debug: Log jumlah proposal yang ditemukan
         \Log::info('Proposal final yang ditemukan untuk dosen:', [
-            'dosen_id' => $dosen->id_dosen,
+            'dosen_id' => $dosen->id,
             'total_proposals' => $proposals->count(),
             'proposals' => $proposals->map(function($proposal) {
                 return [
@@ -335,7 +329,7 @@ class DosenController extends Controller
     // Detail hasil final
     public function detailHasilFinal($id)
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         $proposal = Proposal::with([
             'mahasiswa', 
             'dokumen', 
@@ -344,7 +338,7 @@ class DosenController extends Controller
             'nilaiSubstantif.reviewer',
             'hasilFinal'
         ])
-            ->where('id_dosen', $dosen->id_dosen)
+            ->where('id_dosen', $dosen->id)
             ->findOrFail($id);
 
         return view('dosen.pendamping.detail_hasil_final', compact('proposal', 'dosen'));
@@ -353,8 +347,8 @@ class DosenController extends Controller
     // Download dokumen proposal
     public function downloadDokumen($id, $jenis)
     {
-        $dosen = Auth::guard('dosen')->user();
-        $proposal = Proposal::where('id_dosen', $dosen->id_dosen)
+        $dosen = auth()->user();
+        $proposal = Proposal::where('id_dosen', $dosen->id)
             ->with('dokumen')
             ->findOrFail($id);
 
@@ -378,20 +372,20 @@ class DosenController extends Controller
         }
 
         // Cek apakah file ada di storage (public disk)
-        if (!Storage::disk('public')->exists($path)) {
+        if (!StorageHelper::exists($path)) {
             abort(404, 'File tidak ditemukan di storage: ' . $path);
         }
 
         // Download file dari public disk
-        return Storage::disk('public')->download($path);
+        return StorageHelper::download($path);
     }
 
     // Menampilkan PDF secara langsung untuk iframe
     public function viewPdf($id)
     {
         try {
-            $dosen = Auth::guard('dosen')->user();
-            $proposal = Proposal::where('id_dosen', $dosen->id_dosen)
+            $dosen = auth()->user();
+            $proposal = Proposal::where('id_dosen', $dosen->id)
                 ->with('dokumen')
                 ->findOrFail($id);
 
@@ -399,17 +393,10 @@ class DosenController extends Controller
                 abort(404, 'Dokumen tidak ditemukan.');
             }
 
-            $path = storage_path('app/public/' . $proposal->dokumen->path_file);
-            
-            if (!file_exists($path)) {
-                abort(404, 'File tidak ditemukan: ' . $path);
-            }
+            $path = $proposal->dokumen->path_file;
+            $filename = basename($path);
 
-            // Return PDF dengan content-type yang tepat untuk iframe
-            return response()->file($path, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
-            ]);
+            return StorageHelper::response($path, $filename);
         } catch (\Exception $e) {
             \Log::error('Error in viewPdf (Dosen): ' . $e->getMessage());
             abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
@@ -425,11 +412,11 @@ class DosenController extends Controller
      */
     public function dashboardUniversitas()
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         
         // Ambil proposal yang didampingi sebagai dosen universitas
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'hasilSemiFinal', 'proposalRevisi'])
-            ->where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            ->where('id_dosen_pendamping_universitas', $dosen->id)
             ->orderBy('tanggal_pengajuan', 'desc')
             ->get();
 
@@ -446,11 +433,11 @@ class DosenController extends Controller
      */
     public function validasiAkhirProposal()
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         
         // Ambil proposal yang perlu divalidasi akhir (status: validasi_akhir_dosen_univ)
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'hasilSemiFinal', 'proposalRevisi'])
-            ->where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            ->where('id_dosen_pendamping_universitas', $dosen->id)
             ->where('status', 'validasi_akhir_dosen_univ')
             ->orderBy('tanggal_pengajuan', 'desc')
             ->get();
@@ -463,11 +450,10 @@ class DosenController extends Controller
      */
     public function detailValidasiAkhir($id)
     {
-        $dosen = Auth::guard('dosen')->user();
+        $dosen = auth()->user();
         
         $proposal = Proposal::with([
             'mahasiswa',
-            'semuaAnggotaTim',
             'dokumen',
             'hasilSemiFinal',
             'proposalRevisi' => function($query) {
@@ -475,7 +461,7 @@ class DosenController extends Controller
                       ->orderBy('tanggal_submit', 'desc');
             }
         ])
-            ->where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            ->where('id_dosen_pendamping_universitas', $dosen->id)
             ->where(function($query) {
                 $query->where('status', 'validasi_akhir_dosen_univ')
                       ->orWhere('status', 'pimpinan_pt')
@@ -498,8 +484,8 @@ class DosenController extends Controller
                 'file_review' => 'nullable|file|mimes:pdf|max:5120' // Optional PDF untuk review
             ]);
 
-            $dosen = Auth::guard('dosen')->user();
-            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            $dosen = auth()->user();
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id)
                 ->where(function($query) {
                     $query->where('status', 'validasi_akhir_dosen_univ')
                           ->orWhere('status', 'revisi_akhir');
@@ -528,7 +514,7 @@ class DosenController extends Controller
                 if ($request->hasFile('file_review')) {
                     $reviewFile = $request->file('file_review');
                     $fileName = 'review_akhir_' . time() . '_' . $reviewFile->getClientOriginalName();
-                    $path = $reviewFile->storeAs('proposals/review_akhir', $fileName, 'public');
+                    $path = StorageHelper::store('proposals/review_akhir', $reviewFile, $fileName);
                     
                     $proposal->path_review_dosen = $path;
                     $proposal->nama_file_review_dosen = $fileName;
@@ -540,7 +526,7 @@ class DosenController extends Controller
 
             // Kirim notifikasi ke mahasiswa
             try {
-                $notificationService = new NotificationService();
+                $notificationService = app(NotificationService::class);
                 $statusValidasi = $request->action === 'valid' ? 'valid' : 'tidak_valid';
                 $notificationService->notifyValidasiAkhirDosen(
                     $proposal,
@@ -575,8 +561,8 @@ class DosenController extends Controller
     public function viewPdfUniversitas($id)
     {
         try {
-            $dosen = Auth::guard('dosen')->user();
-            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            $dosen = auth()->user();
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id)
                 ->with('dokumen')
                 ->findOrFail($id);
 
@@ -585,37 +571,9 @@ class DosenController extends Controller
             }
 
             $pathFile = $proposal->dokumen->path_file;
-            
-            // Cek apakah path_file sudah termasuk 'public/' atau tidak
-            // Jika path_file sudah lengkap (misal: 'proposals/file.pdf'), tambahkan 'public/'
-            // Jika path_file sudah termasuk 'public/' (misal: 'public/proposals/file.pdf'), gunakan langsung
-            if (strpos($pathFile, 'public/') === 0) {
-                $path = storage_path('app/' . $pathFile);
-            } else {
-                $path = storage_path('app/public/' . $pathFile);
-            }
-            
-            \Log::info('View PDF Universitas', [
-                'proposal_id' => $id,
-                'path_file' => $pathFile,
-                'full_path' => $path,
-                'file_exists' => file_exists($path)
-            ]);
-            
-            if (!file_exists($path)) {
-                // Coba alternatif path
-                $altPath = storage_path('app/' . $pathFile);
-                if (file_exists($altPath)) {
-                    $path = $altPath;
-                } else {
-                    abort(404, 'File tidak ditemukan: ' . $path);
-                }
-            }
+            $filename = basename($pathFile);
 
-            return response()->file($path, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
-            ]);
+            return StorageHelper::response($pathFile, $filename);
         } catch (\Exception $e) {
             \Log::error('Error in viewPdfUniversitas: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -630,10 +588,10 @@ class DosenController extends Controller
     public function viewPdfRevisiAkhir($id)
     {
         try {
-            $dosen = Auth::guard('dosen')->user();
+            $dosen = auth()->user();
             
             // $id adalah ID proposal, bukan ID revisi
-            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id)
                 ->with(['proposalRevisi' => function($query) {
                     $query->where('path_file', 'like', '%revisi_akhir%')
                           ->orderBy('tanggal_submit', 'desc');
@@ -646,37 +604,7 @@ class DosenController extends Controller
                 abort(404, 'File revisi akhir tidak ditemukan.');
             }
 
-            $pathFile = $revisi->path_file;
-            
-            // Cek apakah path_file sudah termasuk 'public/' atau tidak
-            if (strpos($pathFile, 'public/') === 0) {
-                $path = storage_path('app/' . $pathFile);
-            } else {
-                $path = storage_path('app/public/' . $pathFile);
-            }
-            
-            \Log::info('View PDF Revisi Akhir Universitas', [
-                'proposal_id' => $id,
-                'revisi_id' => $revisi->id,
-                'path_file' => $pathFile,
-                'full_path' => $path,
-                'file_exists' => file_exists($path)
-            ]);
-            
-            if (!file_exists($path)) {
-                // Coba alternatif path
-                $altPath = storage_path('app/' . $pathFile);
-                if (file_exists($altPath)) {
-                    $path = $altPath;
-                } else {
-                    abort(404, 'File tidak ditemukan: ' . $path);
-                }
-            }
-
-            return response()->file($path, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . $revisi->nama_file . '"'
-            ]);
+            return StorageHelper::response($revisi->path_file, $revisi->nama_file);
         } catch (\Exception $e) {
             \Log::error('Error in viewPdfRevisiAkhir: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -691,10 +619,10 @@ class DosenController extends Controller
     public function downloadRevisiAkhir($id)
     {
         try {
-            $dosen = Auth::guard('dosen')->user();
+            $dosen = auth()->user();
             
             // $id adalah ID proposal, bukan ID revisi
-            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id_dosen)
+            $proposal = Proposal::where('id_dosen_pendamping_universitas', $dosen->id)
                 ->with(['proposalRevisi' => function($query) {
                     $query->where('path_file', 'like', '%revisi_akhir%')
                           ->orderBy('tanggal_submit', 'desc');
@@ -707,11 +635,11 @@ class DosenController extends Controller
                 return redirect()->back()->with('error', 'File revisi akhir tidak ditemukan.');
             }
 
-            if (!Storage::disk('public')->exists($revisi->path_file)) {
+            if (!StorageHelper::exists($revisi->path_file)) {
                 return redirect()->back()->with('error', 'File revisi tidak ditemukan di server.');
             }
 
-            return Storage::disk('public')->download($revisi->path_file, $revisi->nama_file);
+            return StorageHelper::download($revisi->path_file);
         } catch (\Exception $e) {
             \Log::error('Error in downloadRevisiAkhir: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal mengunduh file revisi: ' . $e->getMessage());
@@ -722,8 +650,8 @@ class DosenController extends Controller
     public function getReviewData($proposalId)
     {
         try {
-            $dosen = Auth::guard('dosen')->user();
-            $proposal = Proposal::where('id_dosen', $dosen->id_dosen)
+            $dosen = auth()->user();
+            $proposal = Proposal::where('id_dosen', $dosen->id)
                 ->with(['nilaiAdministratif', 'nilaiSubstantif.reviewer', 'mahasiswa', 'hasilFinal'])
                 ->findOrFail($proposalId);
 

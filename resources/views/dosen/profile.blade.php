@@ -1,198 +1,101 @@
 @extends('dosen.layout')
 
-@section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Profile Saya</h1>
-            <p class="text-gray-600 mt-2">Kelola informasi profile dan keamanan akun Anda</p>
-        </div>
+@section('title', 'Profil Dosen')
+@section('page_title', 'Profil Dosen')
 
-        <!-- Success/Error Messages -->
-        @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-                {{ session('success') }}
-            </div>
-        @endif
+@section('dosen_content')
+<div class="row justify-content-center">
+    <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Beranda', 'url' => route('dosen.dashboard')],
+            ['label' => 'Profil', 'active' => true],
+        ]" />
+    </div>
 
-        @if(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                {{ session('error') }}
-            </div>
-        @endif
+    <div class="col-xl-8 col-lg-10">
+        <x-ui-card title="Informasi Akun & Keamanan" icon="fa-user-cog">
+            <form action="{{ route('dosen.profile.update') }}" method="POST" id="dosenProfileForm">
+                <div id="profile-section"></div>
+                @csrf
+                @method('PUT')
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Profile Information -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-6">Informasi Profile</h2>
-                
-                <form action="{{ route('profile.update') }}" method="POST">
-                    @csrf
-                    @method('PATCH')
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="nama_dosen" class="block text-sm font-medium text-gray-700 mb-2">
-                                Nama Lengkap
-                            </label>
-                            <input type="text" 
-                                   id="nama_dosen" 
-                                   name="nama_dosen" 
-                                   value="{{ old('nama_dosen', $user->nama_dosen) }}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                            @error('nama_dosen')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="nidn" class="block text-sm font-medium text-gray-700 mb-2">
-                                NIDN
-                            </label>
-                            <input type="text" 
-                                   id="nidn" 
-                                   name="nidn" 
-                                   value="{{ old('nidn', $user->nidn) }}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                            @error('nidn')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                                Email
-                            </label>
-                            <input type="email" 
-                                   id="email" 
-                                   name="email" 
-                                   value="{{ old('email', $user->email_dosen) }}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                            @error('email')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="alamat_dosen" class="block text-sm font-medium text-gray-700 mb-2">
-                                Alamat
-                            </label>
-                            <textarea id="alamat_dosen" 
-                                      name="alamat_dosen" 
-                                      rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('alamat_dosen', $user->alamat_dosen) }}</textarea>
-                            @error('alamat_dosen')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="no_telp_dosen" class="block text-sm font-medium text-gray-700 mb-2">
-                                Nomor Telepon
-                            </label>
-                            <input type="text" 
-                                   id="no_telp_dosen" 
-                                   name="no_telp_dosen" 
-                                   value="{{ old('no_telp_dosen', $user->no_telp_dosen) }}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            @error('no_telp_dosen')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                        <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}"
+                            class="form-control @error('name') is-invalid @enderror" required maxlength="255">
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
-                    <div class="mt-6">
-                        <button type="submit" 
-                                class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                            Update Profile
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Change Password -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-6">Ganti Password</h2>
-                
-                <form action="{{ route('profile.password') }}" method="POST">
-                    @csrf
-                    @method('PATCH')
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="current_password" class="block text-sm font-medium text-gray-700 mb-2">
-                                Password Saat Ini
-                            </label>
-                            <input type="password" 
-                                   id="current_password" 
-                                   name="current_password" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                            @error('current_password')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                                Password Baru
-                            </label>
-                            <input type="password" 
-                                   id="password" 
-                                   name="password" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                            @error('password')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                                Konfirmasi Password Baru
-                            </label>
-                            <input type="password" 
-                                   id="password_confirmation" 
-                                   name="password_confirmation" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   required>
-                        </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        <input type="email" value="{{ $user->email }}" class="form-control" disabled>
+                        <small class="text-muted">Email login tidak dapat diubah dari halaman ini.</small>
                     </div>
 
-                    <div class="mt-6">
-                        <button type="submit" 
-                                class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
-                            Ganti Password
-                        </button>
+                    <div class="col-md-6">
+                        <label class="form-label">NUPTK</label>
+                        <input type="text" value="{{ $user->getNuptk() }}" class="form-control" disabled>
                     </div>
-                </form>
 
-                <!-- Password Requirements -->
-                <div class="mt-6 p-4 bg-gray-50 rounded-md">
-                    <h3 class="text-sm font-medium text-gray-900 mb-2">Password harus memenuhi:</h3>
-                    <ul class="text-sm text-gray-600 space-y-1">
-                        <li>• Minimal 8 karakter</li>
-                        <li>• Kombinasi huruf dan angka</li>
-                        <li>• Tidak boleh sama dengan password lama</li>
-                    </ul>
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Nomor Telepon <span class="text-danger">*</span></label>
+                        <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
+                            class="form-control @error('phone') is-invalid @enderror" required maxlength="15">
+                        @error('phone')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Back to Dashboard -->
-        <div class="mt-8 text-center">
-            <a href="{{ route('dosen.dashboard') }}" 
-               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Kembali ke Dashboard
-            </a>
-        </div>
+                <hr class="my-4">
+
+                <h6 class="fw-bold mb-3" id="security-section"><i class="fas fa-key me-2"></i>Ubah Password (Opsional)</h6>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="current_password" class="form-label">Password Saat Ini</label>
+                        <input type="password" id="current_password" name="current_password"
+                            class="form-control @error('current_password') is-invalid @enderror">
+                        @error('current_password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <label for="new_password" class="form-label">Password Baru</label>
+                        <input type="password" id="new_password" name="new_password"
+                            class="form-control @error('new_password') is-invalid @enderror">
+                        @error('new_password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <label for="new_password_confirmation" class="form-label">Konfirmasi Password Baru</label>
+                        <input type="password" id="new_password_confirmation" name="new_password_confirmation" class="form-control">
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary" id="btnSubmitDosenProfile">
+                        <i class="fas fa-save me-1"></i>Simpan Perubahan
+                    </button>
+                    <a href="{{ route('dosen.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Kembali
+                    </a>
+                </div>
+            </form>
+        </x-ui-card>
     </div>
 </div>
+@endsection
+
+@section('dosen_scripts')
+<script>
+    document.getElementById('dosenProfileForm')?.addEventListener('submit', function () {
+        const submitBtn = document.getElementById('btnSubmitDosenProfile');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+    });
+</script>
 @endsection

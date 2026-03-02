@@ -258,6 +258,12 @@
 
 @section('content')
 <div class="container-fluid reviewer-compact">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('reviewer.dashboard')],
+        ['label' => 'Review Substantif', 'url' => route('reviewer.review.substantif')],
+        ['label' => 'Detail Proposal', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -286,7 +292,7 @@
                         </h5>
                         <div class="pdf-controls">
                             @if($proposal->dokumen && $proposal->dokumen->path_file)
-                                <a href="{{ asset('storage/' . $proposal->dokumen->path_file) }}" 
+                                <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" 
                                    class="btn btn-sm btn-primary me-2" target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
                                 </a>
@@ -305,7 +311,7 @@
                         <div class="pdf-container-full">
                             <iframe 
                                 id="pdfViewer"
-                                src="{{ asset('storage/' . $proposal->dokumen->path_file) }}"
+                                src="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}"
                                 style="width: 100%; height: 80vh; border: none; border-radius: 8px;"
                                 frameborder="0"
                                 allowfullscreen>
@@ -503,7 +509,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form id="formReviewSubstantif" method="POST" action="{{ route('reviewer.submit.review.substantif', $proposal->id_proposal) }}">
+                    <form id="formReviewSubstantif" method="POST" action="{{ request('seleksi') ? route('reviewer.submit.review.substantif.seleksi', $proposal->id_proposal) : route('reviewer.submit.review.substantif', $proposal->id_proposal) }}">
                         @csrf
                         <input type="hidden" name="skim" value="{{ $proposal->skim }}">
                         
@@ -699,7 +705,7 @@
                                                         @if($item['is_header'])
                                                             <span class="text-muted">-</span>
                                                         @else
-                                                            {{ number_format($item['bobot'], 2) }}
+                                                            @formatId($item['bobot'], 2)
                                                         @endif
                                                     </td>
                                                     <td>
@@ -723,7 +729,7 @@
                                                             <span class="text-muted">-</span>
                                                         @else
                                                             <span class="nilai-display fw-bold" data-index="{{ $item['index'] }}">
-                                                                {{ $nilai > 0 ? number_format($nilai, 2) : '0.00' }}
+                                                                @if($nilai > 0)@formatId($nilai, 2)@else 0,00 @endif
                                                             </span>
                                                         @endif
                                                     </td>
@@ -735,16 +741,16 @@
                                                 <td colspan="2" class="text-end fw-bold">Total</td>
                                                 <td class="text-center fw-bold">100.00</td>
                                                 <td class="text-center">
-                                                    <span class="total-skor-display fw-bold">{{ $existingAvgSkor > 0 ? number_format($existingAvgSkor, 2) : '0.00' }}</span>
+                                                    <span class="total-skor-display fw-bold">@if($existingAvgSkor > 0)@formatId($existingAvgSkor, 2)@else 0,00 @endif</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span class="total-nilai-display fw-bold">{{ $existingTotalNilai > 0 ? number_format($existingTotalNilai, 2) : '0.00' }}</span>
+                                                    <span class="total-nilai-display fw-bold">@if($existingTotalNilai > 0)@formatId($existingTotalNilai, 2)@else 0,00 @endif</span>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
                                                 <td class="text-center">
-                                                    <span class="nilai-akhir-display fw-bold text-primary" style="font-size: 1.2em;">{{ $existingNilaiAkhir > 0 ? number_format($existingNilaiAkhir, 2) : '0.00' }}</span>
+                                                    <span class="nilai-akhir-display fw-bold text-primary" style="font-size: 1.2em;">@if($existingNilaiAkhir > 0)@formatId($existingNilaiAkhir, 2)@else 0,00 @endif</span>
                                                 </td>
                                             </tr>
                                         </tfoot>

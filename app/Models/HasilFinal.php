@@ -42,12 +42,12 @@ class HasilFinal extends Model
 
     public function pimpinanPt()
     {
-        return $this->belongsTo(PT::class, 'id_pimpinan_pt', 'id_pt');
+        return $this->belongsTo(User::class, 'id_pimpinan_pt');
     }
 
     public function pt()
     {
-        return $this->belongsTo(PT::class, 'id_pt', 'id_pt');
+        return $this->belongsTo(User::class, 'id_pt');
     }
 }
 

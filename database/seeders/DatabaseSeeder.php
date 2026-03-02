@@ -6,30 +6,26 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $this->call([
-            // Seed data utama terlebih dahulu
             FakultasSeeder::class,
             ProdiSeeder::class,
+
+            // All user roles → unified 'users' table
+            MahasiswaSeeder::class,
+            DosenSeeder::class,
             ReviewerSeeder::class,
             PtSeeder::class,
             PimpinanPTSeeder::class,
-            DosenSeeder::class,
-            MahasiswaSeeder::class,
-            
-            // Seed data proposal
+
             ProposalSeeder::class,
-            
-            // Seed data penilaian
+
             NilaiAdministratifSeeder::class,
             NilaiSubstantifSeeder::class,
+            HasilSemiFinalSeeder::class,
             HasilFinalSeeder::class,
-            
-            // Seed data ruang kontrol
+
             RuangKontrolSeeder::class,
         ]);
     }

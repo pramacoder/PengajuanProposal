@@ -15,11 +15,12 @@ class NilaiSubstantif extends Model
 
     protected $fillable = [
         'note_substantif',
+        'jenis_review',
         'skor_per_kriteria',
         'total_nilai',
         'nilai_akhir',
         'id_proposal',
-        'id_reviewer'
+        'id_reviewer',
     ];
 
     protected $casts = [
@@ -76,7 +77,7 @@ class NilaiSubstantif extends Model
 
     public function reviewer()
     {
-        return $this->belongsTo(Reviewer::class, 'id_reviewer', 'id_reviewer');
+        return $this->belongsTo(User::class, 'id_reviewer');
     }
 }
 

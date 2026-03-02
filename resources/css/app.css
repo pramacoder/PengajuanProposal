@@ -23,7 +23,7 @@
     --info-color: #17a2b8;
     --light-color: #f8f9fa;
     --dark-color: #343a40;
-    --sidebar-width: 250px;
+    --sidebar-width: 280px;
     --navbar-height: 76px;
     --border-radius: 8px;
     --box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -581,6 +581,15 @@ h1, h2, h3, h4, h5, h6 {
 
 .badge-info {
     background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+.app-breadcrumb {
+    background: transparent;
+    margin-bottom: 1rem;
+}
+
+.app-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
 }
 
 /* Loading animations */

@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('operator.dashboard')],
+        ['label' => 'Manajemen Akun', 'active' => true],
+    ]" />
+
     <x-page-header 
         title="MANAJEMEN AKUN" 
         subtitle="Buat, ubah, hapus akun untuk semua role" />
@@ -133,7 +138,7 @@
                                 </button>
                             </div>
                             <div class="text-muted">
-                                Total: <strong>{{ $mahasiswas->count() }}</strong> mahasiswa
+                                Total: <strong>@formatId($mahasiswas->count())</strong> mahasiswa
                         </div>
                         </div>
 

@@ -32,7 +32,7 @@ class NilaiAdministratif extends Model
 
     public function reviewer()
     {
-        return $this->belongsTo(Reviewer::class, 'id_reviewer', 'id_reviewer');
+        return $this->belongsTo(User::class, 'id_reviewer');
     }
 }
 

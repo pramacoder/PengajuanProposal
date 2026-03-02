@@ -9,60 +9,39 @@ use App\Helpers\TahunAjaranHelper;
 
 class CheckActivePhase
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @param  string  $requiredPhase
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
-     */
     public function handle(Request $request, Closure $next, string $requiredPhase)
     {
-        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
         $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
         $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
             ->where('is_active', true)
             ->first();
-        
-        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+
         if (!$ruangKontrol) {
             $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
                 ->orderBy('created_at', 'desc')
                 ->first();
         }
-        
+
         if (!$ruangKontrol) {
-            // If no ruang kontrol exists, deny access
             return $this->denyAccess($request, 'Sistem belum dikonfigurasi. Silakan hubungi operator.');
         }
-        
-        $isPhaseActive = false;
-        $activePhase = '';
-        
-        switch ($requiredPhase) {
-            case 'pendaftaran':
-                $isPhaseActive = $ruangKontrol->status_pendaftaran === 'terbuka';
-                $activePhase = 'Pengajuan Proposal';
-                break;
-            case 'perbaikan':
-                $isPhaseActive = $ruangKontrol->status_perbaikan === 'terbuka';
-                $activePhase = 'Perbaikan Proposal';
-                break;
-            default:
-                return $this->denyAccess($request, 'Fase yang diminta tidak valid.');
+
+        $phaseLabels = RuangKontrol::PHASE_LABELS;
+
+        if (!in_array($requiredPhase, RuangKontrol::PHASES)) {
+            return $this->denyAccess($request, 'Fase yang diminta tidak valid.');
         }
-        
-        if (!$isPhaseActive) {
-            return $this->denyAccess($request, "Fase {$activePhase} sedang tidak aktif. Silakan tunggu hingga fase ini dibuka oleh operator.");
+
+        $status = $ruangKontrol->getStatusForPhase($requiredPhase);
+        $label = $phaseLabels[$requiredPhase] ?? $requiredPhase;
+
+        if ($status !== 'terbuka') {
+            return $this->denyAccess($request, "{$label} sedang tidak aktif. Silakan tunggu hingga fase ini dibuka oleh operator.");
         }
-        
+
         return $next($request);
     }
-    
-    /**
-     * Deny access and return appropriate response
-     */
+
     private function denyAccess(Request $request, string $message)
     {
         if ($request->expectsJson()) {
@@ -72,7 +51,11 @@ class CheckActivePhase
                 'error' => 'PHASE_NOT_ACTIVE'
             ], 403);
         }
-        
-        return redirect()->back()->with('error', $message);
+
+        $fallback = url()->previous() !== url()->current()
+            ? url()->previous()
+            : route('login');
+
+        return redirect($fallback)->with('error', $message);
     }
 }

@@ -8,75 +8,30 @@ use Illuminate\Support\Facades\Hash;
 
 class PtSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $pts = [
-            [
-                'nama_pt' => 'Dr. I Made Surya Wijaya, S.T., M.T.',
-                'no_hp_pt' => '081234567900',
-                'email_pt' => 'made.surya@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'operator',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_pt' => 'Dr. I Gusti Ayu Made Sari Dewi, S.Pd., M.Pd.',
-                'no_hp_pt' => '081234567901',
-                'email_pt' => 'sari.dewi@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'operator',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_pt' => 'Prof. Dr. I Wayan Gede Suardana, S.T., M.T.',
-                'no_hp_pt' => '081234567902',
-                'email_pt' => 'suardana@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'operator',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_pt' => 'Dr. I Made Sudarma Putra, S.Pd., M.Pd.',
-                'no_hp_pt' => '081234567903',
-                'email_pt' => 'sudarma.putra@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'operator',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_pt' => 'Prof. Dr. I Gusti Agung Ayu Ratna Sari, S.E., M.Si.',
-                'no_hp_pt' => '081234567904',
-                'email_pt' => 'ratna.sari@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'operator',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_pt' => 'Dr. I Wayan Gede Artawan Eka Putra, S.T., M.T.',
-                'no_hp_pt' => '081234567905',
-                'email_pt' => 'artawan.eka@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'operator',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        $operators = [
+            ['identifier' => 'OPR-001', 'name' => 'Dr. I Made Surya Wijaya, S.T., M.T.',                 'email' => 'operator.surya@unud.ac.id',        'phone' => '081234567900'],
+            ['identifier' => 'OPR-002', 'name' => 'Dr. I Gusti Ayu Made Sari Dewi, S.Pd., M.Pd.',        'email' => 'operator.sari.dewi@unud.ac.id',    'phone' => '081234567901'],
+            ['identifier' => 'OPR-003', 'name' => 'Prof. Dr. I Wayan Gede Suardana, S.T., M.T.',         'email' => 'operator.suardana@unud.ac.id',     'phone' => '081234567902'],
+            ['identifier' => 'OPR-004', 'name' => 'Dr. I Made Sudarma Putra, S.Pd., M.Pd.',              'email' => 'operator.sudarma@unud.ac.id',      'phone' => '081234567903'],
+            ['identifier' => 'OPR-005', 'name' => 'Prof. Dr. I Gusti Agung Ayu Ratna Sari, S.E., M.Si.', 'email' => 'operator.ratna@unud.ac.id',        'phone' => '081234567904'],
+            ['identifier' => 'OPR-006', 'name' => 'Dr. I Wayan Gede Artawan Eka Putra, S.T., M.T.',      'email' => 'operator.artawan@unud.ac.id',      'phone' => '081234567905'],
         ];
 
-        DB::table('pts')->insert($pts);
+        foreach ($operators as $op) {
+            DB::table('users')->insert([
+                'identifier' => $op['identifier'],
+                'name' => $op['name'],
+                'email' => $op['email'],
+                'phone' => $op['phone'],
+                'password' => Hash::make('password123'),
+                'role' => 'operator',
+                'is_active' => true,
+                'metadata' => json_encode([]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }
-

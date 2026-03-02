@@ -14,13 +14,11 @@ use App\Models\HasilSemiFinal;
 use App\Models\Dokumen;
 use App\Models\NilaiSubstantif;
 use App\Models\ProposalRevisi;
-use App\Models\PT;
-use App\Models\Mahasiswa;
-use App\Models\Dosen;
-use App\Models\Reviewer;
+use App\Models\User;
 use App\Models\Fakultas;
 use App\Models\Prodi;
 use App\Helpers\ProposalHelper;
+use App\Helpers\StorageHelper;
 
 class PimpinanPTController extends Controller
 {
@@ -29,7 +27,7 @@ class PimpinanPTController extends Controller
      */
     public function dashboard()
     {
-        $pimpinanPT = Auth::guard('operator')->user();
+        $pimpinanPT = auth()->user();
         
         // Pastikan user adalah Pimpinan PT
         if ($pimpinanPT->role !== 'pimpinan_pt') {
@@ -59,7 +57,7 @@ class PimpinanPTController extends Controller
      */
     public function detailHasilFinal($id)
     {
-        $pimpinanPT = Auth::guard('operator')->user();
+        $pimpinanPT = auth()->user();
         
         // Pastikan user adalah Pimpinan PT
         if ($pimpinanPT->role !== 'pimpinan_pt') {
@@ -68,7 +66,6 @@ class PimpinanPTController extends Controller
 
         $proposal = Proposal::with([
             'mahasiswa',
-            'semuaAnggotaTim',
             'dokumen',
             'hasilFinal',
             'hasilSemiFinal',
@@ -90,7 +87,7 @@ class PimpinanPTController extends Controller
             ->where(function($query) use ($pimpinanPT) {
                 $query->where('status', 'pimpinan_pt')
                       ->orWhereHas('hasilFinal', function($q) use ($pimpinanPT) {
-                          $q->where('id_pimpinan_pt', $pimpinanPT->id_pt);
+                          $q->where('id_pimpinan_pt', $pimpinanPT->id);
                       });
             })
             ->findOrFail($id);
@@ -128,10 +125,14 @@ class PimpinanPTController extends Controller
     {
         Log::info('PimpinanPT updateHasilFinal called', [
             'request_data' => $request->all(),
-            'user_id' => auth('operator')->id()
+            'user_id' => auth()->id()
         ]);
 
-        $pimpinanPT = Auth::guard('operator')->user();
+        $request->merge([
+            'dana_yang_didapatkan' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_yang_didapatkan')),
+        ]);
+
+        $pimpinanPT = auth()->user();
         
         // Pastikan user adalah Pimpinan PT
         if ($pimpinanPT->role !== 'pimpinan_pt') {
@@ -244,13 +245,13 @@ class PimpinanPTController extends Controller
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
                     'skor_per_kriteria' => $normalizedSkor,
-                    'id_pimpinan_pt' => $pimpinanPT->id_pt
+                    'id_pimpinan_pt' => $pimpinanPT->id
                 ]
             );
             
             // Kirim notifikasi ke mahasiswa
             try {
-                $notificationService = new \App\Services\NotificationService();
+                $notificationService = app(\App\Services\NotificationService::class);
                 $danaYangDidapatkan = 0;
                 if ($request->status_pendanaan === 'lolos') {
                     $danaInput = $request->input('dana_yang_didapatkan', 0);
@@ -329,7 +330,7 @@ class PimpinanPTController extends Controller
     public function viewPdf($id)
     {
         try {
-            $pimpinanPT = Auth::guard('operator')->user();
+            $pimpinanPT = auth()->user();
             
             // Pastikan user adalah Pimpinan PT
             if ($pimpinanPT->role !== 'pimpinan_pt') {
@@ -352,7 +353,7 @@ class PimpinanPTController extends Controller
                 ->where(function($query) use ($pimpinanPT) {
                     $query->where('status', 'pimpinan_pt')
                           ->orWhereHas('hasilFinal', function($q) use ($pimpinanPT) {
-                              $q->where('id_pimpinan_pt', $pimpinanPT->id_pt);
+                              $q->where('id_pimpinan_pt', $pimpinanPT->id);
                           });
                 })
                 ->findOrFail($id);
@@ -361,37 +362,7 @@ class PimpinanPTController extends Controller
             $revisiAkhir = $proposal->proposalRevisi->first();
             
             if ($revisiAkhir) {
-                // Gunakan revisi akhir
-                $pathFile = $revisiAkhir->path_file;
-                
-                // Cek apakah path_file sudah termasuk 'public/' atau tidak
-                if (strpos($pathFile, 'public/') === 0) {
-                    $path = storage_path('app/' . $pathFile);
-                } else {
-                    $path = storage_path('app/public/' . $pathFile);
-                }
-                
-                Log::info('View PDF Revisi Akhir (Pimpinan PT)', [
-                    'proposal_id' => $id,
-                    'revisi_id' => $revisiAkhir->id_revisi,
-                    'path_file' => $pathFile,
-                    'full_path' => $path,
-                    'file_exists' => file_exists($path)
-                ]);
-                
-                if (!file_exists($path)) {
-                    $altPath = storage_path('app/' . $pathFile);
-                    if (file_exists($altPath)) {
-                        $path = $altPath;
-                    } else {
-                        abort(404, 'File revisi akhir tidak ditemukan: ' . $path);
-                    }
-                }
-                
-                return response()->file($path, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="' . $revisiAkhir->nama_file . '"'
-                ]);
+                return StorageHelper::response($revisiAkhir->path_file, $revisiAkhir->nama_file);
             } else {
                 // Gunakan dokumen original
                 if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
@@ -399,27 +370,9 @@ class PimpinanPTController extends Controller
                 }
 
                 $pathFile = $proposal->dokumen->path_file;
-                
-                // Cek apakah path_file sudah termasuk 'public/' atau tidak
-                if (strpos($pathFile, 'public/') === 0) {
-                    $path = storage_path('app/' . $pathFile);
-                } else {
-                    $path = storage_path('app/public/' . $pathFile);
-                }
-                
-                if (!file_exists($path)) {
-                    $altPath = storage_path('app/' . $pathFile);
-                    if (file_exists($altPath)) {
-                        $path = $altPath;
-                    } else {
-                        abort(404, 'File tidak ditemukan: ' . $path);
-                    }
-                }
+                $filename = basename($pathFile);
 
-                return response()->file($path, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
-                ]);
+                return StorageHelper::response($pathFile, $filename);
             }
         } catch (\Exception $e) {
             Log::error('Error in viewPdf (Pimpinan PT): ' . $e->getMessage(), [
@@ -434,84 +387,68 @@ class PimpinanPTController extends Controller
      */
     public function manageAccounts(Request $request)
     {
-        $pimpinanPT = Auth::guard('operator')->user();
-        
-        // Pastikan user adalah Pimpinan PT
+        $pimpinanPT = auth()->user();
+
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             abort(403, 'Akses ditolak. Hanya Pimpinan PT yang dapat mengakses halaman ini.');
         }
 
         $fakultas = Fakultas::orderBy('nama_fakultas')->get();
         $prodis = Prodi::orderBy('nama_prodi')->get();
-        
-        // Cek apakah ada filter yang diterapkan
-        $hasFilter = $request->filled('filter_fakultas') || 
-                     $request->filled('filter_prodi') || 
-                     $request->filled('filter_nim') || 
+
+        $hasFilter = $request->filled('filter_fakultas') ||
+                     $request->filled('filter_prodi') ||
+                     $request->filled('filter_nim') ||
                      $request->filled('filter_nama') ||
                      $request->filled('filter_nama_dosen') ||
                      $request->filled('filter_nama_reviewer') ||
                      $request->filled('filter_nama_operator') ||
                      $request->filled('filter_nama_pimpinan_pt');
 
-        // Filter untuk Mahasiswa
-        $mahasiswaQuery = Mahasiswa::query();
-        
+        $mahasiswaQuery = User::mahasiswa();
         if ($hasFilter) {
-        // Filter berdasarkan Fakultas
-        if ($request->filled('filter_fakultas')) {
+            if ($request->filled('filter_fakultas')) {
                 $fakultasModel = Fakultas::find($request->filter_fakultas);
                 if ($fakultasModel) {
-                    $mahasiswaQuery->where('fakultas_mhs', $fakultasModel->nama_fakultas);
+                    $mahasiswaQuery->whereRaw("metadata->>'fakultas_name' = ?", [$fakultasModel->nama_fakultas]);
+                }
             }
-        }
-        
-        // Filter berdasarkan Prodi
-        if ($request->filled('filter_prodi')) {
+            if ($request->filled('filter_prodi')) {
                 $prodiModel = Prodi::find($request->filter_prodi);
                 if ($prodiModel) {
-                    $mahasiswaQuery->where('prodi_mhs', $prodiModel->nama_prodi);
+                    $mahasiswaQuery->whereRaw("metadata->>'prodi_name' = ?", [$prodiModel->nama_prodi]);
+                }
             }
-        }
-        
-        // Filter berdasarkan NIM (search)
-        if ($request->filled('filter_nim')) {
-                $mahasiswaQuery->where('nim', 'like', '%' . $request->filter_nim . '%');
-        }
-        
-            // Filter berdasarkan Nama
+            if ($request->filled('filter_nim')) {
+                $mahasiswaQuery->where('identifier', 'like', '%' . $request->filter_nim . '%');
+            }
             if ($request->filled('filter_nama')) {
-                $mahasiswaQuery->where('nama_mhs', 'like', '%' . $request->filter_nama . '%');
+                $mahasiswaQuery->where('name', 'like', '%' . $request->filter_nama . '%');
             }
         }
-        
         $mahasiswas = $hasFilter ? $mahasiswaQuery->orderBy('created_at', 'desc')->get() : collect();
-        
-        // Filter untuk Dosen
-        $dosenQuery = Dosen::query();
+
+        $dosenQuery = User::dosen();
         if ($hasFilter && $request->filled('filter_nama_dosen')) {
-            $dosenQuery->where('nama_dosen', 'like', '%' . $request->filter_nama_dosen . '%');
+            $dosenQuery->where('name', 'like', '%' . $request->filter_nama_dosen . '%');
         }
         $dosens = $hasFilter ? $dosenQuery->orderBy('created_at', 'desc')->get() : collect();
-        
-        // Filter untuk Reviewer
-        $reviewerQuery = Reviewer::query();
+
+        $reviewerQuery = User::reviewer();
         if ($hasFilter && $request->filled('filter_nama_reviewer')) {
-            $reviewerQuery->where('nama_reviewer', 'like', '%' . $request->filter_nama_reviewer . '%');
+            $reviewerQuery->where('name', 'like', '%' . $request->filter_nama_reviewer . '%');
         }
         $reviewers = $hasFilter ? $reviewerQuery->orderBy('created_at', 'desc')->get() : collect();
-        
-        // Filter untuk Operator
-        $operatorQuery = PT::where('role', 'operator');
+
+        $operatorQuery = User::operator();
         if ($hasFilter && $request->filled('filter_nama_operator')) {
-            $operatorQuery->where('nama_pt', 'like', '%' . $request->filter_nama_operator . '%');
+            $operatorQuery->where('name', 'like', '%' . $request->filter_nama_operator . '%');
         }
         $operators = $hasFilter ? $operatorQuery->orderBy('created_at', 'desc')->get() : collect();
-        
-        // Filter untuk Pimpinan PT
-        $pimpinanPTQuery = PT::where('role', 'pimpinan_pt');
+
+        $pimpinanPTQuery = User::pimpinanPT();
         if ($hasFilter && $request->filled('filter_nama_pimpinan_pt')) {
-            $pimpinanPTQuery->where('nama_pt', 'like', '%' . $request->filter_nama_pimpinan_pt . '%');
+            $pimpinanPTQuery->where('name', 'like', '%' . $request->filter_nama_pimpinan_pt . '%');
         }
         $pimpinanPTs = $hasFilter ? $pimpinanPTQuery->orderBy('created_at', 'desc')->get() : collect();
 
@@ -523,102 +460,78 @@ class PimpinanPTController extends Controller
      */
     public function storeAccount(Request $request, $type)
     {
-        $pimpinanPT = Auth::guard('operator')->user();
-        
-        // Pastikan user adalah Pimpinan PT
+        $pimpinanPT = auth()->user();
+
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             return back()->with('error', 'Akses ditolak.');
         }
 
+        $baseRules = [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'no_hp' => 'required|string|max:15',
+            'password' => 'required|string|min:8|confirmed',
+        ];
+
+        $metadata = [];
+
         switch ($type) {
             case 'mahasiswa':
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'nim' => 'required|string|max:20|unique:mahasiswas,nim',
-                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs',
-                    'no_hp' => 'required|string|max:15',
+                $request->validate(array_merge($baseRules, [
+                    'nim' => 'required|string|max:20|unique:users,identifier',
                     'prodi' => 'required|exists:prodis,id_prodi',
                     'fakultas' => 'required|exists:fakultas,id_fakultas',
-                    'password' => 'required|string|min:8|confirmed',
-                ]);
+                ]));
                 $prodi = Prodi::find($request->prodi);
                 $fakultas = Fakultas::find($request->fakultas);
-                Mahasiswa::create([
-                    'nama_mhs' => $request->nama,
-                    'nim' => $request->nim,
-                    'email_mhs' => $request->email,
-                    'no_hp_mhs' => $request->no_hp,
-                    'prodi_mhs' => $prodi->nama_prodi,
-                    'fakultas_mhs' => $fakultas->nama_fakultas,
-                    'password' => Hash::make($request->password),
-                    'is_active' => true,
-                ]);
+                $metadata = [
+                    'prodi_name' => $prodi->nama_prodi,
+                    'fakultas_name' => $fakultas->nama_fakultas,
+                    'prodi_id' => $prodi->id_prodi,
+                    'fakultas_id' => $fakultas->id_fakultas,
+                ];
+                $identifier = $request->nim;
+                $role = 'mahasiswa';
                 break;
             case 'dosen':
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:dosens,email_dosen',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'required|string|min:8|confirmed',
-                ]);
-                Dosen::create([
-                    'nama_dosen' => $request->nama,
-                    'email_dosen' => $request->email,
-                    'no_hp_dosen' => $request->no_hp,
-                    'password' => Hash::make($request->password),
-                    'is_active' => true,
-                ]);
+                $request->validate(array_merge($baseRules, [
+                    'identifier' => 'nullable|string|max:20|unique:users,identifier',
+                ]));
+                $identifier = $request->identifier;
+                $role = 'dosen';
                 break;
             case 'reviewer':
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'required|string|min:8|confirmed',
-                ]);
-                Reviewer::create([
-                    'nama_reviewer' => $request->nama,
-                    'email_reviewer' => $request->email,
-                    'no_hp_reviewer' => $request->no_hp,
-                    'password' => Hash::make($request->password),
-                    'is_active' => true,
-                ]);
+                $request->validate(array_merge($baseRules, [
+                    'identifier' => 'nullable|string|max:20|unique:users,identifier',
+                ]));
+                $identifier = $request->identifier;
+                $role = 'reviewer';
                 break;
             case 'operator':
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:pts,email_pt',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'required|string|min:8|confirmed',
-                ]);
-                PT::create([
-                    'nama_pt' => $request->nama,
-                    'email_pt' => $request->email,
-                    'no_hp_pt' => $request->no_hp,
-                    'password' => Hash::make($request->password),
-                    'role' => 'operator',
-                    'is_active' => true,
-                ]);
+                $request->validate($baseRules);
+                $identifier = null;
+                $role = 'operator';
                 break;
             case 'pimpinan_pt':
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:pts,email_pt',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'required|string|min:8|confirmed',
-                ]);
-                PT::create([
-                    'nama_pt' => $request->nama,
-                    'email_pt' => $request->email,
-                    'no_hp_pt' => $request->no_hp,
-                    'password' => Hash::make($request->password),
-                    'role' => 'pimpinan_pt',
-                    'is_active' => true,
-                ]);
+                $request->validate($baseRules);
+                $identifier = null;
+                $role = 'pimpinan_pt';
                 break;
             default:
                 return back()->with('error', 'Tipe akun tidak dikenal.');
         }
+
+        User::create([
+            'name' => $request->nama,
+            'identifier' => $identifier,
+            'email' => $request->email,
+            'phone' => $request->no_hp,
+            'password' => Hash::make($request->password),
+            'role' => $role,
+            'is_active' => true,
+            'metadata' => $metadata,
+        ]);
+
         return redirect()->route('pimpinan_pt.manage.accounts')->with('success', 'Akun berhasil dibuat.');
     }
 
@@ -627,115 +540,62 @@ class PimpinanPTController extends Controller
      */
     public function updateAccount(Request $request, $type, $id)
     {
-        $pimpinanPT = Auth::guard('operator')->user();
-        
-        // Pastikan user adalah Pimpinan PT
+        $pimpinanPT = auth()->user();
+
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             return back()->with('error', 'Akses ditolak.');
         }
 
+        $user = User::where('role', $type)->findOrFail($id);
+
+        $baseRules = [
+            'nama' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $id,
+            'no_hp' => 'required|string|max:15',
+            'password' => 'nullable|string|min:8|confirmed',
+        ];
+
         switch ($type) {
             case 'mahasiswa':
-                $mahasiswa = Mahasiswa::findOrFail($id);
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'nim' => 'required|string|max:20|unique:mahasiswas,nim,' . $mahasiswa->id_mahasiswa . ',id_mahasiswa',
-                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs,' . $mahasiswa->id_mahasiswa . ',id_mahasiswa',
-                    'no_hp' => 'required|string|max:15',
+                $request->validate(array_merge($baseRules, [
+                    'nim' => 'required|string|max:20|unique:users,identifier,' . $id,
                     'prodi' => 'required|exists:prodis,id_prodi',
                     'fakultas' => 'required|exists:fakultas,id_fakultas',
-                    'password' => 'nullable|string|min:8|confirmed',
-                ]);
+                ]));
                 $prodi = Prodi::find($request->prodi);
                 $fakultas = Fakultas::find($request->fakultas);
-                $updateData = [
-                    'nama_mhs' => $request->nama,
-                    'nim' => $request->nim,
-                    'email_mhs' => $request->email,
-                    'no_hp_mhs' => $request->no_hp,
-                    'prodi_mhs' => $prodi->nama_prodi,
-                    'fakultas_mhs' => $fakultas->nama_fakultas,
-                ];
-                if ($request->filled('password')) {
-                    $updateData['password'] = Hash::make($request->password);
-                }
-                $mahasiswa->update($updateData);
+                $metadata = array_merge($user->metadata ?? [], [
+                    'prodi_name' => $prodi->nama_prodi,
+                    'fakultas_name' => $fakultas->nama_fakultas,
+                    'prodi_id' => $prodi->id_prodi,
+                    'fakultas_id' => $fakultas->id_fakultas,
+                ]);
+                $user->identifier = $request->nim;
+                $user->metadata = $metadata;
                 break;
             case 'dosen':
-                $dosen = Dosen::findOrFail($id);
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:dosens,email_dosen,' . $dosen->id_dosen . ',id_dosen',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'nullable|string|min:8|confirmed',
-                ]);
-                $updateData = [
-                    'nama_dosen' => $request->nama,
-                    'email_dosen' => $request->email,
-                    'no_hp_dosen' => $request->no_hp,
-                ];
-                if ($request->filled('password')) {
-                    $updateData['password'] = Hash::make($request->password);
-                }
-                $dosen->update($updateData);
-                break;
             case 'reviewer':
-                $reviewer = Reviewer::findOrFail($id);
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer,' . $reviewer->id_reviewer . ',id_reviewer',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'nullable|string|min:8|confirmed',
-                ]);
-                $updateData = [
-                    'nama_reviewer' => $request->nama,
-                    'email_reviewer' => $request->email,
-                    'no_hp_reviewer' => $request->no_hp,
-                ];
-                if ($request->filled('password')) {
-                    $updateData['password'] = Hash::make($request->password);
-                }
-                $reviewer->update($updateData);
+                $request->validate(array_merge($baseRules, [
+                    'identifier' => 'nullable|string|max:20|unique:users,identifier,' . $id,
+                ]));
+                $user->identifier = $request->identifier;
                 break;
             case 'operator':
-                $pt = PT::where('id_pt', $id)->where('role', 'operator')->firstOrFail();
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:pts,email_pt,' . $pt->id_pt . ',id_pt',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'nullable|string|min:8|confirmed',
-                ]);
-                $updateData = [
-                    'nama_pt' => $request->nama,
-                    'email_pt' => $request->email,
-                    'no_hp_pt' => $request->no_hp,
-                ];
-                if ($request->filled('password')) {
-                    $updateData['password'] = Hash::make($request->password);
-                }
-                $pt->update($updateData);
-                break;
             case 'pimpinan_pt':
-                $pt = PT::where('id_pt', $id)->where('role', 'pimpinan_pt')->firstOrFail();
-                $request->validate([
-                    'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:pts,email_pt,' . $pt->id_pt . ',id_pt',
-                    'no_hp' => 'required|string|max:15',
-                    'password' => 'nullable|string|min:8|confirmed',
-                ]);
-                $updateData = [
-                    'nama_pt' => $request->nama,
-                    'email_pt' => $request->email,
-                    'no_hp_pt' => $request->no_hp,
-                ];
-                if ($request->filled('password')) {
-                    $updateData['password'] = Hash::make($request->password);
-                }
-                $pt->update($updateData);
+                $request->validate($baseRules);
                 break;
             default:
                 return back()->with('error', 'Tipe akun tidak dikenal.');
         }
+
+        $user->name = $request->nama;
+        $user->email = $request->email;
+        $user->phone = $request->no_hp;
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+        $user->save();
+
         return redirect()->route('pimpinan_pt.manage.accounts')->with('success', 'Akun berhasil diperbarui.');
     }
 
@@ -744,63 +604,39 @@ class PimpinanPTController extends Controller
      */
     public function deleteAccount($type, $id)
     {
-        $pimpinanPT = Auth::guard('operator')->user();
-        
-        // Pastikan user adalah Pimpinan PT
+        $pimpinanPT = auth()->user();
+
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             return back()->with('error', 'Akses ditolak.');
         }
 
-        // Jangan izinkan menghapus diri sendiri untuk Pimpinan PT
-        if ($type === 'pimpinan_pt' && $pimpinanPT->id_pt == $id) {
+        if ($pimpinanPT->id == $id) {
             return back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');
         }
 
         try {
-            switch ($type) {
-                case 'mahasiswa':
-                    Mahasiswa::where('id_mahasiswa', $id)->delete();
-                    break;
-                case 'dosen':
-                    Dosen::where('id_dosen', $id)->delete();
-                    break;
-                case 'reviewer':
-                    Reviewer::where('id_reviewer', $id)->delete();
-                    break;
-                case 'operator':
-                    PT::where('id_pt', $id)->where('role', 'operator')->delete();
-                    break;
-                case 'pimpinan_pt':
-                    PT::where('id_pt', $id)->where('role', 'pimpinan_pt')->delete();
-                    break;
-                default:
-                    return back()->with('error', 'Tipe akun tidak dikenal.');
-            }
+            User::where('id', $id)->where('role', $type)->delete();
             return redirect()->route('pimpinan_pt.manage.accounts')->with('success', 'Akun berhasil dihapus.');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal menghapus akun: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Bulk Delete Mahasiswa
-     */
     public function bulkDeleteMahasiswa(Request $request)
     {
-        $pimpinanPT = Auth::guard('operator')->user();
-        
-        // Pastikan user adalah Pimpinan PT
+        $pimpinanPT = auth()->user();
+
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             return back()->with('error', 'Akses ditolak.');
         }
 
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:mahasiswas,id_mahasiswa',
+            'ids.*' => 'exists:users,id',
         ]);
-        
+
         try {
-            $count = Mahasiswa::whereIn('id_mahasiswa', $request->ids)->delete();
+            $count = User::where('role', 'mahasiswa')->whereIn('id', $request->ids)->delete();
             return redirect()->route('pimpinan_pt.manage.accounts')->with('success', "Berhasil menghapus {$count} akun mahasiswa.");
         } catch (\Exception $e) {
             return redirect()->route('pimpinan_pt.manage.accounts')->with('error', 'Gagal menghapus akun mahasiswa: ' . $e->getMessage());

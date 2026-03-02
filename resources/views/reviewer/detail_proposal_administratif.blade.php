@@ -228,6 +228,12 @@
 
 @section('content')
 <div class="container-fluid reviewer-compact">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('reviewer.dashboard')],
+        ['label' => 'Review Administratif', 'url' => route('reviewer.review.administratif')],
+        ['label' => 'Detail Proposal', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -256,7 +262,7 @@
                         </h5>
                         <div class="pdf-controls">
                             @if($proposal->dokumen && $proposal->dokumen->path_file)
-                                <a href="{{ asset('storage/' . $proposal->dokumen->path_file) }}" 
+                                <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" 
                                    class="btn btn-sm btn-primary me-2" target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
                                 </a>
@@ -275,7 +281,7 @@
                         <div class="pdf-container-full">
                             <iframe 
                                 id="pdfViewer"
-                                src="{{ asset('storage/' . $proposal->dokumen->path_file) }}"
+                                src="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}"
                                 style="width: 100%; height: 80vh; border: none; border-radius: 8px;"
                                 frameborder="0"
                                 allowfullscreen>
@@ -321,48 +327,7 @@
                         <tr>
                             <td class="py-2 px-2"><strong>Status:</strong></td>
                             <td class="py-2 px-2">
-                                @php
-                                    $statusClass = '';
-                                    $statusText = '';
-                                    switch($proposal->status) {
-                                        case 'draft':
-                                            $statusClass = 'bg-secondary';
-                                            $statusText = 'Draft';
-                                            break;
-                                        case 'submitted':
-                                            $statusClass = 'bg-info';
-                                            $statusText = 'Submitted';
-                                            break;
-                                        case 'validated':
-                                            $statusClass = 'bg-success';
-                                            $statusText = 'Validated';
-                                            break;
-                                        case 'review_administratif':
-                                            $statusClass = 'bg-warning';
-                                            $statusText = 'Review Administratif';
-                                            break;
-                                        case 'review_substantif':
-                                            $statusClass = 'bg-info';
-                                            $statusText = 'Review Substantif';
-                                            break;
-                                        case 'review_completed':
-                                            $statusClass = 'bg-warning';
-                                            $statusText = 'Review Completed';
-                                            break;
-                                        case 'revisi':
-                                            $statusClass = 'bg-info';
-                                            $statusText = 'Revisi';
-                                            break;
-                                        case 'finalized':
-                                            $statusClass = 'bg-primary';
-                                            $statusText = 'Finalized';
-                                            break;
-                                        default:
-                                            $statusClass = 'bg-secondary';
-                                            $statusText = $proposal->status;
-                                    }
-                                @endphp
-                                <span class="badge {{ $statusClass }}">{{ $statusText }}</span>
+                                <x-status-badge :status="$proposal->status" :label="$proposal->status_label" />
                             </td>
                         </tr>
                     </table>
@@ -631,6 +596,7 @@
                             <div class="form-text text-danger" id="errorKesalahan" style="display: none;">
                                 Pilih minimal satu kesalahan administratif
                             </div>
+                            <div class="form-text text-danger" id="serverErrorKesalahan" style="display: none;"></div>
                         </div>
 
                         <!-- Catatan Review -->
@@ -643,6 +609,7 @@
                             <div class="form-text text-danger" id="errorCatatan" style="display: none;">
                                 Catatan review harus diisi
                             </div>
+                            <div class="form-text text-danger" id="serverErrorCatatan" style="display: none;"></div>
                         </div>
 
                         <!-- Submit Button -->
@@ -852,6 +819,8 @@
         // Reset error messages
         document.getElementById('errorKesalahan').style.display = 'none';
         document.getElementById('errorCatatan').style.display = 'none';
+        document.getElementById('serverErrorKesalahan').style.display = 'none';
+        document.getElementById('serverErrorCatatan').style.display = 'none';
         
         // Get form data
         const catatan = document.getElementById('catatan').value.trim();
@@ -912,22 +881,25 @@
             },
             credentials: 'same-origin'
         })
-        .then(response => {
+        .then(async (response) => {
             // Log response untuk debugging
             console.log('Response status:', response.status);
             console.log('Response headers:', response.headers);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
+
             // Cek content type untuk memastikan response adalah JSON
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 throw new Error('Response is not JSON');
             }
-            
-            return response.json();
+
+            const payload = await response.json();
+            if (!response.ok) {
+                const httpError = new Error(`HTTP error! status: ${response.status}`);
+                httpError.responsePayload = payload;
+                throw httpError;
+            }
+
+            return payload;
         })
         .then(data => {
             console.log('Response data:', data);
@@ -957,9 +929,31 @@
             
             // Handle network atau parsing errors
             let errorMessage = 'Terjadi kesalahan saat menyimpan review';
+
+            const serverErrors = error?.responsePayload?.errors || {};
+            if (Object.keys(serverErrors).length > 0) {
+                if (serverErrors.kesalahan_administratif) {
+                    const kesalahanError = document.getElementById('serverErrorKesalahan');
+                    kesalahanError.textContent = serverErrors.kesalahan_administratif[0];
+                    kesalahanError.style.display = 'block';
+                }
+                if (serverErrors.catatan) {
+                    const catatanError = document.getElementById('serverErrorCatatan');
+                    catatanError.textContent = serverErrors.catatan[0];
+                    catatanError.style.display = 'block';
+                }
+                const genericErrors = Object.values(serverErrors).flat();
+                if (genericErrors.length > 0) {
+                    errorMessage = genericErrors[0];
+                }
+            } else if (error?.responsePayload?.message) {
+                errorMessage = error.responsePayload.message;
+            }
             
             if (error.message.includes('HTTP error')) {
-                errorMessage = 'Server error: ' + error.message;
+                if (!error?.responsePayload?.errors) {
+                    errorMessage = 'Server error: ' + error.message;
+                }
             } else if (error.message.includes('Response is not JSON')) {
                 errorMessage = 'Server mengembalikan response yang tidak valid. Silakan coba lagi.';
             } else if (error.message.includes('JSON')) {

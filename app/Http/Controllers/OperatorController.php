@@ -6,27 +6,31 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Proposal;
-use App\Models\Dosen;
-use App\Models\Reviewer;
 use App\Models\RuangKontrol;
 use App\Models\HasilFinal;
 use App\Models\HasilSemiFinal;
 use App\Models\NilaiAdministratif;
 use App\Models\NilaiSubstantif;
 use App\Models\Dokumen;
-use App\Models\PT;
 use App\Models\Fakultas;
 use App\Models\Prodi;
 use App\Models\ProposalRevisi;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\StorageHelper;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Mahasiswa;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Helpers\TahunAjaranHelper;
+use App\Repositories\Firebase\RuangKontrolHistoryRepository;
+use App\Services\FirebaseService;
+use Illuminate\Support\Facades\Log;
 
 class OperatorController extends Controller
 {
+    public function __construct(
+        protected RuangKontrolHistoryRepository $ruangKontrolHistoryRepo,
+        protected FirebaseService $firebaseService
+    ) {}
+
     public function dashboard(Request $request)
     {
         // Ambil tahun ajaran yang dipilih (default: tahun ajaran terbaru)
@@ -34,18 +38,17 @@ class OperatorController extends Controller
         
         // Ambil daftar tahun ajaran yang tersedia dari proposal
         $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
-            ->whereRaw("tahun_ajaran LIKE '%/%'") // Hanya format YYYY/YYYY
-            ->distinct()
-            ->orderByRaw("CAST(SUBSTRING_INDEX(tahun_ajaran, '/', 1) AS UNSIGNED) DESC")
+            ->whereRaw("tahun_ajaran LIKE '%/%'")
+            ->select('tahun_ajaran')
+            ->groupBy('tahun_ajaran')
+            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->pluck('tahun_ajaran')
             ->filter(function($item) {
-                // Pastikan format benar (mengandung slash dan memiliki 2 bagian)
                 return strpos($item, '/') !== false && 
                        count(explode('/', $item)) === 2;
             })
             ->values();
         
-        // Jika belum ada proposal, set default tahun ajaran terbaru
         if ($tahunAjaranList->isEmpty()) {
             $tahunAjaranList = collect([TahunAjaranHelper::getTahunAjaranTerbaru()]);
         }
@@ -108,7 +111,7 @@ class OperatorController extends Controller
             return collect([]);
         }
         
-        $query = Proposal::with(['mahasiswa', 'semuaAnggotaTim', 'hasilFinal'])
+        $query = Proposal::with(['mahasiswa', 'hasilFinal'])
             ->where('tahun_ajaran', $tahunAjaran);
         
         // Filter berdasarkan Fakultas
@@ -117,10 +120,8 @@ class OperatorController extends Controller
             if ($fakultas) {
                 $query->where(function($q) use ($fakultas) {
                     $q->whereHas('mahasiswa', function($subQ) use ($fakultas) {
-                        $subQ->where('fakultas_mhs', $fakultas->nama_fakultas);
-                    })->orWhereHas('semuaAnggotaTim', function($subQ) use ($fakultas) {
-                        $subQ->where('fakultas_mhs', $fakultas->nama_fakultas);
-                    });
+                        $subQ->whereRaw("metadata->>'fakultas_name' = ?", [$fakultas->nama_fakultas]);
+                    })->orWhereRaw("EXISTS (SELECT 1 FROM users u WHERE (u.metadata->>'team_id') = proposals.team_id AND u.role = 'mahasiswa' AND u.metadata->>'fakultas_name' = ?)", [$fakultas->nama_fakultas]);
                 });
             }
         }
@@ -131,10 +132,8 @@ class OperatorController extends Controller
             if ($prodi) {
                 $query->where(function($q) use ($prodi) {
                     $q->whereHas('mahasiswa', function($subQ) use ($prodi) {
-                        $subQ->where('prodi_mhs', $prodi->nama_prodi);
-                    })->orWhereHas('semuaAnggotaTim', function($subQ) use ($prodi) {
-                        $subQ->where('prodi_mhs', $prodi->nama_prodi);
-                    });
+                        $subQ->whereRaw("metadata->>'prodi_name' = ?", [$prodi->nama_prodi]);
+                    })->orWhereRaw("EXISTS (SELECT 1 FROM users u WHERE (u.metadata->>'team_id') = proposals.team_id AND u.role = 'mahasiswa' AND u.metadata->>'prodi_name' = ?)", [$prodi->nama_prodi]);
                 });
             }
         }
@@ -183,7 +182,7 @@ class OperatorController extends Controller
                       ->orWhereNull('id_reviewer_substantif_1')
                       ->orWhereNull('id_reviewer_substantif_2');
             })
-            ->whereYear('tanggal_pengajuan', $tahun)
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
             ->when($filter !== 'all', function($query) use ($filter) {
                 $query->where('skim', $filter);
             })
@@ -197,7 +196,7 @@ class OperatorController extends Controller
         ]);
         
         // Ambil semua reviewer yang tersedia
-        $reviewers = Reviewer::where('is_active', true)->get();
+        $reviewers = User::reviewer()->where('is_active', true)->get();
         
         return view('operator.pilih_reviewer', compact('proposals', 'reviewers', 'tahun', 'filter'));
     }
@@ -214,14 +213,17 @@ class OperatorController extends Controller
         }
         
         try {
-            $reviewers = Reviewer::where('is_active', true)
+            $reviewers = User::reviewer()->where('is_active', true)
                 ->where(function($query) use ($search) {
-                    $query->where('nama_reviewer', 'LIKE', "%{$search}%")
-                          ->orWhere('email_reviewer', 'LIKE', "%{$search}%");
+                    $query->where('name', 'LIKE', "%{$search}%")
+                          ->orWhere('email', 'LIKE', "%{$search}%");
                 })
-                ->select('id_reviewer', 'nama_reviewer', 'email_reviewer', 'no_hp_reviewer')
+                ->select('id', 'name', 'email', 'phone')
                 ->limit(10)
-                ->get();
+                ->get()
+                ->map(function ($u) {
+                    return ['id' => $u->id, 'nama_reviewer' => $u->name, 'email_reviewer' => $u->email, 'no_hp_reviewer' => $u->phone];
+                });
             
             return response()->json([
                 'success' => true,
@@ -249,9 +251,9 @@ class OperatorController extends Controller
         try {
             $request->validate([
                 'proposal_id' => 'required|exists:proposals,id_proposal',
-                'reviewer_administratif' => 'required|exists:reviewers,id_reviewer',
-                'reviewer_substantif_1' => 'required|exists:reviewers,id_reviewer',
-                'reviewer_substantif_2' => 'required|exists:reviewers,id_reviewer|different:reviewer_substantif_1'
+                'reviewer_administratif' => 'required|exists:users,id',
+                'reviewer_substantif_1' => 'required|exists:users,id',
+                'reviewer_substantif_2' => 'required|exists:users,id|different:reviewer_substantif_1'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation failed for reviewer assignment', [
@@ -337,7 +339,7 @@ class OperatorController extends Controller
             
             // Kirim notifikasi ke mahasiswa
             try {
-                $notificationService = new NotificationService();
+                $notificationService = app(NotificationService::class);
                 $notificationService->notifyReviewerAssigned($proposal);
             } catch (\Exception $e) {
                 \Log::error('Gagal mengirim notifikasi assign reviewer: ' . $e->getMessage());
@@ -406,7 +408,7 @@ class OperatorController extends Controller
             ->whereNotNull('id_reviewer_administratif')
             ->whereNotNull('id_reviewer_substantif_1')
             ->whereNotNull('id_reviewer_substantif_2')
-            ->whereYear('tanggal_pengajuan', $tahun)
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
             ->when($filter !== 'all', function($query) use ($filter) {
                 $query->where('skim', $filter);
             })
@@ -448,6 +450,46 @@ class OperatorController extends Controller
         }
     }
 
+    /**
+     * JSON: Daftar proposal yang sudah memiliki kedua reviewer seleksi (untuk halaman pilih reviewer seleksi).
+     */
+    public function getAssignedProposalsSeleksi()
+    {
+        $tahun = request('tahun', '2025');
+        $filter = request('filter', 'all');
+
+        try {
+            $proposals = Proposal::with([
+                'mahasiswa',
+                'reviewerSubstantifSeleksi1',
+                'reviewerSubstantifSeleksi2'
+            ])
+                ->whereNotNull('id_reviewer_substantif_seleksi_1')
+                ->whereNotNull('id_reviewer_substantif_seleksi_2')
+                ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+                ->when($filter !== 'all', function ($query) use ($filter) {
+                    $query->where('skim', $filter);
+                })
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'proposals' => $proposals,
+                'count' => $proposals->count()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error getAssignedProposalsSeleksi', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function ruangKontrol()
     {
         // Gunakan TahunAjaranHelper untuk format tahun akademik
@@ -465,11 +507,13 @@ class OperatorController extends Controller
             if (!$ruangKontrolAktif) {
                 $ruangKontrolAktif = RuangKontrol::create([
                     'status_pendaftaran' => 'tertutup',
+                    'status_review' => 'tertutup',
                     'status_perbaikan' => 'tertutup',
+                    'status_penilaian_akhir' => 'tertutup',
                     'tahun_ajaran' => $tahunAjaranTerpilih,
                     'nama_history' => 'Jadwal ' . $tahunAjaranTerpilih,
                     'is_active' => true,
-                    'id_pt' => auth('operator')->id()
+                    'id_pt' => auth()->id()
                 ]);
             } else {
                 // Set yang pertama sebagai aktif jika belum ada yang aktif
@@ -480,7 +524,7 @@ class OperatorController extends Controller
         // Ambil semua history untuk dropdown (hanya format tahun akademik YYYY/YYYY)
         $histories = RuangKontrol::whereNotNull('tahun_ajaran')
             ->whereRaw("tahun_ajaran LIKE '%/%'") // Hanya format YYYY/YYYY
-            ->orderByRaw("CAST(SUBSTRING_INDEX(tahun_ajaran, '/', 1) AS UNSIGNED) DESC")
+            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(function($item) {
@@ -502,7 +546,12 @@ class OperatorController extends Controller
             $ruangKontrolAktif->refresh();
         }
         
-        return view('operator.ruang_kontrol', compact('ruangKontrolAktif', 'histories', 'jadwalTahun', 'tahunAjaranTerpilih'));
+        $phases = RuangKontrol::PHASES;
+        $phaseLabels = RuangKontrol::PHASE_LABELS;
+        $phaseIcons = RuangKontrol::PHASE_ICONS;
+        $phaseDescriptions = RuangKontrol::PHASE_DESCRIPTIONS;
+
+        return view('operator.ruang_kontrol', compact('ruangKontrolAktif', 'histories', 'jadwalTahun', 'tahunAjaranTerpilih', 'phases', 'phaseLabels', 'phaseIcons', 'phaseDescriptions'));
     }
     
     /**
@@ -533,299 +582,365 @@ class OperatorController extends Controller
     }
 
     /**
-     * Check and auto-activate phases based on dates
+     * Check and auto-activate phases based on dates.
+     * Only one phase can be open at a time. Processes phases in order: pendaftaran -> review -> perbaikan -> penilaian_akhir.
      */
     private function checkAndUpdateAutoActivation($ruangKontrol)
     {
         $now = now();
         $updated = false;
-        
-        // Check Fase 1: Pengajuan Proposal
-        if ($ruangKontrol->tanggal_pendaftaran_mulai && 
-            $ruangKontrol->tanggal_pendaftaran_selesai) {
-            
-            $mulai = \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_mulai);
-            $selesai = \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_selesai);
-            
-            // Jika sekarang berada dalam rentang tanggal fase 1 dan fase 1 belum terbuka
-            if ($now->gte($mulai) && $now->lte($selesai)) {
-                if ($ruangKontrol->status_pendaftaran !== 'terbuka') {
-                    $ruangKontrol->status_pendaftaran = 'terbuka';
-                    $ruangKontrol->status_perbaikan = 'tertutup'; // Tutup fase 2 jika fase 1 aktif
-                    $updated = true;
-                }
-            } 
-            // Jika sudah lewat tanggal selesai, tutup fase 1
-            elseif ($now->gt($selesai) && $ruangKontrol->status_pendaftaran === 'terbuka') {
-                $ruangKontrol->status_pendaftaran = 'tertutup';
+        $phaseConfig = [
+            'pendaftaran' => ['mulai' => 'tanggal_pendaftaran_mulai', 'selesai' => 'tanggal_pendaftaran_selesai', 'status' => 'status_pendaftaran'],
+            'review' => ['mulai' => 'tanggal_review_mulai', 'selesai' => 'tanggal_review_selesai', 'status' => 'status_review'],
+            'perbaikan' => ['mulai' => 'tanggal_perbaikan_mulai', 'selesai' => 'tanggal_perbaikan_selesai', 'status' => 'status_perbaikan'],
+            'penilaian_akhir' => ['mulai' => 'tanggal_penilaian_akhir_mulai', 'selesai' => 'tanggal_penilaian_akhir_selesai', 'status' => 'status_penilaian_akhir'],
+        ];
+
+        foreach (RuangKontrol::PHASES as $phase) {
+            $cfg = $phaseConfig[$phase];
+            $mulaiRaw = $ruangKontrol->{$cfg['mulai']};
+            $selesaiRaw = $ruangKontrol->{$cfg['selesai']};
+            $statusAttr = $cfg['status'];
+
+            if (!$mulaiRaw || !$selesaiRaw) {
+                continue;
+            }
+
+            $mulai = \Carbon\Carbon::parse($mulaiRaw);
+            $selesai = \Carbon\Carbon::parse($selesaiRaw);
+
+            // If current date is past this phase's end and phase is still open, close it
+            if ($now->gt($selesai) && $ruangKontrol->{$statusAttr} === 'terbuka') {
+                $ruangKontrol->{$statusAttr} = 'tertutup';
                 $updated = true;
             }
         }
-        
-        // Check Fase 2: Perbaikan Proposal (hanya jika fase 1 tidak aktif)
-        if ($ruangKontrol->status_pendaftaran !== 'terbuka' &&
-            $ruangKontrol->tanggal_perbaikan_mulai && 
-            $ruangKontrol->tanggal_perbaikan_selesai) {
-            
-            $mulai = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_mulai);
-            $selesai = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai);
-            
-            // Jika sekarang berada dalam rentang tanggal fase 2 dan fase 2 belum terbuka
-            if ($now->gte($mulai) && $now->lte($selesai)) {
-                if ($ruangKontrol->status_perbaikan !== 'terbuka') {
-                    $ruangKontrol->status_perbaikan = 'terbuka';
+
+        // Determine which phase (if any) should be open: first phase whose date range contains now and no earlier phase is still active
+        $anyEarlierOpen = false;
+        foreach (RuangKontrol::PHASES as $phase) {
+            $cfg = $phaseConfig[$phase];
+            $mulaiRaw = $ruangKontrol->{$cfg['mulai']};
+            $selesaiRaw = $ruangKontrol->{$cfg['selesai']};
+            $statusAttr = $cfg['status'];
+
+            if (!$mulaiRaw || !$selesaiRaw) {
+                continue;
+            }
+
+            $mulai = \Carbon\Carbon::parse($mulaiRaw);
+            $selesai = \Carbon\Carbon::parse($selesaiRaw);
+
+            if ($anyEarlierOpen) {
+                if ($ruangKontrol->{$statusAttr} === 'terbuka') {
+                    $ruangKontrol->{$statusAttr} = 'tertutup';
                     $updated = true;
                 }
-            } 
-            // Jika sudah lewat tanggal selesai, tutup fase 2
-            elseif ($now->gt($selesai) && $ruangKontrol->status_perbaikan === 'terbuka') {
-                $ruangKontrol->status_perbaikan = 'tertutup';
-                $updated = true;
+                continue;
+            }
+
+            if ($now->gte($mulai) && $now->lte($selesai)) {
+                if ($ruangKontrol->{$statusAttr} !== 'terbuka') {
+                    // Close all other phases, open this one
+                    foreach (RuangKontrol::PHASES as $p) {
+                        $ruangKontrol->{$phaseConfig[$p]['status']} = ($p === $phase) ? 'terbuka' : 'tertutup';
+                    }
+                    $updated = true;
+                }
+                $anyEarlierOpen = true;
             }
         }
-        
+
         if ($updated) {
             $ruangKontrol->save();
             \Log::info('Auto-activation updated', [
                 'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
-                'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
-                'status_perbaikan' => $ruangKontrol->status_perbaikan
+                'phases' => [
+                    'pendaftaran' => $ruangKontrol->status_pendaftaran,
+                    'review' => $ruangKontrol->status_review,
+                    'perbaikan' => $ruangKontrol->status_perbaikan,
+                    'penilaian_akhir' => $ruangKontrol->status_penilaian_akhir,
+                ],
             ]);
         }
     }
 
     /**
-     * Get current active phase status
+     * Get current active phase status (all 4 phases)
      */
     public function getActivePhase()
     {
-        // Ambil ruang kontrol aktif untuk tahun akademik terbaru
         $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
         $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
             ->where('is_active', true)
             ->first();
-        
-        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+
         if (!$ruangKontrol) {
             $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
                 ->orderBy('created_at', 'desc')
                 ->first();
         }
-        
+
         if (!$ruangKontrol) {
             return response()->json([
                 'success' => true,
                 'active_phase' => null,
-                'status_pendaftaran' => 'tertutup',
-                'status_perbaikan' => 'tertutup'
+                'phases' => [
+                    'pendaftaran' => 'tertutup',
+                    'review' => 'tertutup',
+                    'perbaikan' => 'tertutup',
+                    'penilaian_akhir' => 'tertutup',
+                ],
             ]);
         }
-        
-        $activePhase = null;
-        if ($ruangKontrol->status_pendaftaran === 'terbuka') {
-            $activePhase = 'pendaftaran';
-        } elseif ($ruangKontrol->status_perbaikan === 'terbuka') {
-            $activePhase = 'perbaikan';
-        }
-        
+
         return response()->json([
             'success' => true,
-            'active_phase' => $activePhase,
-            'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
-            'status_perbaikan' => $ruangKontrol->status_perbaikan
+            'active_phase' => $ruangKontrol->getActivePhase(),
+            'phases' => [
+                'pendaftaran' => $ruangKontrol->status_pendaftaran,
+                'review' => $ruangKontrol->status_review,
+                'perbaikan' => $ruangKontrol->status_perbaikan,
+                'penilaian_akhir' => $ruangKontrol->status_penilaian_akhir,
+            ],
         ]);
     }
 
     public function updateRuangKontrol(Request $request)
     {
-        // Log request untuk debugging
         \Log::info('Update Ruang Kontrol Request', [
             'data' => $request->all(),
-            'user_id' => auth('operator')->id()
+            'user_id' => auth()->id()
         ]);
 
         $request->validate([
             'id_ruang_kontrol' => 'nullable|exists:ruang_kontrols,id_ruang_kontrol',
-            'status_pendaftaran' => 'required|in:terbuka,tertutup',
-            'status_perbaikan' => 'required|in:terbuka,tertutup',
-            'tanggal_pendaftaran_mulai' => 'required|date',
-            'tanggal_pendaftaran_selesai' => 'required|date|after:tanggal_pendaftaran_mulai',
-            'tanggal_perbaikan_mulai' => 'required|date',
-            'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai',
+            'active_phase' => 'nullable|in:pendaftaran,review,perbaikan,penilaian_akhir',
+            'status_pendaftaran' => 'nullable|in:terbuka,tertutup',
+            'status_review' => 'nullable|in:terbuka,tertutup',
+            'status_perbaikan' => 'nullable|in:terbuka,tertutup',
+            'status_penilaian_akhir' => 'nullable|in:terbuka,tertutup',
+            'tanggal_pendaftaran_mulai' => 'nullable|date',
+            'tanggal_pendaftaran_selesai' => 'nullable|date|after:tanggal_pendaftaran_mulai',
+            'tanggal_review_mulai' => 'nullable|date',
+            'tanggal_review_selesai' => 'nullable|date|after:tanggal_review_mulai',
+            'tanggal_perbaikan_mulai' => 'nullable|date',
+            'tanggal_perbaikan_selesai' => 'nullable|date|after:tanggal_perbaikan_mulai',
+            'tanggal_penilaian_akhir_mulai' => 'nullable|date',
+            'tanggal_penilaian_akhir_selesai' => 'nullable|date|after:tanggal_penilaian_akhir_mulai',
             'tahun_ajaran' => 'nullable|string',
             'nama_history' => 'nullable|string'
         ]);
 
-        // Implement mutual exclusive logic
-        $statusPendaftaran = $request->status_pendaftaran;
-        $statusPerbaikan = $request->status_perbaikan;
-        
-        // If both phases are set to 'terbuka', this is invalid
-        if ($statusPendaftaran === 'terbuka' && $statusPerbaikan === 'terbuka') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak dapat membuka kedua fase secara bersamaan. Hanya satu fase yang dapat aktif pada satu waktu.'
-            ], 422);
+        // Resolve which phase is open: active_phase takes precedence, else derive from status_* (mutual exclusive)
+        $statusPendaftaran = 'tertutup';
+        $statusReview = 'tertutup';
+        $statusPerbaikan = 'tertutup';
+        $statusPenilaianAkhir = 'tertutup';
+
+        if ($request->filled('active_phase')) {
+            $statusPendaftaran = $request->active_phase === 'pendaftaran' ? 'terbuka' : 'tertutup';
+            $statusReview = $request->active_phase === 'review' ? 'terbuka' : 'tertutup';
+            $statusPerbaikan = $request->active_phase === 'perbaikan' ? 'terbuka' : 'tertutup';
+            $statusPenilaianAkhir = $request->active_phase === 'penilaian_akhir' ? 'terbuka' : 'tertutup';
+        } else {
+            $statusPendaftaran = $request->input('status_pendaftaran', 'tertutup');
+            $statusReview = $request->input('status_review', 'tertutup');
+            $statusPerbaikan = $request->input('status_perbaikan', 'tertutup');
+            $statusPenilaianAkhir = $request->input('status_penilaian_akhir', 'tertutup');
+            $openCount = array_filter([$statusPendaftaran, $statusReview, $statusPerbaikan, $statusPenilaianAkhir], fn($s) => $s === 'terbuka');
+            if (count($openCount) > 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat membuka lebih dari satu fase secara bersamaan. Hanya satu fase yang dapat aktif pada satu waktu.'
+                ], 422);
+            }
+        }
+
+        // Validate chronological order if all dates provided
+        $allDatesFilled = $request->tanggal_pendaftaran_selesai && $request->tanggal_review_mulai
+            && $request->tanggal_review_selesai && $request->tanggal_perbaikan_mulai
+            && $request->tanggal_perbaikan_selesai && $request->tanggal_penilaian_akhir_mulai;
+
+        if ($allDatesFilled) {
+            $dates = [
+                'pend_selesai' => strtotime($request->tanggal_pendaftaran_selesai),
+                'review_mulai' => strtotime($request->tanggal_review_mulai),
+                'review_selesai' => strtotime($request->tanggal_review_selesai),
+                'perbaikan_mulai' => strtotime($request->tanggal_perbaikan_mulai),
+                'perbaikan_selesai' => strtotime($request->tanggal_perbaikan_selesai),
+                'penilaian_mulai' => strtotime($request->tanggal_penilaian_akhir_mulai),
+            ];
+            if ($dates['pend_selesai'] >= $dates['review_mulai']) {
+                return response()->json(['success' => false, 'message' => 'Tanggal selesai pendaftaran harus sebelum tanggal mulai review.'], 422);
+            }
+            if ($dates['review_selesai'] >= $dates['perbaikan_mulai']) {
+                return response()->json(['success' => false, 'message' => 'Tanggal selesai review harus sebelum tanggal mulai perbaikan.'], 422);
+            }
+            if ($dates['perbaikan_selesai'] >= $dates['penilaian_mulai']) {
+                return response()->json(['success' => false, 'message' => 'Tanggal selesai perbaikan harus sebelum tanggal mulai penilaian akhir.'], 422);
+            }
         }
 
         try {
-            // Tentukan tahun akademik dari tanggal fase 1 (menggunakan logika yang sama dengan TahunAjaranHelper)
-            $tanggalFase1Mulai = \Carbon\Carbon::parse($request->tanggal_pendaftaran_mulai);
-            $tahunFase1 = (int) $tanggalFase1Mulai->format('Y');
-            $bulanFase1 = (int) $tanggalFase1Mulai->format('n');
-            
-            if ($bulanFase1 >= 7) {
-                // Juli-Desember: tahun akademik = tahun / tahun+1 (misal: Des 2025 = 2025/2026)
-                $tahunAjaran = $tahunFase1 . '/' . ($tahunFase1 + 1);
-            } else {
-                // Januari-Juni: tahun akademik = tahun-1 / tahun (misal: Jan 2026 = 2025/2026)
-                $tahunAjaran = ($tahunFase1 - 1) . '/' . $tahunFase1;
+            $tahunAjaran = $request->input('tahun_ajaran');
+
+            if ($request->filled('tanggal_pendaftaran_mulai')) {
+                $tanggalFase1Mulai = \Carbon\Carbon::parse($request->tanggal_pendaftaran_mulai);
+                $tahunFase1 = (int) $tanggalFase1Mulai->format('Y');
+                $bulanFase1 = (int) $tanggalFase1Mulai->format('n');
+                $tahunAjaran = $bulanFase1 >= 7
+                    ? $tahunFase1 . '/' . ($tahunFase1 + 1)
+                    : ($tahunFase1 - 1) . '/' . $tahunFase1;
+
+                if ($this->isTahunAkademikMasaLalu($tahunAjaran)) {
+                    $tahunAkademikSekarang = TahunAjaranHelper::getTahunAjaranTerbaru();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tahun akademik masa lalu tidak dapat digunakan. Hanya tahun akademik sekarang (' . $tahunAkademikSekarang . ') dan tahun akademik depan yang bisa digunakan untuk mengatur fase.'
+                    ], 422);
+                }
             }
-            
-            // Cek apakah tahun akademik adalah tahun masa lalu (tidak bisa digunakan)
-            if ($this->isTahunAkademikMasaLalu($tahunAjaran)) {
-                $tahunAkademikSekarang = TahunAjaranHelper::getTahunAjaranTerbaru();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tahun akademik masa lalu tidak dapat digunakan. Hanya tahun akademik sekarang (' . $tahunAkademikSekarang . ') dan tahun akademik depan yang bisa digunakan untuk mengatur fase.'
-                ], 422);
+
+            if (!$tahunAjaran) {
+                $tahunAjaran = TahunAjaranHelper::getTahunAjaranTerbaru();
             }
-            
-            // Jika ID jadwal dikirim, update jadwal tersebut
+
+            $payload = [
+                'status_pendaftaran' => $statusPendaftaran,
+                'status_review' => $statusReview,
+                'status_perbaikan' => $statusPerbaikan,
+                'status_penilaian_akhir' => $statusPenilaianAkhir,
+                'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
+                'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                'tanggal_review_mulai' => $request->tanggal_review_mulai,
+                'tanggal_review_selesai' => $request->tanggal_review_selesai,
+                'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
+                'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
+                'tanggal_penilaian_akhir_mulai' => $request->tanggal_penilaian_akhir_mulai,
+                'tanggal_penilaian_akhir_selesai' => $request->tanggal_penilaian_akhir_selesai,
+                'nama_history' => $request->nama_history ?? null,
+            ];
+
             if ($request->filled('id_ruang_kontrol')) {
                 $ruangKontrol = RuangKontrol::findOrFail($request->id_ruang_kontrol);
-                
-                // Pastikan jadwal ini untuk tahun ajaran yang sama
                 if ($ruangKontrol->tahun_ajaran !== $tahunAjaran) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Jadwal yang dipilih tidak sesuai dengan tahun ajaran yang dipilih.'
                     ], 422);
                 }
-                
-                // Simpan status lama untuk cek perubahan
                 $oldStatusPendaftaran = $ruangKontrol->status_pendaftaran;
-                
-                // Update jadwal yang sudah ada (hanya status, tidak membuat history)
-                $ruangKontrol->update([
-                    'status_pendaftaran' => $statusPendaftaran,
-                    'status_perbaikan' => $statusPerbaikan,
-                    'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
-                    'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
-                    'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                    'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history
-                ]);
-                
-                // Kirim notifikasi jika pendaftaran dibuka
+                $payload['nama_history'] = $payload['nama_history'] ?? $ruangKontrol->nama_history;
+                $ruangKontrol->update($payload);
+
                 if ($statusPendaftaran === 'terbuka' && $oldStatusPendaftaran !== 'terbuka') {
                     try {
-                        $notificationService = new NotificationService();
-                        $notificationService->notifyRuangKontrolDibuka($ruangKontrol->fresh());
+                        (app(NotificationService::class))->notifyRuangKontrolDibuka($ruangKontrol->fresh());
                     } catch (\Exception $e) {
                         \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
                     }
                 }
             } else {
-                // Jika ID tidak dikirim, cari jadwal aktif untuk tahun ajaran tersebut
-            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
-                ->where('is_active', true)
-                ->first();
-            
-            if (!$ruangKontrol) {
-                    // Jika tidak ada yang aktif, cari jadwal yang tidak aktif untuk tahun ajaran tersebut
-                    $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
-                        ->orderBy('created_at', 'desc')
-                        ->first();
-                }
-                
+                $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)->where('is_active', true)->first();
                 if (!$ruangKontrol) {
-                    // Buat record baru jika benar-benar belum ada jadwal untuk tahun ajaran tersebut
-                $ruangKontrol = RuangKontrol::create([
-                    'status_pendaftaran' => $statusPendaftaran,
-                    'status_perbaikan' => $statusPerbaikan,
-                    'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
-                    'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
-                    'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                    'tahun_ajaran' => $tahunAjaran,
-                    'nama_history' => $request->nama_history ?? 'Jadwal ' . $tahunAjaran,
-                    'is_active' => true,
-                    'id_pt' => auth('operator')->id()
-                ]);
-                
-                // Kirim notifikasi jika pendaftaran dibuka saat create
-                if ($statusPendaftaran === 'terbuka') {
-                    try {
-                        $notificationService = new NotificationService();
-                        $notificationService->notifyRuangKontrolDibuka($ruangKontrol);
-                    } catch (\Exception $e) {
-                        \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
-                    }
+                    $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)->orderBy('created_at', 'desc')->first();
                 }
-            } else {
-                    // Simpan status lama untuk cek perubahan
+                if (!$ruangKontrol) {
+                    $payload['tahun_ajaran'] = $tahunAjaran;
+                    $payload['nama_history'] = $payload['nama_history'] ?? 'Jadwal ' . $tahunAjaran;
+                    $payload['is_active'] = true;
+                    $payload['id_pt'] = auth()->id();
+                    $ruangKontrol = RuangKontrol::create($payload);
+                    if ($statusPendaftaran === 'terbuka') {
+                        try {
+                            (app(NotificationService::class))->notifyRuangKontrolDibuka($ruangKontrol);
+                        } catch (\Exception $e) {
+                            \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
+                        }
+                    }
+                } else {
                     $oldStatusPendaftaran = $ruangKontrol->status_pendaftaran;
-                    
-                    // Update jadwal yang sudah ada (hanya status, tidak membuat history)
-                $ruangKontrol->update([
-                    'status_pendaftaran' => $statusPendaftaran,
-                    'status_perbaikan' => $statusPerbaikan,
-                    'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
-                    'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
-                    'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
-                    'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                        'nama_history' => $request->nama_history ?? $ruangKontrol->nama_history,
-                        'is_active' => true // Pastikan jadwal aktif
-                ]);
-                
-                // Kirim notifikasi jika pendaftaran dibuka
-                if ($statusPendaftaran === 'terbuka' && $oldStatusPendaftaran !== 'terbuka') {
-                    try {
-                        $notificationService = new NotificationService();
-                        $notificationService->notifyRuangKontrolDibuka($ruangKontrol->fresh());
-                    } catch (\Exception $e) {
-                        \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
+                    $payload['nama_history'] = $payload['nama_history'] ?? $ruangKontrol->nama_history;
+                    $payload['is_active'] = true;
+                    $ruangKontrol->update($payload);
+                    if ($statusPendaftaran === 'terbuka' && $oldStatusPendaftaran !== 'terbuka') {
+                        try {
+                            (app(NotificationService::class))->notifyRuangKontrolDibuka($ruangKontrol->fresh());
+                        } catch (\Exception $e) {
+                            \Log::error('Gagal mengirim notifikasi ruang kontrol dibuka: ' . $e->getMessage());
+                        }
                     }
-                }
                 }
             }
-            
-            // Log success
+
             \Log::info('Ruang Kontrol Updated Successfully', [
                 'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
-                'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
-                'status_perbaikan' => $ruangKontrol->status_perbaikan,
+                'phases' => [
+                    'pendaftaran' => $ruangKontrol->status_pendaftaran,
+                    'review' => $ruangKontrol->status_review,
+                    'perbaikan' => $ruangKontrol->status_perbaikan,
+                    'penilaian_akhir' => $ruangKontrol->status_penilaian_akhir,
+                ],
                 'mutual_exclusive_applied' => true
             ]);
-            
-            // Determine which phase is active for response message
-            $activePhase = '';
-            if ($statusPendaftaran === 'terbuka') {
-                $activePhase = 'Fase 1 (Pengajuan Proposal)';
-            } elseif ($statusPerbaikan === 'terbuka') {
-                $activePhase = 'Fase 2 (Perbaikan Proposal)';
-            } else {
-                $activePhase = 'Tidak ada fase aktif';
+
+            try {
+                if ($this->firebaseService->isAvailable()) {
+                    $this->ruangKontrolHistoryRepo->createHistory((int) $ruangKontrol->id_ruang_kontrol, [
+                        'tahun_ajaran' => $tahunAjaran,
+                        'fase_pendaftaran' => [
+                            'status' => $ruangKontrol->status_pendaftaran,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_pendaftaran_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_pendaftaran_selesai,
+                        ],
+                        'fase_review' => [
+                            'status' => $ruangKontrol->status_review,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_review_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_review_selesai,
+                        ],
+                        'fase_perbaikan' => [
+                            'status' => $ruangKontrol->status_perbaikan,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_perbaikan_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_perbaikan_selesai,
+                        ],
+                        'fase_penilaian_akhir' => [
+                            'status' => $ruangKontrol->status_penilaian_akhir,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_penilaian_akhir_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_penilaian_akhir_selesai,
+                        ],
+                        'pengaturan_dana' => [],
+                        'metadata' => [
+                            'changed_by' => auth()->user()?->identifier ?? 'system',
+                            'timestamp' => now()->toIso8601String(),
+                            'action' => 'update',
+                        ],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Firestore ruang kontrol history write failed', ['error' => $e->getMessage()]);
             }
-            
+
+            $activePhaseLabel = $ruangKontrol->getActivePhase()
+                ? (RuangKontrol::PHASE_LABELS[$ruangKontrol->getActivePhase()] ?? $ruangKontrol->getActivePhase())
+                : 'Tidak ada fase aktif';
+
             return response()->json([
                 'success' => true,
-                'message' => "Pengaturan ruang kontrol berhasil diperbarui. Status aktif: {$activePhase}",
+                'message' => "Pengaturan ruang kontrol berhasil diperbarui. Status aktif: {$activePhaseLabel}",
                 'data' => [
                     'status_pendaftaran' => $statusPendaftaran,
+                    'status_review' => $statusReview,
                     'status_perbaikan' => $statusPerbaikan,
-                    'active_phase' => $activePhase
+                    'status_penilaian_akhir' => $statusPenilaianAkhir,
+                    'active_phase' => $activePhaseLabel
                 ]
             ]);
-            
         } catch (\Exception $e) {
-            // Log error
             \Log::error('Error updating Ruang Kontrol', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
@@ -834,85 +949,82 @@ class OperatorController extends Controller
     }
 
     /**
-     * Create new schedule for future year
+     * Create new schedule for future year (4 phases, 8 date fields)
      */
     public function createJadwal(Request $request)
     {
         try {
-            // Log request untuk debugging
             \Log::info('Create Jadwal Request', [
                 'data' => $request->all(),
-                'user_id' => auth('operator')->id()
+                'user_id' => auth()->id()
             ]);
 
-            // Validasi dengan custom messages (tahun_ajaran dari form adalah referensi saja)
-            // Tahun akademik yang sebenarnya akan di-determine dari tanggal fase 1
-            $validated = $request->validate([
-                'tahun_ajaran' => 'nullable|string', // Optional, hanya referensi untuk naming
+            $request->validate([
+                'tahun_ajaran' => 'nullable|string',
                 'nama_history' => 'required|string|max:255',
                 'tanggal_pendaftaran_mulai' => 'required|date',
                 'tanggal_pendaftaran_selesai' => 'required|date|after:tanggal_pendaftaran_mulai',
+                'tanggal_review_mulai' => 'required|date',
+                'tanggal_review_selesai' => 'required|date|after:tanggal_review_mulai',
                 'tanggal_perbaikan_mulai' => 'required|date',
                 'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai',
+                'tanggal_penilaian_akhir_mulai' => 'required|date',
+                'tanggal_penilaian_akhir_selesai' => 'required|date|after:tanggal_penilaian_akhir_mulai',
             ], [
-                // 'tahun_ajaran' tidak ada required message karena optional
                 'nama_history.required' => 'Nama jadwal wajib diisi.',
                 'nama_history.max' => 'Nama jadwal maksimal 255 karakter.',
                 'tanggal_pendaftaran_mulai.required' => 'Tanggal mulai pendaftaran wajib diisi.',
-                'tanggal_pendaftaran_mulai.date' => 'Format tanggal mulai pendaftaran tidak valid.',
                 'tanggal_pendaftaran_selesai.required' => 'Tanggal selesai pendaftaran wajib diisi.',
-                'tanggal_pendaftaran_selesai.date' => 'Format tanggal selesai pendaftaran tidak valid.',
                 'tanggal_pendaftaran_selesai.after' => 'Tanggal selesai pendaftaran harus setelah tanggal mulai.',
+                'tanggal_review_mulai.required' => 'Tanggal mulai review wajib diisi.',
+                'tanggal_review_selesai.required' => 'Tanggal selesai review wajib diisi.',
+                'tanggal_review_selesai.after' => 'Tanggal selesai review harus setelah tanggal mulai.',
                 'tanggal_perbaikan_mulai.required' => 'Tanggal mulai perbaikan wajib diisi.',
-                'tanggal_perbaikan_mulai.date' => 'Format tanggal mulai perbaikan tidak valid.',
                 'tanggal_perbaikan_selesai.required' => 'Tanggal selesai perbaikan wajib diisi.',
-                'tanggal_perbaikan_selesai.date' => 'Format tanggal selesai perbaikan tidak valid.',
                 'tanggal_perbaikan_selesai.after' => 'Tanggal selesai perbaikan harus setelah tanggal mulai.',
+                'tanggal_penilaian_akhir_mulai.required' => 'Tanggal mulai penilaian akhir wajib diisi.',
+                'tanggal_penilaian_akhir_selesai.required' => 'Tanggal selesai penilaian akhir wajib diisi.',
+                'tanggal_penilaian_akhir_selesai.after' => 'Tanggal selesai penilaian akhir harus setelah tanggal mulai.',
             ]);
 
-            // Validasi tambahan: pastikan tanggal perbaikan setelah tanggal pendaftaran selesai
-            if ($request->tanggal_perbaikan_mulai && $request->tanggal_pendaftaran_selesai) {
-                if (strtotime($request->tanggal_perbaikan_mulai) < strtotime($request->tanggal_pendaftaran_selesai)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Tanggal mulai perbaikan harus setelah tanggal selesai pendaftaran.'
-                    ], 422);
-                }
+            // Chronological order: fase1 end < fase2 start < fase2 end < fase3 start < fase3 end < fase4 start < fase4 end
+            $pendSelesai = strtotime($request->tanggal_pendaftaran_selesai);
+            $reviewMulai = strtotime($request->tanggal_review_mulai);
+            $reviewSelesai = strtotime($request->tanggal_review_selesai);
+            $perbaikanMulai = strtotime($request->tanggal_perbaikan_mulai);
+            $perbaikanSelesai = strtotime($request->tanggal_perbaikan_selesai);
+            $penilaianMulai = strtotime($request->tanggal_penilaian_akhir_mulai);
+            if ($pendSelesai >= $reviewMulai) {
+                return response()->json(['success' => false, 'message' => 'Tanggal selesai pendaftaran harus sebelum tanggal mulai review.'], 422);
+            }
+            if ($reviewSelesai >= $perbaikanMulai) {
+                return response()->json(['success' => false, 'message' => 'Tanggal selesai review harus sebelum tanggal mulai perbaikan.'], 422);
+            }
+            if ($perbaikanSelesai >= $penilaianMulai) {
+                return response()->json(['success' => false, 'message' => 'Tanggal selesai perbaikan harus sebelum tanggal mulai penilaian akhir.'], 422);
             }
 
-            // Determine tahun akademik dari tanggal mulai fase 1
-            // Menggunakan logika yang sama dengan TahunAjaranHelper:
-            // - Jika bulan Juli-Desember: tahun akademik = tahun / tahun+1
-            // - Jika bulan Januari-Juni: tahun akademik = tahun-1 / tahun
             $tanggalFase1Mulai = \Carbon\Carbon::parse($request->tanggal_pendaftaran_mulai);
             $tahunFase1 = (int) $tanggalFase1Mulai->format('Y');
             $bulanFase1 = (int) $tanggalFase1Mulai->format('n');
-            
             if ($bulanFase1 >= 7) {
-                // Juli-Desember: tahun akademik = tahun / tahun+1 (misal: Des 2025 = 2025/2026)
                 $tahunAjaranFormatted = $tahunFase1 . '/' . ($tahunFase1 + 1);
             } else {
-                // Januari-Juni: tahun akademik = tahun-1 / tahun (misal: Jan 2026 = 2025/2026)
                 $tahunAjaranFormatted = ($tahunFase1 - 1) . '/' . $tahunFase1;
             }
-            
-            // Validasi: tahun akademik harus >= tahun akademik sekarang
+
             $tahunAjaranSekarang = TahunAjaranHelper::getTahunAjaranTerbaru();
             $tahunPertamaSekarang = (int) explode('/', $tahunAjaranSekarang)[0];
-            
-            if ($tahunFase1 < $tahunPertamaSekarang || 
-                ($bulanFase1 < 7 && ($tahunFase1 - 1) < $tahunPertamaSekarang)) {
+            if ($tahunFase1 < $tahunPertamaSekarang || ($bulanFase1 < 7 && ($tahunFase1 - 1) < $tahunPertamaSekarang)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Tahun akademik dari fase pertama tidak boleh lebih kecil dari tahun akademik sekarang (' . $tahunAjaranSekarang . ').'
                 ], 422);
             }
-            
-            // Cek apakah sudah ada jadwal dengan nama yang sama untuk tahun akademik yang sama
+
             $existing = RuangKontrol::where('tahun_ajaran', $tahunAjaranFormatted)
                 ->where('nama_history', $request->nama_history)
                 ->first();
-            
             if ($existing) {
                 return response()->json([
                     'success' => false,
@@ -920,8 +1032,7 @@ class OperatorController extends Controller
                 ], 422);
             }
 
-            // Get operator ID
-            $operatorId = auth('operator')->id();
+            $operatorId = auth()->id();
             if (!$operatorId) {
                 return response()->json([
                     'success' => false,
@@ -931,12 +1042,18 @@ class OperatorController extends Controller
 
             $ruangKontrol = RuangKontrol::create([
                 'status_pendaftaran' => 'tertutup',
+                'status_review' => 'tertutup',
                 'status_perbaikan' => 'tertutup',
+                'status_penilaian_akhir' => 'tertutup',
                 'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
                 'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                'tanggal_review_mulai' => $request->tanggal_review_mulai,
+                'tanggal_review_selesai' => $request->tanggal_review_selesai,
                 'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
                 'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                'tahun_ajaran' => $tahunAjaranFormatted, // Gunakan tahun yang di-determine dari fase 1
+                'tanggal_penilaian_akhir_mulai' => $request->tanggal_penilaian_akhir_mulai,
+                'tanggal_penilaian_akhir_selesai' => $request->tanggal_penilaian_akhir_selesai,
+                'tahun_ajaran' => $tahunAjaranFormatted,
                 'nama_history' => $request->nama_history,
                 'is_active' => false,
                 'id_pt' => $operatorId
@@ -948,26 +1065,59 @@ class OperatorController extends Controller
                 'nama_history' => $ruangKontrol->nama_history
             ]);
 
+            try {
+                if ($this->firebaseService->isAvailable()) {
+                    $this->ruangKontrolHistoryRepo->createHistory((int) $ruangKontrol->id_ruang_kontrol, [
+                        'tahun_ajaran' => $ruangKontrol->tahun_ajaran,
+                        'fase_pendaftaran' => [
+                            'status' => $ruangKontrol->status_pendaftaran,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_pendaftaran_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_pendaftaran_selesai,
+                        ],
+                        'fase_review' => [
+                            'status' => $ruangKontrol->status_review,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_review_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_review_selesai,
+                        ],
+                        'fase_perbaikan' => [
+                            'status' => $ruangKontrol->status_perbaikan,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_perbaikan_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_perbaikan_selesai,
+                        ],
+                        'fase_penilaian_akhir' => [
+                            'status' => $ruangKontrol->status_penilaian_akhir,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_penilaian_akhir_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_penilaian_akhir_selesai,
+                        ],
+                        'pengaturan_dana' => [],
+                        'metadata' => [
+                            'changed_by' => auth()->user()?->identifier ?? 'system',
+                            'timestamp' => now()->toIso8601String(),
+                            'action' => 'create',
+                        ],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Firestore ruang kontrol history write failed', ['error' => $e->getMessage()]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Jadwal berhasil dibuat.',
                 'data' => $ruangKontrol
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // Handle validation errors
             $errors = $e->validator->errors()->all();
             return response()->json([
                 'success' => false,
                 'message' => implode(' ', $errors)
             ], 422);
         } catch (\Exception $e) {
-            // Log error untuk debugging
             \Log::error('Error creating jadwal', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat membuat jadwal: ' . $e->getMessage()
@@ -996,21 +1146,17 @@ class OperatorController extends Controller
     }
 
     /**
-     * Update schedule (only if not expired based on tahun ajaran)
+     * Update schedule (only if not expired based on tahun ajaran). Accepts 8 date fields.
      */
     public function updateJadwal(Request $request, $id)
     {
         $ruangKontrol = RuangKontrol::findOrFail($id);
-        
-        // Cek apakah tahun ajaran adalah tahun ajaran yang sudah lewat (tidak bisa diupdate)
+
         $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
         $tahunAjaranJadwal = $ruangKontrol->tahun_ajaran;
-        
-        // Extract tahun pertama dari tahun ajaran untuk perbandingan
         $tahunPertamaJadwal = $this->extractYearFromTahunAjaran($tahunAjaranJadwal);
         $tahunPertamaTerbaru = $this->extractYearFromTahunAjaran($tahunAjaranTerbaru);
-        
-        // Jika tahun ajaran jadwal < tahun ajaran terbaru, berarti sudah kedaluwarsa
+
         if ($tahunPertamaJadwal < $tahunPertamaTerbaru) {
             return response()->json([
                 'success' => false,
@@ -1022,18 +1168,80 @@ class OperatorController extends Controller
             'nama_history' => 'required|string|max:255',
             'tanggal_pendaftaran_mulai' => 'required|date',
             'tanggal_pendaftaran_selesai' => 'required|date|after:tanggal_pendaftaran_mulai',
+            'tanggal_review_mulai' => 'required|date',
+            'tanggal_review_selesai' => 'required|date|after:tanggal_review_mulai',
             'tanggal_perbaikan_mulai' => 'required|date',
             'tanggal_perbaikan_selesai' => 'required|date|after:tanggal_perbaikan_mulai',
+            'tanggal_penilaian_akhir_mulai' => 'required|date',
+            'tanggal_penilaian_akhir_selesai' => 'required|date|after:tanggal_penilaian_akhir_mulai',
         ]);
+
+        // Chronological order
+        $pendSelesai = strtotime($request->tanggal_pendaftaran_selesai);
+        $reviewMulai = strtotime($request->tanggal_review_mulai);
+        $reviewSelesai = strtotime($request->tanggal_review_selesai);
+        $perbaikanMulai = strtotime($request->tanggal_perbaikan_mulai);
+        $perbaikanSelesai = strtotime($request->tanggal_perbaikan_selesai);
+        $penilaianMulai = strtotime($request->tanggal_penilaian_akhir_mulai);
+        if ($pendSelesai >= $reviewMulai) {
+            return response()->json(['success' => false, 'message' => 'Tanggal selesai pendaftaran harus sebelum tanggal mulai review.'], 422);
+        }
+        if ($reviewSelesai >= $perbaikanMulai) {
+            return response()->json(['success' => false, 'message' => 'Tanggal selesai review harus sebelum tanggal mulai perbaikan.'], 422);
+        }
+        if ($perbaikanSelesai >= $penilaianMulai) {
+            return response()->json(['success' => false, 'message' => 'Tanggal selesai perbaikan harus sebelum tanggal mulai penilaian akhir.'], 422);
+        }
 
         try {
             $ruangKontrol->update([
+                'nama_history' => $request->nama_history,
                 'tanggal_pendaftaran_mulai' => $request->tanggal_pendaftaran_mulai,
                 'tanggal_pendaftaran_selesai' => $request->tanggal_pendaftaran_selesai,
+                'tanggal_review_mulai' => $request->tanggal_review_mulai,
+                'tanggal_review_selesai' => $request->tanggal_review_selesai,
                 'tanggal_perbaikan_mulai' => $request->tanggal_perbaikan_mulai,
                 'tanggal_perbaikan_selesai' => $request->tanggal_perbaikan_selesai,
-                'nama_history' => $request->nama_history,
+                'tanggal_penilaian_akhir_mulai' => $request->tanggal_penilaian_akhir_mulai,
+                'tanggal_penilaian_akhir_selesai' => $request->tanggal_penilaian_akhir_selesai,
             ]);
+
+            try {
+                if ($this->firebaseService->isAvailable()) {
+                    $ruangKontrol->refresh();
+                    $this->ruangKontrolHistoryRepo->createHistory((int) $ruangKontrol->id_ruang_kontrol, [
+                        'tahun_ajaran' => $ruangKontrol->tahun_ajaran,
+                        'fase_pendaftaran' => [
+                            'status' => $ruangKontrol->status_pendaftaran,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_pendaftaran_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_pendaftaran_selesai,
+                        ],
+                        'fase_review' => [
+                            'status' => $ruangKontrol->status_review,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_review_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_review_selesai,
+                        ],
+                        'fase_perbaikan' => [
+                            'status' => $ruangKontrol->status_perbaikan,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_perbaikan_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_perbaikan_selesai,
+                        ],
+                        'fase_penilaian_akhir' => [
+                            'status' => $ruangKontrol->status_penilaian_akhir,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_penilaian_akhir_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_penilaian_akhir_selesai,
+                        ],
+                        'pengaturan_dana' => [],
+                        'metadata' => [
+                            'changed_by' => auth()->user()?->identifier ?? 'system',
+                            'timestamp' => now()->toIso8601String(),
+                            'action' => 'update_jadwal',
+                        ],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Firestore ruang kontrol history write failed', ['error' => $e->getMessage()]);
+            }
 
             return response()->json([
                 'success' => true,
@@ -1116,6 +1324,43 @@ class OperatorController extends Controller
             // Set jadwal yang dipilih sebagai aktif
             $ruangKontrol->update(['is_active' => true]);
 
+            try {
+                if ($this->firebaseService->isAvailable()) {
+                    $ruangKontrol->refresh();
+                    $this->ruangKontrolHistoryRepo->createHistory((int) $ruangKontrol->id_ruang_kontrol, [
+                        'tahun_ajaran' => $ruangKontrol->tahun_ajaran,
+                        'fase_pendaftaran' => [
+                            'status' => $ruangKontrol->status_pendaftaran,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_pendaftaran_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_pendaftaran_selesai,
+                        ],
+                        'fase_review' => [
+                            'status' => $ruangKontrol->status_review,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_review_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_review_selesai,
+                        ],
+                        'fase_perbaikan' => [
+                            'status' => $ruangKontrol->status_perbaikan,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_perbaikan_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_perbaikan_selesai,
+                        ],
+                        'fase_penilaian_akhir' => [
+                            'status' => $ruangKontrol->status_penilaian_akhir,
+                            'tanggal_mulai' => $ruangKontrol->tanggal_penilaian_akhir_mulai,
+                            'tanggal_selesai' => $ruangKontrol->tanggal_penilaian_akhir_selesai,
+                        ],
+                        'pengaturan_dana' => [],
+                        'metadata' => [
+                            'changed_by' => auth()->user()?->identifier ?? 'system',
+                            'timestamp' => now()->toIso8601String(),
+                            'action' => 'activate',
+                        ],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Firestore ruang kontrol history write failed', ['error' => $e->getMessage()]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Jadwal berhasil diaktifkan.',
@@ -1141,7 +1386,7 @@ class OperatorController extends Controller
         // EXCLUDE: submitted, review_administratif, review_substantif, review_completed, draft, pending, tidak_valid
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilFinal', 'proposalRevisi'])
             ->whereIn('status', ['revisi', 'revisi_submitted', 'lolos', 'tidak_lolos'])
-            ->whereYear('tanggal_pengajuan', $tahun)
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
             ->when($filter !== 'all', function($query) use ($filter) {
                 $query->where('skim', $filter);
             })
@@ -1185,7 +1430,6 @@ class OperatorController extends Controller
         $proposal = Proposal::with([
             'mahasiswa', 
             'dosen', 
-            'semuaAnggotaTim', 
             'dokumen', 
             'nilaiAdministratif.reviewer', 
             'nilaiSubstantif.reviewer', 
@@ -1202,10 +1446,14 @@ class OperatorController extends Controller
     {
         \Log::info('UpdateHasilFinal called', [
             'request_data' => $request->all(),
-            'user_id' => auth('operator')->id()
+            'user_id' => auth()->id()
         ]);
 
         try {
+            $request->merge([
+                'dana_yang_dapat_diberikan' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_yang_dapat_diberikan')),
+            ]);
+
             // Validasi dengan pesan error yang jelas
             $validated = $request->validate([
             'proposal_id' => 'required|exists:proposals,id_proposal',
@@ -1296,7 +1544,7 @@ class OperatorController extends Controller
                     'nilai' => $request->nilai,
                         'skor_per_kriteria' => $normalizedSkor,
                         'dana_yang_dapat_diberikan' => $request->input('dana_yang_dapat_diberikan', 0),
-                    'id_pt' => auth('operator')->id()
+                    'id_pt' => auth()->id()
                 ]
             );
             } catch (\Exception $modelError) {
@@ -1315,7 +1563,7 @@ class OperatorController extends Controller
             
             // Kirim notifikasi ke mahasiswa dan dosen (jika service tersedia)
             try {
-            $notificationService = new NotificationService();
+            $notificationService = app(NotificationService::class);
             $notificationService->notifyHasilFinal(
                 $proposal,
                 $request->status_final,
@@ -1387,11 +1635,11 @@ class OperatorController extends Controller
         try {
             $revisi = ProposalRevisi::findOrFail($id);
             
-            if (!Storage::disk('public')->exists($revisi->path_file)) {
+            if (!StorageHelper::exists($revisi->path_file)) {
                 return redirect()->back()->with('error', 'File revisi tidak ditemukan di server.');
             }
 
-            return Storage::disk('public')->download($revisi->path_file, $revisi->nama_file);
+            return StorageHelper::download($revisi->path_file);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengunduh file revisi: ' . $e->getMessage());
         }
@@ -1405,35 +1653,7 @@ class OperatorController extends Controller
         try {
             $revisi = ProposalRevisi::findOrFail($id);
             
-            $pathFile = $revisi->path_file;
-            
-            // Cek apakah path_file sudah termasuk 'public/' atau tidak
-            if (strpos($pathFile, 'public/') === 0) {
-                $path = storage_path('app/' . $pathFile);
-            } else {
-                $path = storage_path('app/public/' . $pathFile);
-            }
-            
-            \Log::info('View PDF Revisi (Operator)', [
-                'revisi_id' => $id,
-                'path_file' => $pathFile,
-                'full_path' => $path,
-                'file_exists' => file_exists($path)
-            ]);
-            
-            if (!file_exists($path)) {
-                $altPath = storage_path('app/' . $pathFile);
-                if (file_exists($altPath)) {
-                    $path = $altPath;
-                } else {
-                    abort(404, 'File revisi tidak ditemukan: ' . $path);
-                }
-            }
-            
-            return response()->file($path, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . $revisi->nama_file . '"'
-            ]);
+            return StorageHelper::response($revisi->path_file, $revisi->nama_file);
         } catch (\Exception $e) {
             \Log::error('Error in viewRevisi: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -1454,17 +1674,10 @@ class OperatorController extends Controller
                 abort(404, 'Dokumen tidak ditemukan.');
             }
 
-            $path = storage_path('app/public/' . $proposal->dokumen->path_file);
-            
-            if (!file_exists($path)) {
-                abort(404, 'File tidak ditemukan: ' . $path);
-            }
+            $path = $proposal->dokumen->path_file;
+            $filename = basename($path);
 
-            // Return PDF dengan content-type yang tepat untuk iframe
-            return response()->file($path, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
-            ]);
+            return StorageHelper::response($path, $filename);
         } catch (\Exception $e) {
             \Log::error('Error in viewPdf: ' . $e->getMessage());
             abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
@@ -1480,7 +1693,6 @@ class OperatorController extends Controller
             return Proposal::with([
                 'mahasiswa', 
                 'dosen', 
-                'semuaAnggotaTim', 
                 'dokumen', 
                 'hasilFinal',
                 'nilaiSubstantif.reviewer',
@@ -1528,7 +1740,7 @@ class OperatorController extends Controller
         // Ambil proposal yang sudah selesai review substantif (status "revisi" atau sudah direvisi)
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilSemiFinal', 'proposalRevisi'])
             ->whereIn('status', ['revisi', 'hasil_semi_final'])
-            ->whereYear('tanggal_pengajuan', $tahun)
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
             ->when($filter !== 'all', function($query) use ($filter) {
                 $query->where('skim', $filter);
             })
@@ -1559,7 +1771,6 @@ class OperatorController extends Controller
             return Proposal::with([
                 'mahasiswa', 
                 'dosen', 
-                'semuaAnggotaTim', 
                 'dokumen', 
                 'hasilSemiFinal',
                 'nilaiSubstantif.reviewer',
@@ -1587,7 +1798,7 @@ class OperatorController extends Controller
         }
 
         // Ambil semua dosen untuk dropdown pilih dosen universitas
-        $dosens = Dosen::where('is_active', true)->orderBy('nama_dosen')->get();
+        $dosens = User::dosen()->where('is_active', true)->orderBy('name')->get();
 
         // Ambil proposal terbaru dari mahasiswa yang sama (selain proposal yang sedang dilihat)
         $latestProposals = Proposal::with(['dokumen', 'hasilSemiFinal'])
@@ -1607,7 +1818,7 @@ class OperatorController extends Controller
     {
         \Log::info('UpdateHasilSemiFinal called', [
             'request_data' => $request->all(),
-            'user_id' => auth('operator')->id()
+            'user_id' => auth()->id()
         ]);
 
         // Validasi dasar
@@ -1623,13 +1834,13 @@ class OperatorController extends Controller
         // Validasi dosen universitas hanya jika status lolos
         if ($request->status_final === 'lolos_tingkat_universitas') {
             $request->validate([
-                'id_dosen_pendamping_universitas' => 'required|exists:dosens,id_dosen'
+                'id_dosen_pendamping_universitas' => 'required|exists:users,id'
             ]);
         } else {
             // Jika tidak lolos, pastikan dosen universitas tidak dikirim atau null
             if ($request->filled('id_dosen_pendamping_universitas')) {
                 $request->validate([
-                    'id_dosen_pendamping_universitas' => 'nullable|exists:dosens,id_dosen'
+                    'id_dosen_pendamping_universitas' => 'nullable|exists:users,id'
                 ]);
             }
         }
@@ -1692,13 +1903,13 @@ class OperatorController extends Controller
                     'nilai' => $request->nilai,
                     'skor_per_kriteria' => $normalizedSkor,
                     'dana_yang_dapat_diberikan' => $request->dana_yang_dapat_diberikan ?? null,
-                    'id_pt' => auth('operator')->id()
+                    'id_pt' => auth()->id()
                 ]
             );
             
             // Kirim notifikasi ke mahasiswa
             try {
-                $notificationService = new NotificationService();
+                $notificationService = app(NotificationService::class);
                 $notificationService->notifyHasilSemiFinal(
                     $proposal,
                     $request->status_final,
@@ -1757,14 +1968,14 @@ class OperatorController extends Controller
                      $request->filled('filter_nama_operator');
         
         // Filter untuk Mahasiswa
-        $mahasiswaQuery = Mahasiswa::query();
+        $mahasiswaQuery = User::mahasiswa();
         
         if ($hasFilter) {
             // Filter berdasarkan Fakultas
             if ($request->filled('filter_fakultas')) {
                 $fakultasModel = Fakultas::find($request->filter_fakultas);
                 if ($fakultasModel) {
-                    $mahasiswaQuery->where('fakultas_mhs', $fakultasModel->nama_fakultas);
+                    $mahasiswaQuery->whereRaw("metadata->>'fakultas_name' = ?", [$fakultasModel->nama_fakultas]);
                 }
             }
             
@@ -1772,41 +1983,41 @@ class OperatorController extends Controller
             if ($request->filled('filter_prodi')) {
                 $prodiModel = Prodi::find($request->filter_prodi);
                 if ($prodiModel) {
-                    $mahasiswaQuery->where('prodi_mhs', $prodiModel->nama_prodi);
+                    $mahasiswaQuery->whereRaw("metadata->>'prodi_name' = ?", [$prodiModel->nama_prodi]);
                 }
             }
             
             // Filter berdasarkan NIM (search)
             if ($request->filled('filter_nim')) {
-                $mahasiswaQuery->where('nim', 'like', '%' . $request->filter_nim . '%');
+                $mahasiswaQuery->where('identifier', 'like', '%' . $request->filter_nim . '%');
             }
             
             // Filter berdasarkan Nama
             if ($request->filled('filter_nama')) {
-                $mahasiswaQuery->where('nama_mhs', 'like', '%' . $request->filter_nama . '%');
+                $mahasiswaQuery->where('name', 'like', '%' . $request->filter_nama . '%');
             }
         }
         
         $mahasiswas = $hasFilter ? $mahasiswaQuery->orderBy('created_at', 'desc')->get() : collect();
         
         // Filter untuk Dosen
-        $dosenQuery = Dosen::query();
+        $dosenQuery = User::dosen();
         if ($hasFilter && $request->filled('filter_nama_dosen')) {
-            $dosenQuery->where('nama_dosen', 'like', '%' . $request->filter_nama_dosen . '%');
+            $dosenQuery->where('name', 'like', '%' . $request->filter_nama_dosen . '%');
         }
         $dosens = $hasFilter ? $dosenQuery->orderBy('created_at', 'desc')->get() : collect();
         
         // Filter untuk Reviewer
-        $reviewerQuery = Reviewer::query();
+        $reviewerQuery = User::reviewer();
         if ($hasFilter && $request->filled('filter_nama_reviewer')) {
-            $reviewerQuery->where('nama_reviewer', 'like', '%' . $request->filter_nama_reviewer . '%');
+            $reviewerQuery->where('name', 'like', '%' . $request->filter_nama_reviewer . '%');
         }
         $reviewers = $hasFilter ? $reviewerQuery->orderBy('created_at', 'desc')->get() : collect();
         
         // Filter untuk Operator
-        $operatorQuery = PT::query();
+        $operatorQuery = User::whereIn('role', ['operator', 'pimpinan_pt']);
         if ($hasFilter && $request->filled('filter_nama_operator')) {
-            $operatorQuery->where('nama_pt', 'like', '%' . $request->filter_nama_operator . '%');
+            $operatorQuery->where('name', 'like', '%' . $request->filter_nama_operator . '%');
         }
         $operators = $hasFilter ? $operatorQuery->orderBy('created_at', 'desc')->get() : collect();
         
@@ -1818,11 +2029,11 @@ class OperatorController extends Controller
     {
         $request->validate([
             'ids' => 'required|array',
-            'ids.*' => 'exists:mahasiswas,id_mahasiswa',
+            'ids.*' => 'exists:users,id',
         ]);
         
         try {
-            $count = Mahasiswa::whereIn('id_mahasiswa', $request->ids)->delete();
+            $count = User::where('role', 'mahasiswa')->whereIn('id', $request->ids)->delete();
             return redirect()->route('operator.manage.accounts')->with('success', "Berhasil menghapus {$count} akun mahasiswa.");
         } catch (\Exception $e) {
             return redirect()->route('operator.manage.accounts')->with('error', 'Gagal menghapus akun mahasiswa: ' . $e->getMessage());
@@ -1835,8 +2046,8 @@ class OperatorController extends Controller
             case 'mahasiswa':
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'nim' => 'required|string|max:20|unique:mahasiswas,nim',
-                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs',
+                    'nim' => 'required|string|max:20|unique:users,identifier',
+                    'email' => 'required|email|max:255|unique:users,email',
                     'no_hp' => 'required|string|max:15',
                     'prodi' => 'required|exists:prodis,id_prodi',
                     'fakultas' => 'required|exists:fakultas,id_fakultas',
@@ -1844,45 +2055,52 @@ class OperatorController extends Controller
                 ]);
                 $prodi = Prodi::find($request->prodi);
                 $fakultas = Fakultas::find($request->fakultas);
-                Mahasiswa::create([
-                    'nama_mhs' => $request->nama,
-                    'nim' => $request->nim,
-                    'email_mhs' => $request->email,
-                    'no_hp_mhs' => $request->no_hp,
-                    'prodi_mhs' => $prodi->nama_prodi,
-                    'fakultas_mhs' => $fakultas->nama_fakultas,
+                User::create([
+                    'name' => $request->nama,
+                    'identifier' => $request->nim,
+                    'email' => $request->email,
+                    'phone' => $request->no_hp,
                     'password' => Hash::make($request->password),
+                    'role' => 'mahasiswa',
                     'is_active' => true,
+                    'metadata' => [
+                        'prodi_name' => $prodi->nama_prodi,
+                        'fakultas_name' => $fakultas->nama_fakultas,
+                        'prodi_id' => $prodi->id_prodi,
+                        'fakultas_id' => $fakultas->id_fakultas,
+                    ],
                 ]);
                 break;
             case 'dosen':
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'nuptk' => 'required|string|max:20|unique:dosens,nuptk',
-                    'email' => 'required|email|max:255|unique:dosens,email_dosen',
+                    'nuptk' => 'required|string|max:20',
+                    'email' => 'required|email|max:255|unique:users,email',
                     'no_hp' => 'required|string|max:15',
                     'password' => 'required|string|min:8|confirmed',
                 ]);
-                Dosen::create([
-                    'nama_dosen' => $request->nama,
-                    'nuptk' => $request->nuptk,
-                    'email_dosen' => $request->email,
-                    'no_hp_dosen' => $request->no_hp,
+                User::create([
+                    'name' => $request->nama,
+                    'identifier' => $request->nuptk,
+                    'email' => $request->email,
+                    'phone' => $request->no_hp,
                     'password' => Hash::make($request->password),
+                    'role' => 'dosen',
                     'is_active' => true,
+                    'metadata' => ['nuptk' => $request->nuptk],
                 ]);
                 break;
             case 'reviewer':
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer',
+                    'email' => 'required|email|max:255|unique:users,email',
                     'no_hp' => 'required|string|max:15',
                     'password' => 'required|string|min:8|confirmed',
                 ]);
-                Reviewer::create([
-                    'nama_reviewer' => $request->nama,
-                    'email_reviewer' => $request->email,
-                    'no_hp_reviewer' => $request->no_hp,
+                User::create([
+                    'name' => $request->nama,
+                    'email' => $request->email,
+                    'phone' => $request->no_hp,
                     'password' => Hash::make($request->password),
                     'role' => 'reviewer',
                     'is_active' => true,
@@ -1891,14 +2109,14 @@ class OperatorController extends Controller
             case 'operator':
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:pts,email_pt',
+                    'email' => 'required|email|max:255|unique:users,email',
                     'no_hp' => 'required|string|max:15',
                     'password' => 'required|string|min:8|confirmed',
                 ]);
-                PT::create([
-                    'nama_pt' => $request->nama,
-                    'email_pt' => $request->email,
-                    'no_hp_pt' => $request->no_hp,
+                User::create([
+                    'name' => $request->nama,
+                    'email' => $request->email,
+                    'phone' => $request->no_hp,
                     'password' => Hash::make($request->password),
                     'role' => 'operator',
                     'is_active' => true,
@@ -1914,73 +2132,82 @@ class OperatorController extends Controller
     {
         switch ($type) {
             case 'mahasiswa':
-                $mahasiswa = Mahasiswa::findOrFail($id);
+                $mahasiswa = User::where('role', 'mahasiswa')->findOrFail($id);
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'nim' => 'required|string|max:20|unique:mahasiswas,nim,' . $mahasiswa->id_mahasiswa . ',id_mahasiswa',
-                    'email' => 'required|email|max:255|unique:mahasiswas,email_mhs,' . $mahasiswa->id_mahasiswa . ',id_mahasiswa',
+                    'nim' => 'required|string|max:20|unique:users,identifier,' . $mahasiswa->id . ',id',
+                    'email' => 'required|email|max:255|unique:users,email,' . $mahasiswa->id . ',id',
                     'no_hp' => 'required|string|max:15',
                     'prodi' => 'nullable|exists:prodis,id_prodi',
                     'fakultas' => 'nullable|exists:fakultas,id_fakultas',
                     'password' => 'nullable|string|min:8|confirmed',
                     'is_active' => 'nullable|boolean',
                 ]);
-                $mahasiswa->nama_mhs = $request->nama;
-                $mahasiswa->nim = $request->nim;
-                $mahasiswa->email_mhs = $request->email;
-                $mahasiswa->no_hp_mhs = $request->no_hp;
-                if ($request->filled('prodi')) { $mahasiswa->prodi_mhs = Prodi::find($request->prodi)->nama_prodi; }
-                if ($request->filled('fakultas')) { $mahasiswa->fakultas_mhs = Fakultas::find($request->fakultas)->nama_fakultas; }
+                $mahasiswa->name = $request->nama;
+                $mahasiswa->identifier = $request->nim;
+                $mahasiswa->email = $request->email;
+                $mahasiswa->phone = $request->no_hp;
+                if ($request->filled('prodi')) {
+                    $prodi = Prodi::find($request->prodi);
+                    $mahasiswa->setMetadataValue('prodi_name', $prodi->nama_prodi);
+                    $mahasiswa->setMetadataValue('prodi_id', $prodi->id_prodi);
+                }
+                if ($request->filled('fakultas')) {
+                    $fakultas = Fakultas::find($request->fakultas);
+                    $mahasiswa->setMetadataValue('fakultas_name', $fakultas->nama_fakultas);
+                    $mahasiswa->setMetadataValue('fakultas_id', $fakultas->id_fakultas);
+                }
                 if ($request->filled('password')) { $mahasiswa->password = Hash::make($request->password); }
                 if ($request->has('is_active')) { $mahasiswa->is_active = (bool)$request->is_active; }
                 $mahasiswa->save();
                 break;
             case 'dosen':
-                $dosen = Dosen::findOrFail($id);
+                $dosen = User::where('role', 'dosen')->findOrFail($id);
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'nuptk' => 'required|string|max:20|unique:dosens,nuptk,' . $dosen->id_dosen . ',id_dosen',
-                    'email' => 'required|email|max:255|unique:dosens,email_dosen,' . $dosen->id_dosen . ',id_dosen',
+                    'nuptk' => 'required|string|max:20',
+                    'email' => 'required|email|max:255|unique:users,email,' . $dosen->id . ',id',
                     'no_hp' => 'required|string|max:15',
                     'password' => 'nullable|string|min:8|confirmed',
                     'is_active' => 'nullable|boolean',
                 ]);
-                $dosen->nama_dosen = $request->nama;
-                $dosen->nuptk = $request->nuptk;
-                $dosen->email_dosen = $request->email;
-                $dosen->no_hp_dosen = $request->no_hp;
+                $dosen->name = $request->nama;
+                $dosen->identifier = $request->nuptk;
+                $dosen->email = $request->email;
+                $dosen->phone = $request->no_hp;
+                $dosen->setMetadataValue('nuptk', $request->nuptk);
                 if ($request->filled('password')) { $dosen->password = Hash::make($request->password); }
                 if ($request->has('is_active')) { $dosen->is_active = (bool)$request->is_active; }
                 $dosen->save();
                 break;
             case 'reviewer':
-                $reviewer = Reviewer::findOrFail($id);
+                $reviewer = User::where('role', 'reviewer')->findOrFail($id);
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:reviewers,email_reviewer,' . $reviewer->id_reviewer . ',id_reviewer',
+                    'email' => 'required|email|max:255|unique:users,email,' . $reviewer->id . ',id',
                     'no_hp' => 'required|string|max:15',
                     'password' => 'nullable|string|min:8|confirmed',
                     'is_active' => 'nullable|boolean',
                 ]);
-                $reviewer->nama_reviewer = $request->nama;
-                $reviewer->email_reviewer = $request->email;
-                $reviewer->no_hp_reviewer = $request->no_hp;
+                $reviewer->name = $request->nama;
+                $reviewer->email = $request->email;
+                $reviewer->phone = $request->no_hp;
                 if ($request->filled('password')) { $reviewer->password = Hash::make($request->password); }
                 if ($request->has('is_active')) { $reviewer->is_active = (bool)$request->is_active; }
                 $reviewer->save();
                 break;
             case 'operator':
-                $operator = PT::findOrFail($id);
+                $operator = User::whereIn('role', ['operator', 'pimpinan_pt'])->findOrFail($id);
                 $request->validate([
                     'nama' => 'required|string|max:255',
-                    'email' => 'required|email|max:255|unique:pts,email_pt,' . $operator->id_pt . ',id_pt',
+                    'email' => 'required|email|max:255|unique:users,email,' . $operator->id . ',id',
                     'no_hp' => 'required|string|max:15',
                     'password' => 'nullable|string|min:8|confirmed',
                     'is_active' => 'nullable|boolean',
                 ]);
-                $operator->nama_pt = $request->nama;
-                $operator->email_pt = $request->email;
-                $operator->no_hp_pt = $request->no_hp;
+                $operator->name = $request->nama;
+                $operator->email = $request->email;
+                $operator->phone = $request->no_hp;
                 if ($request->filled('password')) { $operator->password = Hash::make($request->password); }
                 if ($request->has('is_active')) { $operator->is_active = (bool)$request->is_active; }
                 $operator->save();
@@ -1995,16 +2222,16 @@ class OperatorController extends Controller
     {
         switch ($type) {
             case 'mahasiswa':
-                Mahasiswa::where('id_mahasiswa', $id)->delete();
+                User::where('role', 'mahasiswa')->where('id', $id)->delete();
                 break;
             case 'dosen':
-                Dosen::where('id_dosen', $id)->delete();
+                User::where('role', 'dosen')->where('id', $id)->delete();
                 break;
             case 'reviewer':
-                Reviewer::where('id_reviewer', $id)->delete();
+                User::where('role', 'reviewer')->where('id', $id)->delete();
                 break;
             case 'operator':
-                PT::where('id_pt', $id)->delete();
+                User::whereIn('role', ['operator', 'pimpinan_pt'])->where('id', $id)->delete();
                 break;
             default:
                 return back()->with('error', 'Tipe akun tidak dikenal.');
@@ -2124,8 +2351,9 @@ class OperatorController extends Controller
         // Ambil 3 tahun ajaran terakhir untuk chart
         $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
             ->whereRaw("tahun_ajaran LIKE '%/%'")
-            ->distinct()
-            ->orderByRaw("CAST(SUBSTRING_INDEX(tahun_ajaran, '/', 1) AS UNSIGNED) DESC")
+            ->select('tahun_ajaran')
+            ->groupBy('tahun_ajaran')
+            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->pluck('tahun_ajaran')
             ->filter(function($item) {
                 return strpos($item, '/') !== false && count(explode('/', $item)) === 2;
@@ -2157,9 +2385,10 @@ class OperatorController extends Controller
         
         // Data proposal per fakultas di tahun ajaran terpilih
         $proposalPerFakultas = Proposal::where('tahun_ajaran', $tahunAjaran)
-            ->join('mahasiswas', 'proposals.id_mahasiswa', '=', 'mahasiswas.id_mahasiswa')
-            ->selectRaw('mahasiswas.fakultas_mhs as nama_fakultas, COUNT(*) as jumlah')
-            ->groupBy('mahasiswas.fakultas_mhs')
+            ->join('users', 'proposals.id_mahasiswa', '=', 'users.id')
+            ->where('users.role', 'mahasiswa')
+            ->selectRaw("users.metadata->>'fakultas_name' as nama_fakultas, COUNT(*) as jumlah")
+            ->groupByRaw("users.metadata->>'fakultas_name'")
             ->orderBy('jumlah', 'desc')
             ->get()
             ->map(function($item) {
@@ -2193,11 +2422,106 @@ class OperatorController extends Controller
                     'ranking' => $index + 1,
                     'judul' => $proposal->judul_proposal,
                     'skim' => $proposal->skim,
-                    'mahasiswa' => $proposal->mahasiswa->nama_mahasiswa ?? 'N/A',
+                    'mahasiswa' => $proposal->mahasiswa->name ?? 'N/A',
                     'nilai' => $proposal->hasilFinal->nilai ?? 0,
                     'status' => $proposal->hasilFinal->status_final ?? 'N/A'
                 ];
             });
+    }
+
+    /**
+     * Halaman pilih reviewer seleksi: proposal yang status revisi atau review_substantif_seleksi
+     * dan belum memiliki kedua reviewer seleksi.
+     */
+    public function pilihReviewerSeleksi(Request $request)
+    {
+        $tahun = $request->get('tahun', '2025');
+        $filter = $request->get('filter', 'all');
+
+        $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif'])
+            ->whereIn('status', ['revisi', 'review_substantif_seleksi'])
+            ->where(function ($query) {
+                $query->whereNull('id_reviewer_substantif_seleksi_1')
+                    ->orWhereNull('id_reviewer_substantif_seleksi_2');
+            })
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+            ->when($filter !== 'all', function ($q) use ($filter) {
+                $q->where('skim', $filter);
+            })
+            ->get();
+
+        $reviewers = User::reviewer()->where('is_active', true)->get();
+
+        return view('operator.pilih_reviewer_seleksi', compact('proposals', 'reviewers', 'tahun', 'filter'));
+    }
+
+    /**
+     * Assign satu reviewer seleksi (substantif_seleksi_1 atau substantif_seleksi_2).
+     * Jika kedua reviewer seleksi sudah di-assign, status proposal diupdate ke review_substantif_seleksi.
+     */
+    public function assignReviewerSeleksi(Request $request)
+    {
+        $request->validate([
+            'proposal_id' => 'required|exists:proposals,id_proposal',
+            'reviewer_id' => 'required|exists:users,id',
+            'review_type' => 'required|in:substantif_seleksi_1,substantif_seleksi_2'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $proposal = Proposal::findOrFail($request->proposal_id);
+            $reviewerId = (int) $request->reviewer_id;
+            $reviewType = $request->review_type;
+
+            if ($reviewType === 'substantif_seleksi_1') {
+                if ($proposal->id_reviewer_substantif_seleksi_2 == $reviewerId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Reviewer yang sama tidak boleh ditugaskan untuk kedua posisi seleksi.'
+                    ], 422);
+                }
+                $proposal->id_reviewer_substantif_seleksi_1 = $reviewerId;
+            } else {
+                if ($proposal->id_reviewer_substantif_seleksi_1 == $reviewerId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Reviewer yang sama tidak boleh ditugaskan untuk kedua posisi seleksi.'
+                    ], 422);
+                }
+                $proposal->id_reviewer_substantif_seleksi_2 = $reviewerId;
+            }
+
+            $proposal->save();
+
+            if ($proposal->id_reviewer_substantif_seleksi_1 && $proposal->id_reviewer_substantif_seleksi_2) {
+                $proposal->update(['status' => 'review_substantif_seleksi']);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reviewer seleksi berhasil ditugaskan',
+                'data' => [
+                    'proposal_id' => $proposal->id_proposal,
+                    'review_type' => $reviewType,
+                    'reviewer_id' => $reviewerId,
+                    'status' => $proposal->fresh()->status
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error assigning reviewer seleksi', [
+                'proposal_id' => $request->proposal_id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
 

@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('operator.dashboard')],
+        ['label' => 'Hasil Final', 'active' => true],
+    ]" />
+
     <!-- Header Section -->
     <x-page-header 
         title="HASIL FINAL" 
@@ -96,7 +101,7 @@
                                 @if($proposal->status == 'revisi')
                                     @if($proposal->proposalRevisi->count() > 0)
                                         <span class="badge bg-success">Sudah Direvisi</span>
-                                        <br><small class="text-muted">{{ $proposal->proposalRevisi->count() }} file</small>
+                                        <br><small class="text-muted">@formatId($proposal->proposalRevisi->count()) file</small>
                                     @else
                                         <span class="badge bg-warning">Belum Direvisi</span>
                                     @endif
@@ -126,7 +131,7 @@
                             </td>
                             <td>
                                 @if($proposal->hasilFinal)
-                                    <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                    <span class="badge bg-primary fs-6">@formatId($proposal->hasilFinal->nilai, 2)</span>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif

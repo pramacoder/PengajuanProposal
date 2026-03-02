@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+        ['label' => 'Profil', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -164,11 +169,9 @@
                             // Proposal yang dibuat oleh mahasiswa ini
                             $query->where('id_mahasiswa', $user->id_mahasiswa)
                                   // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
-                                  ->orWhereHas('semuaAnggotaTim', function($memberQuery) use ($user) {
-                                      $memberQuery->where('nim', $user->nim);
-                                  });
+                                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier ?? $user->nim]);
                         })
-                        ->with(['mahasiswa', 'dosen', 'dokumen', 'semuaAnggotaTim'])
+                        ->with(['mahasiswa', 'dosen', 'dokumen'])
                         ->orderBy('tanggal_pengajuan', 'desc')
                         ->get();
                         

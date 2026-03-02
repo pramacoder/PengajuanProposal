@@ -4,6 +4,10 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">

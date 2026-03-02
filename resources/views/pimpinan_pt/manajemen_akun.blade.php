@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
+        ['label' => 'Manajemen Akun', 'active' => true],
+    ]" />
+
     <x-page-header 
         title="MANAJEMEN AKUN" 
         subtitle="Buat, ubah, hapus akun untuk semua role" />
@@ -136,7 +141,7 @@
                                 </button>
                             </div>
                             <div class="text-muted">
-                                Total: <strong>{{ $mahasiswas->count() }}</strong> mahasiswa
+                                Total: <strong>@formatId($mahasiswas->count())</strong> mahasiswa
                             </div>
                         </div>
 
@@ -603,7 +608,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger" 
-                                                    {{ Auth::guard('operator')->id() == $pt->id_pt ? 'disabled title="Tidak dapat menghapus akun sendiri"' : '' }}>
+                                                    {{ auth()->id() == $pt->id_pt ? 'disabled title="Tidak dapat menghapus akun sendiri"' : '' }}>
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

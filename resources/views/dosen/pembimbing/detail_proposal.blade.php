@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Dashboard Pembimbing', 'url' => route('dosen.pembimbing.dashboard')],
+        ['label' => 'Detail Proposal', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -62,7 +67,7 @@
                         <div class="col-md-6">
                             <p><strong>Judul:</strong> {{ $proposal->judul }}</p>
                             <p><strong>Skim:</strong> <span class="badge bg-info">{{ $proposal->skim }}</span></p>
-                            <p><strong>Dana Diajukan:</strong> Rp {{ number_format($proposal->dana_diajukan, 0, ',', '.') }}</p>
+                            <p><strong>Dana Diajukan:</strong> @rupiahId($proposal->dana_diajukan)</p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Tanggal Pengajuan:</strong> {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d/m/Y H:i') }}</p>
@@ -245,7 +250,7 @@
                         <div class="mb-3">
                             <h6>Review Administratif</h6>
                             @foreach($proposal->nilaiAdministratif as $nilai)
-                                <p><strong>Nilai:</strong> {{ $nilai->nilai_administratif }}</p>
+                                <p><strong>Nilai:</strong> @formatId((float) $nilai->nilai_administratif, 2)</p>
                                 <p><strong>Komentar:</strong> {{ $nilai->komentar ?? 'Tidak ada komentar' }}</p>
                                 @if(!$loop->last)<hr>@endif
                             @endforeach
@@ -256,7 +261,7 @@
                         <div class="mb-3">
                             <h6>Review Substantif</h6>
                             @foreach($proposal->nilaiSubstantif as $nilai)
-                                <p><strong>Nilai:</strong> {{ $nilai->nilai_substantif }}</p>
+                                <p><strong>Nilai:</strong> @formatId((float) $nilai->nilai_substantif, 2)</p>
                                 <p><strong>Komentar:</strong> {{ $nilai->komentar ?? 'Tidak ada komentar' }}</p>
                                 @if(!$loop->last)<hr>@endif
                             @endforeach
@@ -415,7 +420,7 @@
         @php
             $pdfUrl = '';
             if ($fileProposal && $fileProposal->path_file) {
-                $pdfUrl = asset('storage/' . $fileProposal->path_file);
+                $pdfUrl = route('file.serve', ['path' => $fileProposal->path_file]);
             }
         @endphp
         const pdfUrl = '{{ $pdfUrl }}';

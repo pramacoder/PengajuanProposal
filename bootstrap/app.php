@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'csrf' => \App\Http\Middleware\VerifyCsrfToken::class,
             'ruang.kontrol' => \App\Http\Middleware\CheckRuangKontrol::class,
             'check.phase' => \App\Http\Middleware\CheckActivePhase::class,
+            'role' => \App\Http\Middleware\CheckUserType::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

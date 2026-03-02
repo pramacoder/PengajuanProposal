@@ -56,21 +56,33 @@ class RuangKontrolHelper
         if (!$ruangKontrol) {
             return [
                 'status_pendaftaran' => 'tertutup',
+                'status_review' => 'tertutup',
                 'status_perbaikan' => 'tertutup',
+                'status_penilaian_akhir' => 'tertutup',
                 'tanggal_pendaftaran_mulai' => null,
                 'tanggal_pendaftaran_selesai' => null,
+                'tanggal_review_mulai' => null,
+                'tanggal_review_selesai' => null,
                 'tanggal_perbaikan_mulai' => null,
                 'tanggal_perbaikan_selesai' => null,
+                'tanggal_penilaian_akhir_mulai' => null,
+                'tanggal_penilaian_akhir_selesai' => null,
             ];
         }
 
         return [
             'status_pendaftaran' => $ruangKontrol->status_pendaftaran,
+            'status_review' => $ruangKontrol->status_review,
             'status_perbaikan' => $ruangKontrol->status_perbaikan,
+            'status_penilaian_akhir' => $ruangKontrol->status_penilaian_akhir,
             'tanggal_pendaftaran_mulai' => $ruangKontrol->tanggal_pendaftaran_mulai,
             'tanggal_pendaftaran_selesai' => $ruangKontrol->tanggal_pendaftaran_selesai,
+            'tanggal_review_mulai' => $ruangKontrol->tanggal_review_mulai,
+            'tanggal_review_selesai' => $ruangKontrol->tanggal_review_selesai,
             'tanggal_perbaikan_mulai' => $ruangKontrol->tanggal_perbaikan_mulai,
             'tanggal_perbaikan_selesai' => $ruangKontrol->tanggal_perbaikan_selesai,
+            'tanggal_penilaian_akhir_mulai' => $ruangKontrol->tanggal_penilaian_akhir_mulai,
+            'tanggal_penilaian_akhir_selesai' => $ruangKontrol->tanggal_penilaian_akhir_selesai,
         ];
     }
 

@@ -4,6 +4,12 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('operator.dashboard')],
+        ['label' => 'Hasil Final', 'url' => route('operator.hasil.final')],
+        ['label' => 'Detail Proposal', 'active' => true],
+    ]" />
+
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="d-flex align-items-center">
@@ -413,10 +419,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Ukuran</label>
-                        <p class="form-control-plaintext">{{ number_format($proposal->dokumen->ukuran_file / 1024, 2) }} KB</p>
+                        <p class="form-control-plaintext">@formatId($proposal->dokumen->ukuran_file / 1024, 2) KB</p>
                     </div>
                     <div>
-                        <a href="{{ asset('storage/' . $proposal->dokumen->path_file) }}" 
+                        <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" 
                            target="_blank" class="btn btn-primary w-100">
                             <i class="fas fa-download me-2"></i>Download PDF
                         </a>

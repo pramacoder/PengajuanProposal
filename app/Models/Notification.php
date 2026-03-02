@@ -27,22 +27,11 @@ class Notification extends Model
     ];
 
     /**
-     * Relasi ke User berdasarkan tipe dan identifier
+     * Relasi ke unified User berdasarkan identifier
      */
     public function user()
     {
-        switch ($this->user_type) {
-            case 'mahasiswa':
-                return $this->belongsTo(Mahasiswa::class, 'user_identifier', 'nim');
-            case 'dosen':
-                return $this->belongsTo(Dosen::class, 'user_identifier', 'nidn');
-            case 'reviewer':
-                return $this->belongsTo(Reviewer::class, 'user_identifier', 'id_reviewer');
-            case 'operator':
-                return $this->belongsTo(PT::class, 'user_identifier', 'id_pt');
-            default:
-                return null;
-        }
+        return $this->belongsTo(User::class, 'user_identifier', 'identifier');
     }
 
     /**

@@ -5,6 +5,12 @@
 @section('dosen_content')
 <div class="row">
     <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Dashboard Dosen', 'url' => route('dosen.universitas.dashboard')],
+            ['label' => 'Validasi Akhir', 'url' => route('dosen.universitas.validasi.akhir')],
+            ['label' => 'Detail Proposal', 'active' => true],
+        ]" />
+
         <div class="card card-custom">
             <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
@@ -113,7 +119,7 @@
                                         </tr>
                                         <tr>
                                             <td><strong>Nilai:</strong></td>
-                                            <td><strong class="text-primary">{{ number_format($proposal->hasilSemiFinal->nilai, 2) }}</strong></td>
+                                            <td><strong class="text-primary">@formatId($proposal->hasilSemiFinal->nilai, 2)</strong></td>
                                         </tr>
                                         @if($proposal->hasilSemiFinal->catatan_final)
                                         <tr>

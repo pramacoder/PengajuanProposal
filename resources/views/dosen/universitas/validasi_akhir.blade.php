@@ -5,6 +5,11 @@
 @section('dosen_content')
 <div class="row">
     <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Dashboard Dosen', 'url' => route('dosen.universitas.dashboard')],
+            ['label' => 'Validasi Akhir', 'active' => true],
+        ]" />
+
         <div class="card card-custom">
             <div class="card-header card-header-custom">
                 <h5 class="mb-0">
@@ -54,7 +59,7 @@
                                                 <span class="badge bg-{{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'success' : 'danger' }}">
                                                     {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'Lolos' : 'Tidak Lolos' }}
                                                 </span>
-                                                <br><small class="text-muted">Nilai: {{ number_format($proposal->hasilSemiFinal->nilai, 2) }}</small>
+                                                <br><small class="text-muted">Nilai: @formatId($proposal->hasilSemiFinal->nilai, 2)</small>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif

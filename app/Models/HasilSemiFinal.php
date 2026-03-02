@@ -18,16 +18,18 @@ class HasilSemiFinal extends Model
         'catatan_final',
         'nilai',
         'skor_per_kriteria',
+        'dana_yang_dapat_diberikan',
+        'id_dosen_pendamping_universitas',
         'id_proposal',
-        'id_pt'
+        'id_pt',
     ];
 
     protected $casts = [
         'nilai' => 'decimal:2',
-        'skor_per_kriteria' => 'array'
+        'dana_yang_dapat_diberikan' => 'decimal:2',
+        'skor_per_kriteria' => 'array',
     ];
 
-    // Relationships
     public function proposal()
     {
         return $this->belongsTo(Proposal::class, 'id_proposal', 'id_proposal');
@@ -35,9 +37,11 @@ class HasilSemiFinal extends Model
 
     public function pt()
     {
-        return $this->belongsTo(PT::class, 'id_pt', 'id_pt');
+        return $this->belongsTo(User::class, 'id_pt');
+    }
+
+    public function dosenPendampingUniversitas()
+    {
+        return $this->belongsTo(User::class, 'id_dosen_pendamping_universitas');
     }
 }
-
-
-

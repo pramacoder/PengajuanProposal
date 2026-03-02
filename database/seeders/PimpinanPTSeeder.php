@@ -8,43 +8,28 @@ use Illuminate\Support\Facades\Hash;
 
 class PimpinanPTSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $pimpinanPTs = [
-            [
-                'nama_pt' => 'Prof. Dr. I Made Surya Wijaya, S.T., M.T.',
-                'no_hp_pt' => '081234567910',
-                'email_pt' => 'pimpinan.pt@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'pimpinan_pt',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_pt' => 'Prof. Dr. I Gusti Ayu Made Sari Dewi, S.Pd., M.Pd.',
-                'no_hp_pt' => '081234567911',
-                'email_pt' => 'pimpinan.pt2@unud.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'pimpinan_pt',
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            ['identifier' => 'PIM-001', 'name' => 'Prof. Dr. I Made Surya Wijaya, S.T., M.T.',            'email' => 'pimpinan.pt@unud.ac.id',  'phone' => '081234567910'],
+            ['identifier' => 'PIM-002', 'name' => 'Prof. Dr. I Gusti Ayu Made Sari Dewi, S.Pd., M.Pd.',  'email' => 'pimpinan.pt2@unud.ac.id', 'phone' => '081234567911'],
         ];
 
-        // Insert atau update data Pimpinan PT
-        foreach ($pimpinanPTs as $pimpinanPT) {
-            DB::table('pts')->updateOrInsert(
-                ['email_pt' => $pimpinanPT['email_pt']],
-                $pimpinanPT
+        foreach ($pimpinanPTs as $pim) {
+            DB::table('users')->updateOrInsert(
+                ['email' => $pim['email']],
+                [
+                    'identifier' => $pim['identifier'],
+                    'name' => $pim['name'],
+                    'phone' => $pim['phone'],
+                    'password' => Hash::make('password123'),
+                    'role' => 'pimpinan_pt',
+                    'is_active' => true,
+                    'metadata' => json_encode([]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
             );
         }
     }
 }
-
-
-

@@ -4,12 +4,36 @@ namespace App\Services;
 
 use App\Models\Notification;
 use App\Models\Proposal;
-use App\Models\Team;
 use App\Models\User;
+use App\Repositories\Firebase\NotificationRepository;
 use Illuminate\Support\Facades\Log;
 
 class NotificationService
 {
+    public function __construct(
+        private NotificationRepository $notificationRepository,
+        private FirebaseService $firebaseService
+    ) {
+    }
+
+    /**
+     * Secondary async write to Firestore. Never throws; logs errors only.
+     */
+    private function writeToFirestore(array $data): void
+    {
+        try {
+            if (!$this->firebaseService->isAvailable()) {
+                return;
+            }
+            $this->notificationRepository->createNotification($data);
+        } catch (\Throwable $e) {
+            Log::warning('Firestore notification write failed (non-fatal): ' . $e->getMessage(), [
+                'user_identifier' => $data['user_identifier'] ?? null,
+                'type' => $data['type'] ?? null,
+            ]);
+        }
+    }
+
     /**
      * Kirim notifikasi ke mahasiswa terkait proposal
      */
@@ -25,19 +49,21 @@ class NotificationService
             }
             
             foreach ($teamMembers as $member) {
-                Notification::create([
-                    'user_identifier' => $member->nim,
+                $payload = [
+                    'user_identifier' => $member->identifier,
                     'user_type' => 'mahasiswa',
                     'title' => $title,
                     'message' => $message,
                     'type' => $type,
                     'data' => array_merge($data, [
                         'proposal_id' => $proposal->id_proposal,
-                        'nim' => $member->nim,
+                        'nim' => $member->identifier,
                         'judul_proposal' => $proposal->judul_proposal ?? $proposal->judul
                     ]),
                     'proposal_id' => $proposal->id_proposal,
-                ]);
+                ];
+                Notification::create($payload);
+                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi berhasil dikirim ke mahasiswa untuk proposal {$proposal->id_proposal}");
@@ -55,18 +81,20 @@ class NotificationService
             if ($proposal->id_dosen) {
                 $dosen = $proposal->dosen;
                 if ($dosen) {
-                    Notification::create([
-                        'user_identifier' => $dosen->nidn,
+                    $payload = [
+                        'user_identifier' => $dosen->identifier,
                         'user_type' => 'dosen',
                         'title' => $title,
                         'message' => $message,
                         'type' => $type,
                         'data' => array_merge($data, [
                             'proposal_id' => $proposal->id_proposal,
-                            'mahasiswa_nama' => $proposal->mahasiswa->nama ?? 'N/A'
+                            'mahasiswa_nama' => $proposal->mahasiswa->name ?? 'N/A'
                         ]),
                         'proposal_id' => $proposal->id_proposal,
-                    ]);
+                    ];
+                    Notification::create($payload);
+                    $this->writeToFirestore($payload);
                 }
             }
             
@@ -101,18 +129,20 @@ class NotificationService
             
             foreach ($reviewers as $reviewer) {
                 if ($reviewer) {
-                    Notification::create([
-                        'user_identifier' => $reviewer->id_reviewer,
+                    $payload = [
+                        'user_identifier' => $reviewer->identifier,
                         'user_type' => 'reviewer',
                         'title' => $title,
                         'message' => $message,
                         'type' => $type,
                         'data' => array_merge($data, [
                             'proposal_id' => $proposal->id_proposal,
-                            'review_type' => $this->getReviewType($proposal, $reviewer->id_reviewer)
+                            'review_type' => $this->getReviewType($proposal, $reviewer->id)
                         ]),
                         'proposal_id' => $proposal->id_proposal,
-                    ]);
+                    ];
+                    Notification::create($payload);
+                    $this->writeToFirestore($payload);
                 }
             }
             
@@ -128,18 +158,21 @@ class NotificationService
     public function notifyOperator(string $type, string $title, string $message, array $data = []): void
     {
         try {
-            // Dapatkan semua operator (menggunakan model PT)
-            $operators = \App\Models\PT::all();
-            
+            $operators = User::whereIn('role', ['operator', 'pimpinan_pt'])
+                ->where('is_active', true)
+                ->get();
+
             foreach ($operators as $operator) {
-                Notification::create([
-                    'user_identifier' => $operator->id_pt,
+                $payload = [
+                    'user_identifier' => $operator->identifier,
                     'user_type' => 'operator',
                     'title' => $title,
                     'message' => $message,
                     'type' => $type,
                     'data' => $data,
-                ]);
+                ];
+                Notification::create($payload);
+                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi berhasil dikirim ke operator");
@@ -302,7 +335,17 @@ class NotificationService
     public function cleanupOldNotifications(): int
     {
         $deletedCount = Notification::where('created_at', '<', now()->subDays(30))->delete();
-        Log::info("Berhasil menghapus {$deletedCount} notifikasi lama");
+        try {
+            if ($this->firebaseService->isAvailable()) {
+                $firestoreDeleted = $this->notificationRepository->deleteOlderThan(30);
+                Log::info("Berhasil menghapus {$deletedCount} notifikasi lama (PostgreSQL), {$firestoreDeleted} (Firestore)");
+            } else {
+                Log::info("Berhasil menghapus {$deletedCount} notifikasi lama");
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Firestore cleanup failed (non-fatal): ' . $e->getMessage());
+            Log::info("Berhasil menghapus {$deletedCount} notifikasi lama");
+        }
         return $deletedCount;
     }
 
@@ -373,12 +416,11 @@ class NotificationService
             $tanggalMulai = \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_mulai)->format('d M Y');
             $tanggalSelesai = \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_selesai)->format('d M Y');
             
-            // Kirim ke semua mahasiswa aktif
-            $mahasiswas = \App\Models\Mahasiswa::where('is_active', true)->get();
-            
+            $mahasiswas = User::where('role', 'mahasiswa')->where('is_active', true)->get();
+
             foreach ($mahasiswas as $mahasiswa) {
-                Notification::create([
-                    'user_identifier' => $mahasiswa->nim,
+                $payload = [
+                    'user_identifier' => $mahasiswa->identifier,
                     'user_type' => 'mahasiswa',
                     'title' => 'Pendaftaran Proposal PKM Dibuka',
                     'message' => "Pendaftaran proposal PKM untuk tahun ajaran {$tahunAjaran} telah dibuka. Periode: {$tanggalMulai} - {$tanggalSelesai}. Segera ajukan proposal Anda!",
@@ -389,7 +431,9 @@ class NotificationService
                         'tanggal_mulai' => $ruangKontrol->tanggal_pendaftaran_mulai,
                         'tanggal_selesai' => $ruangKontrol->tanggal_pendaftaran_selesai,
                     ],
-                ]);
+                ];
+                Notification::create($payload);
+                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi ruang kontrol dibuka berhasil dikirim ke semua mahasiswa");
@@ -532,10 +576,10 @@ class NotificationService
         
         $message = "Review substantif untuk proposal Anda '{$judul}' telah selesai.";
         if ($nilai1 !== null) {
-            $message .= " Nilai Reviewer 1: " . number_format($nilai1, 2);
+            $message .= " Nilai Reviewer 1: " . number_format($nilai1, 2, ',', '.');
         }
         if ($nilai2 !== null) {
-            $message .= " Nilai Reviewer 2: " . number_format($nilai2, 2);
+            $message .= " Nilai Reviewer 2: " . number_format($nilai2, 2, ',', '.');
         }
         $message .= " Proposal Anda memerlukan revisi. Silakan periksa catatan reviewer dan upload file revisi.";
         
@@ -563,7 +607,7 @@ class NotificationService
         if ($status === 'lolos_tingkat_universitas') {
             $message = "Selamat! Proposal Anda '{$judul}' telah lolos penilaian semi final tingkat universitas.";
             if ($nilai !== null) {
-                $message .= " Nilai: " . number_format($nilai, 2);
+                $message .= " Nilai: " . number_format($nilai, 2, ',', '.');
             }
             if ($dana !== null && $dana > 0) {
                 $message .= " Dana yang dapat diberikan: Rp " . number_format($dana, 0, ',', '.');
@@ -587,7 +631,7 @@ class NotificationService
             // Tidak lolos - notifikasi negatif dengan pesan yang jelas
             $message = "Mohon maaf, proposal Anda '{$judul}' tidak lolos penilaian semi final tingkat universitas.";
             if ($nilai !== null) {
-                $message .= " Nilai: " . number_format($nilai, 2);
+                $message .= " Nilai: " . number_format($nilai, 2, ',', '.');
             }
             if ($catatan) {
                 $message .= " Catatan: {$catatan}";
@@ -665,7 +709,7 @@ class NotificationService
             $type = 'success';
             $title = 'Selamat! Proposal Lolos PIMNAS dan Mendapat Pendanaan';
             $message = "Selamat! Proposal Anda '{$judul}' telah lolos PIMNAS dan mendapatkan pendanaan.";
-            $message .= " Nilai: " . number_format($nilai, 2);
+            $message .= " Nilai: " . number_format($nilai, 2, ',', '.');
             if ($danaYangDidapatkan > 0) {
                 $message .= " Dana yang didapatkan: Rp " . number_format($danaYangDidapatkan, 0, ',', '.');
             }
@@ -674,13 +718,13 @@ class NotificationService
             $type = 'success';
             $title = 'Selamat! Proposal Lolos PIMNAS';
             $message = "Selamat! Proposal Anda '{$judul}' telah lolos PIMNAS, namun tidak mendapatkan pendanaan.";
-            $message .= " Nilai: " . number_format($nilai, 2);
+            $message .= " Nilai: " . number_format($nilai, 2, ',', '.');
         } elseif (!$isLolosPimnas && $isLolosPendanaan) {
             // Tidak lolos PIMNAS tapi dapat pendanaan
             $type = 'warning';
             $title = 'Proposal Mendapat Pendanaan';
             $message = "Proposal Anda '{$judul}' tidak lolos PIMNAS, namun mendapatkan pendanaan.";
-            $message .= " Nilai: " . number_format($nilai, 2);
+            $message .= " Nilai: " . number_format($nilai, 2, ',', '.');
             if ($danaYangDidapatkan > 0) {
                 $message .= " Dana yang didapatkan: Rp " . number_format($danaYangDidapatkan, 0, ',', '.');
             }
@@ -689,7 +733,7 @@ class NotificationService
             $type = 'danger';
             $title = 'Proposal Tidak Lolos Final';
             $message = "Mohon maaf, proposal Anda '{$judul}' tidak lolos PIMNAS dan tidak mendapatkan pendanaan.";
-            $message .= " Nilai: " . number_format($nilai, 2);
+            $message .= " Nilai: " . number_format($nilai, 2, ',', '.');
         }
         
         if ($catatan) {
@@ -764,17 +808,19 @@ class NotificationService
     public function notifyAllMahasiswa(string $type, string $title, string $message, array $data = []): void
     {
         try {
-            $mahasiswas = \App\Models\Mahasiswa::where('is_active', true)->get();
-            
+            $mahasiswas = User::where('role', 'mahasiswa')->where('is_active', true)->get();
+
             foreach ($mahasiswas as $mahasiswa) {
-                Notification::create([
-                    'user_identifier' => $mahasiswa->nim,
+                $payload = [
+                    'user_identifier' => $mahasiswa->identifier,
                     'user_type' => 'mahasiswa',
                     'title' => $title,
                     'message' => $message,
                     'type' => $type,
                     'data' => $data,
-                ]);
+                ];
+                Notification::create($payload);
+                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi broadcast berhasil dikirim ke semua mahasiswa");

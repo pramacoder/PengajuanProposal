@@ -5,6 +5,11 @@
 @if(isset($statusPendaftaran) && $statusPendaftaran === 'tertutup')
     @section('content')
     <div class="container mt-5">
+        <x-breadcrumb :items="[
+            ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+            ['label' => 'Ajukan Proposal', 'active' => true],
+        ]" />
+
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card border-danger">
@@ -247,6 +252,11 @@
 
 @section('content')
 <div class="container-fluid">
+                <x-breadcrumb :items="[
+                    ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+                    ['label' => 'Ajukan Proposal', 'active' => true],
+                ]" />
+
                 <x-page-header 
                     title="Ajukan Proposal PKM" 
                     subtitle="UNIVERSITAS UDAYANA" />
@@ -406,7 +416,7 @@
                     <label for="dana_diajukan" class="form-label required-field">Dana yang Diajukan</label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
-                        <input type="number" class="form-control @error('dana_diajukan') is-invalid @enderror" id="dana_diajukan" name="dana_diajukan" placeholder="0" min="0" max="15000000" value="{{ old('dana_diajukan') }}" required>
+                        <input type="text" class="form-control js-format-id-int @error('dana_diajukan') is-invalid @enderror" id="dana_diajukan" name="dana_diajukan" placeholder="0" inputmode="numeric" data-max="15000000" value="{{ old('dana_diajukan') }}" required>
                     </div>
                     <div class="form-text" id="dana_help_text">Maksimal Rp 15.000.000</div>
                     <div class="error-message" id="dana_diajukan_error"></div>
@@ -1121,7 +1131,7 @@
             const isInsentif = insentifSkims.includes(selectedSkim);
             
             // Convert dana to number, default to 0 if empty
-            const danaValue = dana ? parseInt(dana) : 0;
+            const danaValue = dana ? parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(dana) : dana).toString(), 10) : 0;
             
             if (isInsentif) {
                 // For PKM Insentif, dana harus 0 (tidak ada pendanaan)
@@ -1545,7 +1555,7 @@
         const selectedSkim = document.getElementById('skim').value;
         const insentifSkims = ['GFT', 'AI'];
         const isInsentif = insentifSkims.includes(selectedSkim);
-        const danaValue = danaField ? parseInt(danaField.value) || 0 : 0;
+        const danaValue = danaField ? (parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(danaField.value) : danaField.value).toString(), 10) || 0) : 0;
         
         if (isInsentif) {
             if (danaValue !== 0) {
@@ -1745,7 +1755,7 @@
                 danaField.style.backgroundColor = '';
                 
                 // If current value is less than 1000000, set to 1000000
-                if (danaField.value && parseInt(danaField.value) < 1000000) {
+                if (danaField.value && (parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(danaField.value) : danaField.value).toString(), 10) < 1000000)) {
                     danaField.value = '1000000';
                 }
             }

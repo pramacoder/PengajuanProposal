@@ -456,6 +456,12 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+        ['label' => 'Lihat Proposal', 'url' => route('mahasiswa.proposal.index')],
+        ['label' => 'Detail Proposal', 'active' => true],
+    ]" />
+
     <!-- Header -->
     <x-page-header 
         title="Detail Proposal PKM" 
@@ -497,7 +503,7 @@
                 </div>
                 <div class="meta-item">
                     <i class="fas fa-money-bill-wave"></i>
-                    <span>Dana: Rp {{ number_format($proposal->dana_diajukan, 0, ',', '.') }}</span>
+                    <span>Dana: @rupiahId($proposal->dana_diajukan)</span>
                 </div>
                 
                 @php
@@ -540,7 +546,7 @@
                     </div>
                     <div class="info-item">
                         <span class="info-label">Dana Diajukan</span>
-                        <span class="info-value">Rp {{ number_format($proposal->dana_diajukan, 0, ',', '.') }}</span>
+                        <span class="info-value">@rupiahId($proposal->dana_diajukan)</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Status Validasi</span>
@@ -816,7 +822,7 @@
                                 <i class="fas fa-star me-1"></i>Nilai Akhir
                             </div>
                             <div style="font-size: 1.3rem; font-weight: 700; color: #1976d2;">
-                                {{ number_format($hasilFinal->nilai, 2) }}
+                                @formatId($hasilFinal->nilai, 2)
                             </div>
                         </div>
                         @endif
@@ -828,7 +834,7 @@
                                 <i class="fas fa-coins me-1"></i>Dana yang Didapatkan
                             </div>
                             <div style="font-size: 1.1rem; font-weight: 700; color: #2e7d32;">
-                                Rp {{ number_format($hasilFinal->dana_yang_didapatkan, 0, ',', '.') }}
+                                @rupiahId($hasilFinal->dana_yang_didapatkan)
                             </div>
                         </div>
                         @endif
@@ -880,7 +886,7 @@
 
             <!-- Informasi Tim -->
             <div class="info-section">
-                <h5><i class="fas fa-users me-2"></i>Anggota Tim ({{ $proposal->semuaAnggotaTim->count() }} orang)</h5>
+                <h5><i class="fas fa-users me-2"></i>Anggota Tim (@formatId($proposal->semuaAnggotaTim->count()) orang)</h5>
                 <div class="team-section">
                     @foreach($proposal->semuaAnggotaTim as $member)
                     <div class="team-member {{ $member->is_ketua ? 'ketua' : '' }}">
@@ -934,7 +940,7 @@
                 <div class="info-item">
                     <span class="info-label">File Review</span>
                     <span class="info-value">
-                        <a href="{{ asset('storage/' . $proposal->path_review_dosen) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        <a href="{{ route('file.serve', ['path' => $proposal->path_review_dosen]) }}" target="_blank" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-download me-1"></i>
                             {{ $proposal->nama_file_review_dosen ?? 'Download Review PDF' }}
                         </a>
@@ -989,7 +995,7 @@
         <div class="pdf-header">
             <h5 class="pdf-title">
                 <i class="fas fa-edit me-2"></i>
-                Dokumen Revisi ({{ $proposal->proposalRevisi->count() }} file)
+                Dokumen Revisi (@formatId($proposal->proposalRevisi->count()) file)
             </h5>
             <div class="pdf-controls">
                 <button id="revisiFullscreenBtn" class="btn btn-outline-secondary btn-sm me-2">
@@ -1031,7 +1037,7 @@
                                 <strong>Tanggal Submit:</strong> {{ $revisi->tanggal_submit->format('d/m/Y H:i') }}
                             </div>
                             <div class="col-md-3 text-end">
-                                <a href="{{ asset('storage/' . $revisi->path_file) }}" 
+                                <a href="{{ route('file.serve', ['path' => $revisi->path_file]) }}" 
                                    class="btn btn-outline-primary btn-sm" 
                                    download="{{ $revisi->nama_file }}">
                                     <i class="fas fa-download me-1"></i>Download
@@ -1129,7 +1135,7 @@
 
     function loadPDFDocument() {
         const pdfViewer = document.getElementById('pdfViewer');
-        const pdfUrl = '{{ $proposal->dokumen ? asset('storage/' . $proposal->dokumen->path_file) : "" }}';
+        const pdfUrl = '{{ $proposal->dokumen ? route("mahasiswa.proposal.view-pdf", $proposal->id_proposal) : "" }}';
         
         console.log('Loading PDF from URL:', pdfUrl);
         
@@ -1210,7 +1216,7 @@
     function loadRevisionDocuments() {
         @if($proposal->proposalRevisi->count() > 0)
             @foreach($proposal->proposalRevisi as $revisi)
-                loadRevisionPDF({{ $revisi->id_revisi }}, '{{ asset('storage/' . $revisi->path_file) }}');
+                loadRevisionPDF({{ $revisi->id_revisi }}, '{{ route('file.serve', ['path' => $revisi->path_file]) }}');
             @endforeach
         @endif
     }
@@ -1280,7 +1286,7 @@
                 <p>Browser Anda tidak dapat menampilkan PDF secara langsung.</p>
                 <p>Silakan download file untuk melihat dokumen:</p>
                 <div style="margin-top: 1rem;">
-                    <a href="{{ asset('storage/' . ($proposal->proposalRevisi->first()->path_file ?? '')) }}" 
+                    <a href="{{ $proposal->proposalRevisi->first() ? route('file.serve', ['path' => $proposal->proposalRevisi->first()->path_file]) : '#' }}" 
                        class="btn btn-primary">
                         <i class="fas fa-download me-1"></i>Download PDF
                     </a>

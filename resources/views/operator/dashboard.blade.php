@@ -4,6 +4,10 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'active' => true],
+    ]" />
+
     <!-- Header Section -->
     <x-page-header 
         title="BERANDA" 
@@ -67,7 +71,7 @@
                                         </td>
                                         <td>{{ $proposal['mahasiswa'] }}</td>
                                         <td>
-                                            <span class="badge bg-success fs-6">{{ number_format($proposal['nilai'], 2) }}</span>
+                                            <span class="badge bg-success fs-6">@formatId($proposal['nilai'], 2)</span>
                                         </td>
                                         <td>
                                             <span class="badge bg-{{ $proposal['status'] == 'lolos' ? 'success' : 'danger' }}">
@@ -100,7 +104,7 @@
                     <div class="card card-custom">
                         <div class="card-body text-center">
                             <h5 class="card-title text-primary">Jumlah Total</h5>
-                            <h2 class="display-4 fw-bold text-primary">{{ number_format($totalKeseluruhan + $totalInsentif) }}</h2>
+                            <h2 class="display-4 fw-bold text-primary">@formatId($totalKeseluruhan + $totalInsentif)</h2>
                             <p class="text-muted">Total Semua Proposal PKM</p>
                         </div>
                     </div>
@@ -109,7 +113,7 @@
                     <div class="card card-custom">
                         <div class="card-body text-center">
                             <h5 class="card-title text-success">Jumlah PKM-8 Bidang</h5>
-                            <h2 class="display-4 fw-bold text-success">{{ number_format($totalKeseluruhan) }}</h2>
+                            <h2 class="display-4 fw-bold text-success">@formatId($totalKeseluruhan)</h2>
                             <p class="text-muted">Proposal yang Memerlukan Dana</p>
                         </div>
                     </div>
@@ -118,7 +122,7 @@
                     <div class="card card-custom">
                         <div class="card-body text-center">
                             <h5 class="card-title text-info">Jumlah PKM Insentif</h5>
-                            <h2 class="display-4 fw-bold text-info">{{ number_format($totalInsentif) }}</h2>
+                            <h2 class="display-4 fw-bold text-info">@formatId($totalInsentif)</h2>
                             <p class="text-muted">Proposal Insentif</p>
                         </div>
                     </div>
@@ -158,12 +162,12 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td><strong>{{ $data['skim'] }}</strong></td>
-                                    <td class="text-dark fw-bold">{{ $data['jumlah'] }}</td>
-                                    <td class="text-success fw-bold">{{ $data['sudah_valid'] }}</td>
-                                    <td class="text-warning fw-bold">{{ $data['belum_valid'] }}</td>
-                                    <td class="text-danger fw-bold">{{ $data['tolak_valid'] }}</td>
-                                    <td class="text-info fw-bold">{{ $data['sedang_review'] }}</td>
-                                    <td class="text-primary fw-bold">{{ $data['selesai_review'] }}</td>
+                                    <td class="text-dark fw-bold">@formatId($data['jumlah'])</td>
+                                    <td class="text-success fw-bold">@formatId($data['sudah_valid'])</td>
+                                    <td class="text-warning fw-bold">@formatId($data['belum_valid'])</td>
+                                    <td class="text-danger fw-bold">@formatId($data['tolak_valid'])</td>
+                                    <td class="text-info fw-bold">@formatId($data['sedang_review'])</td>
+                                    <td class="text-primary fw-bold">@formatId($data['selesai_review'])</td>
                                     <td>
                                         <button class="btn btn-primary btn-sm" onclick="pilihReviewer('{{ $data['skim'] }}')">
                                             <i class="fas fa-user-plus me-1"></i>
@@ -175,12 +179,12 @@
                                 <!-- Total Row -->
                                 <tr class="table-dark fw-bold">
                                     <td colspan="2" class="text-white text-center"><strong>TOTAL</strong></td>
-                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('jumlah') }}</td>
-                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('sudah_valid') }}</td>
-                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('belum_valid') }}</td>
-                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('tolak_valid') }}</td>
-                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('sedang_review') }}</td>
-                                    <td class="text-white text-center">{{ $pkm8Bidang->sum('selesai_review') }}</td>
+                                    <td class="text-white text-center">@formatId($pkm8Bidang->sum('jumlah'))</td>
+                                    <td class="text-white text-center">@formatId($pkm8Bidang->sum('sudah_valid'))</td>
+                                    <td class="text-white text-center">@formatId($pkm8Bidang->sum('belum_valid'))</td>
+                                    <td class="text-white text-center">@formatId($pkm8Bidang->sum('tolak_valid'))</td>
+                                    <td class="text-white text-center">@formatId($pkm8Bidang->sum('sedang_review'))</td>
+                                    <td class="text-white text-center">@formatId($pkm8Bidang->sum('selesai_review'))</td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -222,12 +226,12 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td><strong>{{ $data['skim'] }}</strong></td>
-                                    <td class="text-dark fw-bold">{{ $data['jumlah'] }}</td>
-                                    <td class="text-success fw-bold">{{ $data['sudah_valid'] }}</td>
-                                    <td class="text-warning fw-bold">{{ $data['belum_valid'] }}</td>
-                                    <td class="text-danger fw-bold">{{ $data['tolak_valid'] }}</td>
-                                    <td class="text-info fw-bold">{{ $data['sedang_review'] }}</td>
-                                    <td class="text-primary fw-bold">{{ $data['selesai_review'] }}</td>
+                                    <td class="text-dark fw-bold">@formatId($data['jumlah'])</td>
+                                    <td class="text-success fw-bold">@formatId($data['sudah_valid'])</td>
+                                    <td class="text-warning fw-bold">@formatId($data['belum_valid'])</td>
+                                    <td class="text-danger fw-bold">@formatId($data['tolak_valid'])</td>
+                                    <td class="text-info fw-bold">@formatId($data['sedang_review'])</td>
+                                    <td class="text-primary fw-bold">@formatId($data['selesai_review'])</td>
                                     <td>
                                         <button class="btn btn-primary btn-sm" onclick="pilihReviewer('{{ $data['skim'] }}')">
                                             <i class="fas fa-user-plus me-1"></i>
@@ -239,12 +243,12 @@
                                 <!-- Total Row -->
                                 <tr class="table-dark fw-bold">
                                     <td colspan="2" class="text-white text-center"><strong>TOTAL</strong></td>
-                                    <td class="text-white text-center">{{ $pkmInsentif->sum('jumlah') }}</td>
-                                    <td class="text-white text-center">{{ $pkmInsentif->sum('sudah_valid') }}</td>
-                                    <td class="text-white text-center">{{ $pkmInsentif->sum('belum_valid') }}</td>
-                                    <td class="text-white text-center">{{ $pkmInsentif->sum('tolak_valid') }}</td>
-                                    <td class="text-white text-center">{{ $pkmInsentif->sum('sedang_review') }}</td>
-                                    <td class="text-white text-center">{{ $pkmInsentif->sum('selesai_review') }}</td>
+                                    <td class="text-white text-center">@formatId($pkmInsentif->sum('jumlah'))</td>
+                                    <td class="text-white text-center">@formatId($pkmInsentif->sum('sudah_valid'))</td>
+                                    <td class="text-white text-center">@formatId($pkmInsentif->sum('belum_valid'))</td>
+                                    <td class="text-white text-center">@formatId($pkmInsentif->sum('tolak_valid'))</td>
+                                    <td class="text-white text-center">@formatId($pkmInsentif->sum('sedang_review'))</td>
+                                    <td class="text-white text-center">@formatId($pkmInsentif->sum('selesai_review'))</td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -357,7 +361,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="mb-0">
                                     <i class="fas fa-list me-2"></i>
-                                    Hasil Filter ({{ $filteredProposals->count() }} proposal ditemukan)
+                                    Hasil Filter (@formatId($filteredProposals->count()) proposal ditemukan)
                                 </h6>
                                 @if($filteredProposals->count() > 20 && !request()->has('show_all'))
                                     <form method="GET" action="{{ route('operator.dashboard') }}" style="display: inline;">
@@ -434,7 +438,7 @@
                                                 </td>
                                                 <td>
                                                     @if($proposal->hasilFinal)
-                                                        <span class="badge" style="background-color: #800000; color: white;">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                                        <span class="badge" style="background-color: #800000; color: white;">@formatId($proposal->hasilFinal->nilai, 2)</span>
                                                     @else
                                                         <span class="text-muted">-</span>
                                                     @endif

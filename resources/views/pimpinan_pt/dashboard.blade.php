@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
+        ['label' => 'Hasil Final', 'active' => true],
+    ]" />
+
     <!-- Header Section -->
     <x-page-header 
         title="HASIL FINAL" 
@@ -17,7 +22,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Total Proposal</h6>
-                            <h3 class="mb-0">{{ $proposals->count() }}</h3>
+                            <h3 class="mb-0">@formatId($proposals->count())</h3>
                         </div>
                         <div class="text-primary" style="font-size: 2.5rem;">
                             <i class="fas fa-file-alt"></i>
@@ -32,7 +37,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Belum Dinilai</h6>
-                            <h3 class="mb-0 text-warning">{{ $proposalsBelumDinilai->count() }}</h3>
+                            <h3 class="mb-0 text-warning">@formatId($proposalsBelumDinilai->count())</h3>
                         </div>
                         <div class="text-warning" style="font-size: 2.5rem;">
                             <i class="fas fa-clock"></i>
@@ -47,7 +52,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Sudah Dinilai</h6>
-                            <h3 class="mb-0 text-success">{{ $proposalsSudahDinilai->count() }}</h3>
+                            <h3 class="mb-0 text-success">@formatId($proposalsSudahDinilai->count())</h3>
                         </div>
                         <div class="text-success" style="font-size: 2.5rem;">
                             <i class="fas fa-check-circle"></i>
@@ -66,14 +71,14 @@
                     <button class="nav-link active" id="belum-dinilai-tab" data-bs-toggle="tab" 
                             data-bs-target="#belum-dinilai" type="button" role="tab">
                         <i class="fas fa-clock me-2"></i>Belum Dinilai 
-                        <span class="badge bg-warning ms-2">{{ $proposalsBelumDinilai->count() }}</span>
+                        <span class="badge bg-warning ms-2">@formatId($proposalsBelumDinilai->count())</span>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="sudah-dinilai-tab" data-bs-toggle="tab" 
                             data-bs-target="#sudah-dinilai" type="button" role="tab">
                         <i class="fas fa-check-circle me-2"></i>Sudah Dinilai 
-                        <span class="badge bg-success ms-2">{{ $proposalsSudahDinilai->count() }}</span>
+                        <span class="badge bg-success ms-2">@formatId($proposalsSudahDinilai->count())</span>
                     </button>
                 </li>
             </ul>
@@ -117,7 +122,7 @@
                                                 {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'Lolos' : 'Tidak Lolos' }}
                                             </span>
                                             @if($proposal->hasilSemiFinal->nilai)
-                                                <br><small class="text-muted">Nilai: {{ number_format($proposal->hasilSemiFinal->nilai, 2) }}</small>
+                                                <br><small class="text-muted">Nilai: @formatId($proposal->hasilSemiFinal->nilai, 2)</small>
                                             @endif
                                         @else
                                             <span class="badge bg-secondary">-</span>
@@ -195,7 +200,7 @@
                                                 {{ $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
                                             </span>
                                             @if($proposal->hasilFinal->status_pendanaan == 'lolos' && $proposal->hasilFinal->dana_yang_didapatkan)
-                                                <br><small class="text-muted">Rp {{ number_format($proposal->hasilFinal->dana_yang_didapatkan, 0, ',', '.') }}</small>
+                                                <br><small class="text-muted">@rupiahId($proposal->hasilFinal->dana_yang_didapatkan)</small>
                                             @endif
                                         @else
                                             <span class="badge bg-secondary">-</span>
@@ -203,7 +208,7 @@
                                     </td>
                                     <td>
                                         @if($proposal->hasilFinal && $proposal->hasilFinal->nilai)
-                                            <span class="badge bg-primary fs-6">{{ number_format($proposal->hasilFinal->nilai, 2) }}</span>
+                                            <span class="badge bg-primary fs-6">@formatId($proposal->hasilFinal->nilai, 2)</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif

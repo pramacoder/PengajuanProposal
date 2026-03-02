@@ -13,6 +13,8 @@ use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\ReviewerController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\PimpinanPTController;
+use App\Http\Controllers\FormPenilaianController;
+use App\Http\Controllers\SimbelmawaReportController;
 
 // Route untuk autentikasi
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -60,6 +62,18 @@ Route::get('/api/mahasiswa/check-proposal/{nim}', [ApiController::class, 'checkM
 Route::get('/api/ruang-kontrol/status', [ApiController::class, 'getRuangKontrolStatus'])->name('api.ruang.kontrol.status');
 Route::get('/api/proposal/{id}/revisi', [ApiController::class, 'getProposalRevisi'])->name('api.proposal.revisi');
 
+Route::get('/api/firebase/health', function () {
+    $firebaseService = app(\App\Services\FirebaseService::class);
+    return response()->json($firebaseService->healthCheck());
+});
+
+// Authenticated file serve route (serves files from Supabase Storage or local fallback)
+Route::get('/file/serve', function (\Illuminate\Http\Request $request) {
+    $path = $request->query('path');
+    if (!$path) abort(404);
+    return \App\Helpers\StorageHelper::response($path, basename($path));
+})->middleware('auth')->name('file.serve');
+
 // Route default
 Route::get('/', function () {
     return redirect('/login');
@@ -67,7 +81,7 @@ Route::get('/', function () {
 
 
 // Route untuk dashboard berdasarkan user type
-Route::middleware(['auth:mahasiswa'])->group(function () {
+Route::middleware(['auth', 'role:mahasiswa'])->group(function () {
     // Dashboard mahasiswa sekarang mengarah ke dashboard yang proper
     Route::get('/mahasiswa/dashboard', [ProposalController::class, 'dashboard'])->name('mahasiswa.dashboard');
     Route::get('/mahasiswa/profile', [AuthController::class, 'showProfile'])->name('mahasiswa.profile');
@@ -77,21 +91,22 @@ Route::middleware(['auth:mahasiswa'])->group(function () {
     Route::get('/mahasiswa/proposal/create', [ProposalController::class, 'create'])->name('mahasiswa.proposal.create')->middleware('check.phase:pendaftaran');
     Route::post('/mahasiswa/proposal/store', [ProposalController::class, 'store'])->name('mahasiswa.proposal.store')->middleware('check.phase:pendaftaran');
     Route::get('/mahasiswa/proposal', [ProposalController::class, 'index'])->name('mahasiswa.proposal.index');
-    Route::get('/mahasiswa/proposal/{id}', [ProposalController::class, 'show'])->name('mahasiswa.proposal.show');
-    Route::get('/mahasiswa/proposal/{id}/edit', [ProposalController::class, 'edit'])->name('mahasiswa.proposal.edit');
-    Route::put('/mahasiswa/proposal/{id}', [ProposalController::class, 'update'])->name('mahasiswa.proposal.update');
-    Route::delete('/mahasiswa/proposal/{id}', [ProposalController::class, 'destroy'])->name('mahasiswa.proposal.destroy');
-    Route::get('/mahasiswa/proposal/{id}/download/{jenis}', [ProposalController::class, 'download'])->name('mahasiswa.proposal.download');
-    Route::get('/mahasiswa/proposal/{id}/view-pdf', [ProposalController::class, 'viewPdf'])->name('mahasiswa.proposal.view-pdf');
+    Route::get('/mahasiswa/proposal/{id}', [ProposalController::class, 'show'])->name('mahasiswa.proposal.show')->whereNumber('id');
+    Route::get('/mahasiswa/proposal/{id}/edit', [ProposalController::class, 'edit'])->name('mahasiswa.proposal.edit')->whereNumber('id');
+    Route::put('/mahasiswa/proposal/{id}', [ProposalController::class, 'update'])->name('mahasiswa.proposal.update')->whereNumber('id');
+    Route::delete('/mahasiswa/proposal/{id}', [ProposalController::class, 'destroy'])->name('mahasiswa.proposal.destroy')->whereNumber('id');
+    Route::get('/mahasiswa/proposal/{id}/download/{jenis}', [ProposalController::class, 'download'])->name('mahasiswa.proposal.download')->whereNumber('id');
+    Route::get('/mahasiswa/proposal/{id}/view-pdf', [ProposalController::class, 'viewPdf'])->name('mahasiswa.proposal.view-pdf')->whereNumber('id');
 
     // Review Data Routes
-    Route::get('/mahasiswa/proposal/{id}/review/administrative', [ProposalController::class, 'getAdministrativeReview'])->name('mahasiswa.proposal.review.administrative');
-    Route::get('/mahasiswa/proposal/{id}/review/substantive', [ProposalController::class, 'getSubstantiveReview'])->name('mahasiswa.proposal.review.substantive');
-    Route::get('/mahasiswa/proposal/{id}/review/final', [ProposalController::class, 'getFinalReview'])->name('mahasiswa.proposal.review.final');
-Route::get('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'showRevisiForm'])->name('mahasiswa.proposal.revisi')->middleware('check.phase:perbaikan');
-Route::post('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'submitRevisi'])->name('mahasiswa.proposal.revisi.submit')->middleware('check.phase:perbaikan');
-Route::get('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class, 'showRevisiAkhirForm'])->name('mahasiswa.proposal.revisi.akhir');
-Route::post('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class, 'submitRevisiAkhir'])->name('mahasiswa.proposal.revisi.akhir.submit');
+    Route::get('/mahasiswa/proposal/{id}/review/administrative', [ProposalController::class, 'getAdministrativeReview'])->name('mahasiswa.proposal.review.administrative')->whereNumber('id');
+    Route::get('/mahasiswa/proposal/{id}/review/substantive', [ProposalController::class, 'getSubstantiveReview'])->name('mahasiswa.proposal.review.substantive')->whereNumber('id');
+    Route::get('/mahasiswa/proposal/{id}/review/final', [ProposalController::class, 'getFinalReview'])->name('mahasiswa.proposal.review.final')->whereNumber('id');
+    Route::get('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'showRevisiForm'])->name('mahasiswa.proposal.revisi')->middleware('check.phase:perbaikan')->whereNumber('id');
+    Route::post('/mahasiswa/proposal/{id}/revisi', [ProposalController::class, 'submitRevisi'])->name('mahasiswa.proposal.revisi.submit')->middleware('check.phase:perbaikan')->whereNumber('id');
+    // Fase 4: Revisi akhir
+    Route::get('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class, 'showRevisiAkhirForm'])->name('mahasiswa.proposal.revisi.akhir')->middleware('check.phase:penilaian_akhir')->whereNumber('id');
+    Route::post('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class, 'submitRevisiAkhir'])->name('mahasiswa.proposal.revisi.akhir.submit')->middleware('check.phase:penilaian_akhir')->whereNumber('id');
     
     // Route untuk revisi proposal
     Route::get('/mahasiswa/revisi', [App\Http\Controllers\Mahasiswa\ProposalRevisiController::class, 'index'])->name('mahasiswa.revisi.index')->middleware('check.phase:perbaikan');
@@ -105,7 +120,7 @@ Route::post('/mahasiswa/proposal/{id}/revisi-akhir', [ProposalController::class,
     Route::post('/mahasiswa/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('mahasiswa.notifications.mark-all-read');
 });
 
-Route::middleware(['auth:dosen'])->group(function () {
+Route::middleware(['auth', 'role:dosen'])->group(function () {
     // Dashboard utama dosen (redirect ke pembimbing atau pendamping)
     Route::get('/dosen/dashboard', [DosenController::class, 'dashboard'])->name('dosen.dashboard');
     Route::get('/dosen/profile', [AuthController::class, 'showProfile'])->name('dosen.profile');
@@ -168,16 +183,14 @@ Route::middleware(['auth:dosen'])->group(function () {
     Route::post('/dosen/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('dosen.notifications.mark-all-read');
 });
 
-Route::middleware(['auth:reviewer'])->group(function () {
+Route::middleware(['auth', 'role:reviewer'])->group(function () {
     Route::get('/reviewer/dashboard', [ReviewerController::class, 'dashboard'])->name('reviewer.dashboard');
     Route::get('/reviewer/profile', [AuthController::class, 'showProfile'])->name('reviewer.profile');
     Route::put('/reviewer/profile', [AuthController::class, 'updateProfile'])->name('reviewer.profile.update');
     
-    // Route untuk review administratif (memerlukan fase perbaikan)
-    Route::get('/reviewer/review-administratif', [ReviewerController::class, 'reviewAdministratif'])->name('reviewer.review.administratif')->middleware('check.phase:perbaikan');
-    
-    // Route untuk review substantif (memerlukan fase perbaikan)
-    Route::get('/reviewer/review-substantif', [ReviewerController::class, 'reviewSubstantif'])->name('reviewer.review.substantif')->middleware('check.phase:perbaikan');
+    // Fase 2: Review administratif & substantif
+    Route::get('/reviewer/review-administratif', [ReviewerController::class, 'reviewAdministratif'])->name('reviewer.review.administratif')->middleware('check.phase:review');
+    Route::get('/reviewer/review-substantif', [ReviewerController::class, 'reviewSubstantif'])->name('reviewer.review.substantif')->middleware('check.phase:review');
     
     // Route untuk detail proposal
     Route::get('/reviewer/proposal/{id}/detail', [ReviewerController::class, 'detailProposal'])->name('reviewer.detail.proposal');
@@ -185,9 +198,13 @@ Route::middleware(['auth:reviewer'])->group(function () {
     // Route untuk detail proposal substantif
     Route::get('/reviewer/proposal/{id}/detail-substantif', [ReviewerController::class, 'detailProposalSubstantif'])->name('reviewer.detail.proposal.substantif');
     
-    // Route untuk submit review (memerlukan fase perbaikan)
-    Route::post('/reviewer/proposal/{id}/submit-review-administratif', [ReviewerController::class, 'submitReviewAdministratif'])->name('reviewer.submit.review.administratif')->middleware('check.phase:perbaikan');
-    Route::post('/reviewer/proposal/{id}/submit-review-substantif', [ReviewerController::class, 'submitReviewSubstantif'])->name('reviewer.submit.review.substantif')->middleware('check.phase:perbaikan');
+    // Fase 2: Submit review
+    Route::post('/reviewer/proposal/{id}/submit-review-administratif', [ReviewerController::class, 'submitReviewAdministratif'])->name('reviewer.submit.review.administratif')->middleware('check.phase:review');
+    Route::post('/reviewer/proposal/{id}/submit-review-substantif', [ReviewerController::class, 'submitReviewSubstantif'])->name('reviewer.submit.review.substantif')->middleware('check.phase:review');
+    
+    // Fase 3: Review substantif seleksi
+    Route::get('/reviewer/review-substantif-seleksi', [ReviewerController::class, 'reviewSubstantifSeleksi'])->name('reviewer.review.substantif.seleksi')->middleware('check.phase:perbaikan');
+    Route::post('/reviewer/proposal/{id}/submit-review-substantif-seleksi', [ReviewerController::class, 'submitReviewSubstantifSeleksi'])->name('reviewer.submit.review.substantif.seleksi')->middleware('check.phase:perbaikan');
     
     // Route untuk notifikasi reviewer
     Route::get('/reviewer/notifications', [App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('reviewer.notifications.get');
@@ -195,16 +212,18 @@ Route::middleware(['auth:reviewer'])->group(function () {
     Route::post('/reviewer/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('reviewer.notifications.mark-all-read');
 });
 
-Route::middleware(['auth:operator'])->group(function () {
+Route::middleware(['auth', 'role:operator,pimpinan_pt'])->group(function () {
     Route::get('/operator/dashboard', [OperatorController::class, 'dashboard'])->name('operator.dashboard');
     Route::get('/operator/profile', [AuthController::class, 'showProfile'])->name('operator.profile');
     Route::put('/operator/profile', [AuthController::class, 'updateProfile'])->name('operator.profile.update');
     
     // Route untuk operator
-    Route::get('/operator/pilih-reviewer', [OperatorController::class, 'pilihReviewer'])->name('operator.pilih.reviewer')->middleware('check.phase:perbaikan');
+    // Fase 2: Assign reviewer
+    Route::get('/operator/pilih-reviewer', [OperatorController::class, 'pilihReviewer'])->name('operator.pilih.reviewer')->middleware('check.phase:review');
     Route::get('/operator/search-reviewers', [OperatorController::class, 'searchReviewers'])->name('operator.search.reviewers');
-    Route::post('/operator/assign-reviewer', [OperatorController::class, 'assignReviewer'])->name('operator.assign.reviewer')->middleware('check.phase:perbaikan');
+    Route::post('/operator/assign-reviewer', [OperatorController::class, 'assignReviewer'])->name('operator.assign.reviewer')->middleware('check.phase:review');
     Route::get('/operator/assigned-proposals', [OperatorController::class, 'getAssignedProposals'])->name('operator.assigned.proposals');
+    Route::get('/operator/assigned-proposals-seleksi', [OperatorController::class, 'getAssignedProposalsSeleksi'])->name('operator.assigned.proposals.seleksi');
     Route::get('/operator/ruang-kontrol', [OperatorController::class, 'ruangKontrol'])->name('operator.ruang.kontrol');
     Route::post('/operator/update-ruang-kontrol', [OperatorController::class, 'updateRuangKontrol'])->name('operator.update.ruang.kontrol');
     Route::post('/operator/create-jadwal', [OperatorController::class, 'createJadwal'])->name('operator.create.jadwal');
@@ -213,18 +232,37 @@ Route::middleware(['auth:operator'])->group(function () {
     Route::delete('/operator/delete-jadwal/{id}', [OperatorController::class, 'deleteJadwal'])->name('operator.delete.jadwal');
     Route::post('/operator/activate-jadwal/{id}', [OperatorController::class, 'activateJadwal'])->name('operator.activate.jadwal');
     Route::get('/operator/active-phase', [OperatorController::class, 'getActivePhase'])->name('operator.active.phase');
-    Route::get('/operator/hasil-final', [OperatorController::class, 'hasilFinal'])->name('operator.hasil.final')->middleware('check.phase:perbaikan');
+    // Fase 4: Hasil final
+    Route::get('/operator/hasil-final', [OperatorController::class, 'hasilFinal'])->name('operator.hasil.final')->middleware('check.phase:penilaian_akhir');
     Route::get('/operator/proposal/{id}/detail', [OperatorController::class, 'proposalDetail'])->name('operator.proposal.detail');
-    Route::post('/operator/update-hasil-final', [OperatorController::class, 'updateHasilFinal'])->name('operator.update.hasil.final')->middleware('check.phase:perbaikan');
+    Route::post('/operator/update-hasil-final', [OperatorController::class, 'updateHasilFinal'])->name('operator.update.hasil.final')->middleware('check.phase:penilaian_akhir');
     Route::get('/operator/revisi/{id}/download', [OperatorController::class, 'downloadRevisi'])->name('operator.revisi.download');
     Route::get('/operator/revisi/{id}/view', [OperatorController::class, 'viewRevisi'])->name('operator.revisi.view');
     Route::get('/operator/detail-hasil-final/{id}', [OperatorController::class, 'detailHasilFinal'])->name('operator.detail.hasil.final');
     Route::get('/operator/proposal/{id}/view-pdf', [OperatorController::class, 'viewPdf'])->name('operator.proposal.view.pdf');
     
-    // Route untuk hasil semi final
+    // Fase 3: Hasil semi final + pilih reviewer seleksi
     Route::get('/operator/hasil-semi-final', [OperatorController::class, 'hasilSemiFinal'])->name('operator.hasil.semi.final')->middleware('check.phase:perbaikan');
     Route::get('/operator/detail-hasil-semi-final/{id}', [OperatorController::class, 'detailHasilSemiFinal'])->name('operator.detail.hasil.semi.final');
     Route::post('/operator/update-hasil-semi-final', [OperatorController::class, 'updateHasilSemiFinal'])->name('operator.update.hasil.semi.final')->middleware('check.phase:perbaikan');
+    Route::get('/operator/pilih-reviewer-seleksi', [OperatorController::class, 'pilihReviewerSeleksi'])->name('operator.pilih.reviewer.seleksi')->middleware('check.phase:perbaikan');
+    Route::post('/operator/assign-reviewer-seleksi', [OperatorController::class, 'assignReviewerSeleksi'])->name('operator.assign.reviewer.seleksi')->middleware('check.phase:perbaikan');
+    
+    // CRUD Form Penilaian
+    Route::get('/operator/form-penilaian', [FormPenilaianController::class, 'index'])->name('operator.form.penilaian.index');
+    Route::get('/operator/form-penilaian/create', [FormPenilaianController::class, 'create'])->name('operator.form.penilaian.create');
+    Route::post('/operator/form-penilaian', [FormPenilaianController::class, 'store'])->name('operator.form.penilaian.store');
+    Route::get('/operator/form-penilaian/{id}/edit', [FormPenilaianController::class, 'edit'])->name('operator.form.penilaian.edit');
+    Route::put('/operator/form-penilaian/{id}', [FormPenilaianController::class, 'update'])->name('operator.form.penilaian.update');
+    Route::delete('/operator/form-penilaian/{id}', [FormPenilaianController::class, 'destroy'])->name('operator.form.penilaian.destroy');
+    
+    // CRUD Laporan SIMBELMAWA
+    Route::get('/operator/laporan-simbelmawa', [SimbelmawaReportController::class, 'index'])->name('operator.laporan.simbelmawa.index');
+    Route::get('/operator/laporan-simbelmawa/create', [SimbelmawaReportController::class, 'create'])->name('operator.laporan.simbelmawa.create');
+    Route::post('/operator/laporan-simbelmawa', [SimbelmawaReportController::class, 'store'])->name('operator.laporan.simbelmawa.store');
+    Route::get('/operator/laporan-simbelmawa/{id}/edit', [SimbelmawaReportController::class, 'edit'])->name('operator.laporan.simbelmawa.edit');
+    Route::put('/operator/laporan-simbelmawa/{id}', [SimbelmawaReportController::class, 'update'])->name('operator.laporan.simbelmawa.update');
+    Route::delete('/operator/laporan-simbelmawa/{id}', [SimbelmawaReportController::class, 'destroy'])->name('operator.laporan.simbelmawa.destroy');
     
     // Manajemen Akun (Mahasiswa, Dosen, Reviewer, Operator)
     Route::get('/operator/akun', [OperatorController::class, 'manageAccounts'])->name('operator.manage.accounts');

@@ -127,56 +127,18 @@ class NotificationController extends Controller
         return response()->json(['success' => true]);
     }
 
-    /**
-     * Get user type
-     */
     private function getUserType($user): string
     {
-        // Check if user has role method (User model)
-        if (method_exists($user, 'hasRole')) {
-            if ($user->hasRole('mahasiswa')) {
-                return 'mahasiswa';
-            } elseif ($user->hasRole('dosen')) {
-                return 'dosen';
-            } elseif ($user->hasRole('reviewer')) {
-                return 'reviewer';
-            } elseif ($user->hasRole('operator')) {
-                return 'operator';
-            }
-        }
-        
-        // Check based on model class name
-        $className = get_class($user);
-        if (str_contains($className, 'Mahasiswa')) {
-            return 'mahasiswa';
-        } elseif (str_contains($className, 'Dosen')) {
-            return 'dosen';
-        } elseif (str_contains($className, 'Reviewer')) {
-            return 'reviewer';
-        } elseif (str_contains($className, 'PT')) {
+        $role = $user->role ?? 'user';
+        if ($role === 'pimpinan_pt') {
             return 'operator';
         }
-        
-        return 'user';
+        return $role;
     }
 
-    /**
-     * Get user identifier based on user type
-     */
     private function getUserIdentifier($user, string $userType): ?string
     {
-        switch ($userType) {
-            case 'mahasiswa':
-                return $user->nim ?? $user->id_mahasiswa ?? null;
-            case 'dosen':
-                return $user->nidn ?? $user->id_dosen ?? null;
-            case 'reviewer':
-                return $user->id_reviewer ?? null;
-            case 'operator':
-                return $user->id_pt ?? $user->id_operator ?? null;
-            default:
-                return null;
-        }
+        return $user->identifier ?? (string) $user->id;
     }
 
     /**

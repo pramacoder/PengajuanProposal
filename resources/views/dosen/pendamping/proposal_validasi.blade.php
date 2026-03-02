@@ -5,6 +5,11 @@
 @section('dosen_content')
 <div class="row">
     <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Dashboard Dosen', 'url' => route('dosen.pendamping.dashboard')],
+            ['label' => 'Validasi Proposal', 'active' => true],
+        ]" />
+
         <div class="card card-custom">
             <div class="card-header card-header-custom">
                 <div class="d-flex justify-content-between align-items-center">

@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('operator.dashboard')],
+        ['label' => 'Pilih Reviewer', 'active' => true],
+    ]" />
+
     <!-- Header Section -->
     <x-page-header 
         title="PILIH REVIEWER" 

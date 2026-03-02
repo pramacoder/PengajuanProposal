@@ -5,6 +5,12 @@
 @section('dosen_content')
 <div class="row">
     <div class="col-12">
+        <x-breadcrumb :items="[
+            ['label' => 'Dashboard Dosen', 'url' => route('dosen.pendamping.dashboard')],
+            ['label' => 'Validasi Proposal', 'url' => route('dosen.pendamping.proposal.validasi')],
+            ['label' => 'Detail Proposal', 'active' => true],
+        ]" />
+
         <div class="card card-custom">
             <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
@@ -16,23 +22,6 @@
                 </a>
             </div>
             <div class="card-body">
-                <!-- Success/Error Messages -->
-                @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <strong>Berhasil!</strong> {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                @endif
-
-                @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Error!</strong> {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                @endif
-
                 <!-- Informasi Proposal -->
     <div class="row mb-4">
         <div class="col-12">
@@ -99,28 +88,18 @@
                                 <td><strong>Status Validasi:</strong></td>
                                 <td>
                                     @if($proposal->status_validasi === 'valid')
-                                        <span class="badge bg-success">Sudah Divalidasi</span>
+                                        <x-status-badge status="valid" label="Sudah Divalidasi" />
                                     @elseif($proposal->status_validasi === 'tidak_valid')
-                                        <span class="badge bg-danger">Ditolak</span>
+                                        <x-status-badge status="tidak_valid" label="Ditolak" />
                                     @else
-                                        <span class="badge bg-warning">Belum Divalidasi</span>
+                                        <x-status-badge status="pending" label="Belum Divalidasi" />
                                     @endif
                                 </td>
                             </tr>
                             <tr>
                                 <td><strong>Status Proposal:</strong></td>
                                 <td>
-                                    @if($proposal->status === 'valid')
-                                        <span class="badge bg-success">Valid</span>
-                                    @elseif($proposal->status === 'tidak_valid')
-                                        <span class="badge bg-danger">Tidak Valid</span>
-                                    @elseif($proposal->status === 'pending')
-                                        <span class="badge bg-warning">Pending</span>
-                                    @elseif($proposal->status === 'submitted')
-                                        <span class="badge bg-info">Submitted</span>
-                                    @else
-                                        <span class="badge bg-secondary">{{ ucfirst($proposal->status) }}</span>
-                                    @endif
+                                    <x-status-badge :status="$proposal->status" :label="$proposal->status_label" />
                                 </td>
                             </tr>
                         </table>
@@ -252,6 +231,9 @@
                                         <p class="mb-2">Berikan alasan penolakan yang jelas agar mahasiswa dapat melakukan perbaikan:</p>
                                         <textarea name="catatan" class="form-control" rows="4" 
                                                   placeholder="Masukkan alasan penolakan proposal..." required></textarea>
+                                        @error('catatan')
+                                            <div class="invalid-feedback d-block mt-2">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                     
                                     <!-- Upload File Koreksi (Opsional) -->
@@ -264,6 +246,9 @@
                                         <small class="form-text text-muted">
                                             Format: PDF saja. Maksimal: 5MB. File ini akan menggantikan file proposal asli.
                                         </small>
+                                        @error('file_koreksi')
+                                            <div class="invalid-feedback d-block mt-2">{{ $message }}</div>
+                                        @enderror
                                         <div class="alert alert-info mt-2 mb-0">
                                             <i class="fas fa-info-circle me-2"></i>
                                             <small>File koreksi yang diupload akan menggantikan file proposal asli. Mahasiswa akan melihat file ini sebagai file proposal yang telah dikoreksi.</small>
@@ -299,7 +284,7 @@
                         <div class="mb-3">
                             <h6>Review Administratif</h6>
                             @foreach($proposal->nilaiAdministratif as $nilai)
-                                <p><strong>Nilai:</strong> {{ $nilai->nilai_administratif }}</p>
+                                <p><strong>Nilai:</strong> @formatId((float) $nilai->nilai_administratif, 2)</p>
                                 <p><strong>Komentar:</strong> {{ $nilai->komentar ?? 'Tidak ada komentar' }}</p>
                                 @if(!$loop->last)<hr>@endif
                             @endforeach
@@ -310,7 +295,7 @@
                         <div class="mb-3">
                             <h6>Review Substantif</h6>
                             @foreach($proposal->nilaiSubstantif as $nilai)
-                                <p><strong>Nilai:</strong> {{ $nilai->nilai_substantif }}</p>
+                                <p><strong>Nilai:</strong> @formatId((float) $nilai->nilai_substantif, 2)</p>
                                 <p><strong>Komentar:</strong> {{ $nilai->komentar ?? 'Tidak ada komentar' }}</p>
                                 @if(!$loop->last)<hr>@endif
                             @endforeach
@@ -322,11 +307,11 @@
                             <h6>Hasil Final</h6>
                             <p><strong>Status:</strong> 
                                 @if($proposal->hasilFinal->status_final == 'diterima')
-                                    <span class="badge bg-success">Diterima</span>
+                                    <x-status-badge status="diterima" />
                                 @elseif($proposal->hasilFinal->status_final == 'ditolak')
-                                    <span class="badge bg-danger">Ditolak</span>
+                                    <x-status-badge status="ditolak" />
                                 @else
-                                    <span class="badge bg-warning">{{ ucfirst($proposal->hasilFinal->status_final) }}</span>
+                                    <x-status-badge :status="$proposal->hasilFinal->status_final" />
                                 @endif
                             </p>
                             <p><strong>Komentar Final:</strong> {{ $proposal->hasilFinal->catatan_final ?? 'Tidak ada komentar' }}</p>
@@ -479,21 +464,6 @@
         // Initialize fullscreen functionality
         initializeFullscreen();
 
-        // Show success/error messages
-        @if(session('success'))
-            showToast('{{ session('success') }}', 'success');
-            
-            // Redirect setelah 2 detik jika ada redirect_to
-            @if(session('redirect_to'))
-                setTimeout(() => {
-                    window.location.href = '{{ session('redirect_to') }}';
-                }, 2000);
-            @endif
-        @endif
-
-        @if(session('error'))
-            showToast('{{ session('error') }}', 'error');
-        @endif
     });
 
     function loadPDFDocument() {
