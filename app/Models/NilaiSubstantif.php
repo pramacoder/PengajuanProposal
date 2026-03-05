@@ -19,15 +19,17 @@ class NilaiSubstantif extends Model
         'skor_per_kriteria',
         'total_nilai',
         'nilai_akhir',
+        'extra_fields',
         'id_proposal',
         'id_reviewer',
     ];
 
     protected $casts = [
         'total_nilai' => 'decimal:2',
-        'nilai_akhir' => 'decimal:2'
+        'nilai_akhir' => 'decimal:2',
+        'extra_fields' => 'array',
     ];
-    
+
     /**
      * Set attribute untuk skor_per_kriteria
      * Memastikan data di-encode sebagai JSON dengan benar
@@ -38,13 +40,15 @@ class NilaiSubstantif extends Model
             // Pastikan array di-encode sebagai JSON
             // Gunakan JSON_NUMERIC_CHECK untuk memastikan angka tetap sebagai angka
             $this->attributes['skor_per_kriteria'] = json_encode($value, JSON_NUMERIC_CHECK);
-        } elseif ($value === null || $value === '') {
+        }
+        elseif ($value === null || $value === '') {
             $this->attributes['skor_per_kriteria'] = null;
-        } else {
+        }
+        else {
             $this->attributes['skor_per_kriteria'] = $value;
         }
     }
-    
+
     /**
      * Get attribute untuk skor_per_kriteria
      * Memastikan data di-decode dengan benar
@@ -54,7 +58,7 @@ class NilaiSubstantif extends Model
         if (is_null($value) || $value === '') {
             return [];
         }
-        
+
         if (is_string($value)) {
             $decoded = json_decode($value, true);
             if (json_last_error() === JSON_ERROR_NONE) {
@@ -65,19 +69,18 @@ class NilaiSubstantif extends Model
             }
             return [];
         }
-        
+
         return is_array($value) ? $value : [];
     }
 
     // Relationships
     public function proposal()
     {
-        return $this->belongsTo(Proposal::class, 'id_proposal', 'id_proposal');
+        return $this->belongsTo(Proposal::class , 'id_proposal', 'id_proposal');
     }
 
     public function reviewer()
     {
-        return $this->belongsTo(User::class, 'id_reviewer');
+        return $this->belongsTo(User::class , 'id_reviewer');
     }
 }
-

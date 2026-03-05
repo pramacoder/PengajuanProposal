@@ -16,23 +16,24 @@ class NilaiAdministratif extends Model
     protected $fillable = [
         'note_administratif',
         'checklist',
+        'extra_fields',
         'id_proposal',
         'id_reviewer'
     ];
 
     protected $casts = [
-        'checklist' => 'array'
+        'checklist' => 'array',
+        'extra_fields' => 'array',
     ];
 
     // Relationships
     public function proposal()
     {
-        return $this->belongsTo(Proposal::class, 'id_proposal', 'id_proposal');
+        return $this->belongsTo(Proposal::class , 'id_proposal', 'id_proposal');
     }
 
     public function reviewer()
     {
-        return $this->belongsTo(User::class, 'id_reviewer');
+        return $this->belongsTo(User::class , 'id_reviewer');
     }
 }
-

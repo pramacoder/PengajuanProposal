@@ -8,36 +8,21 @@
         ['label' => 'Beranda', 'active' => true],
     ]" />
 
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2><i class="fas fa-chalkboard-teacher me-2"></i>Dashboard Dosen Pembimbing</h2>
-                    <p class="text-muted">Monitor proposal mahasiswa bimbingan Anda - Tahun Ajaran 2024/2025</p>
-                </div>
-                <div class="btn-group" role="group">
-                    <a href="{{ route('dosen.pembimbing.dashboard') }}" class="btn btn-primary">
-                        <i class="fas fa-chalkboard-teacher me-1"></i>Pembimbing
-                    </a>
-                    <a href="{{ route('dosen.pendamping.dashboard') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-user-check me-1"></i>Pendamping
-                    </a>
-                </div>
-            </div>
-        </div>
+    {{-- Welcome Header --}}
+    <div class="mb-4">
+        <h1 class="h4 fw-bold mb-1" style="color: var(--text-900);">
+            Selamat datang, <span style="color: var(--primary-700);">{{ \App\Helpers\UserHelper::getCurrentUserName() }}</span> 👋
+        </h1>
+        <p class="mb-0" style="color: var(--text-600); font-size: 0.9rem;">Dashboard Dosen Pembimbing — Monitor proposal mahasiswa bimbingan Anda</p>
     </div>
 
-    <!-- Halaman Kosong - Akan diisi dengan fungsi baru nanti -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">Halaman Kosong</h5>
-                    <p class="text-muted">Halaman ini akan diisi dengan fungsi baru nanti.</p>
-                </div>
+    <div class="card card-custom">
+        <div class="card-body text-center py-5">
+            <div style="width:64px;height:64px;border-radius:16px;background:var(--primary-100);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                <i class="fas fa-chalkboard-teacher" style="font-size:1.5rem;color:var(--primary-700);"></i>
             </div>
+            <h6 class="fw-semibold mb-1" style="color:var(--text-900);">Halaman Dalam Pengembangan</h6>
+            <p style="color:var(--text-600);font-size:0.875rem;">Halaman ini akan diisi dengan fungsi baru.</p>
         </div>
     </div>
 </div>

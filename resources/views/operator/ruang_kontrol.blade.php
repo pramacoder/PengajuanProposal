@@ -174,69 +174,110 @@
     {{-- Active Schedule Editor --}}
     <div class="card card-custom mb-4">
         <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Pengaturan Jadwal Aktif</h5>
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-sliders-h" style="color: var(--primary-700);"></i>
+                <span class="fw-bold" style="font-size:0.95rem;">Pengaturan Jadwal Aktif</span>
+            </div>
             @if($ruangKontrolAktif && is_object($ruangKontrolAktif) && isset($ruangKontrolAktif->is_active) && $ruangKontrolAktif->is_active)
-                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Aktif</span>
+                <span class="badge" style="background:rgba(5,150,105,0.12);color:#059669;border:1px solid rgba(5,150,105,0.25);font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:20px;">
+                    <i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:4px;"></i>Aktif
+                </span>
             @endif
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <form id="formUpdateRuangKontrol">
                 @csrf
                 @if(isset($ruangKontrolAktif->id_ruang_kontrol))
                     <input type="hidden" name="id_ruang_kontrol" value="{{ $ruangKontrolAktif->id_ruang_kontrol }}">
                 @endif
 
-                {{-- Phase selector --}}
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Fase Aktif Saat Ini</label>
-                        <select name="active_phase" id="activePhasePicker" class="form-select">
-                            <option value="" @selected(!$activePhase)>— Tidak ada fase aktif (semua tertutup) —</option>
-                            @foreach($phaseConfig as $phaseKey => $cfg)
-                                <option value="{{ $phaseKey }}" @selected($activePhase === $phaseKey)>
-                                    {{ $cfg['label'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Nama Jadwal</label>
-                        <input type="text" name="nama_history" class="form-control"
-                               value="{{ $ruangKontrolAktif->nama_history ?? '' }}" placeholder="Nama jadwal...">
+                {{-- Top meta row: fase aktif & nama jadwal --}}
+                <div class="px-4 py-3" style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold mb-1" style="font-size:0.8rem;color:var(--text-600);">FASE AKTIF SAAT INI</label>
+                            <select name="active_phase" id="activePhasePicker" class="form-select form-select-sm" style="border-color:var(--border);border-radius:8px;">
+                                <option value="" @selected(!$activePhase)>— Tidak ada fase aktif —</option>
+                                @foreach($phaseConfig as $phaseKey => $cfg)
+                                    <option value="{{ $phaseKey }}" @selected($activePhase === $phaseKey)>
+                                        {{ $cfg['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold mb-1" style="font-size:0.8rem;color:var(--text-600);">NAMA JADWAL</label>
+                            <input type="text" name="nama_history" class="form-control form-control-sm"
+                                   value="{{ $ruangKontrolAktif->nama_history ?? '' }}"
+                                   placeholder="Contoh: Jadwal PKM 2025/2026"
+                                   style="border-color:var(--border);border-radius:8px;">
+                        </div>
                     </div>
                 </div>
 
-                {{-- Date fields for all 4 phases --}}
-                @foreach($phaseConfig as $phaseKey => $cfg)
-                    <div class="card mb-3 border-start border-4 border-{{ $cfg['color'] }}">
-                        <div class="card-body py-3">
-                            <h6 class="fw-bold text-{{ $cfg['color'] }} mb-3">
-                                <i class="fas {{ $cfg['icon'] }} me-2"></i>{{ $cfg['label'] }}
-                            </h6>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small">Tanggal Mulai</label>
-                                    <input type="date" name="{{ $cfg['start_field'] }}" class="form-control"
-                                           value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))->format('Y-m-d') : '' }}">
+                {{-- Phase rows --}}
+                <div class="phase-list">
+                    @foreach($phaseConfig as $phaseKey => $cfg)
+                        @php
+                            $phaseNum = $loop->iteration;
+                            $phaseColors = ['maroon','teal','purple','green'];
+                            $dotColors = [
+                                'maroon' => ['bg' => 'rgba(143,11,19,0.1)', 'text' => '#8F0B13', 'border' => 'rgba(143,11,19,0.2)'],
+                                'teal'   => ['bg' => 'rgba(8,145,178,0.1)', 'text' => '#0891B2', 'border' => 'rgba(8,145,178,0.2)'],
+                                'purple' => ['bg' => 'rgba(124,58,237,0.1)', 'text' => '#7C3AED', 'border' => 'rgba(124,58,237,0.2)'],
+                                'green'  => ['bg' => 'rgba(5,150,105,0.1)', 'text' => '#059669', 'border' => 'rgba(5,150,105,0.2)'],
+                            ];
+                            $pc = $dotColors[$phaseColors[$loop->index]];
+                        @endphp
+                        <div class="phase-row px-4 py-3 {{ !$loop->last ? 'border-bottom' : '' }}" style="border-color: var(--border) !important;">
+                            <div class="row align-items-center g-3">
+                                {{-- Step number + label --}}
+                                <div class="col-md-4 d-flex align-items-center gap-3">
+                                    <div class="phase-step-num" style="
+                                        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+                                        background: {{ $pc['bg'] }}; border: 1px solid {{ $pc['border'] }};
+                                        display: flex; align-items: center; justify-content: center;
+                                        font-weight: 800; font-size: 0.85rem; color: {{ $pc['text'] }};
+                                    ">{{ $phaseNum }}</div>
+                                    <div>
+                                        <div class="fw-semibold" style="font-size:0.875rem;color:var(--text-900);line-height:1.3;">
+                                            <i class="fas {{ $cfg['icon'] }} me-1" style="color:{{ $pc['text'] }};font-size:0.8rem;"></i>
+                                            {{ $cfg['label'] }}
+                                        </div>
+                                        <div style="font-size:0.72rem;color:var(--text-400);margin-top:1px;">{{ $cfg['desc'] }}</div>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small">Tanggal Selesai</label>
-                                    <input type="date" name="{{ $cfg['end_field'] }}" class="form-control"
-                                           value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))->format('Y-m-d') : '' }}">
+                                {{-- Date fields --}}
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1" style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal Mulai</label>
+                                    <input type="date" name="{{ $cfg['start_field'] }}" class="form-control form-control-sm"
+                                           value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))->format('Y-m-d') : '' }}"
+                                           style="border-color:var(--border);border-radius:8px;">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1" style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal Selesai</label>
+                                    <input type="date" name="{{ $cfg['end_field'] }}" class="form-control form-control-sm"
+                                           value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))->format('Y-m-d') : '' }}"
+                                           style="border-color:var(--border);border-radius:8px;">
                                 </div>
                             </div>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
 
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary btn-lg" id="btnSimpan">
-                        <i class="fas fa-save me-2"></i>Simpan Pengaturan
+                {{-- Footer / Action --}}
+                <div class="px-4 py-3 d-flex justify-content-end" style="border-top: 1px solid var(--border); background: var(--surface-2);">
+                    <button type="submit" class="btn btn-sm fw-semibold d-flex align-items-center gap-2" id="btnSimpan"
+                            style="background:var(--primary-700);color:white;border-radius:8px;padding:0.5rem 1.25rem;border:none;box-shadow:0 2px 8px rgba(143,11,19,0.25);transition:all 0.2s ease;"
+                            onmouseover="this.style.background='var(--primary-900)'" onmouseout="this.style.background='var(--primary-700)'">
+                        <i class="fas fa-save" style="font-size:0.85rem;"></i>
+                        Simpan Pengaturan
                     </button>
                 </div>
             </form>
         </div>
     </div>
+
 
     {{-- Schedule List --}}
     <div class="card card-custom mb-4">

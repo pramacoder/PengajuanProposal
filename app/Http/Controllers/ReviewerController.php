@@ -238,13 +238,21 @@ class ReviewerController extends Controller
             }
             
             // Cek apakah reviewer ditugaskan untuk substantif review
-            $isSubstantif = $proposal->id_reviewer_substantif_1 == $reviewer->id || 
-                           $proposal->id_reviewer_substantif_2 == $reviewer->id;
-            
+            // Jika ?seleksi=1, cek reviewer seleksi; jika tidak, cek reviewer substantif biasa
+            $isSeleksiMode = request()->get('seleksi') == '1';
+            if ($isSeleksiMode) {
+                $isSubstantif = $proposal->id_reviewer_substantif_seleksi_1 == $reviewer->id ||
+                               $proposal->id_reviewer_substantif_seleksi_2 == $reviewer->id;
+            } else {
+                $isSubstantif = $proposal->id_reviewer_substantif_1 == $reviewer->id ||
+                               $proposal->id_reviewer_substantif_2 == $reviewer->id;
+            }
             if (!$isSubstantif) {
-                \Log::warning('Reviewer not assigned for substantif review', [
+                \Log::warning('Reviewer not assigned for substantif review (seleksi mode: ' . ($isSeleksiMode ? 'yes' : 'no') . ')', [
                     'reviewer_id' => $reviewer->id,
-                    'proposal_id' => $id
+                    'proposal_id' => $id,
+                    'seleksi_1' => $proposal->id_reviewer_substantif_seleksi_1,
+                    'seleksi_2' => $proposal->id_reviewer_substantif_seleksi_2,
                 ]);
                 abort(403, 'Anda tidak ditugaskan untuk review substantif proposal ini');
             }

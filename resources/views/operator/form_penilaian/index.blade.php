@@ -1,6 +1,6 @@
 @extends('operator.layout')
 
-@section('title', 'Form Penilaian')
+@section('title', 'Manajemen Form Penilaian')
 
 @section('content')
 <div class="container-fluid">
@@ -9,116 +9,159 @@
         ['label' => 'Form Penilaian', 'active' => true],
     ]" />
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">
-            <i class="fas fa-file-alt me-2"></i>Form Penilaian
-        </h4>
-        <a href="{{ route('operator.form.penilaian.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>Tambah Form
+    {{-- Header --}}
+    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="h4 fw-bold mb-1" style="color:var(--text-900);">Manajemen Form Penilaian</h1>
+            <p class="mb-0" style="color:var(--text-600);font-size:0.9rem;">Kelola form penilaian dinamis untuk reviewer — administratif, substantif, dan semi final</p>
+        </div>
+        <a href="{{ route('operator.form.penilaian.create') }}"
+           class="btn fw-semibold text-white"
+           style="background:linear-gradient(135deg,var(--primary-900),var(--primary-700));border-radius:10px;padding:0.5rem 1.25rem;font-size:0.875rem;box-shadow:0 4px 12px rgba(143,11,19,0.25);">
+            <i class="fas fa-plus me-2"></i>Buat Form Baru
         </a>
     </div>
 
-    <!-- Filters -->
+    {{-- Filters --}}
     <div class="card card-custom mb-4">
-        <div class="card-body">
-            <form method="GET" action="{{ route('operator.form.penilaian.index') }}" class="row g-3">
+        <div class="card-body py-3">
+            <form method="GET" action="{{ route('operator.form.penilaian.index') }}" class="row g-3 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label">Jenis Form</label>
-                    <select name="jenis_form" class="form-select">
-                        <option value="">-- Semua --</option>
-                        <option value="administratif" {{ request('jenis_form') === 'administratif' ? 'selected' : '' }}>Administratif</option>
-                        <option value="substantif" {{ request('jenis_form') === 'substantif' ? 'selected' : '' }}>Substantif</option>
-                        <option value="substantif_seleksi" {{ request('jenis_form') === 'substantif_seleksi' ? 'selected' : '' }}>Substantif Seleksi</option>
-                        <option value="semi_final" {{ request('jenis_form') === 'semi_final' ? 'selected' : '' }}>Semi Final</option>
-                        <option value="final" {{ request('jenis_form') === 'final' ? 'selected' : '' }}>Final</option>
+                    <label class="form-label fw-semibold" style="font-size:0.8rem;color:var(--text-600);">Jenis Form</label>
+                    <select name="jenis_form" class="form-select form-select-sm" style="border-radius:8px;border-color:var(--border);">
+                        <option value="">— Semua —</option>
+                        @foreach(['administratif'=>'Administratif','substantif'=>'Substantif','substantif_seleksi'=>'Substantif Seleksi','semi_final'=>'Semi Final','final'=>'Final'] as $val=>$label)
+                            <option value="{{ $val }}" {{ request('jenis_form')===$val?'selected':'' }}>{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Skim</label>
-                    <select name="skim" class="form-select">
-                        <option value="">-- Semua --</option>
-                        <option value="RE" {{ request('skim') === 'RE' ? 'selected' : '' }}>RE</option>
-                        <option value="RSH" {{ request('skim') === 'RSH' ? 'selected' : '' }}>RSH</option>
-                        <option value="KC" {{ request('skim') === 'KC' ? 'selected' : '' }}>KC</option>
-                        <option value="PM" {{ request('skim') === 'PM' ? 'selected' : '' }}>PM</option>
-                        <option value="PI" {{ request('skim') === 'PI' ? 'selected' : '' }}>PI</option>
-                        <option value="PK" {{ request('skim') === 'PK' ? 'selected' : '' }}>PK</option>
-                        <option value="GT" {{ request('skim') === 'GT' ? 'selected' : '' }}>GT</option>
-                        <option value="GFK" {{ request('skim') === 'GFK' ? 'selected' : '' }}>GFK</option>
-                        <option value="VGK" {{ request('skim') === 'VGK' ? 'selected' : '' }}>VGK</option>
-                        <option value="KI" {{ request('skim') === 'KI' ? 'selected' : '' }}>KI</option>
+                    <label class="form-label fw-semibold" style="font-size:0.8rem;color:var(--text-600);">Skim</label>
+                    <select name="skim" class="form-select form-select-sm" style="border-radius:8px;border-color:var(--border);">
+                        <option value="">— Semua —</option>
+                        @foreach(['RE','RSH','KC','PM','PI','K','KI','VGK','AI','GFT'] as $s)
+                            <option value="{{ $s }}" {{ request('skim')===$s?'selected':'' }}>{{ $s }}</option>
+                        @endforeach
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-outline-primary me-2">
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm fw-semibold" style="background:var(--primary-100);color:var(--primary-700);border-radius:8px;padding:0.45rem 1rem;">
                         <i class="fas fa-filter me-1"></i>Filter
                     </button>
-                    <a href="{{ route('operator.form.penilaian.index') }}" class="btn btn-outline-secondary">Reset</a>
+                    <a href="{{ route('operator.form.penilaian.index') }}" class="btn btn-sm" style="border:1px solid var(--border);border-radius:8px;padding:0.45rem 1rem;color:var(--text-600);">Reset</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Table -->
+    {{-- Table --}}
     <div class="card card-custom">
         <div class="card-header card-header-custom">
-            <h5 class="mb-0">
-                <i class="fas fa-list me-2"></i>Daftar Form Penilaian
-            </h5>
+            <i class="fas fa-list-alt"></i>
+            <span>Daftar Form Penilaian</span>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-dark">
+                <table class="table table-hover align-middle mb-0" style="font-size:0.875rem;">
+                    <thead style="background:var(--surface-2);border-bottom:1px solid var(--border);">
                         <tr>
-                            <th>No</th>
-                            <th>Nama Form</th>
-                            <th>Jenis Form</th>
-                            <th>Skim</th>
-                            <th>Tahun Ajaran</th>
-                            <th>Status</th>
-                            <th>Dibuat Oleh</th>
-                            <th>Aksi</th>
+                            <th class="px-4 py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">No</th>
+                            <th class="py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Nama Form</th>
+                            <th class="py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Penempatan</th>
+                            <th class="py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Skim</th>
+                            <th class="py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Tahun Ajaran</th>
+                            <th class="py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Fields</th>
+                            <th class="py-3 fw-bold" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Status</th>
+                            <th class="py-3 fw-bold text-center" style="color:rgba(255,255,255,0.92);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($formPenilaians as $index => $form)
-                        <tr>
-                            <td>{{ $formPenilaians->firstItem() + $index }}</td>
-                            <td>{{ $form->nama_form }}</td>
-                            <td><span class="badge bg-secondary">{{ $form->jenis_form }}</span></td>
-                            <td>{{ $form->skim ?? '-' }}</td>
-                            <td>{{ $form->tahun_ajaran ?? '-' }}</td>
-                            <td>
-                                @if($form->is_active)
-                                    <span class="badge bg-success">Active</span>
-                                @else
-                                    <span class="badge bg-secondary">Inactive</span>
+                        @php
+                            $jenisLabels = [
+                                'administratif'      => ['Administratif',     '#0891B2', 'rgba(8,145,178,0.1)'],
+                                'substantif'         => ['Substantif',        '#7C3AED', 'rgba(124,58,237,0.1)'],
+                                'substantif_seleksi' => ['Substantif Seleksi','#D97706', 'rgba(245,158,11,0.1)'],
+                                'semi_final'         => ['Semi Final',        '#059669', 'rgba(5,150,105,0.1)'],
+                                'final'              => ['Final',             '#DC2626', 'rgba(220,38,38,0.1)'],
+                            ];
+                            [$jLabel, $jColor, $jBg] = $jenisLabels[$form->jenis_form] ?? [$form->jenis_form, '#6B7280', 'rgba(107,114,128,0.1)'];
+                            $fieldCount = is_array($form->fields) ? count($form->fields) : 0;
+                        @endphp
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td class="px-4 py-3" style="color:var(--text-400);">{{ $formPenilaians->firstItem() + $index }}</td>
+                            <td class="py-3">
+                                <div class="fw-semibold" style="color:var(--text-900);">{{ $form->nama_form }}</div>
+                                @if($form->creator)
+                                    <div style="font-size:0.75rem;color:var(--text-400);">{{ $form->creator->name }}</div>
                                 @endif
                             </td>
-                            <td>{{ $form->creator->name ?? '-' }}</td>
-                            <td>
-                                <a href="{{ route('operator.form.penilaian.edit', $form->id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('operator.form.penilaian.destroy', $form->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin menghapus form ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
+                            <td class="py-3">
+                                <span class="badge rounded-pill fw-semibold" style="background:{{ $jBg }};color:{{ $jColor }};font-size:0.72rem;padding:0.3rem 0.7rem;">
+                                    {{ $jLabel }}
+                                </span>
+                            </td>
+                            <td class="py-3">
+                                @if($form->skim)
+                                    <span class="badge rounded-pill" style="background:rgba(8,145,178,0.1);color:#0891B2;font-size:0.72rem;padding:0.3rem 0.65rem;">{{ $form->skim }}</span>
+                                @else
+                                    <span style="color:var(--text-400);font-size:0.82rem;">Semua Skim</span>
+                                @endif
+                            </td>
+                            <td class="py-3" style="color:var(--text-600);font-size:0.82rem;">{{ $form->tahun_ajaran ?? '—' }}</td>
+                            <td class="py-3">
+                                <span class="fw-semibold" style="color:var(--text-900);">{{ $fieldCount }}</span>
+                                <span style="color:var(--text-400);font-size:0.78rem;"> field</span>
+                            </td>
+                            <td class="py-3">
+                                @if($form->is_active)
+                                    <span class="badge rounded-pill" style="background:rgba(5,150,105,0.1);color:#059669;font-size:0.72rem;padding:0.3rem 0.7rem;">
+                                        <i class="fas fa-circle" style="font-size:0.45rem;vertical-align:middle;margin-right:3px;"></i>Aktif
+                                    </span>
+                                @else
+                                    <span class="badge rounded-pill" style="background:rgba(107,114,128,0.1);color:#6B7280;font-size:0.72rem;padding:0.3rem 0.7rem;">
+                                        <i class="fas fa-circle" style="font-size:0.45rem;vertical-align:middle;margin-right:3px;"></i>Nonaktif
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="py-3 text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a href="{{ route('operator.form.penilaian.edit', $form->id) }}"
+                                       class="btn btn-sm fw-semibold"
+                                       style="background:var(--primary-100);color:var(--primary-700);border-radius:8px;padding:0.3rem 0.85rem;font-size:0.8rem;"
+                                       title="Edit">
+                                        <i class="fas fa-edit me-1"></i>Edit
+                                    </a>
+                                    <form action="{{ route('operator.form.penilaian.destroy', $form->id) }}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Yakin ingin menghapus form \'{{ $form->nama_form }}\'?');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm fw-semibold"
+                                                style="background:rgba(220,38,38,0.08);color:#DC2626;border-radius:8px;padding:0.3rem 0.85rem;font-size:0.8rem;"
+                                                title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-4">Belum ada data form penilaian.</td>
+                            <td colspan="8" class="text-center py-5">
+                                <div style="width:56px;height:56px;border-radius:14px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                                    <i class="fas fa-file-alt" style="font-size:1.4rem;color:var(--text-400);"></i>
+                                </div>
+                                <div class="fw-semibold mb-1" style="color:var(--text-900);">Belum Ada Form</div>
+                                <p style="color:var(--text-600);font-size:0.875rem;">Buat form penilaian pertama untuk digunakan reviewer.</p>
+                                <a href="{{ route('operator.form.penilaian.create') }}" class="btn btn-sm fw-semibold text-white" style="background:var(--primary-700);border-radius:8px;">
+                                    <i class="fas fa-plus me-1"></i>Buat Form
+                                </a>
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="d-flex justify-content-center mt-3">
+            <div class="d-flex justify-content-center py-3">
                 {{ $formPenilaians->withQueryString()->links() }}
             </div>
         </div>

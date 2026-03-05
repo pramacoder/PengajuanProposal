@@ -10,195 +10,244 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #8b3a3a;
-            --primary-dark: #6d2d2d;
-            --sidebar-width: 280px;
-            --navbar-height: 70px;
+            --primary-900: #380F17;
+            --primary-700: #8F0B13;
+            --primary-100: rgba(143,11,19,0.08);
+            --bg-soft: #EDEBDD;
+            --surface: #FFFFFF;
+            --surface-2: #F7F4EF;
+            --text-900: #252B2B;
+            --text-600: #4C4F54;
+            --text-400: #9CA3AF;
+            --border: #E2E0D9;
+            --border-dark: #D4D0C8;
+            --shadow-sm: 0 1px 4px rgba(56,15,23,0.06);
+            --shadow: 0 2px 12px rgba(56,15,23,0.08);
+            --shadow-md: 0 4px 20px rgba(56,15,23,0.12);
+            --shadow-lg: 0 8px 32px rgba(56,15,23,0.16);
+            /* Legacy */
+            --primary-color: #8F0B13;
+            --primary-dark: #380F17;
+            --sidebar-width: 270px;
+            --navbar-height: 64px;
         }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-soft);
             margin: 0;
             padding-top: var(--navbar-height);
+            color: var(--text-900);
+            -webkit-font-smoothing: antialiased;
         }
-
-        /* Navbar Styles */
+        /* ====== NAVBAR ====== */
         .navbar-custom {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            background: var(--primary-900);
             color: white;
-            padding: 0.75rem 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            padding: 0 1.25rem;
+            box-shadow: 0 2px 12px rgba(56,15,23,0.18);
             height: var(--navbar-height);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
-
         .navbar-brand {
             color: white !important;
-            font-weight: bold;
-            font-size: 1.5rem;
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-
+        .navbar-brand i {
+            background: rgba(255,255,255,0.15);
+            width: 34px; height: 34px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
         .navbar-nav .nav-link {
-            color: white !important;
-            margin: 0 0.5rem;
-            transition: all 0.3s ease;
+            color: rgba(255,255,255,0.85) !important;
+            margin: 0 0.25rem;
+            transition: all 0.2s ease;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
         }
-
         .navbar-nav .nav-link:hover {
-            color: #f8f9fa !important;
-            transform: translateY(-1px);
+            color: white !important;
+            background: rgba(255,255,255,0.12);
         }
-
-        /* Sidebar Styles */
+        /* ====== SIDEBAR ====== */
         .sidebar {
             position: fixed;
             top: var(--navbar-height);
             left: 0;
             width: var(--sidebar-width);
             height: calc(100vh - var(--navbar-height));
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            padding: 1.5rem 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1rem 0 2rem;
             overflow-y: auto;
+            overflow-x: hidden;
             transition: transform 0.3s ease;
             z-index: 1000;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 16px rgba(56,15,23,0.06);
         }
-
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
         .sidebar-title {
-            color: white;
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin-bottom: 2rem;
-            padding: 0 1rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
         }
-
+        .sidebar-brand-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            background: var(--primary-900);
+            color: white;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
         .sidebar-menu {
             list-style: none;
-            padding: 0;
+            padding: 0 0.75rem;
             margin: 0;
+            padding-bottom: 2rem;
         }
-
-        .sidebar-menu > li {
-            margin-bottom: 0.5rem;
-        }
-
+        .sidebar-menu > li { margin-bottom: 2px; list-style: none; }
+        .sidebar-menu > li::marker { display: none; }
+        .sidebar-menu li { list-style: none; }
+        .sidebar-menu li::marker { display: none; }
         .sidebar-menu a {
-            display: block;
-            color: white;
+            display: flex;
+            align-items: center;
+            color: var(--text-600);
             text-decoration: none;
-            padding: 0.75rem 1.5rem;
-            transition: all 0.3s ease;
-            border-radius: 0 25px 25px 0;
-            margin-right: 1rem;
+            padding: 0.6rem 0.875rem;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            gap: 0.6rem;
         }
-
-        .sidebar-menu a:hover,
+        .sidebar-menu a i {
+            width: 18px; text-align: center; font-size: 0.9rem;
+            flex-shrink: 0; color: var(--text-400); transition: color 0.2s ease;
+        }
+        .sidebar-menu a:hover { background: var(--primary-100); color: var(--primary-700); }
+        .sidebar-menu a:hover i { color: var(--primary-700); }
         .sidebar-menu a.active {
-            background-color: rgba(255,255,255,0.15);
-            border-right: 3px solid white;
-            transform: translateX(5px);
+            background: var(--primary-900);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(56,15,23,0.2);
         }
-
+        .sidebar-menu a.active i { color: rgba(255,255,255,0.85); }
         .sidebar-menu .submenu {
             list-style: none;
-            padding: 0;
-            margin: 0;
+            padding: 0 0 0 0.5rem;
+            margin: 2px 0 0;
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
         }
-
-        .sidebar-menu .submenu.show {
-            max-height: 300px;
-        }
-
+        .sidebar-menu .submenu.show { max-height: 500px; }
+        .sidebar-menu .submenu li { list-style: none; }
         .sidebar-menu .submenu a {
-            padding-left: 2.5rem;
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-right: 1.5rem;
+            padding: 0.5rem 0.875rem 0.5rem 2.2rem;
+            font-size: 0.84rem;
+            border-left: 2px solid var(--border);
+            border-radius: 0 7px 7px 0;
+            margin-left: 0.5rem;
         }
-
-        .sidebar-menu .submenu a:hover {
-            opacity: 1;
-            background-color: rgba(255,255,255,0.1);
+        .sidebar-menu .submenu a:hover { border-left-color: var(--primary-700); }
+        .sidebar-menu .submenu a.active {
+            background: rgba(143,11,19,0.1);
+            color: var(--primary-700);
+            font-weight: 700;
+            border-left-color: var(--primary-700);
+            box-shadow: none;
         }
-
-        /* Main Content Styles */
+        .menu-toggle { display: flex; align-items: center; justify-content: space-between; }
+        .menu-toggle .fa-chevron-down { transition: transform 0.25s ease; font-size: 0.7rem; color: var(--text-400); margin-left: auto; }
+        .menu-toggle.active .fa-chevron-down { transform: rotate(180deg); }
+        .sidebar-menu .menu-toggle.active { background: var(--primary-100); color: var(--primary-700); }
+        .sidebar-menu .menu-toggle.active i { color: var(--primary-700); }
+        /* ====== MAIN CONTENT ====== */
         .main-content {
             margin-left: var(--sidebar-width);
-            padding: 2rem;
+            padding: 1.75rem 2rem;
             min-height: calc(100vh - var(--navbar-height));
             transition: margin-left 0.3s ease;
         }
-
-        /* Card Styles */
+        /* ====== CARDS ====== */
         .card-custom {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s ease;
+            overflow: hidden;
         }
-
-        .card-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-
+        .card-custom:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
         .card-header-custom {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            color: white;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 1rem 1.5rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-900);
+            border-radius: 14px 14px 0 0 !important;
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-
-        /* Responsive Styles */
+        .card-header-custom i, .card-header-custom h5 i { color: var(--primary-700); }
+        /* ====== RESPONSIVE ====== */
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-                padding: 1rem;
-            }
-            
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); box-shadow: 4px 0 24px rgba(56,15,23,0.15); }
+            .main-content { margin-left: 0; padding: 1rem; }
             .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.5);
-                z-index: 999;
-                display: none;
+                position: fixed; top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: rgba(56,15,23,0.4);
+                z-index: 999; display: none;
             }
-            
-            .sidebar-overlay.show {
-                display: block;
-            }
+            .sidebar-overlay.show { display: block; }
         }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            z-index: 9999;
-        }
-
+        .toast-container { position: fixed; top: 80px; right: 1.25rem; z-index: 9999; }
         .toast-custom {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-left: 4px solid var(--primary-color);
+            background: var(--surface); border-radius: 10px;
+            box-shadow: var(--shadow-lg); border-left: 4px solid var(--primary-700);
         }
+        /* User profile dropdown */
+        .user-profile-dropdown {
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            border-radius: 12px;
+            padding: 0;
+        }
+        .profile-menu-item {
+            padding: 0.6rem 0.875rem;
+            transition: all 0.2s ease;
+            border-radius: 7px;
+            margin: 0 0.375rem;
+            color: var(--text-900);
+            font-size: 0.875rem;
+        }
+        .profile-menu-item:hover { background: var(--surface-2); color: var(--primary-700); }
+        .profile-menu-item i { width: 18px; text-align: center; margin-right: 0.625rem; color: var(--primary-700); }
+        .user-name { font-weight: 700; color: var(--text-900); font-size: 0.9rem; }
+        .user-info { color: var(--text-600); font-size: 0.78rem; }
+        .user-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: white; flex-shrink: 0;
+        }
+        .user-avatar.primary { background: var(--primary-700); }
+        .user-avatar.success { background: #059669; }
+        .user-avatar.info { background: #0891B2; }
     </style>
     @yield('styles')
 </head>
@@ -212,8 +261,8 @@
             </button>
             
             <a class="navbar-brand" href="#">
-                <i class="fas fa-cogs me-2"></i>
-                OPERATOR
+                <i class="fas fa-cogs"></i>
+                <span>Operator Panel</span>
             </a>
             
             <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
@@ -247,6 +296,12 @@
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
+        <div class="sidebar-title">
+            <div class="sidebar-brand-inner">
+                <i class="fas fa-cogs"></i>
+                <span>Operator Panel</span>
+            </div>
+        </div>
         
         <ul class="sidebar-menu">
             <li>

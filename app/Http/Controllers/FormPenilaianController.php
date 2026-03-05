@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Log;
 
 class FormPenilaianController extends Controller
 {
-    public function __construct(
-        private FormPenilaianConfigRepository $configRepo,
-        private FirebaseService $firebaseService
-    ) {}
+    public function __construct(private
+        FormPenilaianConfigRepository $configRepo, private
+        FirebaseService $firebaseService
+        )
+    {
+    }
 
     public function index(Request $request)
     {
@@ -43,11 +45,15 @@ class FormPenilaianController extends Controller
             'skim' => 'nullable|string|max:10',
             'tahun_ajaran' => 'nullable|string|max:20',
             'config' => 'nullable|json',
+            'fields' => 'nullable|string', // JSON string from field builder
             'is_active' => 'boolean',
         ]);
 
         $validated['created_by'] = auth()->id();
-        $validated['config'] = $validated['config'] ? json_decode($validated['config'], true) : null;
+        $validated['config'] = isset($validated['config']) && $validated['config']
+            ? json_decode($validated['config'], true) : null;
+        $validated['fields'] = isset($validated['fields']) && $validated['fields']
+            ? json_decode($validated['fields'], true) : null;
         $validated['is_active'] = $request->boolean('is_active', true);
 
         $form = FormPenilaian::create($validated);
@@ -60,14 +66,17 @@ class FormPenilaianController extends Controller
                     'jenis_form' => $form->jenis_form,
                     'skim' => $form->skim,
                     'config' => $form->config,
+                    'fields' => $form->fields,
                     'tahun_ajaran' => $form->tahun_ajaran,
                 ]);
             }
-        } catch (\Throwable $e) {
+        }
+        catch (\Throwable $e) {
             Log::warning('Firestore form penilaian config sync failed', ['error' => $e->getMessage()]);
         }
 
-        return redirect()->route('operator.form.penilaian.index')->with('success', 'Form penilaian berhasil dibuat.');
+        return redirect()->route('operator.form.penilaian.index')
+            ->with('success', 'Form penilaian berhasil dibuat.');
     }
 
     public function edit($id)
@@ -86,15 +95,37 @@ class FormPenilaianController extends Controller
             'skim' => 'nullable|string|max:10',
             'tahun_ajaran' => 'nullable|string|max:20',
             'config' => 'nullable|json',
+            'fields' => 'nullable|string', // JSON string from field builder
             'is_active' => 'boolean',
         ]);
 
-        $validated['config'] = $validated['config'] ? json_decode($validated['config'], true) : null;
+        $validated['config'] = isset($validated['config']) && $validated['config']
+            ? json_decode($validated['config'], true) : null;
+        $validated['fields'] = isset($validated['fields']) && $validated['fields']
+            ? json_decode($validated['fields'], true) : null;
         $validated['is_active'] = $request->boolean('is_active', true);
 
         $form->update($validated);
 
-        return redirect()->route('operator.form.penilaian.index')->with('success', 'Form penilaian berhasil diperbarui.');
+        // Sync to Firestore
+        try {
+            if ($this->firebaseService->isAvailable()) {
+                $this->configRepo->createConfig($form->id, [
+                    'nama_form' => $form->nama_form,
+                    'jenis_form' => $form->jenis_form,
+                    'skim' => $form->skim,
+                    'config' => $form->config,
+                    'fields' => $form->fields,
+                    'tahun_ajaran' => $form->tahun_ajaran,
+                ]);
+            }
+        }
+        catch (\Throwable $e) {
+            Log::warning('Firestore form penilaian update sync failed', ['error' => $e->getMessage()]);
+        }
+
+        return redirect()->route('operator.form.penilaian.index')
+            ->with('success', 'Form penilaian berhasil diperbarui.');
     }
 
     public function destroy($id)
@@ -102,6 +133,22 @@ class FormPenilaianController extends Controller
         $form = FormPenilaian::findOrFail($id);
         $form->delete();
 
-        return redirect()->route('operator.form.penilaian.index')->with('success', 'Form penilaian berhasil dihapus.');
+        return redirect()->route('operator.form.penilaian.index')
+            ->with('success', 'Form penilaian berhasil dihapus.');
+    }
+
+    /**
+     * Get the active form definition for a given placement and skim.
+     * Used by reviewer views to render dynamic fields.
+     */
+    public static function getActiveForm(string $jenisForm, ?string $skim = null): ?FormPenilaian
+    {
+        return FormPenilaian::where('jenis_form', $jenisForm)
+            ->where('is_active', true)
+            ->where(function ($q) use ($skim) {
+            $q->where('skim', $skim)->orWhereNull('skim');
+        })
+            ->orderByRaw("CASE WHEN skim = ? THEN 0 ELSE 1 END", [$skim ?? ''])
+            ->first();
     }
 }

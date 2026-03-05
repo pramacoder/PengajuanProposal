@@ -8,10 +8,15 @@
         ['label' => 'Beranda', 'active' => true],
     ]" />
 
-    <!-- Header Section -->
-    <x-page-header 
-        title="BERANDA" 
-        subtitle="UNIVERSITAS UDAYANA" />
+    {{-- Welcome Header --}}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h4 fw-bold mb-1" style="color: var(--text-900);">
+                Selamat datang, <span style="color: var(--primary-700);">{{ \App\Helpers\UserHelper::getCurrentUserName() }}</span> 👋
+            </h1>
+            <p class="mb-0" style="color: var(--text-600); font-size: 0.9rem;">Dashboard Operator PKM — Kelola proposal dan reviewer</p>
+        </div>
+    </div>
 
     <!-- Tahun Ajaran Selector -->
     <div class="row mb-4">
@@ -95,37 +100,38 @@
         </div>
     </div>
     
-    <!-- Summary Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h4 class="fw-bold mb-3">RINGKASAN</h4>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card card-custom">
-                        <div class="card-body text-center">
-                            <h5 class="card-title text-primary">Jumlah Total</h5>
-                            <h2 class="display-4 fw-bold text-primary">@formatId($totalKeseluruhan + $totalInsentif)</h2>
-                            <p class="text-muted">Total Semua Proposal PKM</p>
-                        </div>
-                    </div>
+    {{-- Summary Stat Cards --}}
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-card-icon maroon">
+                    <i class="fas fa-file-alt"></i>
                 </div>
-                <div class="col-md-4">
-                    <div class="card card-custom">
-                        <div class="card-body text-center">
-                            <h5 class="card-title text-success">Jumlah PKM-8 Bidang</h5>
-                            <h2 class="display-4 fw-bold text-success">@formatId($totalKeseluruhan)</h2>
-                            <p class="text-muted">Proposal yang Memerlukan Dana</p>
-                        </div>
-                    </div>
+                <div class="stat-card-info">
+                    <div class="stat-label">Total Semua Proposal</div>
+                    <div class="stat-value">@formatId($totalKeseluruhan + $totalInsentif)</div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card card-custom">
-                        <div class="card-body text-center">
-                            <h5 class="card-title text-info">Jumlah PKM Insentif</h5>
-                            <h2 class="display-4 fw-bold text-info">@formatId($totalInsentif)</h2>
-                            <p class="text-muted">Proposal Insentif</p>
-                        </div>
-                    </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-card-icon teal">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="stat-card-info">
+                    <div class="stat-label">PKM-8 Bidang</div>
+                    <div class="stat-value">@formatId($totalKeseluruhan)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-card-icon purple">
+                    <i class="fas fa-gift"></i>
+                </div>
+                <div class="stat-card-info">
+                    <div class="stat-label">PKM Insentif</div>
+                    <div class="stat-value">@formatId($totalInsentif)</div>
                 </div>
             </div>
         </div>

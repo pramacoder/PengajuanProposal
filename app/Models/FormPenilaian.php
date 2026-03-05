@@ -16,6 +16,7 @@ class FormPenilaian extends Model
         'jenis_form',
         'skim',
         'config',
+        'fields', // Added
         'is_active',
         'tahun_ajaran',
         'mongo_config_id',
@@ -24,12 +25,13 @@ class FormPenilaian extends Model
 
     protected $casts = [
         'config' => 'array',
+        'fields' => 'array', // Added
         'is_active' => 'boolean',
     ];
 
     public function creator()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class , 'created_by');
     }
 
     public function scopeActive($query)

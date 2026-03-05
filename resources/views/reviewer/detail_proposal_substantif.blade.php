@@ -527,7 +527,11 @@
                         @php
                             // Debug: Cek apakah $criteria ter-pass dari controller
                             $criteriaItems = $criteria ?? [];
-                            $existingReview = $proposal->nilaiSubstantif->where('id_reviewer', auth()->user()->id_reviewer)->first();
+                            $isSeleksiView = request('seleksi') == '1';
+                            $existingReview = $proposal->nilaiSubstantif
+                                ->where('id_reviewer', auth()->id())
+                                ->where('jenis_review', $isSeleksiView ? 'seleksi' : 'pertama')
+                                ->first();
                             
                             // Ambil total_nilai dan nilai_akhir dari database jika ada
                             $existingTotalNilai = $existingReview ? ($existingReview->total_nilai ?? 0) : 0;
@@ -758,6 +762,13 @@
                                 </div>
                             @endif
                         </div>
+
+                        {{-- Dynamic Fields from FormPenilaian (operator) --}}
+                        @include('reviewer.partials.dynamic_fields', [
+                            'dynamicForm'    => $dynamicForm ?? null,
+                            'existingAnswers' => $existingReview->extra_fields ?? [],
+                            'inputPrefix'    => 'extra_fields',
+                        ])
 
                         <!-- Catatan Review Substantif -->
                         <div class="mb-3">

@@ -599,6 +599,13 @@
                             <div class="form-text text-danger" id="serverErrorKesalahan" style="display: none;"></div>
                         </div>
 
+                        {{-- Dynamic Fields from FormPenilaian (operator) --}}
+                        @include('reviewer.partials.dynamic_fields', [
+                            'dynamicForm'    => $dynamicForm ?? null,
+                            'existingAnswers' => $existingReview->extra_fields ?? [],
+                            'inputPrefix'    => 'extra_fields',
+                        ])
+
                         <!-- Catatan Review -->
                         <div class="mb-3">
                             <label for="catatan" class="form-label fw-bold">Catatan Review <span class="text-danger">*</span></label>
