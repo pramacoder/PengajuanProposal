@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('message');
             $table->string('type', 50)->default('info');
-            $table->jsonb('data')->nullable();
+            $table->json('data')->nullable();
             $table->bigInteger('proposal_id')->nullable();
             $table->timestamp('read_at')->nullable();
             $table->timestamps();

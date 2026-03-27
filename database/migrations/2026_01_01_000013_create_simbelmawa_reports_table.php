@@ -16,9 +16,9 @@ return new class extends Migration
             $table->integer('jumlah_proposal_dapat_pendanaan')->default(0);
             $table->decimal('total_dana_pendanaan', 15, 2)->default(0);
             $table->integer('jumlah_proposal_lolos_pimnas')->default(0);
-            $table->jsonb('judul_proposal_lolos_pimnas')->nullable();
+            $table->json('judul_proposal_lolos_pimnas')->nullable();
             $table->integer('jumlah_prestasi')->default(0);
-            $table->jsonb('prestasi')->nullable();
+            $table->json('prestasi')->nullable();
             $table->string('mongo_report_id')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();

@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('status_final', 50);
             $table->text('catatan_final')->nullable();
             $table->decimal('nilai', 5, 2)->nullable();
-            $table->jsonb('skor_per_kriteria')->nullable();
+            $table->json('skor_per_kriteria')->nullable();
             $table->decimal('dana_yang_dapat_diberikan', 15, 2)->nullable();
             $table->foreignId('id_dosen_pendamping_universitas')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('id_proposal')->constrained('proposals', 'id_proposal')->onDelete('cascade');

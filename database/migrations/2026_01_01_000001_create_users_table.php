@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('role', 50);
             $table->string('phone', 20)->nullable();
             $table->boolean('is_active')->default(true);
-            $table->jsonb('metadata')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

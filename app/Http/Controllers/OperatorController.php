@@ -39,13 +39,14 @@ class OperatorController extends Controller
         // Ambil daftar tahun ajaran yang tersedia dari proposal
         $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
             ->whereRaw("tahun_ajaran LIKE '%/%'")
-            ->select('tahun_ajaran')
-            ->groupBy('tahun_ajaran')
-            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->pluck('tahun_ajaran')
             ->filter(function($item) {
-                return strpos($item, '/') !== false && 
+                return strpos($item, '/') !== false &&
                        count(explode('/', $item)) === 2;
+            })
+            ->unique()
+            ->sortByDesc(function($item) {
+                return (int) explode('/', $item)[0];
             })
             ->values();
         
@@ -524,13 +525,16 @@ class OperatorController extends Controller
         // Ambil semua history untuk dropdown (hanya format tahun akademik YYYY/YYYY)
         $histories = RuangKontrol::whereNotNull('tahun_ajaran')
             ->whereRaw("tahun_ajaran LIKE '%/%'") // Hanya format YYYY/YYYY
-            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(function($item) {
                 // Double check: pastikan format benar (mengandung slash dan memiliki 2 bagian)
-                return strpos($item->tahun_ajaran, '/') !== false && 
+                return strpos($item->tahun_ajaran, '/') !== false &&
                        count(explode('/', $item->tahun_ajaran)) === 2;
+            })
+            ->sortByDesc(function($item) {
+                // Sort by tahun pertama (YYYY/YYYY → ambil bagian kiri), PHP-side agar SQLite-compatible
+                return (int) explode('/', $item->tahun_ajaran)[0];
             })
             ->groupBy('tahun_ajaran');
         
@@ -2351,12 +2355,13 @@ class OperatorController extends Controller
         // Ambil 3 tahun ajaran terakhir untuk chart
         $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
             ->whereRaw("tahun_ajaran LIKE '%/%'")
-            ->select('tahun_ajaran')
-            ->groupBy('tahun_ajaran')
-            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->pluck('tahun_ajaran')
             ->filter(function($item) {
                 return strpos($item, '/') !== false && count(explode('/', $item)) === 2;
+            })
+            ->unique()
+            ->sortByDesc(function($item) {
+                return (int) explode('/', $item)[0];
             })
             ->take(3)
             ->values();

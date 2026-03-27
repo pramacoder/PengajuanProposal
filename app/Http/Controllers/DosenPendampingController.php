@@ -39,13 +39,14 @@ class DosenPendampingController extends Controller
         $tahunAjaranList = $dosen->proposalsDosen()
             ->whereNotNull('tahun_ajaran')
             ->whereRaw("tahun_ajaran LIKE '%/%'")
-            ->select('tahun_ajaran')
-            ->groupBy('tahun_ajaran')
-            ->orderByRaw("CAST(SPLIT_PART(tahun_ajaran, '/', 1) AS INTEGER) DESC")
             ->pluck('tahun_ajaran')
             ->filter(function($item) {
                 return strpos($item, '/') !== false &&
                        count(explode('/', $item)) === 2;
+            })
+            ->unique()
+            ->sortByDesc(function($item) {
+                return (int) explode('/', $item)[0];
             })
             ->values();
 
@@ -188,26 +189,7 @@ class DosenPendampingController extends Controller
         ]);
 
         if ($tahunAjaranTerpilih) {
-            $proposalsQuery->where(function($query) use ($tahunAjaranTerpilih) {
-                $query->where('tahun_ajaran', $tahunAjaranTerpilih)
-                      ->orWhere(function($q) use ($tahunAjaranTerpilih) {
-                          $q->where(function($subQ) {
-                              $subQ->whereNull('tahun_ajaran')
-                                   ->orWhere('tahun_ajaran', '');
-                          })
-                          ->whereRaw("CONCAT(
-                              CASE WHEN EXTRACT(MONTH FROM tanggal_pengajuan) >= 7
-                                  THEN EXTRACT(YEAR FROM tanggal_pengajuan)::text
-                                  ELSE (EXTRACT(YEAR FROM tanggal_pengajuan) - 1)::text
-                              END,
-                              '/',
-                              CASE WHEN EXTRACT(MONTH FROM tanggal_pengajuan) >= 7
-                                  THEN (EXTRACT(YEAR FROM tanggal_pengajuan) + 1)::text
-                                  ELSE EXTRACT(YEAR FROM tanggal_pengajuan)::text
-                              END
-                          ) = ?", [$tahunAjaranTerpilih]);
-                      });
-            });
+            $proposalsQuery->where('tahun_ajaran', $tahunAjaranTerpilih);
         }
 
         $proposals = $proposalsQuery->orderBy('tanggal_pengajuan', 'desc')->get();

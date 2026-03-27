@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('nama_form');
             $table->string('jenis_form', 50);
             $table->string('skim', 10)->nullable();
-            $table->jsonb('config')->nullable();
+            $table->json('config')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('tahun_ajaran')->nullable();
             $table->string('mongo_config_id')->nullable();

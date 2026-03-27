@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('dana_yang_dapat_diberikan', 15, 2)->nullable();
             $table->text('catatan_final')->nullable();
             $table->decimal('nilai', 5, 2)->nullable();
-            $table->jsonb('skor_per_kriteria')->nullable();
+            $table->json('skor_per_kriteria')->nullable();
             $table->foreignId('id_proposal')->constrained('proposals', 'id_proposal')->onDelete('cascade');
             $table->foreignId('id_pimpinan_pt')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('id_pt')->nullable()->constrained('users')->onDelete('cascade');
