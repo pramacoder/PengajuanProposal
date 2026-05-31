@@ -1,0 +1,3434 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="HEKvnxIEnTqrVOiECR5RNZrq1f9a37dtHlLbXgJY">
+    <title>Data Proposal PKM</title>
+    <!-- PDF.js - Hanya muat sekali di sini -->
+    <script type="module" src="http://[::1]:5173/@vite/client"></script><link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css" /><script type="module" src="http://[::1]:5173/resources/js/app.js"></script>    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-900: #380F17;
+            --primary-700: #8F0B13;
+            --primary-100: rgba(143,11,19,0.08);
+            --bg-soft: #EDEBDD;
+            --surface: #FFFFFF;
+            --surface-2: #F7F4EF;
+            --text-900: #252B2B;
+            --text-600: #4C4F54;
+            --text-400: #9CA3AF;
+            --border: #E2E0D9;
+            --border-dark: #D4D0C8;
+            --shadow-sm: 0 1px 4px rgba(56,15,23,0.06);
+            --shadow: 0 2px 12px rgba(56,15,23,0.08);
+            --shadow-md: 0 4px 20px rgba(56,15,23,0.12);
+            --shadow-lg: 0 8px 32px rgba(56,15,23,0.16);
+            /* Legacy */
+            --primary-color: #8F0B13;
+            --primary-dark: #380F17;
+            --sidebar-width: 270px;
+            --navbar-height: 64px;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-soft);
+            margin: 0;
+            padding-top: var(--navbar-height);
+            color: var(--text-900);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ====== NAVBAR ====== */
+        .navbar-custom {
+            background: var(--primary-900);
+            color: white;
+            padding: 0 1.25rem;
+            box-shadow: 0 2px 12px rgba(56,15,23,0.18);
+            height: var(--navbar-height);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .navbar-brand {
+            color: white !important;
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .navbar-brand i {
+            background: rgba(255,255,255,0.15);
+            width: 34px; height: 34px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .navbar-nav .nav-link {
+            color: rgba(255,255,255,0.85) !important;
+            margin: 0 0.25rem;
+            transition: all 0.2s ease;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+        }
+        .navbar-nav .nav-link:hover {
+            color: white !important;
+            background: rgba(255,255,255,0.12);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #EF4444;
+            color: white;
+            border-radius: 50%;
+            padding: 0.15rem 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            min-width: 18px;
+            text-align: center;
+            border: 2px solid var(--primary-900);
+        }
+
+        /* Notification Styles */
+        .notification-icon-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .notification-icon {
+            filter: brightness(0) invert(1);
+            transition: all 0.3s ease;
+        }
+
+        .notification-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .notification-dropdown {
+            border: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 0;
+        }
+
+        .notification-dropdown .dropdown-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1rem;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .notification-item {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-item.unread {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .notification-item.unread:hover {
+            background-color: #bbdefb;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .notification-icon-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notification-icon-small.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .notification-icon-small.warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .notification-icon-small.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .notification-icon-small.danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .notification-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #212529;
+            font-size: 0.9rem;
+        }
+
+        .notification-message {
+            color: #6c757d;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .notification-time {
+            color: #adb5bd;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .notification-actions .btn {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Negative Notification Styles (Penolakan) */
+        .notification-item.negative {
+            background-color: #fee;
+            border-left: 4px solid #dc3545;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .notification-item.negative:hover {
+            background-color: #fdd;
+        }
+
+        .notification-item.negative.unread {
+            background-color: #fee;
+            border-left: 4px solid #dc3545;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1);
+        }
+
+        .notification-item.negative.unread:hover {
+            background-color: #fdd;
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.15);
+        }
+
+        .notification-item.negative .notification-icon-small {
+            background-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        .notification-item.negative .notification-title {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .notification-item.negative .notification-message {
+            color: #721c24;
+            font-weight: 500;
+        }
+
+        .notification-item.negative .notification-time {
+            color: #a94442;
+        }
+
+        .notification-item.negative .catatan-box {
+            background-color: #fff;
+            border: 1px solid #dc3545;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+            color: #721c24;
+        }
+
+        .notification-item.negative .catatan-box strong {
+            color: #dc3545;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .notification-item.negative .action-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .notification-item.negative .action-button:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+        }
+
+        .empty-notifications {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .empty-notifications i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* User Profile Dropdown Styles */
+        .user-profile-dropdown {
+            border: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            border-radius: 12px;
+            padding: 0;
+        }
+
+        .user-profile-dropdown .dropdown-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 1rem;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .user-info-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-avatar.primary { background-color: #007bff; }
+        .user-avatar.success { background-color: #28a745; }
+        .user-avatar.info { background-color: #17a2b8; }
+        .user-avatar.warning { background-color: #ffc107; }
+        .user-avatar.secondary { background-color: #6c757d; }
+
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 2px;
+            font-size: 0.95rem;
+        }
+
+        .user-info {
+            color: #6c757d;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+
+        .profile-menu-item {
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            margin: 0 0.5rem;
+        }
+
+        .profile-menu-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(4px);
+        }
+
+        .profile-menu-item i {
+            width: 20px;
+            text-align: center;
+            margin-right: 0.75rem;
+        }
+
+        /* ====== SIDEBAR ====== */
+        .sidebar {
+            position: fixed;
+            top: var(--navbar-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--navbar-height));
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1rem 0 2rem;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 16px rgba(56,15,23,0.06);
+        }
+        
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: var(--primary-700); }
+
+        /* Sidebar header/brand area */
+        .sidebar-title {
+            padding: 0.75rem 1rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-brand-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            background: var(--primary-900);
+            color: white;
+            font-weight: 800;
+            font-size: 0.9rem;
+            letter-spacing: -0.01em;
+        }
+        .sidebar-brand-inner i {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Section label */
+        .sidebar-section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-400);
+            padding: 0.75rem 1.25rem 0.25rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0 0.75rem;
+            margin: 0;
+            padding-bottom: 2rem;
+        }
+        .sidebar-menu > li {
+            margin-bottom: 2px;
+            list-style: none;
+        }
+        .sidebar-menu > li::marker { display: none; }
+        .sidebar-menu li { list-style: none; }
+        .sidebar-menu li::marker { display: none; }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            color: var(--text-600);
+            text-decoration: none;
+            padding: 0.6rem 0.875rem;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            gap: 0.6rem;
+        }
+        .sidebar-menu a i {
+            width: 18px;
+            text-align: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            color: var(--text-400);
+            transition: color 0.2s ease;
+        }
+        .sidebar-menu a:hover {
+            background: var(--primary-100);
+            color: var(--primary-700);
+        }
+        .sidebar-menu a:hover i { color: var(--primary-700); }
+
+        .sidebar-menu a.active {
+            background: var(--primary-900);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(56,15,23,0.2);
+        }
+        .sidebar-menu a.active i { color: rgba(255,255,255,0.85); }
+
+        /* Submenu */
+        .sidebar-menu .submenu {
+            list-style: none;
+            padding: 0 0 0 0.5rem;
+            margin: 2px 0 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .sidebar-menu .submenu.show { max-height: 500px; }
+        .sidebar-menu .submenu li { margin: 0; list-style: none; }
+        .sidebar-menu .submenu li::marker { display: none; }
+        .sidebar-menu .submenu a {
+            padding: 0.5rem 0.875rem 0.5rem 2.2rem;
+            font-size: 0.84rem;
+            color: var(--text-600);
+            border-radius: 7px;
+            border-left: 2px solid var(--border);
+            border-radius: 0 7px 7px 0;
+            margin-left: 0.5rem;
+        }
+        .sidebar-menu .submenu a:hover {
+            background: var(--primary-100);
+            color: var(--primary-700);
+            border-left-color: var(--primary-700);
+        }
+        .sidebar-menu .submenu a.active {
+            background: rgba(143,11,19,0.1);
+            color: var(--primary-700);
+            font-weight: 700;
+            border-left-color: var(--primary-700);
+            box-shadow: none;
+        }
+        .sidebar-menu .submenu a.active i { color: var(--primary-700); }
+
+        /* Menu toggle */
+        .menu-toggle {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .menu-toggle .fa-chevron-down {
+            transition: transform 0.25s ease;
+            font-size: 0.7rem;
+            color: var(--text-400);
+            margin-left: auto;
+        }
+        .menu-toggle.active .fa-chevron-down { transform: rotate(180deg); }
+        .sidebar-menu .menu-toggle.active {
+            background: var(--primary-100);
+            color: var(--primary-700);
+        }
+        .sidebar-menu .menu-toggle.active i { color: var(--primary-700); }
+
+        /* ====== MAIN CONTENT ====== */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 1.75rem 2rem;
+            min-height: calc(100vh - var(--navbar-height));
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Card Styles */
+        .card-custom {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s ease;
+            overflow: hidden;
+        }
+        .card-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .card-header-custom {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            color: var(--text-900);
+            border-radius: 14px 14px 0 0 !important;
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card-header-custom i { color: var(--primary-700); }
+
+        /* Modal */
+        .modal-header-custom {
+            background: var(--primary-900);
+            color: white;
+            border-radius: 14px 14px 0 0;
+            border-bottom: none;
+        }
+        /* Button */
+        .btn-primary-custom {
+            background: var(--primary-700);
+            border: none; border-radius: 8px;
+            padding: 0.6rem 1.25rem;
+            font-weight: 600; color: white;
+            transition: all 0.25s ease;
+        }
+        .btn-primary-custom:hover {
+            background: var(--primary-900); color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(56,15,23,0.25);
+        }
+
+        /* Sidebar menu visibility control */
+        .sidebar-menu .submenu li.hidden {
+            display: none !important;
+        }
+        
+        /* Hide menu items based on user type using CSS */
+                .menu-dosen, .menu-reviewer, .menu-operator {
+            display: none !important;
+        }
+                
+        /* Debug styling */
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .debug-info strong {
+            color: #495057;
+        }
+        
+        .debug-info small {
+            color: #6c757d;
+        }
+
+        /* ====== RESPONSIVE ====== */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); box-shadow: none; }
+            .sidebar.show { transform: translateX(0); box-shadow: 4px 0 24px rgba(56,15,23,0.15); }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .sidebar-overlay {
+                position: fixed; top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: rgba(56,15,23,0.4);
+                z-index: 999; display: none;
+                backdrop-filter: blur(2px);
+            }
+            .sidebar-overlay.show { display: block; }
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ====== TOAST ====== */
+        .toast-container { position: fixed; top: 80px; right: 1.25rem; z-index: 9999; }
+        .toast-custom {
+            background: var(--surface); border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary-700);
+        }
+
+        /* ====== USER PROFILE / NOTIFICATION DROPDOWNS ====== */
+        .user-profile-dropdown, .notification-dropdown {
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            border-radius: 12px;
+            padding: 0;
+            background: var(--surface);
+        }
+        .user-profile-dropdown .dropdown-header,
+        .notification-dropdown .dropdown-header {
+            background: var(--surface-2);
+            padding: 0.875rem 1rem;
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .profile-menu-item {
+            padding: 0.6rem 0.875rem;
+            transition: all 0.2s ease;
+            border-radius: 7px;
+            margin: 0 0.375rem;
+            color: var(--text-900);
+            font-size: 0.875rem;
+        }
+        .profile-menu-item:hover {
+            background: var(--surface-2);
+            color: var(--primary-700);
+            transform: translateX(3px);
+        }
+        .profile-menu-item i {
+            width: 18px; text-align: center;
+            margin-right: 0.625rem; color: var(--primary-700);
+        }
+        .user-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: white; flex-shrink: 0;
+        }
+        .user-avatar.primary { background: var(--primary-700); }
+        .user-avatar.success { background: #059669; }
+        .user-avatar.info { background: #0891B2; }
+        .user-avatar.warning { background: #D97706; }
+        .user-avatar.secondary { background: var(--text-600); }
+        .user-name { font-weight: 700; color: var(--text-900); font-size: 0.9rem; }
+        .user-info { color: var(--text-600); font-size: 0.78rem; line-height: 1.3; }
+        .notification-item {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+        .notification-item:hover { background: var(--surface-2); }
+        .notification-item.unread {
+            background: #EFF6FF;
+            border-left: 3px solid #3B82F6;
+        }
+        .notification-item.negative {
+            background: #FEF2F2;
+            border-left: 3px solid #EF4444;
+        }
+        .notification-title { font-weight: 600; margin-bottom: 3px; color: var(--text-900); font-size: 0.875rem; }
+        .notification-message { color: var(--text-600); font-size: 0.82rem; line-height: 1.4; margin-bottom: 6px; }
+        .notification-time { color: var(--text-400); font-size: 0.72rem; font-weight: 500; }
+        .notification-icon-small {
+            width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .notification-icon-small.success { background: #D1FAE5; color: #065F46; }
+        .notification-icon-small.warning { background: #FEF3C7; color: #92400E; }
+        .notification-icon-small.info { background: #DBEAFE; color: #1E40AF; }
+        .notification-icon-small.danger { background: #FEE2E2; color: #991B1B; }
+        .empty-notifications { text-align: center; padding: 2rem; color: var(--text-400); }
+        .empty-notifications i { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.5; }
+    </style>
+    <style>
+    .proposal-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: none;
+        overflow: hidden;
+    }
+    
+    .proposal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .status-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-pending {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .status-review {
+        background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+        color: #0c5460;
+        border: 1px solid #b8daff;
+    }
+    
+    .status-approved {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-rejected {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .status-valid {
+        background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
+        color: #0c5460;
+        border: 1px solid #b8daff;
+    }
+    
+    .status-revisi {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .review-section {
+        margin-bottom: 2rem;
+    }
+    
+    .review-section .card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .review-section .card-header {
+        border-bottom: none;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+    }
+    
+    .review-section .card-body {
+        padding: 1.5rem;
+    }
+    
+    .proposal-info {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .proposal-info h6 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .proposal-info p {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .proposal-info .badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .proposal-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 1.5rem;
+        position: relative;
+    }
+    
+    .proposal-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+    
+    .proposal-meta {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .proposal-body {
+        padding: 1.5rem;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9rem;
+    }
+    
+    .info-value {
+        color: #333;
+        font-size: 0.9rem;
+    }
+    
+    .action-buttons {
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .btn-action {
+        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        margin: 0 0.25rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-1px);
+    }
+    
+    .pdf-viewer {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .document-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .document-tabs .nav-link {
+        color: var(--primary-color);
+        border-color: transparent;
+        font-weight: 500;
+        border-radius: 8px 8px 0 0;
+        margin-right: 0.25rem;
+    }
+    
+    .document-tabs .nav-link.active {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 1rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        color: #dee2e6;
+    }
+    
+    .empty-state h4 {
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    
+    .empty-state p {
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .empty-state .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        min-width: 200px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .empty-state .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .empty-state .btn i {
+        margin-right: 8px;
+        font-size: 1.1em;
+    }
+    
+    .empty-state-button-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    /* Action Sidebar Button */
+    .action-toggle-btn {
+        position: fixed;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        border: none;
+        padding: 12px 8px;
+        border-radius: 8px 0 0 8px;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        z-index: 1002;
+        transition: all 0.3s ease;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+    
+    .action-toggle-btn:hover {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, #5a1f1f 100%);
+        color: white;
+        transform: translateY(-50%) translateX(-2px);
+    }
+    
+    .action-toggle-btn.shifted {
+        right: 320px;
+    }
+    
+    /* Proposal Stats */
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Loading Animation */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        border-radius: 12px;
+    }
+    
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Team Member Badge */
+    .team-member-badge {
+        display: inline-block;
+        background: #e9ecef;
+        color: #495057;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin: 0.125rem;
+    }
+
+    .team-member-badge.ketua {
+        background: #007bff;
+        color: white;
+    }
+
+    /* Header Styles */
+    .page-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .header-logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
+    .header-title {
+        color: var(--primary-color);
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Action Sidebar - Mahasiswa Specific */
+    .mahasiswa-action-sidebar {
+        position: fixed;
+        right: -320px;
+        top: 0;
+        width: 320px;
+        height: 100vh;
+        background: white;
+        box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+        z-index: 1001;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+    }
+
+    .mahasiswa-action-sidebar.show {
+        right: 0;
+    }
+
+    .mahasiswa-sidebar-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .mahasiswa-sidebar-header h4 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .mahasiswa-sidebar-content {
+        padding: 1.5rem;
+    }
+
+    .mahasiswa-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .mahasiswa-sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+
+    .mahasiswa-sidebar-menu a {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        color: #333;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+
+    .mahasiswa-sidebar-menu a:hover {
+        background: #e9ecef;
+        border-left-color: var(--primary-color);
+        transform: translateX(5px);
+    }
+
+    .mahasiswa-sidebar-menu i {
+        margin-right: 1rem;
+        font-size: 1.2rem;
+        color: var(--primary-color);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1003;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .modal-header {
+        background: #8B0000;
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h5 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: rgba(255,255,255,0.3);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .review-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .review-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .review-icon {
+        width: 24px;
+        height: 24px;
+        background: #007bff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        color: white;
+        font-size: 0.8rem;
+    }
+
+    .review-title {
+        color: #007bff;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .error-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1rem 0;
+    }
+
+    .error-list li {
+        background: #f8f9fa;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 6px;
+        border-left: 4px solid #dc3545;
+        color: #721c24;
+    }
+
+    .note-section {
+        display: flex;
+        align-items: flex-start;
+        background: #fff3cd;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #ffc107;
+    }
+
+    .note-icon {
+        color: #ffc107;
+        margin-right: 0.75rem;
+        margin-top: 0.125rem;
+    }
+
+    .note-text {
+        color: #856404;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .substantive-review {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .reviewer-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .reviewer-avatar {
+        width: 20px;
+        height: 20px;
+        background: #007bff;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+
+    .reviewer-name {
+        color: #007bff;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .review-note {
+        background: #fff3cd;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 4px solid #ffc107;
+    }
+
+    .review-note-text {
+        color: #856404;
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    /* Action Toggle Button */
+    .mahasiswa-action-toggle-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 60px;
+        height: 60px;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .mahasiswa-action-toggle-btn:hover {
+        background: var(--primary-dark);
+        transform: scale(1.1);
+    }
+
+    .mahasiswa-action-toggle-btn.shifted {
+        right: 340px;
+    }
+
+    /* Card Actions */
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .card-actions .btn {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    /* Review Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h5 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    /* Review Section Styles */
+    .review-section {
+        margin-bottom: 1rem;
+    }
+
+    .proposal-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        border-left: 4px solid #007bff;
+    }
+
+    .proposal-info h6 {
+        color: #007bff;
+        margin-bottom: 0.5rem;
+    }
+
+    .proposal-info p {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    /* Card Styles */
+    .card {
+        border: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .card-header {
+        border-radius: 8px 8px 0 0 !important;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Alert Styles */
+    .alert {
+        border: none;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .alert-info {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+
+    .alert-warning {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    .alert-success {
+        background: #e8f5e8;
+        color: #1b5e20;
+    }
+
+    .alert-danger {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    /* Badge Styles */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    /* List Styles */
+    .list-unstyled li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .list-unstyled li:last-child {
+        border-bottom: none;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Action Sidebar Styles */
+    .mahasiswa-action-sidebar {
+        position: fixed;
+        right: -300px;
+        top: 0;
+        width: 300px;
+        height: 100vh;
+        background: white;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+
+    .mahasiswa-action-sidebar.show {
+        right: 0;
+    }
+
+    .mahasiswa-sidebar-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .mahasiswa-sidebar-header h4 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+
+    .mahasiswa-sidebar-content {
+        padding: 1rem;
+    }
+
+    .mahasiswa-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .mahasiswa-sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+
+    .mahasiswa-sidebar-menu a {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+    }
+
+    .mahasiswa-sidebar-menu a:hover {
+        background: #e9ecef;
+        border-left-color: #007bff;
+        transform: translateX(5px);
+    }
+
+    .mahasiswa-sidebar-menu i {
+        margin-right: 0.75rem;
+        width: 20px;
+        text-align: center;
+        color: #007bff;
+    }
+
+    /* Action Toggle Button */
+    .mahasiswa-action-toggle-btn {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s;
+        z-index: 999;
+    }
+
+    .mahasiswa-action-toggle-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Toast Styles */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        max-width: 300px;
+    }
+
+    .toast-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .toast-error {
+        background: #dc3545;
+        color: white;
+    }
+
+    .toast-info {
+        background: #17a2b8;
+        color: white;
+    }
+</style>
+    </head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+        <div class="container-fluid">
+            <!-- Hamburger Menu -->
+            <button class="btn btn-link text-white d-lg-none me-2" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap"></i>
+                Pengajuan Proposal
+            </a>
+            
+            <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+                <!-- Notifications -->
+                <div class="nav-item dropdown me-3 position-relative">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center position-relative" href="#" data-bs-toggle="dropdown" id="notificationDropdown">
+                        <div class="notification-icon-wrapper">
+                            <img src="http://localhost/ion_notifcations.svg" alt="Notifikasi" class="notification-icon" width="24" height="24">
+                            <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+                        </div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 380px; max-height: 500px; overflow-y: auto;">
+                        <div class="dropdown-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold">
+                                <i class="fas fa-bell me-2 text-primary"></i>
+                                Notifikasi Sistem
+                            </h6>
+                            <button class="btn btn-sm btn-outline-primary" id="markAllRead">
+                                Tandai Semua Dibaca
+                            </button>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div id="notificationList">
+                            <!-- Notifications will be populated here -->
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="text-center p-2">
+                            <a href="#" class="text-decoration-none" id="viewAllNotifications">
+                                Lihat Semua Notifikasi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Profile -->
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-white rounded-circle p-2 me-2">
+                                <i class="fas fa-user text-primary"></i>
+                            </div>
+                            <span class="fw-bold">
+                                I Made Surya Wijaya
+                            </span>
+                        </div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end user-profile-dropdown" style="min-width: 280px;">
+    <div class="dropdown-header">
+        <i class="fas fa-user-circle me-2"></i>Profil Pengguna
+    </div>
+
+    <div class="px-3 py-3">
+        <div class="d-flex align-items-center">
+            <div class="bg-primary rounded-circle p-3 me-3">
+                <i class="fas fa-user-graduate text-white"></i>
+            </div>
+            <div>
+                <div class="fw-bold">I Made Surya Wijaya</div>
+                <div class="user-info">Mahasiswa</div>
+                                    <div class="user-info">made.surya@student.unud.ac.id</div>
+                                                    <div class="user-info">081234567200</div>
+                                                                            <div class="user-info">NIM: 2001234567</div>
+                                                                                <div class="user-info">Program Studi: Teknologi Informasi</div>
+                                                                                <div class="user-info">Fakultas: Fakultas Teknik</div>
+                                                </div>
+        </div>
+    </div>
+
+    <div class="dropdown-divider"></div>
+
+    <a class="dropdown-item profile-menu-item" href="http://localhost/mahasiswa/profile">
+        <i class="fas fa-user me-2"></i>Detail Profil
+    </a>
+    <a class="dropdown-item profile-menu-item" href="http://localhost/mahasiswa/profile#profile-section">
+        <i class="fas fa-edit me-2"></i>Edit Profil
+    </a>
+    <a class="dropdown-item profile-menu-item" href="http://localhost/mahasiswa/profile#profile-section">
+        <i class="fas fa-cog me-2"></i>Pengaturan
+    </a>
+    <a class="dropdown-item profile-menu-item" href="http://localhost/mahasiswa/profile#security-section">
+        <i class="fas fa-key me-2"></i>Ubah Password
+    </a>
+
+    <div class="dropdown-divider"></div>
+
+    <a class="dropdown-item profile-menu-item text-danger" href="#" onclick="event.preventDefault(); document.getElementById('logout-form-main').submit();">
+        <i class="fas fa-sign-out-alt me-2"></i>Logout
+    </a>
+    <form id="logout-form-main" action="http://localhost/logout" method="POST" style="display: none;">
+        <input type="hidden" name="_token" value="HEKvnxIEnTqrVOiECR5RNZrq1f9a37dtHlLbXgJY" autocomplete="off">    </form>
+</div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        
+        <ul class="sidebar-menu">
+            <li>
+                <a href="#" class="menu-toggle" data-target="pkm" id="pkmMenu">
+                    <i class="fas fa-lightbulb me-2"></i>PKM
+                    <i class="fas fa-chevron-down float-end mt-1"></i>
+                </a>
+                <ul class="submenu" id="pkm">
+                                            <li class="menu-mahasiswa"><a href="http://localhost/mahasiswa/dashboard" class="">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a></li>
+                        <li class="menu-mahasiswa"><a href="http://localhost/mahasiswa/proposal/create" class="">
+                            <i class="fas fa-plus me-2"></i>Ajukan Proposal
+                        </a></li>
+                        <li class="menu-mahasiswa"><a href="http://localhost/mahasiswa/proposal" class=" active ">
+                            <i class="fas fa-eye me-2"></i>Lihat Proposal
+                        </a></li>
+                        <li class="menu-mahasiswa"><a href="http://localhost/mahasiswa/revisi" class="">
+                            <i class="fas fa-edit me-2"></i>Revisi Proposal
+                        </a></li>
+                        <li class="menu-mahasiswa"><a href="http://localhost/mahasiswa/proposal" class="">
+                            <i class="fas fa-file-edit me-2"></i>Revisi Akhir
+                        </a></li>
+                                        
+                                        
+                                        
+                                    </ul>
+            </li>
+            
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <div class="container-fluid">
+    <nav aria-label="breadcrumb" class="app-breadcrumb">
+        <ol class="breadcrumb mb-0">
+                                                                <li class="breadcrumb-item"><a href="http://localhost/mahasiswa/dashboard">Beranda</a></li>
+                                                                                <li class="breadcrumb-item active" aria-current="page">Lihat Proposal</li>
+                                    </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-center align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <div class="me-3">
+            <img src="http://localhost/UNUDLOGO.png" alt="UNUD Logo" style="width: 80px; height: 80px; object-fit: contain;">
+        </div>
+        <div class="text-center">
+            <h2 class="mb-0 fw-bold">Data Proposal PKM</h2>
+            <h4 class="text-muted mb-0">UNIVERSITAS UDAYANA</h4>
+                            <p class="text-muted mb-0 mt-2">Selamat datang, I Made Surya Wijaya! Berikut adalah daftar proposal PKM yang telah Anda ajukan.</p>
+                                </div>
+    </div>
+</div>
+
+    <hr class="mb-4">
+
+    
+
+
+
+    <!-- Proposal Cards -->
+    <div class="row" id="proposalCards">
+                                    <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="proposal-card">
+                        <div class="proposal-header">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="status-badge status-pending">
+                                                                            Menunggu Validasi
+                                                                    </span>
+                                
+                            </div>
+                            <div class="proposal-title">
+                            Testing Judul Porposal 1
+                            </div>
+                            <div class="proposal-meta">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Diajukan: 20 May 2026
+                                
+                                                                
+                                                                    <br>
+                                    <span class="badge bg-info me-1">
+                                        <i class="fas fa-user me-1"></i>Pengaju
+                                    </span>
+                                                            </div>
+                        </div>
+                        
+                        <div class="proposal-body">
+                            <div class="info-row">
+                                <span class="info-label">Skim</span>
+                                <span class="info-value">K</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Ketua Tim</span>
+                                <span class="info-value">
+                                                                        N/A
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dosen Pendamping</span>
+                                <span class="info-value">Dr. I Gusti Ayu Made Sari, S.Pd., M.Pd.</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dana Diajukan</span>
+                                <span class="info-value">Rp 1.000.000</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Jumlah Anggota</span>
+                                <span class="info-value">0 orang</span>
+                            </div>
+                                                        <div class="info-row">
+                                <span class="info-label">Status Validasi</span>
+                                <span class="info-value">
+                                                                            <span class="text-warning">Menunggu Validasi</span>
+                                                                    </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="http://localhost/mahasiswa/proposal/21" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Lihat Detail
+                            </a>
+                                                        <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '21')">
+                                <i class="fas fa-clipboard-check me-1"></i>Review
+                            </button>
+                                                    </div>
+                    </div>
+                </div>
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="proposal-card">
+                        <div class="proposal-header">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="status-badge status-approved">
+                                                                            Lolos
+                                                                    </span>
+                                
+                            </div>
+                            <div class="proposal-title">
+                            Pengembangan Sistem Informasi Manajemen Koperasi Berbasis Web
+                            </div>
+                            <div class="proposal-meta">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Diajukan: 15 September 2022
+                                
+                                                                
+                                                                    <br>
+                                    <span class="badge bg-info me-1">
+                                        <i class="fas fa-user me-1"></i>Pengaju
+                                    </span>
+                                                            </div>
+                        </div>
+                        
+                        <div class="proposal-body">
+                            <div class="info-row">
+                                <span class="info-label">Skim</span>
+                                <span class="info-value">RE</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Ketua Tim</span>
+                                <span class="info-value">
+                                                                        N/A
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dosen Pendamping</span>
+                                <span class="info-value">Prof. Dr. I Made Sujana, S.T., M.T.</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dana Diajukan</span>
+                                <span class="info-value">Rp 15.000.000</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Jumlah Anggota</span>
+                                <span class="info-value">0 orang</span>
+                            </div>
+                                                        <div class="info-row">
+                                <span class="info-label">Status Validasi</span>
+                                <span class="info-value">
+                                                                                                                        <span class="text-success">Lolos Final</span>
+                                                                                                            </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="http://localhost/mahasiswa/proposal/1" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Lihat Detail
+                            </a>
+                                                        <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '1')">
+                                <i class="fas fa-clipboard-check me-1"></i>Review
+                            </button>
+                                                    </div>
+                    </div>
+                </div>
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="proposal-card">
+                        <div class="proposal-header">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="status-badge status-approved">
+                                                                            Lolos
+                                                                    </span>
+                                
+                            </div>
+                            <div class="proposal-title">
+                            Strategi Pemasaran Digital untuk UMKM di Bali
+                            </div>
+                            <div class="proposal-meta">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Diajukan: 15 March 2023
+                                
+                                                                
+                                                                    <br>
+                                    <span class="badge bg-info me-1">
+                                        <i class="fas fa-user me-1"></i>Pengaju
+                                    </span>
+                                                            </div>
+                        </div>
+                        
+                        <div class="proposal-body">
+                            <div class="info-row">
+                                <span class="info-label">Skim</span>
+                                <span class="info-value">KC</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Ketua Tim</span>
+                                <span class="info-value">
+                                                                        N/A
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dosen Pendamping</span>
+                                <span class="info-value">Prof. Dr. I Wayan Gede Suardana, S.T., M.T.</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dana Diajukan</span>
+                                <span class="info-value">Rp 10.000.000</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Jumlah Anggota</span>
+                                <span class="info-value">0 orang</span>
+                            </div>
+                                                        <div class="info-row">
+                                <span class="info-label">Status Validasi</span>
+                                <span class="info-value">
+                                                                                                                        <span class="text-success">Lolos Final</span>
+                                                                                                            </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="http://localhost/mahasiswa/proposal/6" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Lihat Detail
+                            </a>
+                                                        <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '6')">
+                                <i class="fas fa-clipboard-check me-1"></i>Review
+                            </button>
+                                                    </div>
+                    </div>
+                </div>
+                            <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="proposal-card">
+                        <div class="proposal-header">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="status-badge status-approved">
+                                                                            Lolos
+                                                                    </span>
+                                
+                            </div>
+                            <div class="proposal-title">
+                            Desain Arsitektur Berkelanjutan untuk Kawasan Pesisir
+                            </div>
+                            <div class="proposal-meta">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Diajukan: 20 March 2024
+                                
+                                                                
+                                                                    <br>
+                                    <span class="badge bg-info me-1">
+                                        <i class="fas fa-user me-1"></i>Pengaju
+                                    </span>
+                                                            </div>
+                        </div>
+                        
+                        <div class="proposal-body">
+                            <div class="info-row">
+                                <span class="info-label">Skim</span>
+                                <span class="info-value">PM</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Ketua Tim</span>
+                                <span class="info-value">
+                                                                        N/A
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dosen Pendamping</span>
+                                <span class="info-value">Dr. I Gusti Ayu Made Sari Dewi, S.Pd., M.Pd.</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dana Diajukan</span>
+                                <span class="info-value">Rp 17.000.000</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Jumlah Anggota</span>
+                                <span class="info-value">0 orang</span>
+                            </div>
+                                                        <div class="info-row">
+                                <span class="info-label">Status Validasi</span>
+                                <span class="info-value">
+                                                                                                                        <span class="text-success">Lolos Final</span>
+                                                                                                            </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="http://localhost/mahasiswa/proposal/14" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Lihat Detail
+                            </a>
+                                                        <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '14')">
+                                <i class="fas fa-clipboard-check me-1"></i>Review
+                            </button>
+                                                    </div>
+                    </div>
+                </div>
+                        </div>
+</div>
+
+<!-- Action Sidebar -->
+<div class="mahasiswa-action-sidebar" id="actionSidebar">
+    <div class="mahasiswa-sidebar-header">
+        <h4><i class="fas fa-tasks me-2"></i>Menu Aksi</h4>
+    </div>
+    <div class="mahasiswa-sidebar-content">
+        <ul class="mahasiswa-sidebar-menu">
+            <li>
+                <a href="#" onclick="showReviewModal('administrative', '21')">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Hasil Review Administratif</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="showReviewModal('substantive', '21')">
+                    <i class="fas fa-search"></i>
+                    <span>Hasil Review Substantif</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="showReviewModal('final', '21')">
+                    <i class="fas fa-trophy"></i>
+                    <span>Hasil Final</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 id="modalTitle">Hasil Review</h5>
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Action Toggle Button -->
+<button class="mahasiswa-action-toggle-btn" id="actionToggleBtn" onclick="toggleActionSidebar()">
+    <i class="fas fa-bars"></i>
+</button>
+    </div>
+
+
+
+    <!-- Review Modal -->
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function applyIndonesianNumberFormatting() {
+            if (window.AppUI?.applyIndonesianNumberFormatting) {
+                window.AppUI.applyIndonesianNumberFormatting(document);
+            }
+        }
+
+        // Show Review Modal
+        function showReviewModal(type) {
+            const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+            const title = document.getElementById('reviewModalTitle');
+            const body = document.getElementById('reviewModalBody');
+            
+            if (type === 'administratif') {
+                title.innerHTML = '<i class="fas fa-clipboard-check me-2"></i>Hasil Review Administratif';
+                body.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Hasil Review Kesalahan Administratif</strong>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title text-danger">
+                                <i class="fas fa-times-circle me-2"></i>
+                                Kesalahan yang Ditemukan:
+                            </h6>
+                            <ol class="mb-3">
+                                <li>Margin tidak sesuai dengan ketentuan (harus 4-4-3-3 cm)</li>
+                                <li>Penulisan judul tidak sesuai format yang ditentukan</li>
+                                <li>Font yang digunakan tidak sesuai standar (harus Times New Roman)</li>
+                                <li>Spasi antar paragraf tidak konsisten</li>
+                            </ol>
+                            <div class="alert alert-info">
+                                <i class="fas fa-edit text-info me-2"></i>
+                                <strong>Catatan:</strong><br>
+                                Berikan revisi sesuai kesalahan administratif yang ditemukan agar proposal memungkinkan untuk lolos ke tahap review substantif. Semangat!!
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                title.innerHTML = '<i class="fas fa-user-check me-2"></i>Hasil Review Subtantif';
+                body.innerHTML = `
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <i class="fas fa-user me-2"></i>
+                            <strong>Reviewer 1 - Dr. Sari Widyastuti, M.Kom</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="fas fa-edit text-warning me-2"></i>
+                                <strong>Catatan:</strong><br>
+                                Isi proposal sudah baik secara substantif, akan tetapi ada beberapa penggunaan AI yang masih terdeteksi dalam penulisan. Mohon untuk menulis ulang bagian tersebut dengan bahasa yang lebih natural.
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Nilai: 85/100</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="badge bg-warning">Perlu Revisi</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <i class="fas fa-user me-2"></i>
+                            <strong>Reviewer 2 - Prof. Dr. Budi Santoso, M.T</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="fas fa-edit text-warning me-2"></i>
+                                <strong>Catatan:</strong><br>
+                                Proposal memiliki inovasi yang menarik dan metodologi yang jelas. Namun perlu perbaikan pada bagian analisis data dan kesimpulan.
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Nilai: 90/100</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    <span class="badge bg-success">Disetujui</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            modal.show();
+        }
+
+        // Action Sidebar Toggle (for lihat proposal page)
+        function toggleActionSidebar() {
+            const actionSidebar = document.getElementById('actionSidebar');
+            actionSidebar.classList.toggle('show');
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'info', duration = 3000) {
+            if (window.AppUI?.showToast) {
+                window.AppUI.showToast(message, type, duration);
+            }
+        }
+
+        // Notification System
+        class NotificationSystem {
+            constructor() {
+                this.notifications = [];
+                this.unreadCount = 0;
+                this.init();
+            }
+
+            init() {
+                this.loadNotifications();
+                this.setupEventListeners();
+                this.startPolling();
+            }
+
+            setupEventListeners() {
+                try {
+                    // Mark all as read
+                    const markAllReadBtn = document.getElementById('markAllRead');
+                    if (markAllReadBtn) {
+                        markAllReadBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this.markAllAsRead();
+                        });
+                    }
+
+                    // View all notifications
+                    const viewAllBtn = document.getElementById('viewAllNotifications');
+                    if (viewAllBtn) {
+                        viewAllBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            this.showAllNotifications();
+                        });
+                    }
+
+                    // Close dropdown when clicking outside
+                    document.addEventListener('click', (e) => {
+                        const dropdown = document.querySelector('.notification-dropdown');
+                        const toggle = document.getElementById('notificationDropdown');
+                        
+                        if (!dropdown?.contains(e.target) && !toggle?.contains(e.target)) {
+                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
+                            if (bsDropdown) {
+                                bsDropdown.hide();
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error setting up notification event listeners:', error);
+                }
+            }
+
+            async loadNotifications() {
+                try {
+                    // Deteksi user type dan gunakan route yang sesuai
+                    let notificationRoute = '';
+                    
+                    // Cek apakah ada route yang sesuai dengan user type
+                    if (window.location.pathname.includes('/dosen/')) {
+                        notificationRoute = 'http://localhost/dosen/notifications';
+                    } else if (window.location.pathname.includes('/mahasiswa/')) {
+                        notificationRoute = 'http://localhost/mahasiswa/notifications';
+                    } else if (window.location.pathname.includes('/reviewer/')) {
+                        notificationRoute = 'http://localhost/reviewer/notifications';
+                    } else if (window.location.pathname.includes('/operator/')) {
+                        notificationRoute = 'http://localhost/operator/notifications';
+                    } else {
+                        // Fallback jika tidak ada route yang cocok
+                        console.warn('No notification route found for current path');
+                        this.loadSampleNotifications();
+                        return;
+                    }
+                    
+                    const response = await fetch(notificationRoute, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        // Format notifications untuk memastikan semua field ada
+                        this.notifications = (data.notifications || []).map(notif => ({
+                            ...notif,
+                            unread: notif.unread !== undefined ? notif.unread : !notif.read_at,
+                            data: notif.data || {},
+                            proposal_id: notif.proposal_id || (notif.data?.proposal_id || null)
+                        }));
+                        this.updateNotificationCount();
+                        this.renderNotifications();
+                    } else {
+                        console.error('Failed to load notifications');
+                        // Fallback to sample notifications
+                        this.loadSampleNotifications();
+                    }
+                } catch (error) {
+                    console.error('Error loading notifications:', error);
+                    // Fallback to sample notifications
+                    this.loadSampleNotifications();
+                }
+            }
+
+            loadSampleNotifications() {
+                // Fallback notifications when API is not available
+                this.notifications = [
+                    {
+                        id: 1,
+                        type: 'success',
+                        title: 'Proposal Disetujui',
+                        message: 'Proposal PKM Anda telah disetujui dan lolos ke tahap review substantif.',
+                        time: '2 jam yang lalu',
+                        unread: true,
+                        actions: ['Lihat Detail', 'Download']
+                    },
+                    {
+                        id: 2,
+                        type: 'warning',
+                        title: 'Perlu Revisi',
+                        message: 'Proposal PKM Anda memerlukan revisi pada bagian metodologi penelitian.',
+                        time: '1 hari yang lalu',
+                        unread: true,
+                        actions: ['Lihat Detail', 'Revisi']
+                    },
+                    {
+                        id: 3,
+                        type: 'info',
+                        title: 'Status Berubah',
+                        message: 'Status proposal Anda telah berubah dari "Draft" menjadi "Under Review".',
+                        time: '3 hari yang lalu',
+                        unread: false,
+                        actions: ['Lihat Detail']
+                    },
+                    {
+                        id: 4,
+                        type: 'danger',
+                        title: 'Proposal Ditolak',
+                        message: 'Mohon maaf, proposal PKM Anda tidak dapat diproses karena tidak memenuhi syarat administratif.',
+                        time: '1 minggu yang lalu',
+                        unread: false,
+                        actions: ['Lihat Detail', 'Ajukan Ulang']
+                    }
+                ];
+
+                this.updateNotificationCount();
+                this.renderNotifications();
+            }
+
+            renderNotifications() {
+                try {
+                    const container = document.getElementById('notificationList');
+                    if (!container) {
+                        console.warn('Notification container not found');
+                        return;
+                    }
+
+                    if (this.notifications.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-notifications">
+                                <i class="fas fa-bell-slash"></i>
+                                <p>Tidak ada notifikasi</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = this.notifications.map(notification => {
+                        // Cek apakah notifikasi negatif (penolakan)
+                        const isNegative = notification.data?.is_negative || false;
+                        const hasCatatan = notification.data?.catatan || notification.data?.catatan_final || notification.data?.catatan_operator || notification.data?.catatan_dosen;
+                        const proposalId = notification.data?.proposal_id || notification.proposal_id;
+                        const action = notification.data?.action;
+                        
+                        return `
+                            <div class="notification-item ${notification.unread ? 'unread' : ''} ${isNegative ? 'negative' : ''}" data-id="${notification.id}">
+                                <div class="notification-content">
+                                    <div class="notification-icon-small ${notification.type}">
+                                        <i class="fas fa-${this.getIconForType(notification.type)}"></i>
+                                    </div>
+                                    <div class="notification-text">
+                                        <div class="notification-title">${this.escapeHtml(notification.title)}</div>
+                                        <div class="notification-message">${this.escapeHtml(notification.message)}</div>
+                                        ${hasCatatan ? `
+                                            <div class="catatan-box">
+                                                <strong>Catatan:</strong> ${this.escapeHtml(hasCatatan)}
+                                            </div>
+                                        ` : ''}
+                                        <div class="notification-time">${notification.time || notification.created_at || ''}</div>
+                                        ${action && proposalId ? `
+                                            <button class="action-button" 
+                                                    onclick="event.stopPropagation(); notificationSystem.handleAction(${notification.id}, '${action}', ${proposalId})">
+                                                ${this.getActionText(action)}
+                                            </button>
+                                        ` : notification.actions && notification.actions.length > 0 ? `
+                                            <div class="notification-actions">
+                                                ${notification.actions.map(action => `
+                                                    <button class="btn btn-sm btn-outline-${isNegative ? 'danger' : this.getButtonStyle(notification.type)}" 
+                                                            onclick="event.stopPropagation(); notificationSystem.handleAction(${notification.id}, '${action}')">
+                                                        ${action}
+                                                    </button>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Add click event to mark as read
+                    container.querySelectorAll('.notification-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const id = parseInt(item.dataset.id);
+                            this.markAsRead(id);
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error rendering notifications:', error);
+                    // Fallback to simple display
+                    const container = document.getElementById('notificationList');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="empty-notifications">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Gagal memuat notifikasi</p>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            getIconForType(type) {
+                const icons = {
+                    success: 'check-circle',
+                    warning: 'exclamation-triangle',
+                    info: 'info-circle',
+                    danger: 'times-circle'
+                };
+                return icons[type] || 'info-circle';
+            }
+
+            getButtonStyle(type) {
+                const styles = {
+                    success: 'success',
+                    warning: 'warning',
+                    info: 'primary',
+                    danger: 'danger'
+                };
+                return styles[type] || 'primary';
+            }
+
+            updateNotificationCount() {
+                try {
+                    this.unreadCount = this.notifications.filter(n => n.unread).length;
+                    const badge = document.getElementById('notificationCount');
+                    
+                    if (badge) {
+                        if (this.unreadCount > 0) {
+                            badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                            badge.style.display = 'block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error updating notification count:', error);
+                }
+            }
+
+            async markAsRead(id) {
+                try {
+                    // Deteksi user type dan gunakan route yang sesuai
+                    let markReadRoute = '';
+                    
+                    if (window.location.pathname.includes('/dosen/')) {
+                        markReadRoute = 'http://localhost/dosen/notifications/mark-read';
+                    } else if (window.location.pathname.includes('/mahasiswa/')) {
+                        markReadRoute = 'http://localhost/mahasiswa/notifications/mark-read';
+                    } else if (window.location.pathname.includes('/reviewer/')) {
+                        markReadRoute = 'http://localhost/reviewer/notifications/mark-read';
+                    } else if (window.location.pathname.includes('/operator/')) {
+                        markReadRoute = 'http://localhost/operator/notifications/mark-read';
+                    } else {
+                        console.warn('No mark-read route found for current path');
+                        return;
+                    }
+                    
+                    const response = await fetch(markReadRoute, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        },
+                        body: JSON.stringify({ notification_id: id }),
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        const notification = this.notifications.find(n => n.id === id);
+                        if (notification && notification.unread) {
+                            notification.unread = false;
+                            this.updateNotificationCount();
+                            this.renderNotifications();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error marking notification as read:', error);
+                    // Fallback to local update
+                    const notification = this.notifications.find(n => n.id === id);
+                    if (notification && notification.unread) {
+                        notification.unread = false;
+                        this.updateNotificationCount();
+                        this.renderNotifications();
+                    }
+                }
+            }
+
+            async markAllAsRead() {
+                try {
+                    // Deteksi user type dan gunakan route yang sesuai
+                    let markAllReadRoute = '';
+                    
+                    if (window.location.pathname.includes('/dosen/')) {
+                        markAllReadRoute = 'http://localhost/dosen/notifications/mark-all-read';
+                    } else if (window.location.pathname.includes('/mahasiswa/')) {
+                        markAllReadRoute = 'http://localhost/mahasiswa/notifications/mark-all-read';
+                    } else if (window.location.pathname.includes('/reviewer/')) {
+                        markAllReadRoute = 'http://localhost/reviewer/notifications/mark-all-read';
+                    } else if (window.location.pathname.includes('/operator/')) {
+                        markAllReadRoute = 'http://localhost/operator/notifications/mark-all-read';
+                    } else {
+                        console.warn('No mark-all-read route found for current path');
+                        return;
+                    }
+                    
+                    const response = await fetch(markAllReadRoute, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        this.notifications.forEach(n => n.unread = false);
+                        this.updateNotificationCount();
+                        this.renderNotifications();
+                        
+                        // Show success message
+                        if (typeof showToast === 'function') {
+                            showToast('Semua notifikasi telah ditandai sebagai dibaca', 'success');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error marking all notifications as read:', error);
+                    // Fallback to local update
+                    this.notifications.forEach(n => n.unread = false);
+                    this.updateNotificationCount();
+                    this.renderNotifications();
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('Semua notifikasi telah ditandai sebagai dibaca', 'success');
+                    }
+                }
+            }
+
+            handleAction(id, action, proposalId = null) {
+                try {
+                    const notification = this.notifications.find(n => n.id === id);
+                    if (!notification) {
+                        console.warn(`Notification with id ${id} not found`);
+                        return;
+                    }
+
+                    // Jika ada proposalId, gunakan action URL
+                    if (proposalId && action) {
+                        const url = this.getActionUrl(action, proposalId);
+                        if (url && url !== '#') {
+                            window.location.href = url;
+                            return;
+                        }
+                    }
+
+                    // Handle different actions (fallback untuk action lama)
+                    switch (action) {
+                        case 'Lihat Detail':
+                        case 'view_proposal':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('view_proposal', proposalId);
+                            } else {
+                                this.showNotificationDetail(notification);
+                            }
+                            break;
+                        case 'Download':
+                            this.downloadDocument(notification);
+                            break;
+                        case 'Revisi':
+                        case 'revisi_proposal':
+                        case 'upload_revisi':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('upload_revisi', proposalId);
+                            } else {
+                                this.openRevisionForm(notification);
+                            }
+                            break;
+                        case 'upload_revisi_akhir':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('upload_revisi_akhir', proposalId);
+                            } else {
+                                this.openRevisionForm(notification);
+                            }
+                            break;
+                        case 'view_hasil_final':
+                            if (proposalId) {
+                                window.location.href = this.getActionUrl('view_hasil_final', proposalId);
+                            } else {
+                                this.showNotificationDetail(notification);
+                            }
+                            break;
+                        case 'Ajukan Ulang':
+                            this.resubmitProposal(notification);
+                            break;
+                        default:
+                            console.log(`Action: ${action} for notification ${id}`);
+                    }
+                } catch (error) {
+                    console.error('Error handling notification action:', error);
+                }
+            }
+
+            getActionUrl(action, proposalId) {
+                const baseUrl = window.location.origin;
+                const routes = {
+                    'view_proposal': `/mahasiswa/proposal/${proposalId}`,
+                    'revisi_proposal': `/mahasiswa/proposal/${proposalId}/revisi`,
+                    'upload_revisi': `/mahasiswa/proposal/${proposalId}/revisi`,
+                    'upload_revisi_akhir': `/mahasiswa/proposal/${proposalId}/revisi-akhir`,
+                    'view_hasil_final': `/mahasiswa/proposal/${proposalId}`
+                };
+                return routes[action] || '#';
+            }
+
+            getActionText(action) {
+                const texts = {
+                    'view_proposal': 'Lihat Proposal',
+                    'revisi_proposal': 'Revisi Proposal',
+                    'upload_revisi': 'Upload Revisi',
+                    'upload_revisi_akhir': 'Upload Revisi Akhir',
+                    'view_hasil_final': 'Lihat Hasil Final'
+                };
+                return texts[action] || 'Lihat Detail';
+            }
+
+            escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            showNotificationDetail(notification) {
+                // Show modal or navigate to detail page
+                if (typeof showToast === 'function') {
+                    showToast(`Membuka detail: ${notification.title}`, 'info');
+                }
+            }
+
+            downloadDocument(notification) {
+                if (typeof showToast === 'function') {
+                    showToast('Mengunduh dokumen...', 'info');
+                }
+            }
+
+            openRevisionForm(notification) {
+                if (typeof showToast === 'function') {
+                    showToast('Membuka form revisi...', 'info');
+                }
+            }
+
+            resubmitProposal(notification) {
+                if (typeof showToast === 'function') {
+                    showToast('Membuka form pengajuan ulang...', 'info');
+                }
+            }
+
+            startPolling() {
+                try {
+                    // Poll for new notifications every 30 seconds
+                    this.pollingInterval = setInterval(() => {
+                        this.checkForNewNotifications();
+                    }, 30000);
+                } catch (error) {
+                    console.error('Error starting notification polling:', error);
+                }
+            }
+
+            checkForNewNotifications() {
+                try {
+                    // Simulate checking for new notifications
+                    // In real implementation, this would make an AJAX call to the server
+                    const hasNewNotifications = Math.random() > 0.8; // 20% chance of new notification
+                    
+                    if (hasNewNotifications) {
+                        this.addNewNotification();
+                    }
+                } catch (error) {
+                    console.error('Error checking for new notifications:', error);
+                }
+            }
+
+            addNewNotification() {
+                try {
+                    const newNotification = {
+                        id: Date.now(),
+                        type: 'info',
+                        title: 'Notifikasi Baru',
+                        message: 'Ada pembaruan status proposal yang perlu Anda periksa.',
+                        time: 'Baru saja',
+                        unread: true,
+                        actions: ['Lihat Detail']
+                    };
+
+                    this.notifications.unshift(newNotification);
+                    this.updateNotificationCount();
+                    this.renderNotifications();
+
+                    // Show toast notification
+                    if (typeof showToast === 'function') {
+                        showToast('Anda memiliki notifikasi baru', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error adding new notification:', error);
+                }
+            }
+
+            showAllNotifications() {
+                // Navigate to notifications page or show all in modal
+                if (typeof showToast === 'function') {
+                    showToast('Membuka halaman semua notifikasi', 'info');
+                }
+            }
+
+            // Cleanup function
+            cleanup() {
+                try {
+                    if (this.pollingInterval) {
+                        clearInterval(this.pollingInterval);
+                        this.pollingInterval = null;
+                    }
+                } catch (error) {
+                    console.error('Error cleaning up notification system:', error);
+                }
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Layout loaded successfully');
+            window.AppUI?.initSidebarInteractions?.();
+            applyIndonesianNumberFormatting();
+            
+            // Initialize notification system only once
+            if (!window.notificationSystem) {
+                try {
+                    window.notificationSystem = new NotificationSystem();
+                    console.log('Notification system initialized successfully');
+                } catch (error) {
+                    console.error('Failed to initialize notification system:', error);
+                }
+            } else {
+                console.log('Notification system already exists');
+            }
+        });
+
+        // Cleanup notification system when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (window.notificationSystem) {
+                window.notificationSystem.cleanup();
+            }
+        });
+
+        // Load custom PDF viewer script
+        const pdfViewerScript = document.createElement('script');
+        pdfViewerScript.src = '/js/pdf-viewer.js';
+        pdfViewerScript.onload = function() {
+            console.log('PDF Viewer script loaded successfully');
+        };
+        pdfViewerScript.onerror = function() {
+            console.error('Failed to load PDF Viewer script');
+        };
+        document.head.appendChild(pdfViewerScript);
+    </script>
+        <script>
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Proposal index page loaded');
+        
+        // Check if there are any proposals
+        const proposalCards = document.querySelectorAll('.proposal-card');
+        if (proposalCards.length === 0) {
+            console.log('No proposals found');
+        }
+
+        // Show success message if exists
+        
+            });
+
+    // Handle responsive design
+    window.addEventListener('resize', function() {
+        // Adjust layout for mobile devices
+        if (window.innerWidth < 768) {
+            const actionSidebar = document.getElementById('actionSidebar');
+            const toggleBtn = document.getElementById('actionToggleBtn');
+            
+            if (actionSidebar && actionSidebar.classList.contains('show')) {
+                // Hide action sidebar on mobile when resizing
+                actionSidebar.classList.remove('show');
+                toggleBtn.classList.remove('shifted');
+            }
+        }
+    });
+
+    // Sidebar and Modal Functions
+    function toggleActionSidebar() {
+        const actionSidebar = document.getElementById('actionSidebar');
+        const toggleBtn = document.getElementById('actionToggleBtn');
+        
+        if (actionSidebar) {
+            actionSidebar.classList.toggle('show');
+            toggleBtn.classList.toggle('shifted');
+        }
+    }
+
+    function showReviewModal(type, proposalId) {
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        // Show loading
+        modalBody.innerHTML = '<div class="text-center"><div class="spinner"></div><p>Memuat data...</p></div>';
+        modalOverlay.classList.add('show');
+        
+        // Set modal title based on type
+        switch(type) {
+            case 'administrative':
+                modalTitle.textContent = 'Hasil Review Administratif';
+                loadAdministrativeReview(proposalId);
+                break;
+            case 'substantive':
+                modalTitle.textContent = 'Hasil Review Substantif';
+                loadSubstantiveReview(proposalId);
+                break;
+            case 'final':
+                modalTitle.textContent = 'Hasil Final';
+                loadFinalReview(proposalId);
+                break;
+        }
+    }
+
+    function closeModal() {
+        const modalOverlay = document.getElementById('modalOverlay');
+        modalOverlay.classList.remove('show');
+    }
+
+    function loadAdministrativeReview(proposalId) {
+        if (!proposalId) {
+            document.getElementById('modalBody').innerHTML = '<p class="text-center text-muted">Tidak ada data review administratif.</p>';
+            return;
+        }
+
+        fetch(`/mahasiswa/proposal/${proposalId}/review/administrative`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data.length > 0) {
+                    document.getElementById('modalBody').innerHTML = generateAdministrativeReviewHTML(data.data, data.proposal_info);
+                } else {
+                    document.getElementById('modalBody').innerHTML = `
+                        <div class="text-center">
+                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada review administratif</h6>
+                            <p class="text-muted">Review administratif akan muncul di sini setelah proposal direview oleh reviewer.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> Terjadi kesalahan saat memuat data review administratif.
+                    </div>
+                `;
+            });
+    }
+
+    function loadSubstantiveReview(proposalId) {
+        console.log('Loading substantive review for proposal:', proposalId);
+        
+        if (!proposalId) {
+            console.log('No proposal ID provided');
+            document.getElementById('modalBody').innerHTML = '<p class="text-center text-muted">Tidak ada data review substantif.</p>';
+            return;
+        }
+
+        fetch(`/mahasiswa/proposal/${proposalId}/review/substantive`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received data:', data);
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    console.log(`Found ${data.data.length} substantive reviews`);
+                    document.getElementById('modalBody').innerHTML = generateSubstantiveReviewHTML(data.data, data.proposal_info);
+                } else {
+                    console.log('No substantive reviews found or empty data');
+                    document.getElementById('modalBody').innerHTML = `
+                        <div class="text-center">
+                            <i class="fas fa-user-check fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada review substantif</h6>
+                            <p class="text-muted">Review substantif akan muncul di sini setelah proposal lolos review administratif.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading substantive review:', error);
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> Terjadi kesalahan saat memuat data review substantif.
+                        <br><small>Error: ${error.message}</small>
+                    </div>
+                `;
+            });
+    }
+
+    function loadFinalReview(proposalId) {
+        if (!proposalId) {
+            document.getElementById('modalBody').innerHTML = '<p class="text-center text-muted">Tidak ada data hasil final.</p>';
+            return;
+        }
+
+        fetch(`/mahasiswa/proposal/${proposalId}/review/final`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    document.getElementById('modalBody').innerHTML = generateFinalReviewHTML(
+                        data.data, 
+                        data.proposal_info, 
+                        data.dosen_universitas,
+                        data.hasil_semi_final
+                    );
+                } else {
+                    document.getElementById('modalBody').innerHTML = `
+                        <div class="text-center">
+                            <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada hasil final</h6>
+                            <p class="text-muted">Hasil final akan muncul di sini setelah semua review selesai.</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Error:</strong> Terjadi kesalahan saat memuat data hasil final.
+                    </div>
+                `;
+            });
+    }
+
+    function generateAdministrativeReviewHTML(reviews, proposalInfo) {
+        let html = `
+            <div class="review-section">
+                <div class="proposal-info mb-3">
+                    <h6 class="text-primary"><i class="fas fa-file-alt me-2"></i>Informasi Proposal</h6>
+                    <p><strong>Judul:</strong> ${proposalInfo.judul}</p>
+                    <p><strong>Skim:</strong> ${proposalInfo.skim}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
+                </div>
+        `;
+        
+        // Karena sekarang hanya ada 1 review administratif terbaru
+        if (reviews.length > 0) {
+            const review = reviews[0];
+            html += `
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        <strong>Review Administratif</strong>
+                        ${review.reviewer ? ` - ${review.reviewer.nama_reviewer}` : ''}
+                    </div>
+                    <div class="card-body">
+            `;
+            
+            if (review.checklist && review.checklist.length > 0) {
+                html += '<div class="mb-3"><strong>Kesalahan Administratif yang Ditemukan:</strong><ul class="list-unstyled mt-2">';
+                
+                // Display selected errors
+                review.checklist.forEach((item) => {
+                    html += `
+                        <li class="mb-2">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-danger me-3">
+                                    <i class="fas fa-times"></i>
+                                </span>
+                                <div>
+                                    <strong>${item}</strong>
+                                    <br>
+                                    <small class="text-muted">Status: Perlu Perbaikan</small>
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                });
+                html += '</ul></div>';
+            } else {
+                html += `
+                    <div class="mb-3">
+                        <strong>Checklist Administratif:</strong>
+                        <div class="text-center text-success mt-2">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Semua kriteria telah memenuhi standar
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (review.note_administratif) {
+                html += `
+                    <div class="alert alert-info">
+                        <i class="fas fa-edit me-2"></i>
+                        <strong>Catatan:</strong><br>
+                        ${review.note_administratif}
+                    </div>
+                `;
+            }
+            
+            html += '</div></div>';
+        } else {
+            html += `
+                <div class="card mb-3">
+                    <div class="card-body text-center text-muted">
+                        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                        <h6>Belum ada review administratif</h6>
+                        <p>Review administratif akan muncul di sini setelah proposal direview oleh reviewer.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    function generateSubstantiveReviewHTML(reviews, proposalInfo) {
+        console.log('Generating substantive review HTML with:', { reviews, proposalInfo });
+        
+        let html = `
+            <div class="review-section">
+                <div class="proposal-info mb-3">
+                    <h6 class="text-primary"><i class="fas fa-file-alt me-2"></i>Informasi Proposal</h6>
+                    <p><strong>Judul:</strong> ${proposalInfo.judul}</p>
+                    <p><strong>Skim:</strong> ${proposalInfo.skim}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
+                </div>
+        `;
+        
+        if (reviews && reviews.length > 0) {
+            console.log(`Found ${reviews.length} substantive reviews`);
+            
+            reviews.forEach((review, index) => {
+                console.log(`Processing review ${index + 1}:`, review);
+                
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <i class="fas fa-user me-2"></i>
+                            <strong>Reviewer Substantif ${index + 1}</strong>
+                            ${review.reviewer ? ` - ${review.reviewer.nama_reviewer}` : ''}
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-edit me-2"></i>
+                                <strong>Catatan:</strong><br>
+                                ${review.note_substantif || 'Tidak ada catatan khusus.'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            console.log('No substantive reviews found');
+            html += `
+                <div class="card mb-3">
+                    <div class="card-body text-center text-muted">
+                        <i class="fas fa-user-check fa-3x mb-3"></i>
+                        <h6>Belum ada review substantif</h6>
+                        <p>Review substantif akan muncul di sini setelah proposal lolos review administratif.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    function generateFinalReviewHTML(finalResult, proposalInfo, dosenUniversitas = null, hasilSemiFinal = null) {
+        // Tentukan status berdasarkan hasil final dari Pimpinan PT
+        let statusClass = 'secondary';
+        let statusText = 'BELUM DINILAI';
+        let statusIcon = 'clock';
+        
+        if (finalResult) {
+            // Status PIMNAS
+            const statusPimnas = finalResult.status_pimnas;
+            const statusPendanaan = finalResult.status_pendanaan;
+            
+            if (statusPimnas === 'lolos' && statusPendanaan === 'lolos') {
+                statusClass = 'success';
+                statusText = 'LOLOS PIMNAS & PENDANAAN';
+                statusIcon = 'trophy';
+            } else if (statusPimnas === 'lolos' && statusPendanaan === 'tidak_lolos') {
+                statusClass = 'warning';
+                statusText = 'LOLOS PIMNAS (TIDAK PENDANAAN)';
+                statusIcon = 'trophy';
+            } else if (statusPimnas === 'tidak_lolos' && statusPendanaan === 'lolos') {
+                statusClass = 'info';
+                statusText = 'TIDAK LOLOS PIMNAS (LOLOS PENDANAAN)';
+                statusIcon = 'money-bill-wave';
+            } else {
+                statusClass = 'danger';
+                statusText = 'TIDAK LOLOS';
+                statusIcon = 'times-circle';
+            }
+        }
+        
+        return `
+            <div class="review-section">
+                <div class="proposal-info mb-3">
+                    <h6 class="text-primary"><i class="fas fa-file-alt me-2"></i>Informasi Proposal</h6>
+                    <p><strong>Judul:</strong> ${proposalInfo.judul}</p>
+                    <p><strong>Skim:</strong> ${proposalInfo.skim}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
+                </div>
+                
+                ${dosenUniversitas ? `
+                <div class="card mb-3" style="border-left: 4px solid #667eea;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user-tie me-2"></i>
+                            Dosen Pendamping Universitas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Nama:</strong> ${dosenUniversitas.nama_dosen}</p>
+                        ${dosenUniversitas.no_hp_dosen ? `<p><strong>No. HP:</strong> ${dosenUniversitas.no_hp_dosen}</p>` : ''}
+                        ${dosenUniversitas.email_dosen ? `<p><strong>Email:</strong> ${dosenUniversitas.email_dosen}</p>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${hasilSemiFinal ? `
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            Hasil Semi Final
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'success' : 'danger'}">
+                                ${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'Lolos Tingkat Universitas' : 'Tidak Lolos Tingkat Universitas'}
+                            </span>
+                        </p>
+                        <p><strong>Nilai:</strong> ${hasilSemiFinal.nilai ? parseFloat(hasilSemiFinal.nilai).toFixed(2) : 'N/A'}</p>
+                        ${hasilSemiFinal.catatan_final ? `<p><strong>Catatan:</strong> ${hasilSemiFinal.catatan_final}</p>` : ''}
+                    </div>
+                </div>
+                ` : ''}
+                
+                <div class="card">
+                    <div class="card-header bg-${statusClass} text-white">
+                        <i class="fas fa-${statusIcon} me-2"></i>
+                        <strong>Hasil Final (Pimpinan PT)</strong>
+                    </div>
+                    <div class="card-body">
+                        ${finalResult ? `
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="alert alert-${finalResult.status_pimnas === 'lolos' ? 'success' : 'danger'}">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-${finalResult.status_pimnas === 'lolos' ? 'trophy' : 'times-circle'} me-2"></i>
+                                        Status PIMNAS: ${finalResult.status_pimnas === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}
+                                    </h5>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-${finalResult.status_pendanaan === 'lolos' ? 'success' : 'danger'}">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-${finalResult.status_pendanaan === 'lolos' ? 'money-bill-wave' : 'times-circle'} me-2"></i>
+                                        Status Pendanaan: ${finalResult.status_pendanaan === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}
+                                    </h5>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-primary">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-star me-2"></i>
+                                        Nilai: ${finalResult.nilai ? parseFloat(finalResult.nilai).toFixed(2) : 'N/A'}
+                                    </h5>
+                                </div>
+                            </div>
+                            ${finalResult.dana_yang_didapatkan && finalResult.dana_yang_didapatkan > 0 ? `
+                            <div class="col-md-4">
+                                <div class="alert alert-success">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-money-bill-wave me-2"></i>
+                                        Dana yang Didapatkan: Rp ${formatRupiah(finalResult.dana_yang_didapatkan)}
+                                    </h5>
+                                </div>
+                            </div>
+                            ` : ''}
+                            <div class="col-md-4">
+                                <div class="alert alert-secondary">
+                                    <h5 class="alert-heading">
+                                        <i class="fas fa-calendar me-2"></i>
+                                        Tanggal: ${new Date(finalResult.created_at).toLocaleDateString('id-ID', { 
+                                            year: 'numeric', 
+                                            month: 'long', 
+                                            day: 'numeric' 
+                                        })}
+                                    </h5>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${finalResult.catatan_final ? `
+                        <div class="mb-3">
+                            <h6><i class="fas fa-comment me-2"></i>Catatan Final:</h6>
+                            <p class="mb-0">
+                                ${finalResult.catatan_final}
+                            </p>
+                        </div>
+                        ` : ''}
+                        ` : `
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Belum ada hasil final</h6>
+                            <p class="text-muted">Hasil final akan muncul di sini setelah Pimpinan PT melakukan penilaian.</p>
+                        </div>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+        const modalOverlay = document.getElementById('modalOverlay');
+        if (event.target === modalOverlay) {
+            closeModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    // Format Rupiah helper function
+    function formatRupiah(value) {
+        if (!value) return '0';
+        const num = parseFloat(value);
+        return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#17a2b8'};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        // Show toast
+        setTimeout(() => {
+            toast.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+</script>
+</body>
+</html> 

@@ -5,33 +5,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\Proposal;
 use App\Models\User;
-use App\Repositories\Firebase\NotificationRepository;
-use Illuminate\Support\Facades\Log;
-
-class NotificationService
-{
-    public function __construct(
-        private NotificationRepository $notificationRepository,
-        private FirebaseService $firebaseService
-    ) {
-    }
-
-    /**
-     * Secondary async write to Firestore. Never throws; logs errors only.
-     */
-    private function writeToFirestore(array $data): void
-    {
-        try {
-            if (!$this->firebaseService->isAvailable()) {
-                return;
-            }
-            $this->notificationRepository->createNotification($data);
-        } catch (\Throwable $e) {
-            Log::warning('Firestore notification write failed (non-fatal): ' . $e->getMessage(), [
-                'user_identifier' => $data['user_identifier'] ?? null,
-                'type' => $data['type'] ?? null,
-            ]);
-        }
+    public function __construct() {
     }
 
     /**
@@ -63,7 +37,6 @@ class NotificationService
                     'proposal_id' => $proposal->id_proposal,
                 ];
                 Notification::create($payload);
-                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi berhasil dikirim ke mahasiswa untuk proposal {$proposal->id_proposal}");
@@ -94,7 +67,6 @@ class NotificationService
                         'proposal_id' => $proposal->id_proposal,
                     ];
                     Notification::create($payload);
-                    $this->writeToFirestore($payload);
                 }
             }
             
@@ -142,7 +114,6 @@ class NotificationService
                         'proposal_id' => $proposal->id_proposal,
                     ];
                     Notification::create($payload);
-                    $this->writeToFirestore($payload);
                 }
             }
             
@@ -172,7 +143,6 @@ class NotificationService
                     'data' => $data,
                 ];
                 Notification::create($payload);
-                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi berhasil dikirim ke operator");
@@ -335,17 +305,7 @@ class NotificationService
     public function cleanupOldNotifications(): int
     {
         $deletedCount = Notification::where('created_at', '<', now()->subDays(30))->delete();
-        try {
-            if ($this->firebaseService->isAvailable()) {
-                $firestoreDeleted = $this->notificationRepository->deleteOlderThan(30);
-                Log::info("Berhasil menghapus {$deletedCount} notifikasi lama (PostgreSQL), {$firestoreDeleted} (Firestore)");
-            } else {
-                Log::info("Berhasil menghapus {$deletedCount} notifikasi lama");
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Firestore cleanup failed (non-fatal): ' . $e->getMessage());
-            Log::info("Berhasil menghapus {$deletedCount} notifikasi lama");
-        }
+        Log::info("Berhasil menghapus {$deletedCount} notifikasi lama");
         return $deletedCount;
     }
 
@@ -433,7 +393,6 @@ class NotificationService
                     ],
                 ];
                 Notification::create($payload);
-                $this->writeToFirestore($payload);
             }
             
             Log::info("Notifikasi ruang kontrol dibuka berhasil dikirim ke semua mahasiswa");

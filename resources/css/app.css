@@ -1,14 +1,4 @@
-@import 'tailwindcss';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
-
-@theme {
-    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-}
 
 /* ============================================================
    DESIGN SYSTEM — Sistem Pengajuan Proposal PKM
@@ -16,70 +6,64 @@
    ============================================================ */
 
 :root {
-    /* === Brand / Primary === */
-    --primary-900: #380F17;
-    /* sidebar aktif, hover kuat */
-    --primary-700: #8F0B13;
-    /* tombol CTA, link, highlight */
-    --primary-100: rgba(143, 11, 19, 0.08);
-    /* hover bg tipis */
+    /* === Brand / Primary (Crimson/Maroon) === */
+    --primary-900: #7f1d1d; /* Crimson Dark */
+    --primary-700: #991b1b; /* Crimson Base */
+    --primary-600: #b91c1c; /* Crimson Hover */
+    --primary-100: #fee2e2; /* Crimson Light bg */
+    --primary-50:  #fef2f2; /* Crimson Soft bg */
 
-    /* === Surface / Background === */
-    --bg-soft: #EDEBDD;
-    /* background halaman */
-    --surface: #FFFFFF;
-    /* card background */
-    --surface-2: #F7F4EF;
-    /* secondary surface */
+    /* === Surface / Background (Slate) === */
+    --bg-soft: #f8fafc; /* Slate 50 */
+    --surface: #ffffff; /* White card */
+    --surface-2: #f1f5f9; /* Slate 100 */
 
-    /* === Text / Neutral === */
-    --text-900: #252B2B;
-    /* teks utama */
-    --text-600: #4C4F54;
-    /* teks sekunder */
-    --text-400: #9CA3AF;
-    /* placeholder, teks muted */
+    /* === Text / Neutral (Slate) === */
+    --text-900: #0f172a; /* Slate 900 */
+    --text-600: #475569; /* Slate 600 */
+    --text-400: #94a3b8; /* Slate 400 */
 
     /* === Border & Shadow === */
-    --border: #E2E0D9;
-    --border-dark: #D4D0C8;
-    --shadow-sm: 0 1px 4px rgba(56, 15, 23, 0.06);
-    --shadow: 0 2px 12px rgba(56, 15, 23, 0.08);
-    --shadow-md: 0 4px 20px rgba(56, 15, 23, 0.12);
-    --shadow-lg: 0 8px 32px rgba(56, 15, 23, 0.16);
+    --border: #e2e8f0; /* Slate 200 */
+    --border-dark: #cbd5e1; /* Slate 300 */
+    --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.1);
+    --shadow-md: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
+    --shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+    --shadow-xl: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 
     /* === Status Colors (universal) === */
-    --status-draft-bg: #F3F4F6;
-    --status-draft-text: #6B7280;
-    --status-submitted-bg: #DBEAFE;
-    --status-submitted-text: #1D4ED8;
-    --status-validated-bg: #CFFAFE;
-    --status-validated-text: #0E7490;
-    --status-review-bg: #EDE9FE;
-    --status-review-text: #6D28D9;
-    --status-revisi-bg: #FEF3C7;
-    --status-revisi-text: #B45309;
-    --status-final-bg: #D1FAE5;
-    --status-final-text: #065F46;
-    --status-rejected-bg: #FEE2E2;
-    --status-rejected-text: #B91C1C;
+    --status-draft-bg: #f1f5f9;
+    --status-draft-text: #475569;
+    --status-submitted-bg: #dbeafe;
+    --status-submitted-text: #1d4ed8;
+    --status-validated-bg: #cffafe;
+    --status-validated-text: #0e7490;
+    --status-review-bg: #f3e8ff;
+    --status-review-text: #7e22ce;
+    --status-revisi-bg: #fef3c7;
+    --status-revisi-text: #b45309;
+    --status-final-bg: #d1fae5;
+    --status-final-text: #047857;
+    --status-rejected-bg: #fee2e2;
+    --status-rejected-text: #b91c1c;
 
     /* === Legacy compat === */
-    --primary-color: #8F0B13;
-    --primary-dark: #380F17;
-    --primary-light: #BF2030;
+    --primary-color: var(--primary-700);
+    --primary-dark: var(--primary-900);
+    --primary-light: var(--primary-600);
     --secondary-color: var(--text-600);
-    --success-color: #059669;
-    --warning-color: #D97706;
-    --danger-color: #DC2626;
-    --info-color: #0891B2;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #0ea5e9;
     --light-color: var(--bg-soft);
     --dark-color: var(--text-900);
-    --sidebar-width: 270px;
-    --navbar-height: 64px;
-    --border-radius: 10px;
+    --sidebar-width: 280px;
+    --navbar-height: 70px;
+    --border-radius: 12px;
     --box-shadow: var(--shadow);
-    --transition: all 0.25s ease;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================================
@@ -182,20 +166,20 @@ a:hover {
     background: var(--primary-700);
     color: #fff;
     border: none;
-    box-shadow: 0 2px 6px rgba(143, 11, 19, 0.25);
+    box-shadow: 0 4px 6px -1px rgba(153, 27, 27, 0.2), 0 2px 4px -2px rgba(153, 27, 27, 0.1);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
     background: var(--primary-900);
     color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(56, 15, 23, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(153, 27, 27, 0.3), 0 4px 6px -4px rgba(153, 27, 27, 0.1);
 }
 
 .btn-primary:active {
     transform: translateY(0);
-    box-shadow: none;
+    box-shadow: 0 1px 2px 0 rgba(153, 27, 27, 0.2);
 }
 
 .btn-secondary {
@@ -289,7 +273,7 @@ a:hover {
 .btn-primary-custom:hover {
     background: var(--primary-900);
     color: #fff;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
 .btn-outline-primary-custom {
@@ -309,7 +293,7 @@ a:hover {
 .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
     overflow: hidden;
@@ -317,7 +301,7 @@ a:hover {
 
 .card:hover {
     box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
 }
 
 .card-header {
@@ -350,14 +334,16 @@ a:hover {
 /* Modal card headers */
 .card-header-custom,
 .modal-header-custom {
-    background: var(--primary-900);
+    background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-700) 100%);
     color: #fff;
-    border-radius: 14px 14px 0 0 !important;
-    padding: 1rem 1.25rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    padding: 1.25rem 1.5rem;
+    border-bottom: none;
 }
 
 .modal-header-custom .btn-close-white {
     filter: brightness(0) invert(1);
+    opacity: 0.8;
 }
 
 /* Stat Mini Cards */
@@ -374,8 +360,8 @@ a:hover {
 }
 
 .stat-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
 }
 
 .stat-card-icon {
@@ -390,7 +376,7 @@ a:hover {
 }
 
 .stat-card-icon.maroon {
-    background: rgba(143, 11, 19, 0.1);
+    background: var(--primary-50);
     color: var(--primary-700);
 }
 
@@ -539,7 +525,7 @@ a:hover {
 .form-control:focus,
 .form-select:focus {
     border-color: var(--primary-700);
-    box-shadow: 0 0 0 3px rgba(143, 11, 19, 0.12);
+    box-shadow: 0 0 0 4px var(--primary-100);
     outline: none;
 }
 

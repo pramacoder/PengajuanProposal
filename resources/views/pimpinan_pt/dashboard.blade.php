@@ -1,4 +1,4 @@
-@extends('operator.layout')
+@extends('mainlayout.app')
 
 @section('title', 'Dashboard Hasil Final - Pimpinan PT')
 

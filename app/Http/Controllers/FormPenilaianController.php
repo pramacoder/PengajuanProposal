@@ -3,17 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\FormPenilaian;
-use App\Repositories\Firebase\FormPenilaianConfigRepository;
-use App\Services\FirebaseService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class FormPenilaianController extends Controller
 {
-    public function __construct(private
-        FormPenilaianConfigRepository $configRepo, private
-        FirebaseService $firebaseService
-        )
+    public function __construct()
     {
     }
 
@@ -58,22 +54,6 @@ class FormPenilaianController extends Controller
 
         $form = FormPenilaian::create($validated);
 
-        // Dual-write to Firestore
-        try {
-            if ($this->firebaseService->isAvailable()) {
-                $this->configRepo->createConfig($form->id, [
-                    'nama_form' => $form->nama_form,
-                    'jenis_form' => $form->jenis_form,
-                    'skim' => $form->skim,
-                    'config' => $form->config,
-                    'fields' => $form->fields,
-                    'tahun_ajaran' => $form->tahun_ajaran,
-                ]);
-            }
-        }
-        catch (\Throwable $e) {
-            Log::warning('Firestore form penilaian config sync failed', ['error' => $e->getMessage()]);
-        }
 
         return redirect()->route('operator.form.penilaian.index')
             ->with('success', 'Form penilaian berhasil dibuat.');
@@ -107,22 +87,6 @@ class FormPenilaianController extends Controller
 
         $form->update($validated);
 
-        // Sync to Firestore
-        try {
-            if ($this->firebaseService->isAvailable()) {
-                $this->configRepo->createConfig($form->id, [
-                    'nama_form' => $form->nama_form,
-                    'jenis_form' => $form->jenis_form,
-                    'skim' => $form->skim,
-                    'config' => $form->config,
-                    'fields' => $form->fields,
-                    'tahun_ajaran' => $form->tahun_ajaran,
-                ]);
-            }
-        }
-        catch (\Throwable $e) {
-            Log::warning('Firestore form penilaian update sync failed', ['error' => $e->getMessage()]);
-        }
 
         return redirect()->route('operator.form.penilaian.index')
             ->with('success', 'Form penilaian berhasil diperbarui.');

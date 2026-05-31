@@ -19,18 +19,17 @@ class StorageHelper
         try {
             $disk = Storage::disk(static::$disk);
 
-            if ($filename) {
-                return $disk->putFileAs(
-                    $path,
-                    $file,
-                    $filename
-                );
+            $result = $filename ? $disk->putFileAs($path, $file, $filename) : $disk->putFile($path, $file);
+
+            if ($result === false) {
+                throw new \Exception("Supabase storage returned false.");
             }
 
-            return $disk->putFile($path, $file);
+            return $result;
         } catch (\Throwable $e) {
             Log::error("Supabase Storage upload failed, falling back to public disk: {$e->getMessage()}");
-            return Storage::disk('public')->putFile($path, $file);
+            $fallbackResult = Storage::disk('public')->putFile($path, $file);
+            return $fallbackResult === false ? null : $fallbackResult;
         }
     }
 

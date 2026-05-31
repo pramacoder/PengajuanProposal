@@ -38,6 +38,34 @@ function applyIndonesianNumberFormatting(root = document) {
     });
 }
 
+function initGlobalFormLoading(root = document) {
+    root.querySelectorAll('form').forEach((form) => {
+        if (form.dataset.loadingBound === '1') return;
+        form.dataset.loadingBound = '1';
+        form.addEventListener('submit', function (e) {
+            // Prevent if form is invalid (HTML5 validation)
+            if (!this.checkValidity()) return;
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn && !submitBtn.dataset.originalText) {
+                // Save original text
+                submitBtn.dataset.originalText = submitBtn.innerHTML;
+                
+                // Add spinner and disable
+                const isSmall = submitBtn.classList.contains('btn-sm');
+                const spinnerSize = isSmall ? '14px' : '18px';
+                
+                submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" style="width: ${spinnerSize}; height: ${spinnerSize};" role="status" aria-hidden="true"></span> Memproses...`;
+                submitBtn.disabled = true;
+                
+                // Also add a slight opacity to the form
+                this.style.opacity = '0.7';
+                this.style.pointerEvents = 'none';
+            }
+        });
+    });
+}
+
 function showToast(message, type = 'info', duration = 3000) {
     const toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) return;
@@ -136,6 +164,7 @@ window.AppUI = {
     parseAngkaIndonesia,
     formatAngkaIndonesia,
     applyIndonesianNumberFormatting,
+    initGlobalFormLoading,
     showToast,
     initSidebarInteractions,
 };
@@ -143,4 +172,5 @@ window.AppUI = {
 window.parseAngkaIndonesia = parseAngkaIndonesia;
 window.formatAngkaIndonesia = formatAngkaIndonesia;
 window.applyIndonesianNumberFormatting = applyIndonesianNumberFormatting;
+window.initGlobalFormLoading = initGlobalFormLoading;
 window.showToast = showToast;

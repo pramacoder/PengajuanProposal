@@ -3,17 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\SimbelmawaReport;
-use App\Repositories\Firebase\SimbelmawaReportRepository;
-use App\Services\FirebaseService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class SimbelmawaReportController extends Controller
 {
-    public function __construct(
-        protected SimbelmawaReportRepository $simbelmawaReportRepository,
-        protected FirebaseService $firebaseService
-    ) {}
+    public function __construct() {}
 
     /**
      * Display a listing of the resource.
@@ -83,26 +79,6 @@ class SimbelmawaReportController extends Controller
         $report->prestasi = $prestasiArray;
         $report->created_by = $request->user()->id;
         $report->save();
-
-        if ($this->firebaseService->isAvailable()) {
-            try {
-                $docId = $this->simbelmawaReportRepository->createReport($report->id, [
-                    'tahun_ajaran' => $report->tahun_ajaran,
-                    'judul_proposal_lolos_pimnas' => $report->judul_proposal_lolos_pimnas,
-                    'prestasi' => $report->prestasi,
-                    'metadata' => [
-                        'jumlah_proposal_tervalidasi_pimpinan_pt' => $report->jumlah_proposal_tervalidasi_pimpinan_pt,
-                        'jumlah_proposal_dapat_pendanaan' => $report->jumlah_proposal_dapat_pendanaan,
-                        'total_dana_pendanaan' => (float) $report->total_dana_pendanaan,
-                        'jumlah_proposal_lolos_pimnas' => $report->jumlah_proposal_lolos_pimnas,
-                        'jumlah_prestasi' => $report->jumlah_prestasi,
-                    ],
-                ]);
-                $report->update(['mongo_report_id' => $docId]);
-            } catch (\Exception $e) {
-                Log::warning('Firestore dual-write failed for SimbelmawaReport: ' . $e->getMessage());
-            }
-        }
 
         return redirect()
             ->route('operator.laporan.simbelmawa.index')

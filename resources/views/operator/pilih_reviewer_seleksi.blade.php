@@ -1,4 +1,4 @@
-@extends('operator.layout')
+@extends('mainlayout.app')
 
 @section('title', 'Pilih Reviewer Seleksi - Operator')
 

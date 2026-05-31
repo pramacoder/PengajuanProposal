@@ -252,4 +252,261 @@ class ProposalRevisiController extends Controller
             return redirect()->route('mahasiswa.revisi.index')->with('error', 'Gagal menghapus file revisi: ' . $e->getMessage());
         }
     }
+
+    public function showRevisiForm($id)
+    {
+        if (!auth()->check()) {
+            return redirect('/login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $user = auth()->user();
+        
+        $proposal = Proposal::with([
+            'mahasiswa', 
+            'dosen', 
+            'dokumen',
+            'nilaiAdministratif.reviewer',
+            'nilaiSubstantif.reviewer',
+            'hasilSemiFinal',
+            'dosenPendampingUniversitas'
+        ])
+            ->where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                $query->where('id_mahasiswa', $user->id)
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+            })
+            ->firstOrFail();
+
+        if ($proposal->status !== 'revisi') {
+            return redirect()->route('mahasiswa.proposal.show', $id)
+                ->with('error', 'Proposal belum siap untuk direvisi. Status saat ini: ' . ucfirst(str_replace('_', ' ', $proposal->status)));
+        }
+
+        $tahunAjaranTerbaru = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        $revisi = ProposalRevisi::where('id_proposal', $proposal->id_proposal)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('mahasiswa.revisi_proposal', compact('proposal', 'user', 'ruangKontrol', 'revisi'));
+    }
+
+    public function submitRevisi(Request $request, $id)
+    {
+        try {
+            if (!auth()->check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan login terlebih dahulu.'
+                ], 401);
+            }
+
+            $user = auth()->user();
+            
+            $proposal = Proposal::with(['dokumen'])
+                ->where('id_proposal', $id)
+                ->where(function($query) use ($user) {
+                    $query->where('id_mahasiswa', $user->id)
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                })
+                ->firstOrFail();
+
+            if ($proposal->status !== 'revisi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proposal belum siap untuk direvisi.'
+                ], 400);
+            }
+
+            $request->validate([
+                'revisi_file' => 'required|file|mimes:pdf|max:5120', 
+            ], [
+                'revisi_file.required' => 'File revisi proposal wajib diupload.',
+                'revisi_file.file' => 'File revisi harus berupa file.',
+                'revisi_file.mimes' => 'File revisi harus berformat PDF.',
+                'revisi_file.max' => 'Ukuran file revisi maksimal 5MB.',
+            ]);
+
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $revisiFile = $request->file('revisi_file');
+            $fileName = 'revisi_' . time() . '_' . $revisiFile->getClientOriginalName();
+            $filePath = StorageHelper::store('proposals/revisi', $revisiFile, $fileName);
+
+            $proposalRevisi = $proposal->proposalRevisi()->create([
+                'nama_file' => $fileName,
+                'path_file' => $filePath,
+                'tanggal_submit' => now(),
+                'jenis_revisi' => 'revisi_biasa', 
+            ]);
+
+            $proposal->update([
+                'status' => 'revisi_submitted',
+                'updated_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Revisi proposal berhasil diupload! Proposal akan direview kembali oleh reviewer.',
+                'data' => [
+                    'proposal_id' => $proposal->id_proposal,
+                    'file_name' => $fileName,
+                    'file_size' => $revisiFile->getSize(),
+                    'status' => 'revisi_submitted'
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $e->errors()),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollback();
+            
+            \Illuminate\Support\Facades\Log::error('Error in submitRevisi', [
+                'proposal_id' => $id,
+                'user_id' => $user->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function showRevisiAkhirForm($id)
+    {
+        $user = auth()->user();
+        
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+        }
+
+        $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas', 'hasilSemiFinal'])
+            ->where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                $query->where('id_mahasiswa', $user->id)
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+            })
+            ->firstOrFail();
+
+        if ($proposal->status !== 'revisi_akhir') {
+            return redirect()->route('mahasiswa.proposal.index')
+                ->with('error', 'Proposal belum siap untuk revisi akhir. Status saat ini: ' . ucfirst(str_replace('_', ' ', $proposal->status)));
+        }
+
+        $revisiAkhir = ProposalRevisi::where('id_proposal', $proposal->id_proposal)
+            ->where('path_file', 'like', '%revisi_akhir%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('mahasiswa.revisi_akhir_proposal', compact('proposal', 'user', 'revisiAkhir'));
+    }
+
+    public function submitRevisiAkhir(Request $request, $id)
+    {
+        try {
+            if (!auth()->check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan login terlebih dahulu.'
+                ], 401);
+            }
+
+            $user = auth()->user();
+            
+            $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas'])
+                ->where('id_proposal', $id)
+                ->where(function($query) use ($user) {
+                    $query->where('id_mahasiswa', $user->id)
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                })
+                ->firstOrFail();
+
+            if ($proposal->status !== 'revisi_akhir') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proposal belum siap untuk revisi akhir.'
+                ], 400);
+            }
+
+            $request->validate([
+                'revisi_file' => 'required|file|mimes:pdf|max:5120', 
+            ], [
+                'revisi_file.required' => 'File revisi akhir proposal wajib diupload.',
+                'revisi_file.file' => 'File revisi harus berupa file.',
+                'revisi_file.mimes' => 'File revisi harus berformat PDF.',
+                'revisi_file.max' => 'Ukuran file revisi maksimal 5MB.',
+            ]);
+
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $revisiFile = $request->file('revisi_file');
+            $fileName = 'revisi_akhir_' . time() . '_' . $revisiFile->getClientOriginalName();
+            $filePath = StorageHelper::store('proposals/revisi_akhir', $revisiFile, $fileName);
+
+            $proposalRevisi = $proposal->proposalRevisi()->create([
+                'nama_file' => $fileName,
+                'path_file' => $filePath,
+                'tanggal_submit' => now(),
+                'jenis_revisi' => 'revisi_akhir', 
+            ]);
+
+            $proposal->update([
+                'status' => 'validasi_akhir_dosen_univ',
+                'status_final' => 'validasi_akhir_dosen_univ',
+                'updated_at' => now(),
+            ]);
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Revisi akhir proposal berhasil diupload! Proposal akan divalidasi oleh dosen pendamping universitas.',
+                'data' => [
+                    'proposal_id' => $proposal->id_proposal,
+                    'file_name' => $fileName,
+                    'file_size' => $revisiFile->getSize(),
+                    'status' => 'validasi_akhir_dosen_univ'
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $e->errors()),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollback();
+            
+            \Illuminate\Support\Facades\Log::error('Error in submitRevisiAkhir', [
+                'proposal_id' => $id,
+                'user_id' => $user->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

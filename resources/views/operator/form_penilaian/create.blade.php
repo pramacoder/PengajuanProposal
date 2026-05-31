@@ -1,4 +1,4 @@
-@extends('operator.layout')
+@extends('mainlayout.app')
 
 @section('title', 'Buat Form Penilaian')
 
