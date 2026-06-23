@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer');
         await page.goto('http://127.0.0.1:8000/login');
         
         console.log('Logging in...');
-        await page.type('input[name=email]', '2001234567');
+        await page.type('input[name=email]', 'made.surya@student.unud.ac.id');
         await page.type('input[name=password]', 'password123');
         await page.click('button[type=submit]');
         await page.waitForNavigation();

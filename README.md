@@ -52,7 +52,7 @@ Sistem mendukung 5 role user dalam unified `users` table:
 1. **Mahasiswa** (`auth:mahasiswa`)
     - Pengajuan proposal
     - Monitoring status proposal
-    - Upload revisi
+    - Upload revisi 
     - Lihat hasil final
 
 2. **Dosen Pendamping** (`auth:dosen`)

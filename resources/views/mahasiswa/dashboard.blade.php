@@ -14,7 +14,7 @@
             <h1 class="h4 fw-bold mb-1" style="color: var(--text-900);">
                 Selamat datang, <span style="color: var(--primary-700);">{{ auth()->user()->name }}</span> 👋
             </h1>
-            <p class="mb-0" style="color: var(--text-600); font-size: 0.9rem;">Dashboard PKM — Lihat dan kelola proposal Anda</p>
+            <p class="mb-0" style="color: var(--text-600); font-size: 0.9rem;">Dashboard PKM | Lihat dan kelola proposal Anda</p>
         </div>
 
         <div class="d-flex align-items-center gap-2">

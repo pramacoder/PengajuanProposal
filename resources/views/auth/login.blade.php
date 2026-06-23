@@ -283,7 +283,7 @@
             </h1>
 
             <p class="brand-desc">
-                Platform digital terintegrasi untuk pengelolaan proposal Program Kreativitas Mahasiswa (PKM) — dari pengajuan, review, hingga penilaian akhir, semua dalam satu sistem.
+                Platform digital terintegrasi untuk pengelolaan proposal Program Kreativitas Mahasiswa (PKM) dari pengajuan, review, hingga penilaian akhir, semua dalam satu sistem.
             </p>
 
             <div class="brand-features">

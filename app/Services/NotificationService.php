@@ -5,6 +5,10 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\Proposal;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
+
+class NotificationService
+{
     public function __construct() {
     }
 
