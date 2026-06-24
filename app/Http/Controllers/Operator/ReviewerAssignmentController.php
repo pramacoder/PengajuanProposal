@@ -20,7 +20,7 @@ class ReviewerAssignmentController extends Controller
 
     public function pilihReviewer()
     {
-        $tahun = request('tahun', '2025');
+        $tahun = request('tahun', date('Y'));
         $filter = request('filter', 'all');
         
         // Ambil proposal yang sudah divalidasi dosen dan BELUM memiliki reviewer
@@ -116,7 +116,7 @@ class ReviewerAssignmentController extends Controller
 
     public function getAssignedProposals()
     {
-        $tahun = request('tahun', '2025');
+        $tahun = request('tahun', date('Y'));
         $filter = request('filter', 'all');
         
         try {
@@ -155,7 +155,7 @@ class ReviewerAssignmentController extends Controller
 
     public function getAssignedProposalsSeleksi()
     {
-        $tahun = request('tahun', '2025');
+        $tahun = request('tahun', date('Y'));
         $filter = request('filter', 'all');
 
         try {
@@ -188,7 +188,7 @@ class ReviewerAssignmentController extends Controller
 
     public function pilihReviewerSeleksi(Request $request)
     {
-        $tahun = $request->get('tahun', '2025');
+        $tahun = $request->get('tahun', date('Y'));
         $filter = $request->get('filter', 'all');
 
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif'])

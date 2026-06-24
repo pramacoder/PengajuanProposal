@@ -18,9 +18,10 @@
     <div class="row mb-4">
         <div class="col-md-3">
             <select class="form-select" id="yearSelector">
-                <option value="2025" {{ $tahun == '2025' ? 'selected' : '' }}>2025</option>
-                <option value="2024" {{ $filter == '2024' ? 'selected' : '' }}>2024</option>
-                <option value="2023" {{ $filter == '2023' ? 'selected' : '' }}>2023</option>
+                @php $currentYear = date('Y'); @endphp
+                @for($i = $currentYear; $i >= 2023; $i--)
+                    <option value="{{ $i }}" {{ $tahun == $i ? 'selected' : '' }}>{{ $i }}</option>
+                @endfor
             </select>
         </div>
         <div class="col-md-3">

@@ -19,7 +19,7 @@ class HasilController extends Controller
 {
     public function hasilFinal()
     {
-        $tahun = request('tahun', '2025');
+        $tahun = request('tahun', date('Y'));
         $filter = request('filter', 'all');
         $statusRevisi = request('status_revisi', 'all');
         
@@ -251,7 +251,7 @@ class HasilController extends Controller
 
     public function hasilSemiFinal()
     {
-        $tahun = request('tahun', '2025');
+        $tahun = request('tahun', date('Y'));
         $filter = request('filter', 'all');
         $statusRevisi = request('status_revisi', 'all');
         
