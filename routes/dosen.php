@@ -17,6 +17,11 @@ Route::middleware(['auth', 'role:dosen'])->group(function () {
         Route::get('/dashboard', [DosenPembimbingController::class, 'dashboard'])->name('dashboard');
         Route::get('/mahasiswa-bimbingan', [DosenPembimbingController::class, 'mahasiswaBimbingan'])->name('mahasiswa.bimbingan');
         Route::get('/proposal/{id}/detail', [DosenPembimbingController::class, 'detailProposal'])->name('proposal.detail');
+
+        // Validasi 2 (setelah mahasiswa revisi)
+        Route::get('/validasi-2', [DosenController::class, 'validasiProposal2'])->name('validasi.2');
+        Route::get('/proposal/{id}/validasi-2-detail', [DosenController::class, 'detailValidasiProposal2'])->name('validasi.2.detail');
+        Route::post('/proposal/{id}/validasi-2', [DosenController::class, 'validasiProposal2Action'])->name('validasi.2.submit');
     });
     
     // Route untuk Dosen Pendamping

@@ -87,7 +87,7 @@ class SubstantifController extends Controller
             $jenisForm = $isSeleksiMode ? 'substantif_seleksi' : 'substantif';
             $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm($jenisForm, $proposal->skim);
 
-            return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted', 'criteria', 'dynamicForm'));
+            return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted', 'criteria', 'dynamicForm', 'isSeleksiMode'));
             
         } catch (\Exception $e) {
             abort(500, 'Terjadi kesalahan saat mengakses detail proposal substantif: ' . $e->getMessage());

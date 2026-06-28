@@ -129,7 +129,8 @@ class PimpinanPTController extends Controller
         ]);
 
         $request->merge([
-            'dana_yang_didapatkan' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_yang_didapatkan')),
+            'dana_didapatkan_belmawa' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_didapatkan_belmawa')),
+            'dana_didapatkan_operator' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_didapatkan_operator')),
         ]);
 
         $pimpinanPT = auth()->user();
@@ -146,7 +147,8 @@ class PimpinanPTController extends Controller
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_pimnas' => 'required|in:lolos,tidak_lolos',
             'status_pendanaan' => 'required|in:lolos,tidak_lolos',
-            'dana_yang_didapatkan' => 'required_if:status_pendanaan,lolos|nullable|numeric|min:0|max:15000000',
+            'dana_didapatkan_belmawa' => 'nullable|numeric|min:0|max:15000000',
+            'dana_didapatkan_operator' => 'nullable|numeric|min:0|max:15000000',
             'catatan_final' => 'nullable|string',
             'nilai' => 'required|numeric|min:0|max:100',
             'skor' => 'required|array',
@@ -217,22 +219,21 @@ class PimpinanPTController extends Controller
                 'status_final' => $statusFinal
             ]);
             
-            // Handle dana_yang_didapatkan
-            $danaYangDidapatkan = 0;
+            // Handle dana_didapatkan
+            $danaDidapatkanBelmawa = 0;
+            $danaDidapatkanOperator = 0;
             if ($request->status_pendanaan === 'lolos') {
-                $danaInput = $request->input('dana_yang_didapatkan', 0);
-                // Convert to numeric if string (remove any formatting)
-                if (is_string($danaInput)) {
-                    $danaInput = preg_replace('/[^0-9.]/', '', $danaInput);
+                $danaInputBelmawa = $request->input('dana_didapatkan_belmawa', 0);
+                if (is_string($danaInputBelmawa)) {
+                    $danaInputBelmawa = preg_replace('/[^0-9.]/', '', $danaInputBelmawa);
                 }
-                $danaYangDidapatkan = (float) $danaInput;
-                // Ensure it's within valid range
-                if ($danaYangDidapatkan < 0) {
-                    $danaYangDidapatkan = 0;
+                $danaDidapatkanBelmawa = max(0, min((float) $danaInputBelmawa, 15000000));
+                
+                $danaInputOperator = $request->input('dana_didapatkan_operator', 0);
+                if (is_string($danaInputOperator)) {
+                    $danaInputOperator = preg_replace('/[^0-9.]/', '', $danaInputOperator);
                 }
-                if ($danaYangDidapatkan > 15000000) {
-                    $danaYangDidapatkan = 15000000;
-                }
+                $danaDidapatkanOperator = max(0, min((float) $danaInputOperator, 15000000));
             }
             
             // Update atau buat hasil final
@@ -241,7 +242,8 @@ class PimpinanPTController extends Controller
                 [
                     'status_pimnas' => $request->status_pimnas,
                     'status_pendanaan' => $request->status_pendanaan,
-                    'dana_yang_didapatkan' => $danaYangDidapatkan,
+                    'dana_didapatkan_belmawa' => $danaDidapatkanBelmawa,
+                    'dana_didapatkan_operator' => $danaDidapatkanOperator,
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
                     'skor_per_kriteria' => $normalizedSkor,

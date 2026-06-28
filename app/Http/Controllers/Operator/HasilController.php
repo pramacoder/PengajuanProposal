@@ -75,7 +75,8 @@ class HasilController extends Controller
     {
         try {
             $request->merge([
-                'dana_yang_dapat_diberikan' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_yang_dapat_diberikan')),
+                'dana_disetujui_belmawa' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_disetujui_belmawa')),
+                'dana_disetujui_operator' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_disetujui_operator')),
             ]);
 
             $request->validate([
@@ -85,7 +86,8 @@ class HasilController extends Controller
                 'nilai' => 'required|numeric|min:0|max:100',
                 'skor' => 'required|array|min:1',
                 'skor.*' => 'required|numeric|min:0|max:10',
-                'dana_yang_dapat_diberikan' => 'nullable|numeric|min:0'
+                'dana_disetujui_belmawa' => 'nullable|numeric|min:0',
+                'dana_disetujui_operator' => 'nullable|numeric|min:0'
             ]);
 
             DB::beginTransaction();
@@ -131,7 +133,8 @@ class HasilController extends Controller
                         'catatan_final' => $request->catatan_final,
                         'nilai' => $request->nilai,
                         'skor_per_kriteria' => $normalizedSkor,
-                        'dana_yang_dapat_diberikan' => $request->input('dana_yang_dapat_diberikan', 0),
+                        'dana_disetujui_belmawa' => $request->input('dana_disetujui_belmawa', 0),
+                        'dana_disetujui_operator' => $request->input('dana_disetujui_operator', 0),
                         'id_pt' => auth()->id()
                     ]
                 );
@@ -295,8 +298,11 @@ class HasilController extends Controller
         });
 
         $criteria = \App\Helpers\ProposalHelper::getSubstantifCriteria($proposal->skim);
-        $nilaiSubstantif1 = $proposal->id_reviewer_substantif_1 ? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first() : null;
-        $nilaiSubstantif2 = $proposal->id_reviewer_substantif_2 ? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first() : null;
+        $nilaiSubstantif1 = $proposal->id_reviewer_substantif_1 ? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->where('jenis_review', 'pertama')->first() : null;
+        $nilaiSubstantif2 = $proposal->id_reviewer_substantif_2 ? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->where('jenis_review', 'pertama')->first() : null;
+        
+        $nilaiSubstantifSeleksi1 = $proposal->id_reviewer_substantif_seleksi_1 ? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_seleksi_1)->where('jenis_review', 'seleksi')->first() : null;
+        $nilaiSubstantifSeleksi2 = $proposal->id_reviewer_substantif_seleksi_2 ? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_seleksi_2)->where('jenis_review', 'seleksi')->first() : null;
 
         $dosens = User::dosen()->where('is_active', true)->orderBy('name')->get();
 
@@ -307,11 +313,16 @@ class HasilController extends Controller
             ->limit(5)
             ->get();
 
-        return view('operator.detail_hasil_semi_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'dosens', 'latestProposals'));
+        return view('operator.detail_hasil_semi_final', compact('proposal', 'criteria', 'nilaiSubstantif1', 'nilaiSubstantif2', 'nilaiSubstantifSeleksi1', 'nilaiSubstantifSeleksi2', 'dosens', 'latestProposals'));
     }
 
     public function updateHasilSemiFinal(Request $request)
     {
+        $request->merge([
+            'dana_disetujui_belmawa' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_disetujui_belmawa')),
+            'dana_disetujui_operator' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_disetujui_operator')),
+        ]);
+
         $request->validate([
             'proposal_id' => 'required|exists:proposals,id_proposal',
             'status_final' => 'required|in:lolos_tingkat_universitas,tidak_lolos_tingkat_universitas',
@@ -319,6 +330,8 @@ class HasilController extends Controller
             'nilai' => 'required|numeric|min:0|max:100',
             'skor' => 'required|array',
             'skor.*' => 'required|numeric|min:0|max:10',
+            'dana_disetujui_belmawa' => 'nullable|numeric|min:0',
+            'dana_disetujui_operator' => 'nullable|numeric|min:0'
         ]);
 
         if ($request->status_final === 'lolos_tingkat_universitas') {
@@ -377,7 +390,8 @@ class HasilController extends Controller
                     'catatan_final' => $request->catatan_final,
                     'nilai' => $request->nilai,
                     'skor_per_kriteria' => $normalizedSkor,
-                    'dana_yang_dapat_diberikan' => $request->dana_yang_dapat_diberikan ?? null,
+                    'dana_disetujui_belmawa' => $request->input('dana_disetujui_belmawa', null),
+                    'dana_disetujui_operator' => $request->input('dana_disetujui_operator', null),
                     'id_pt' => auth()->id()
                 ]
             );

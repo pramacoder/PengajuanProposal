@@ -502,8 +502,12 @@
                     <span>Skim: {{ $proposal->skim }}</span>
                 </div>
                 <div class="meta-item">
-                    <i class="fas fa-money-bill-wave"></i>
-                    <span>Dana: @rupiahId($proposal->dana_diajukan)</span>
+                    <i class="fas fa-university"></i>
+                    <span>Dana Belmawa: @rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-building"></i>
+                    <span>Dana Univ: @rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
                 </div>
                 
                 @php
@@ -545,8 +549,12 @@
                         <span class="info-value">{{ $proposal->tahun_ajaran ?? 'N/A' }}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Dana Diajukan</span>
-                        <span class="info-value">@rupiahId($proposal->dana_diajukan)</span>
+                        <span class="info-label">Dana dari Belmawa <small class="text-muted">(Kemendiktisaintek)</small></span>
+                        <span class="info-value text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Dana dari Universitas</span>
+                        <span class="info-value text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Status Validasi</span>
@@ -767,6 +775,40 @@
                         </div>
                     </div>
                     @endif
+
+                    {{-- Card Info Dosen Universitas (muncul jika lolos) --}}
+                    @if($hasilSemiFinal->status_final == 'lolos_tingkat_universitas' && $proposal->dosenPendampingUniversitas)
+                    @php $dosenUniv = $proposal->dosenPendampingUniversitas; @endphp
+                    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 2px solid #4caf50; border-radius: 10px; padding: 1.25rem; margin-top: 1rem;">
+                        <h6 style="color: #2e7d32; font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem;">
+                            <i class="fas fa-user-tie me-2"></i>Dosen Pendamping Universitas Anda
+                        </h6>
+                        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                            <div>
+                                <div style="font-size: 0.78rem; color: #6c757d; margin-bottom: 2px;">Nama</div>
+                                <div style="font-weight: 600; color: #212529;">
+                                    {{ $dosenUniv->gelar_depan ? $dosenUniv->gelar_depan . ' ' : '' }}{{ $dosenUniv->name }}{{ $dosenUniv->gelar_belakang ? ', ' . $dosenUniv->gelar_belakang : '' }}
+                                </div>
+                            </div>
+                            @if($dosenUniv->email)
+                            <div>
+                                <div style="font-size: 0.78rem; color: #6c757d; margin-bottom: 2px;">Email</div>
+                                <div><a href="mailto:{{ $dosenUniv->email }}" style="color: #1565c0; font-weight: 500;">{{ $dosenUniv->email }}</a></div>
+                            </div>
+                            @endif
+                            @if($dosenUniv->phone)
+                            <div>
+                                <div style="font-size: 0.78rem; color: #6c757d; margin-bottom: 2px;">No. HP / WhatsApp</div>
+                                <div style="font-weight: 500;">{{ $dosenUniv->phone }}</div>
+                            </div>
+                            @endif
+                        </div>
+                        <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 6px; font-size: 0.875rem; color: #2e7d32;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Hubungi Dosen Pendamping Universitas, lalu upload <strong>revisi akhir</strong> proposal Anda melalui menu <strong>Revisi Akhir</strong>.
+                        </div>
+                    </div>
+                    @endif
                 </div>
                 @endif
                 
@@ -828,13 +870,19 @@
                         @endif
                         
                         <!-- Dana yang Didapatkan -->
-                        @if($hasilFinal->status_pendanaan == 'lolos' && $hasilFinal->dana_yang_didapatkan)
+                        @if($hasilFinal->status_pendanaan == 'lolos' && ($hasilFinal->dana_didapatkan_belmawa || $hasilFinal->dana_didapatkan_operator))
                         <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; padding: 1rem; border-left: 4px solid #4caf50;">
                             <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
-                                <i class="fas fa-coins me-1"></i>Dana yang Didapatkan
+                                <i class="fas fa-coins me-1"></i>Dana Didapatkan (Belmawa)
                             </div>
                             <div style="font-size: 1.1rem; font-weight: 700; color: #2e7d32;">
-                                @rupiahId($hasilFinal->dana_yang_didapatkan)
+                                @rupiahId($hasilFinal->dana_didapatkan_belmawa ?? 0)
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; margin-top: 0.5rem; font-weight: 500;">
+                                <i class="fas fa-coins me-1"></i>Dana Didapatkan (Universitas)
+                            </div>
+                            <div style="font-size: 1.1rem; font-weight: 700; color: #2e7d32;">
+                                @rupiahId($hasilFinal->dana_didapatkan_operator ?? 0)
                             </div>
                         </div>
                         @endif

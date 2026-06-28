@@ -706,4 +706,108 @@ class DosenController extends Controller
             ], 500);
         }
     }
+
+    // ─── VALIDASI 2 (Setelah Revisi) ────────────────────────────────────────
+
+    /**
+     * Daftar proposal yang memerlukan Validasi 2 (status = revisi, status_validasi_2 = pending)
+     */
+    public function validasiProposal2()
+    {
+        $dosen = auth()->user();
+
+        $proposals = Proposal::with(['mahasiswa', 'dokumen', 'proposalRevisi' => function ($q) {
+            $q->where('jenis_revisi', 'revisi_biasa')->orderBy('tanggal_submit', 'desc');
+        }])
+            ->where('id_dosen', $dosen->id)
+            ->whereIn('status', ['revisi'])
+            ->where('status_validasi_2', 'pending')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return view('dosen.pembimbing.validasi_2', compact('proposals', 'dosen'));
+    }
+
+    /**
+     * Detail proposal untuk Validasi 2
+     */
+    public function detailValidasiProposal2($id)
+    {
+        $dosen = auth()->user();
+
+        $proposal = Proposal::with([
+            'mahasiswa',
+            'dokumen',
+            'nilaiAdministratif.reviewer',
+            'nilaiSubstantif.reviewer',
+            'proposalRevisi' => function ($q) {
+                $q->where('jenis_revisi', 'revisi_biasa')->orderBy('tanggal_submit', 'desc');
+            }
+        ])
+            ->where('id_dosen', $dosen->id)
+            ->findOrFail($id);
+
+        // File yang ditampilkan: revisi biasa terbaru, fallback ke proposal awal
+        $fileProposal = $proposal->proposalRevisi->first() ?? $proposal->dokumen;
+        $jenisFile    = $proposal->proposalRevisi->first() ? 'revisi' : 'proposal_awal';
+
+        // Catatan reviewer (untuk referensi dosen)
+        $catatanAdministratif = $proposal->nilaiAdministratif->first();
+        $catatanSubstantif    = $proposal->nilaiSubstantif->where('jenis_review', 'pertama');
+
+        return view('dosen.pembimbing.validasi_2_detail', compact(
+            'proposal', 'fileProposal', 'jenisFile',
+            'catatanAdministratif', 'catatanSubstantif', 'dosen'
+        ));
+    }
+
+    /**
+     * Proses submit Validasi 2
+     */
+    public function validasiProposal2Action(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'action'  => 'required|in:valid,tolak',
+                'catatan' => 'required_if:action,tolak|nullable|string',
+            ]);
+
+            $dosen    = auth()->user();
+            $proposal = Proposal::where('id_dosen', $dosen->id)->findOrFail($id);
+
+            if ($request->action === 'valid') {
+                $proposal->status_validasi_2 = 'valid';
+                // Status berubah ke antrian assign reviewer seleksi
+                $proposal->status = 'validasi_2_valid';
+                $message = 'Validasi 2 berhasil. Proposal siap untuk reviewer seleksi.';
+            } else {
+                $proposal->status_validasi_2 = 'tidak_valid';
+                $proposal->status  = 'revisi';        // kembalikan ke revisi
+                $proposal->catatan = $request->catatan;
+                $message = 'Proposal dikembalikan ke mahasiswa untuk diperbaiki kembali.';
+            }
+
+            $proposal->save();
+
+            // Notifikasi ke mahasiswa
+            try {
+                $notificationService = app(NotificationService::class);
+                $notificationService->notifyValidasiDosen(
+                    $proposal,
+                    $request->action === 'valid' ? 'valid' : 'tidak_valid',
+                    $request->catatan ?? null
+                );
+            } catch (\Exception $e) {
+                \Log::error('Gagal kirim notifikasi validasi 2: ' . $e->getMessage());
+            }
+
+            return redirect()->route('dosen.pembimbing.validasi.2')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            \Log::error('Error validasi 2: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
 }

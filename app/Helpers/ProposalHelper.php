@@ -247,6 +247,30 @@ class ProposalHelper
     }
 
     /**
+     * Mengecek batas 10 kelompok (proposal) per dosen pendamping dalam 1 tahun ajaran.
+     */
+    public static function checkDosenLimit($dosenId, $tahunAjaran, $excludeProposalId = null)
+    {
+        $query = \App\Models\Proposal::where('dosen_id', $dosenId);
+        
+        if ($tahunAjaran) {
+            $query->where('tahun_ajaran', $tahunAjaran);
+        }
+        
+        if ($excludeProposalId) {
+            $query->where('id_proposal', '!=', $excludeProposalId);
+        }
+        
+        // Proposal yang ditolak dosen (status_validasi = tidak_valid) tidak dihitung
+        $query->where(function ($q) {
+            $q->whereNull('status_validasi')
+              ->orWhere('status_validasi', '!=', 'tidak_valid');
+        });
+        
+        return $query->count();
+    }
+
+    /**
      * Cek apakah mahasiswa sudah terdaftar dalam proposal lain menggunakan tabel mahasiswa
      * dengan pertimbangan tahun akademik
      */

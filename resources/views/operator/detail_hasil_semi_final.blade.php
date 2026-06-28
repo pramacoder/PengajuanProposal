@@ -178,7 +178,8 @@
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
-                                    <p><strong>Dana Diajukan:</strong> @rupiahId($proposal->dana_diajukan)</p>
+                                    <p><strong>Dana Belmawa:</strong> <span class="text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span></p>
+                                    <p><strong>Dana Univ:</strong> <span class="text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span></p>
                                     <p><strong>Tahun Ajaran:</strong> {{ $proposal->tahun_ajaran }}</p>
                                 </div>
                                 <div class="col-md-6">
@@ -414,6 +415,83 @@
         <div id="pdfViewer" class="pdf-loading">
             <div class="spinner"></div>
             <!-- PDF iframe will be inserted here -->
+        </div>
+    </div>
+    @endif
+
+    <!-- Tabel Penilaian Substantif Seleksi dari 2 Reviewer (Jika Ada) -->
+    @if($nilaiSubstantifSeleksi1 || $nilaiSubstantifSeleksi2)
+    <div class="card card-custom mt-4 mb-4">
+        <div class="card-header card-header-custom bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-award me-2"></i>
+                Referensi Penilaian Substantif Seleksi dari Reviewer
+            </h5>
+        </div>
+        <div class="card-body">
+            @if($nilaiSubstantifSeleksi1)
+            <div class="mb-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-user-check me-2"></i>
+                            Reviewer Seleksi 1
+                            @if($nilaiSubstantifSeleksi1->reviewer)
+                                - {{ $nilaiSubstantifSeleksi1->reviewer->nama_reviewer }}
+                            @endif
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3 mb-md-0">
+                                <div class="display-4 text-primary fw-bold">@formatId($nilaiSubstantifSeleksi1->total_nilai)</div>
+                                <div class="text-muted small">Total Nilai</div>
+                            </div>
+                            <div class="col-md-9">
+                                @if($nilaiSubstantifSeleksi1->catatan)
+                                <div class="bg-white p-3 rounded border">
+                                    <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
+                                    {{ $nilaiSubstantifSeleksi1->catatan }}
+                                </div>
+                                @else
+                                <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($nilaiSubstantifSeleksi2)
+            <div>
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-user-check me-2"></i>
+                            Reviewer Seleksi 2
+                            @if($nilaiSubstantifSeleksi2->reviewer)
+                                - {{ $nilaiSubstantifSeleksi2->reviewer->nama_reviewer }}
+                            @endif
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3 mb-md-0">
+                                <div class="display-4 text-success fw-bold">@formatId($nilaiSubstantifSeleksi2->total_nilai)</div>
+                                <div class="text-muted small">Total Nilai</div>
+                            </div>
+                            <div class="col-md-9">
+                                @if($nilaiSubstantifSeleksi2->catatan)
+                                <div class="bg-white p-3 rounded border">
+                                    <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
+                                    {{ $nilaiSubstantifSeleksi2->catatan }}
+                                </div>
+                                @else
+                                <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
     @endif

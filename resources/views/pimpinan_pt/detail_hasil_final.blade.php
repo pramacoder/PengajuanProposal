@@ -178,7 +178,8 @@
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
-                                    <p><strong>Dana Diajukan:</strong> @rupiahId($proposal->dana_diajukan)</p>
+                                    <p><strong>Dana Belmawa:</strong> <span class="text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span></p>
+                                    <p><strong>Dana Univ:</strong> <span class="text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span></p>
                                     <p><strong>Tahun Ajaran:</strong> {{ $proposal->tahun_ajaran }}</p>
                                 </div>
                                 <div class="col-md-6">
@@ -755,21 +756,22 @@
                                 <div class="col-md-3">
                                     <p><strong>Status Pendanaan:</strong> 
                                         <span class="badge bg-{{ $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'success' : 'danger' }}">
-                                            {{ $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                                            {{ $proposal->hasilFinal->status_pendanaan == 'lolos' ? 'Didanai' : 'Tidak Didanai' }}
                                         </span>
                                     </p>
+                                    @if($proposal->hasilFinal->status_pendanaan == 'lolos' && ($proposal->hasilFinal->dana_didapatkan_belmawa || $proposal->hasilFinal->dana_didapatkan_operator))
+                                        <p><strong>Dana Didapatkan (Belmawa):</strong>
+                                            <span class="badge bg-primary fs-6">@rupiahId($proposal->hasilFinal->dana_didapatkan_belmawa ?? 0)</span>
+                                        </p>
+                                        <p><strong>Dana Didapatkan (Universitas):</strong>
+                                            <span class="badge bg-success fs-6">@rupiahId($proposal->hasilFinal->dana_didapatkan_operator ?? 0)</span>
+                                        </p>
+                                    @endif
                                 </div>
                                 <div class="col-md-3">
                                     <p><strong>Nilai:</strong> 
                                         <span class="badge bg-primary fs-6">@formatId($proposal->hasilFinal->nilai, 2)</span>
                                     </p>
-                                </div>
-                                <div class="col-md-3">
-                                    @if($proposal->hasilFinal->dana_yang_didapatkan)
-                                        <p><strong>Dana yang Didapatkan:</strong> 
-                                            <span class="badge bg-success fs-6">@rupiahId($proposal->hasilFinal->dana_yang_didapatkan)</span>
-                                        </p>
-                                    @endif
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
@@ -1012,17 +1014,29 @@
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label" id="danaLabel">Dana yang Didapatkan</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="text" class="form-control js-format-id-int" name="dana_yang_didapatkan" id="danaFinalInput"
-                                               value="{{ $proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'lolos' ? ($proposal->hasilFinal->dana_yang_didapatkan ?? '0') : '0' }}"
-                                               inputmode="numeric"
-                                               placeholder="0"
-                                               @if($proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'tidak_lolos') disabled @endif>
+                                <div id="danaContainer" class="{{ ($proposal->hasilFinal && $proposal->hasilFinal->status_pendanaan == 'lolos') ? '' : 'd-none' }}">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Dana Didapatkan (Belmawa) <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rp</span>
+                                                <input type="text" class="form-control js-format-id-int" name="dana_didapatkan_belmawa" id="danaDidapatkanBelmawaInput"
+                                                       value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_didapatkan_belmawa ?? '') : '' }}"
+                                                       placeholder="0">
+                                            </div>
+                                            <div class="form-text">Dana yang berhasil didapatkan dari Belmawa</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Dana Didapatkan (Universitas) <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rp</span>
+                                                <input type="text" class="form-control js-format-id-int" name="dana_didapatkan_operator" id="danaDidapatkanOperatorInput"
+                                                       value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_didapatkan_operator ?? '') : '' }}"
+                                                       placeholder="0">
+                                            </div>
+                                            <div class="form-text">Dana yang berhasil didapatkan dari Universitas</div>
+                                        </div>
                                     </div>
-                                    <div class="form-text" id="danaHelpText">Dana yang didapatkan per proposal (jika lolos pendanaan, maksimal Rp 15.000.000)</div>
                                 </div>
                             </div>
                         </div>

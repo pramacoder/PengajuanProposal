@@ -2,20 +2,20 @@
 
 ## 📖 Deskripsi Sistem
 
-Sistem Pengajuan Proposal PKM (Program Kreativitas Mahasiswa) adalah aplikasi web berbasis Laravel 12 yang mengelola seluruh alur kerja proposal PKM dari pengajuan oleh mahasiswa hingga pengumuman hasil final. Sistem ini mendukung multi-role user dengan autentikasi unified, sistem penilaian dinamis berdasarkan skim proposal, dan notifikasi real-time untuk semua pengguna.
+Sistem Pengajuan Proposal PKM (Program Kreativitas Mahasiswa) adalah aplikasi web berbasis Laravel 12 yang mengelola seluruh alur kerja proposal PKM dari pengajuan oleh mahasiswa hingga pengumuman hasil final. Sistem ini mendukung multi-role user dengan autentikasi unified, sistem penilaian dinamis berdasarkan skim proposal, dan notifikasi database channel untuk semua pengguna.
 
-**Sistem menggunakan Relational Database Architecture** berbasis MySQL/PostgreSQL dengan implementasi form request terpusat untuk validasi data, serta file storage dengan mekanisme *smart fallback* antara Cloud Storage dan Local Storage.
+**Sistem menggunakan Relational Database Architecture** berbasis Supabase PostgreSQL dengan implementasi form request terpusat untuk validasi data, serta file storage dengan mekanisme *smart fallback* antara Supabase Storage (S3) dan Local Disk.
 
 **Versi:** 5.0.0  
 **Status:** Production  
 **Framework:** Laravel 12  
-**PHP:** 8.3+  
-**Database:** Supabase PostgreSQL / MySQL  
-**File Storage:** Supabase Storage (S3-compatible) & Local Storage Fallback
+**PHP:** 8.2+  
+**Database:** Supabase PostgreSQL  
+**File Storage:** Supabase Storage (S3-compatible) & Local Disk Fallback
 
 ---
 
-## 🎯 Daftar Isi
+## Daftar Isi
 
 1. [Overview & Arsitektur Sistem](#overview--arsitektur-sistem)
 2. [Flow Lengkap Proposal PKM](#flow-lengkap-proposal-pkm)
@@ -126,26 +126,26 @@ database/migrations/                        # Database migrations
 
 ```mermaid
 graph TD
-    A[Mahasiswa Upload Proposal] -->|Status: submitted| B[Dosen Validasi 1]
-    B -->|Valid| C[Operator Assign Reviewer]
+    A["Mahasiswa Submit Proposal (2 nominal dana: Belmawa + Univ)"] -->|Status: submitted| B[Dosen Pembimbing Validasi 1]
+    B -->|Valid| C[Operator Assign 3 Reviewer]
     B -->|Tidak Valid| A
-    C -->|Status: review_administratif| D[Reviewer Administratif]
-    D -->|Status: review_substantif| E[Reviewer Substantif Pertama]
-    E -->|Catatan saja| F[Mahasiswa Revisi]
-    F -->|Status: revisi| G[Dosen Validasi 2]
-    G -->|Valid| H[Operator Pilih Reviewer Seleksi]
+    C -->|"1 Administratif + 2 Substantif (berbeda)"| D[Reviewer Administratif]
+    D -->|Status: review_substantif| E["Reviewer Substantif 1 & 2 - catatan saja"]
+    E -->|Kedua submit - Status: revisi| F[Mahasiswa Terima Catatan + Upload Revisi]
+    F -->|Status: revisi| G[Dosen Pembimbing Validasi 2 - Menu Sidebar Baru]
+    G -->|Valid| H[Operator Assign 2 Reviewer Seleksi]
     G -->|Tidak Valid| F
-    H -->|Status: review_substantif_seleksi| I[Reviewer Substantif Seleksi]
-    I -->|Penilaian dengan skor| J[Operator Hasil Semi Final]
-    J -->|Lolos| K[Mahasiswa Revisi Akhir]
-    J -->|Tidak Lolos| END1[End]
+    H -->|Status: review_substantif_seleksi| I["Reviewer Seleksi - Menu Sidebar Baru + Skor 0-10"]
+    I -->|Kedua submit| J[Operator Menu Semi-Final: Lihat Semua Nilai]
+    J -->|Tidak Lolos| END1[End - Status: tidak_lolos_tingkat_universitas]
+    J -->|"Lolos: assign Dosen Univ (bukan dosen pembimbing)"| K[Mahasiswa Lihat Kontak Dosen Univ + Upload Revisi Akhir]
     K -->|Status: validasi_akhir_dosen_univ| L[Dosen Universitas Validasi Akhir]
-    L -->|Valid| M[Pimpinan PT Hasil Final]
     L -->|Tidak Valid| K
-    M -->|Status Final| N[Mahasiswa Lihat Hasil]
+    L -->|Valid| M[Pimpinan PT Penilaian Final + Keputusan Pendanaan]
+    M -->|Status Final| N[Mahasiswa & Dosen Lihat Hasil]
 ```
 
-### 11 Fase Lengkap
+### Fase-Fase Lengkap
 
 #### **FASE 1: Upload oleh Mahasiswa** 📤
 
@@ -153,14 +153,17 @@ graph TD
 - **Controller:** `ProposalController@store`
 - **Status Setelah Upload:** `submitted`, `status_validasi = 'pending'`
 - **Data yang Disimpan:**
-    - Tabel `proposals`: Informasi proposal (judul, skim, tahun ajaran, dana)
+    - Tabel `proposals`: Informasi proposal (judul, skim, tahun ajaran)
     - Tabel `dokumens`: File PDF proposal
-    - Tabel `mahasiswas`: Data ketua dan anggota tim (maksimal 5 orang)
+    - Data ketua dan anggota tim via kolom `anggota*_` dan `team_id`
+- **Input Dana (2 Nominal Terpisah):**
+    - `dana_diajukan_belmawa`: Dana dari Kemendiktisaintek, **Rp 0 – Rp 8.000.000**
+    - `dana_diajukan_operator`: Dana dari Universitas, **Rp 0 – Rp 2.000.000**
 - **Fitur:**
     - Auto-fill data mahasiswa berdasarkan NIM
     - Validasi: Satu mahasiswa hanya bisa terdaftar dalam 1 proposal per tahun ajaran
-    - Format angka dengan titik untuk dana diajukan
-    - Validasi dana berdasarkan min/max dari ruang kontrol
+    - Format angka dengan titik sebagai pemisah ribuan
+    - Validasi dana berdasarkan min/max dari `ruang_kontrols`
 
 #### **FASE 2: Validasi oleh Dosen Pendamping** ✅
 
@@ -177,13 +180,16 @@ graph TD
 #### **FASE 3: Assignment Reviewer oleh Operator** 👨‍💼
 
 - **Route:** `/operator/pilih-reviewer`
-- **Controller:** `OperatorController@assignReviewer`
+- **Controller:** `ReviewerAssignmentController@assignReviewer`
 - **Proses:**
     - Operator melihat proposal dengan `status = 'valid'`
     - Assign 3 reviewer:
         - 1 Reviewer Administratif → `id_reviewer_administratif`
         - 2 Reviewer Substantif → `id_reviewer_substantif_1`, `id_reviewer_substantif_2`
     - Update status: `status = 'review_administratif'`
+- **Aturan Penting:**
+    - Kedua reviewer substantif **tidak boleh sama satu sama lain**
+    - UI assign reviewer harus menampilkan indikator jika reviewer sudah dipilih
 - **Fitur:**
     - Search reviewer berdasarkan nama/NIP
     - Validasi: Harus assign 3 reviewer lengkap
@@ -246,7 +252,7 @@ graph TD
 #### **FASE 8: Operator Pilih Reviewer Seleksi** 👨‍💼
 
 - **Route:** `/operator/pilih-reviewer-seleksi`
-- **Controller:** `OperatorController@assignReviewerSeleksi`
+- **Controller:** `ReviewerAssignmentController@assignReviewerSeleksi`
 - **Proses:**
     - Operator melihat proposal dengan `status_validasi_2 = 'valid'`
     - Assign 2 reviewer substantif seleksi:
@@ -255,44 +261,44 @@ graph TD
     - Update status: `status = 'review_substantif_seleksi'`
     - Membuat `NilaiSubstantif` records dengan `jenis_review = 'seleksi'`
 
-#### **FASE 9: Review Substantif Seleksi** 📊
+#### **FASE 9: Review Substantif Seleksi** 📊 *(Menu Sidebar Baru: Selective Review)*
 
 - **Route:** `/reviewer/review-substantif-seleksi`
 - **Controller:** `ReviewerController@submitReviewSubstantif`
 - **Proses:**
-    - Reviewer melihat proposal yang di-assign untuk seleksi
-    - PDF ditampilkan dengan iframe
+    - Reviewer membuka menu sidebar baru **Selective Review**
+    - Reviewer melihat **ringkasan hasil review sebelumnya** (catatan administratif & substantif pertama)
+    - PDF proposal ditampilkan dengan iframe
     - **Form penilaian dinamis** berdasarkan skim:
         - Kriteria dan bobot berbeda per skim
         - Struktur hierarkis: Kriteria utama + sub-kriteria (jika ada)
     - Reviewer memberikan skor 0-10 untuk setiap kriteria
     - **Perhitungan otomatis:**
         - Nilai = Bobot × Skor
-        - Total maksimal: 1000 (jika semua skor = 10)
-        - Nilai akhir = Total / 10 (contoh: 789 → 78.9)
+        - Total maksimal: 1.000 (jika semua skor = 10)
+        - Nilai akhir = Total / 10 (contoh: 789 → 78,9)
     - Reviewer menulis catatan substantif (minimal 50 karakter)
     - Submit → Data disimpan di `nilai_substantifs` dengan `jenis_review = 'seleksi'`
-- **Status Transisi:** `review_substantif_seleksi` → `pimpinan_pt` (setelah kedua reviewer selesai)
+- **Status Transisi:** `review_substantif_seleksi` → masuk ke antrian semi-final operator (setelah kedua reviewer selesai)
 
 #### **FASE 10: Hasil Semi Final oleh Operator** 🎯
 
 - **Route:** `/operator/detail-hasil-semi-final/{id}`
-- **Controller:** `OperatorController@updateHasilSemiFinal`
+- **Controller:** `HasilController@updateHasilSemiFinal`
 - **Proses:**
-    - Operator membuka halaman detail hasil semi final
+    - Operator membuka halaman **Menu Semi-Final**
     - **PDF proposal** ditampilkan (prioritas: revisi terakhir jika ada)
-    - **Tabel referensi** menampilkan penilaian dari 2 reviewer substantif seleksi
-    - **Form penilaian semi final** dengan struktur yang sama seperti review substantif
+    - **Tabel referensi** menampilkan **semua nilai dari semua reviewer** (administratif, substantif pertama, substantif seleksi) beserta catatan tiap tahap
     - Operator mengisi:
         - **Status Final**: Lolos Tingkat Universitas / Tidak Lolos Tingkat Universitas
-        - **Nilai Final**: Terisi otomatis dari penilaian (readonly)
         - **Dana yang Dapat Diberikan**: Input manual (opsional)
         - **Catatan Final**: Catatan untuk mahasiswa
         - **Dosen Pendamping Universitas**: Dipilih jika status "Lolos Tingkat Universitas"
+          - **Aturan:** Dosen yang dipilih **tidak boleh** sama dengan dosen pembimbing asli
     - Submit → Data disimpan di tabel `hasil_semi_finals`
 - **Status Transisi:**
-    - `pimpinan_pt` → `revisi_akhir` (jika lolos_tingkat_universitas)
-    - `pimpinan_pt` → `tidak_lolos` (jika tidak_lolos_tingkat_universitas)
+    - → `revisi_akhir` (jika lolos_tingkat_universitas)
+    - → `tidak_lolos_tingkat_universitas` (jika tidak lolos)
 
 #### **FASE 11: Revisi Akhir oleh Mahasiswa** 🔄
 
@@ -330,17 +336,19 @@ graph TD
     - Pimpinan PT mengisi:
         - **Status PIMNAS**: Lolos / Tidak Lolos
         - **Status Pendanaan**: Lolos / Tidak Lolos
-        - **Dana yang Didapatkan**:
-            - Jika `status_pendanaan` = `lolos` → Input 0-15,000,000 (wajib)
-            - Jika `status_pendanaan` = `tidak_lolos` → Otomatis 0 (tidak bisa diubah)
-        - **Nilai Final**: Terisi otomatis dari penilaian (readonly)
+        - **Dana yang Didapatkan** — Pimpinan PT **dapat mengubah** nominal dari yang diajukan mahasiswa:
+            - Dana Belmawa (Kemendiktisaintek): Range menyesuaikan keputusan
+            - Dana Universitas: Range menyesuaikan keputusan
+            - Jika `status_pendanaan = tidak_lolos` → Dana otomatis 0
+        - **Nilai Final**: Dihitung otomatis dari penilaian (readonly)
         - **Catatan Final**: Catatan untuk mahasiswa
     - Submit → Data disimpan di tabel `hasil_finals`
+    - Notifikasi dikirim ke mahasiswa dan dosen pembimbing
 - **Status Transisi:**
-    - `pimpinan_pt` → `lolos_pimnas_pendanaan` (jika keduanya lolos)
-    - `pimpinan_pt` → `lolos_pimnas_tidak_pendanaan` (jika PIMNAS lolos, pendanaan tidak)
-    - `pimpinan_pt` → `tidak_lolos_pimnas_lolos_pendanaan` (jika PIMNAS tidak, pendanaan lolos)
-    - `pimpinan_pt` → `tidak_lolos` (jika keduanya tidak lolos)
+    - → `lolos_pimnas_pendanaan` (jika keduanya lolos)
+    - → `lolos_pimnas_tidak_pendanaan` (jika PIMNAS lolos, pendanaan tidak)
+    - → `tidak_lolos_pimnas_lolos_pendanaan` (jika PIMNAS tidak, pendanaan lolos)
+    - → `tidak_lolos` (jika keduanya tidak lolos)
 
 #### **FASE 14: Pengumuman Hasil Final** 📢
 
@@ -619,7 +627,7 @@ Same process, but use NIDN/NUPTK/NIP instead of NIM.
 
 ---
 
-## 🗄️ Struktur Database
+## Struktur Database
 
 ### Tabel Utama
 
@@ -640,10 +648,9 @@ Same process, but use NIDN/NUPTK/NIP instead of NIM.
 - id_reviewer_administratif (FK)
 - id_reviewer_substantif_1 (FK)
 - id_reviewer_substantif_2 (FK)
-- id_reviewer_substantif_seleksi_1 (FK)
-- id_reviewer_substantif_seleksi_2 (FK)
+- id_reviewer_substantif_seleksi_1 — FK → users
+- id_reviewer_substantif_seleksi_2 — FK → users
 - team_id (untuk mengelompokkan anggota tim)
-- dana_diajukan (legacy)
 - dana_diajukan_operator (decimal)
 - dana_diajukan_belmawa (decimal)
 - tahun_ajaran
@@ -862,7 +869,7 @@ Operator (1) → (many) Notification
 
 ---
 
-## ✨ Fitur Utama
+## Fitur Utama
 
 ### 1. Auto-fill Data Mahasiswa
 
@@ -952,7 +959,7 @@ Operator (1) → (many) Notification
 
 ---
 
-## 📊 Sistem Penilaian
+## Sistem Penilaian
 
 ### Review Administratif Dinamis
 
@@ -1036,7 +1043,7 @@ Setiap skim memiliki kriteria dan bobot yang berbeda. Detail lengkap dapat dilih
 
 ---
 
-## 🔔 Sistem Notifikasi
+## Sistem Notifikasi
 
 ### Fitur Notifikasi
 
@@ -1084,7 +1091,7 @@ Method-method utama:
 
 ---
 
-## 📁 File Storage
+## File Storage
 
 ### Struktur Storage
 
@@ -1149,9 +1156,9 @@ Detail implementasi dapat dilihat di dokumentasi `CLOUD_STORAGE_IMPLEMENTATION.m
 
 ### Requirements
 
-- PHP >= 8.0
+- PHP >= 8.2
 - Composer
-- MySQL >= 5.7
+- Supabase PostgreSQL (atau PostgreSQL lokal)
 - Node.js & NPM (untuk asset compilation)
 - Web server (Apache/Nginx)
 
@@ -1161,7 +1168,7 @@ Detail implementasi dapat dilihat di dokumentasi `CLOUD_STORAGE_IMPLEMENTATION.m
 
 ```bash
 git clone [repository-url]
-cd PengajuanProposal3
+cd PengajuanProposal
 ```
 
 2. **Install Dependencies**
@@ -1182,12 +1189,18 @@ php artisan key:generate
    Edit `.env` file:
 
 ```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=pengajuan_proposal
-DB_USERNAME=root
-DB_PASSWORD=
+DB_CONNECTION=pgsql
+DB_HOST=...supabase host...
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=...
+DB_PASSWORD=...
+
+# Supabase Storage
+FILESYSTEM_DISK=supabase
+SUPABASE_URL=...
+SUPABASE_KEY=...
+SUPABASE_STORAGE_BUCKET=proposals
 ```
 
 5. **Run Migrations**
@@ -1414,14 +1427,15 @@ chmod -R 775 bootstrap/cache
 - Catatan substantif saja (tidak ada penilaian skor)
 - Submit review
 
-#### Review Substantif Seleksi
+#### Review Substantif Seleksi *(Menu Sidebar Baru)*
 
 - Route: `/reviewer/review-substantif-seleksi`
-- Menampilkan proposal yang di-assign untuk review substantif seleksi
-- View PDF proposal
+- Menampilkan proposal yang di-assign untuk review seleksi melalui **menu sidebar Selective Review** (baru)
+- Ringkasan hasil review sebelumnya (catatan administratif & substantif pertama) ditampilkan sebagai referensi
+- View PDF proposal (prioritas revisi biasa)
 - Form penilaian dinamis dengan skor 0-10 per kriteria
 - Perhitungan nilai otomatis
-- Catatan substantif
+- Catatan substantif (minimal 50 karakter)
 - Submit review
 
 ### 5. Operator
@@ -1445,14 +1459,15 @@ chmod -R 775 bootstrap/cache
 
 - Route: `/operator/pilih-reviewer`
 - Menampilkan proposal yang perlu reviewer
-- Assign reviewer administratif dan substantif
+- Assign **1 reviewer administratif** dan **2 reviewer substantif** (harus berbeda)
 - Search reviewer berdasarkan nama/NIP
+- UI menampilkan indikator jika reviewer sudah dipilih untuk proposal yang sama
 
 #### Pilih Reviewer Seleksi
 
 - Route: `/operator/pilih-reviewer-seleksi`
 - Menampilkan proposal yang sudah validasi 2
-- Assign reviewer substantif seleksi
+- Assign **2 reviewer substantif seleksi**
 
 #### Ruang Kontrol
 
@@ -1467,9 +1482,9 @@ chmod -R 775 bootstrap/cache
 #### Hasil Semi Final
 
 - Route: `/operator/detail-hasil-semi-final/{id}`
-- Penilaian semi final dengan form dinamis
-- Input status final, nilai, dana, catatan
-- Assign Dosen Pendamping Universitas
+- Menampilkan **semua nilai dari semua reviewer** (administratif, substantif pertama, seleksi) beserta catatan
+- Input status lolos/tidak lolos tingkat universitas, dana yang diberikan, catatan
+- Assign Dosen Pendamping Universitas (tidak boleh sama dengan dosen pembimbing asli)
 
 #### Form Penilaian (CRUD)
 
@@ -1506,13 +1521,16 @@ chmod -R 775 bootstrap/cache
 #### Hasil Final
 
 - Route: `/pimpinan-pt/detail-hasil-final/{id}`
-- Penilaian final dengan form dinamis
+- Penilaian final dengan form substantif dinamis
 - Input:
     - Status PIMNAS (Lolos/Tidak Lolos)
     - Status Pendanaan (Lolos/Tidak Lolos)
-    - Dana yang didapatkan (0-15M jika lolos pendanaan)
+    - **Keputusan Dana** (dapat mengubah nominal dari yang diajukan mahasiswa):
+        - Dana Belmawa (Kemendiktisaintek)
+        - Dana Universitas
     - Nilai final (auto-calculate)
     - Catatan final
+- Notifikasi otomatis ke mahasiswa dan dosen pembimbing setelah submit
 
 #### Manajemen Akun
 
@@ -1789,7 +1807,8 @@ Semua route di bawah memerlukan autentikasi sesuai role:
 - Validasi file: PDF only, maksimal 5MB
 - Validasi skor: 0-10
 - Validasi catatan: Minimal 50 karakter untuk substantif
-- Validasi dana: 0-15,000,000 untuk hasil final
+- Validasi dana: dua kolom terpisah (`dana_diajukan_belmawa` dan `dana_diajukan_operator`)
+- Batas dana dikonfigurasi di Ruang Kontrol per tahun ajaran
 
 ### Checklist QA UX/UI (Sebelum Merge)
 

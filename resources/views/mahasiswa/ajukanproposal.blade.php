@@ -412,15 +412,51 @@
                     <label for="tanggal_pengajuan" class="form-label">Tanggal Pengajuan</label>
                     <input type="date" class="form-control" id="tanggal_pengajuan" name="tanggal_pengajuan" value="{{ date('Y-m-d') }}" readonly>
                 </div>
+                {{-- Dana Belmawa (Kemendiktisaintek) --}}
                 <div class="col-md-6 mb-3">
-                    <label for="dana_diajukan" class="form-label required-field">Dana yang Diajukan</label>
+                    <label for="dana_diajukan_belmawa" class="form-label required-field">
+                        <i class="fas fa-university me-1 text-primary"></i>Dana dari Belmawa (Kemendiktisaintek)
+                    </label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
-                        <input type="text" class="form-control js-format-id-int @error('dana_diajukan') is-invalid @enderror" id="dana_diajukan" name="dana_diajukan" placeholder="0" inputmode="numeric" data-max="15000000" value="{{ old('dana_diajukan') }}" required>
+                        <input type="text"
+                            class="form-control js-format-id-int @error('dana_diajukan_belmawa') is-invalid @enderror"
+                            id="dana_diajukan_belmawa"
+                            name="dana_diajukan_belmawa"
+                            placeholder="0"
+                            inputmode="numeric"
+                            value="{{ old('dana_diajukan_belmawa') }}"
+                            data-dana-type="belmawa">
                     </div>
-                    <div class="form-text" id="dana_help_text">Maksimal Rp 15.000.000</div>
-                    <div class="error-message" id="dana_diajukan_error"></div>
-                    @error('dana_diajukan')
+                    <div class="form-text" id="dana_belmawa_help_text">
+                        Rp 0 – Rp 8.000.000
+                    </div>
+                    <div class="error-message" id="dana_diajukan_belmawa_error"></div>
+                    @error('dana_diajukan_belmawa')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                {{-- Dana Universitas --}}
+                <div class="col-md-6 mb-3">
+                    <label for="dana_diajukan_operator" class="form-label required-field">
+                        <i class="fas fa-building me-1 text-success"></i>Dana dari Universitas
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text"
+                            class="form-control js-format-id-int @error('dana_diajukan_operator') is-invalid @enderror"
+                            id="dana_diajukan_operator"
+                            name="dana_diajukan_operator"
+                            placeholder="0"
+                            inputmode="numeric"
+                            value="{{ old('dana_diajukan_operator') }}"
+                            data-dana-type="operator">
+                    </div>
+                    <div class="form-text" id="dana_operator_help_text">
+                        Rp 0 – Rp 2.000.000
+                    </div>
+                    <div class="error-message" id="dana_diajukan_operator_error"></div>
+                    @error('dana_diajukan_operator')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -1029,7 +1065,7 @@
         
         let hasErrors = false;
         const requiredFields = [
-            'judul', 'skim', 'dana_diajukan', 'dosen_pembimbing',
+            'judul', 'skim', 'dana_diajukan_belmawa', 'dana_diajukan_operator', 'dosen_pembimbing',
             'ketua_nama', 'ketua_nim', 'ketua_prodi', 'ketua_fakultas', 
             'ketua_email', 'ketua_no_hp'
         ];
@@ -1118,35 +1154,39 @@
             }
         }
 
-        // Validate dana based on skim type
-        if (!danaField) {
-            showError('dana_diajukan', 'Field dana tidak ditemukan!');
-            hasErrors = true;
-        } else {
-            const dana = danaField.value;
-            const selectedSkim = document.getElementById('skim').value;
-            
-            // Define PKM Insentif skims (tidak memiliki pendanaan)
-            const insentifSkims = ['GFT', 'AI'];
-            const isInsentif = insentifSkims.includes(selectedSkim);
-            
-            // Convert dana to number, default to 0 if empty
-            const danaValue = dana ? parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(dana) : dana).toString(), 10) : 0;
-            
+        // Validate dana Belmawa & Universitas
+        const selectedSkim = document.getElementById('skim') ? document.getElementById('skim').value : '';
+        const insentifSkims = ['GFT', 'AI'];
+        const isInsentif = insentifSkims.includes(selectedSkim);
+
+        const danaBelmawa = document.getElementById('dana_diajukan_belmawa');
+        const danaOperator = document.getElementById('dana_diajukan_operator');
+
+        if (danaBelmawa) {
+            const belmawaNilai = danaBelmawa.value ? parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(danaBelmawa.value) : danaBelmawa.value).toString().replace(/\D/g,''), 10) : 0;
             if (isInsentif) {
-                // For PKM Insentif, dana harus 0 (tidak ada pendanaan)
-                if (danaValue !== 0) {
-                    showError('dana_diajukan', 'PKM Insentif tidak memiliki pendanaan. Dana harus 0!');
+                if (belmawaNilai !== 0) {
+                    showError('dana_diajukan_belmawa', 'PKM Insentif tidak memiliki pendanaan. Dana harus 0!');
                     hasErrors = true;
                 }
             } else {
-                // For PKM Pendanaan, dana must be at least 1,000,000
-                if (!dana || danaValue < 1000000) {
-                    showError('dana_diajukan', 'Dana yang diajukan minimal Rp 1.000.000!');
+                if (belmawaNilai > 8000000) {
+                    showError('dana_diajukan_belmawa', 'Dana Belmawa maksimal Rp 8.000.000!');
                     hasErrors = true;
                 }
-                if (danaValue > 15000000) {
-                    showError('dana_diajukan', 'Dana yang diajukan maksimal Rp 15.000.000!');
+            }
+        }
+
+        if (danaOperator) {
+            const operatorNilai = danaOperator.value ? parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(danaOperator.value) : danaOperator.value).toString().replace(/\D/g,''), 10) : 0;
+            if (isInsentif) {
+                if (operatorNilai !== 0) {
+                    showError('dana_diajukan_operator', 'PKM Insentif tidak memiliki pendanaan. Dana harus 0!');
+                    hasErrors = true;
+                }
+            } else {
+                if (operatorNilai > 2000000) {
+                    showError('dana_diajukan_operator', 'Dana Universitas maksimal Rp 2.000.000!');
                     hasErrors = true;
                 }
             }
@@ -1600,7 +1640,9 @@
 
     // Global variables for form elements
     let ketuaNimField = null;
-    let danaField = null;
+    let danaField = null;       // legacy ref
+    let danaBelmawdField = null;
+    let danaOperatorField = null;
     let skimField = null;
     let submitBtn = null;
     let submitHelpText = null;
@@ -1611,7 +1653,9 @@
         
         // Initialize global variables
         ketuaNimField = document.getElementById('ketua_nim');
-        danaField = document.getElementById('dana_diajukan');
+        danaField = document.getElementById('dana_diajukan_belmawa');  // legacy pointer
+        danaBelmawdField = document.getElementById('dana_diajukan_belmawa');
+        danaOperatorField = document.getElementById('dana_diajukan_operator');
         skimField = document.getElementById('skim');
         submitBtn = document.getElementById('submitBtn');
         submitHelpText = document.getElementById('submitHelpText');
@@ -1671,14 +1715,7 @@
             console.log('No user data available for auto-fill');
         }
 
-        // Format currency input
-        danaField.addEventListener('input', function() {
-            let value = this.value.replace(/\D/g, '');
-            if (value > 15000000) {
-                value = 15000000;
-            }
-            this.value = value;
-        });
+        // Format currency inputs (handled by js-format-id-int class)
 
         // Clear errors on input and validate form
         const inputs = document.querySelectorAll('input, select');
@@ -1722,51 +1759,52 @@
             }, 500);
         }
 
-        // Handle skim change to update dana field behavior
-        const danaLabel = document.querySelector('label[for="dana_diajukan"]');
-        const danaHelpText = document.getElementById('dana_help_text');
-        
+        // Handle skim change to update dana fields behavior
         function updateDanaFieldBehavior() {
+            if (!skimField) return;
             const selectedSkim = skimField.value;
             const insentifSkims = ['GFT', 'AI'];
             const isInsentif = insentifSkims.includes(selectedSkim);
-            
-            // Clear any existing errors
-            clearError('dana_diajukan');
-            
+
+            const belmawdHelp = document.getElementById('dana_belmawa_help_text');
+            const operatorHelp = document.getElementById('dana_operator_help_text');
+
+            clearError('dana_diajukan_belmawa');
+            clearError('dana_diajukan_operator');
+
             if (isInsentif) {
-                // For PKM Insentif - tidak ada pendanaan
-                danaField.min = '0';
-                danaField.max = '0';
-                danaField.value = '0';
-                danaField.readOnly = true;
-                danaField.placeholder = '0 (PKM Insentif tidak memiliki pendanaan)';
-                danaHelpText.textContent = 'PKM Insentif tidak memiliki pendanaan. Dana otomatis 0.';
-                danaHelpText.className = 'form-text text-info';
-                danaField.style.backgroundColor = '#f8f9fa';
+                // PKM Insentif - tidak ada pendanaan
+                [danaBelmawdField, danaOperatorField].forEach(f => {
+                    if (!f) return;
+                    f.value = '0';
+                    f.readOnly = true;
+                    f.style.backgroundColor = '#f8f9fa';
+                    f.placeholder = '0 (PKM Insentif tidak memiliki pendanaan)';
+                });
+                if (belmawdHelp) { belmawdHelp.textContent = 'PKM Insentif tidak memiliki pendanaan. Dana otomatis 0.'; belmawdHelp.className = 'form-text text-info'; }
+                if (operatorHelp) { operatorHelp.textContent = 'PKM Insentif tidak memiliki pendanaan. Dana otomatis 0.'; operatorHelp.className = 'form-text text-info'; }
             } else {
-                // For PKM Pendanaan
-                danaField.min = '1000000';
-                danaField.max = '15000000';
-                danaField.readOnly = false;
-                danaField.placeholder = '1000000';
-                danaHelpText.textContent = 'Minimal Rp 1.000.000, maksimal Rp 15.000.000';
-                danaHelpText.className = 'form-text';
-                danaField.style.backgroundColor = '';
-                
-                // If current value is less than 1000000, set to 1000000
-                if (danaField.value && (parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(danaField.value) : danaField.value).toString(), 10) < 1000000)) {
-                    danaField.value = '1000000';
+                // PKM Pendanaan
+                if (danaBelmawdField) {
+                    danaBelmawdField.readOnly = false;
+                    danaBelmawdField.style.backgroundColor = '';
+                    danaBelmawdField.placeholder = '0';
                 }
+                if (danaOperatorField) {
+                    danaOperatorField.readOnly = false;
+                    danaOperatorField.style.backgroundColor = '';
+                    danaOperatorField.placeholder = '0';
+                }
+                if (belmawdHelp) { belmawdHelp.textContent = 'Rp 0 – Rp 8.000.000'; belmawdHelp.className = 'form-text'; }
+                if (operatorHelp) { operatorHelp.textContent = 'Rp 0 – Rp 2.000.000'; operatorHelp.className = 'form-text'; }
             }
-            
-            // Trigger form validation after dana field behavior update
+
             validateFormForSubmit();
         }
-        
+
         // Add event listener for skim change
-        skimField.addEventListener('change', updateDanaFieldBehavior);
-        
+        if (skimField) skimField.addEventListener('change', updateDanaFieldBehavior);
+
         // Initialize dana field behavior on page load
         updateDanaFieldBehavior();
 

@@ -1067,8 +1067,12 @@
                                 <span class="info-value">{{ $proposal->dosen_pembimbing ?? 'N/A' }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">Dana Diajukan</span>
-                                <span class="info-value">@rupiahId($proposal->dana_diajukan)</span>
+                                <span class="info-label">Dana Belmawa</span>
+                                <span class="info-value text-primary">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Dana Universitas</span>
+                                <span class="info-value text-success">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Jumlah Anggota</span>
@@ -1677,13 +1681,19 @@
                                     </h5>
                                 </div>
                             </div>
-                            ${finalResult.dana_yang_didapatkan && finalResult.dana_yang_didapatkan > 0 ? `
-                            <div class="col-md-4">
+                            ${finalResult.dana_didapatkan_belmawa > 0 || finalResult.dana_didapatkan_operator > 0 ? `
+                            <div class="col-md-6">
                                 <div class="alert alert-success">
-                                    <h5 class="alert-heading">
+                                    <h5 class="alert-heading fs-6 mb-1">
                                         <i class="fas fa-money-bill-wave me-2"></i>
-                                        Dana yang Didapatkan: Rp ${formatRupiah(finalResult.dana_yang_didapatkan)}
+                                        Dana (Belmawa)
                                     </h5>
+                                    <div>Rp ${formatRupiah(finalResult.dana_didapatkan_belmawa || 0)}</div>
+                                    <h5 class="alert-heading fs-6 mb-1 mt-2">
+                                        <i class="fas fa-money-bill-wave me-2"></i>
+                                        Dana (Universitas)
+                                    </h5>
+                                    <div>Rp ${formatRupiah(finalResult.dana_didapatkan_operator || 0)}</div>
                                 </div>
                             </div>
                             ` : ''}

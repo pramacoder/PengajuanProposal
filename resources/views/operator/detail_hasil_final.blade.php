@@ -178,7 +178,8 @@
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
-                                    <p><strong>Dana Diajukan:</strong> @rupiahId($proposal->dana_diajukan)</p>
+                                    <p><strong>Dana Belmawa:</strong> <span class="text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span></p>
+                                    <p><strong>Dana Univ:</strong> <span class="text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span></p>
                                     <p><strong>Tahun Ajaran:</strong> {{ $proposal->tahun_ajaran }}</p>
                                 </div>
                                 <div class="col-md-6">
@@ -726,9 +727,12 @@
                                     </p>
                                 </div>
                                 <div class="col-md-4">
-                                    @if($proposal->hasilFinal->dana_yang_dapat_diberikan)
-                                        <p><strong>Dana yang Dapat Diberikan:</strong> 
-                                            <span class="badge bg-success fs-6">@rupiahId($proposal->hasilFinal->dana_yang_dapat_diberikan)</span>
+                                    @if($proposal->hasilFinal && ($proposal->hasilFinal->dana_disetujui_belmawa || $proposal->hasilFinal->dana_disetujui_operator))
+                                        <p><strong>Dana yang Disetujui (Belmawa):</strong> 
+                                            <span class="badge bg-primary fs-6">@rupiahId($proposal->hasilFinal->dana_disetujui_belmawa ?? 0)</span>
+                                        </p>
+                                        <p><strong>Dana yang Disetujui (Universitas):</strong> 
+                                            <span class="badge bg-success fs-6">@rupiahId($proposal->hasilFinal->dana_disetujui_operator ?? 0)</span>
                                         </p>
                                     @endif
                                     <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
@@ -961,16 +965,27 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label">Dana yang Dapat Diberikan</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="text" class="form-control js-format-id-int" name="dana_yang_dapat_diberikan" id="danaFinalInput"
-                                               value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_yang_dapat_diberikan ?? '') : '' }}"
-                                               inputmode="numeric"
-                                               placeholder="0">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Dana Disetujui (Belmawa)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="text" class="form-control js-format-id-int" name="dana_disetujui_belmawa" 
+                                                   value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_disetujui_belmawa > 0 ? (int)$proposal->hasilFinal->dana_disetujui_belmawa : '') : '' }}" 
+                                                   placeholder="0" max="8000000">
+                                        </div>
+                                        <div class="form-text">Maksimal 8.000.000</div>
                                     </div>
-                                    <div class="form-text">Dana yang dapat diberikan kepada proposal ini</div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Dana Disetujui (Universitas)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="text" class="form-control js-format-id-int" name="dana_disetujui_operator" 
+                                                   value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_disetujui_operator > 0 ? (int)$proposal->hasilFinal->dana_disetujui_operator : '') : '' }}" 
+                                                   placeholder="0" max="2000000">
+                                        </div>
+                                        <div class="form-text">Maksimal 2.000.000</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -495,6 +495,41 @@
                     @endif
                 </div>
             </div>
+
+            @if(isset($isSeleksiMode) && $isSeleksiMode)
+            <!-- Riwayat Review Tahap Pertama (Khusus Seleksi) -->
+            <div class="card card-custom mt-3 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-history me-2"></i>Riwayat Review Tahap 1</h6>
+                </div>
+                <div class="card-body">
+                    @php
+                        $review1 = $proposal->nilaiSubstantif->where('jenis_review', 'pertama')->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
+                        $review2 = $proposal->nilaiSubstantif->where('jenis_review', 'pertama')->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
+                    @endphp
+                    
+                    <div class="mb-3">
+                        <strong class="d-block text-primary">Reviewer 1</strong>
+                        @if($review1)
+                            <div>Total Nilai: <span class="badge bg-primary">{{ $review1->total_nilai }}</span></div>
+                            <div class="small bg-light p-2 mt-1 rounded text-muted">{{ $review1->catatan ?? 'Tidak ada catatan' }}</div>
+                        @else
+                            <div class="small text-muted">Belum ada nilai</div>
+                        @endif
+                    </div>
+                    
+                    <div>
+                        <strong class="d-block text-success">Reviewer 2</strong>
+                        @if($review2)
+                            <div>Total Nilai: <span class="badge bg-success">{{ $review2->total_nilai }}</span></div>
+                            <div class="small bg-light p-2 mt-1 rounded text-muted">{{ $review2->catatan ?? 'Tidak ada catatan' }}</div>
+                        @else
+                            <div class="small text-muted">Belum ada nilai</div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
 
         <!-- Form Review Section -->

@@ -406,36 +406,43 @@ function setupReviewerSelection() {
             console.log('Reviewer select changed:', {
                 type: this.dataset.type,
                 proposalId: this.dataset.proposalId,
-                selectedValue: this.value,
-                event: e
+                selectedValue: this.value
             });
             
             const selectedValue = this.value;
             const type = this.dataset.type;
             const proposalId = this.dataset.proposalId;
+            const row = document.querySelector(`tr[data-proposal-id="${proposalId}"]`) || document.querySelector(`[data-proposal-id="${proposalId}"]`).closest('tr');
+            
+            if (type === 'substantif1' || type === 'substantif2') {
+                const otherType = type === 'substantif1' ? 'substantif2' : 'substantif1';
+                const otherSelect = row.querySelector(`[data-type="${otherType}"]`);
+                
+                if (selectedValue !== '' && selectedValue === otherSelect.value) {
+                    showToast('Reviewer substantif 1 dan 2 tidak boleh sama', 'error');
+                    this.value = '';
+                    delete this.dataset.selectedReviewerId;
+                    checkReviewerAssignment(proposalId);
+                    return;
+                }
+                
+                // Disable option in other select
+                Array.from(otherSelect.options).forEach(opt => {
+                    if (opt.value !== '') {
+                        opt.disabled = (opt.value === selectedValue && selectedValue !== '');
+                    }
+                });
+            }
             
             if (selectedValue !== '') {
-                // Get selected option data
-                const selectedOption = this.options[this.selectedIndex];
-                const reviewerName = selectedOption.dataset.reviewerName;
-                
-                console.log('Reviewer selected:', {
-                    type: type,
-                    reviewerId: selectedValue,
-                    reviewerName: reviewerName
-                });
-                
                 // Store selected reviewer ID
                 this.dataset.selectedReviewerId = selectedValue;
-                
                 // Check if all reviewers are selected
                 checkReviewerAssignment(proposalId);
             } else {
                 console.log('Reviewer deselected:', type);
-                
                 // Clear selected reviewer ID
                 delete this.dataset.selectedReviewerId;
-                
                 // Check if all reviewers are selected
                 checkReviewerAssignment(proposalId);
             }

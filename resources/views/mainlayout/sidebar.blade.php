@@ -52,9 +52,24 @@
                         </ul>
                     </li>
 
-                    <li class="menu-dosen"><a href="{{ route('dosen.pembimbing.dashboard') }}" class="@if(request()->routeIs('dosen.pembimbing.*')) active @endif">
-                        <i class="fas fa-user-graduate me-2"></i>Pembimbing
-                    </a></li>
+                    <!-- Menu Dosen Pembimbing -->
+                    <li class="menu-dosen">
+                        <a href="#" class="menu-toggle" data-target="pembimbingProposal">
+                            <i class="fas fa-user-graduate me-2"></i>Pembimbing
+                            <i class="fas fa-chevron-down float-end mt-1"></i>
+                        </a>
+                        <ul class="submenu" id="pembimbingProposal">
+                            <li><a href="{{ route('dosen.pembimbing.dashboard') }}" class="@if(request()->routeIs('dosen.pembimbing.dashboard')) active @endif">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a></li>
+                            <li><a href="{{ route('dosen.pembimbing.mahasiswa.bimbingan') }}" class="@if(request()->routeIs('dosen.pembimbing.mahasiswa.bimbingan')) active @endif">
+                                <i class="fas fa-users me-2"></i>Mahasiswa Bimbingan
+                            </a></li>
+                            <li><a href="{{ route('dosen.pembimbing.validasi.2') }}" class="@if(request()->routeIs('dosen.pembimbing.validasi.2*')) active @endif">
+                                <i class="fas fa-check-double me-2"></i>Validasi 2
+                            </a></li>
+                        </ul>
+                    </li>
                     
                     <!-- Menu Dosen Universitas (Pendamping Universitas) -->
                     <li class="menu-dosen">

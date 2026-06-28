@@ -132,22 +132,28 @@ class ProposalController extends Controller
 
             // Validasi khusus untuk PKM Insentif (tidak ada pendanaan)
             $insentifSkims = ['GFT', 'AI'];
+            // Ambil batas dana dari ruang kontrol aktif
+            $ruangKontrol = \App\Models\RuangKontrol::where('is_active', true)->first();
+            $maxBelmawa = $ruangKontrol ? ($ruangKontrol->dana_max_belmawa ?? 8000000) : 8000000;
+            $maxOperator = $ruangKontrol ? ($ruangKontrol->dana_max_operator ?? 2000000) : 2000000;
+
+            // Parse dana dari format Indonesia (titik sebagai pemisah)
+            $danaBelmawa = ProposalHelper::parseAngka($request->dana_diajukan_belmawa ?? 0);
+            $danaOperator = ProposalHelper::parseAngka($request->dana_diajukan_operator ?? 0);
+
             if (in_array($request->skim, $insentifSkims)) {
-                if ($request->dana_diajukan != 0) {
-                    return back()
-                        ->withErrors(['dana_diajukan' => 'PKM Insentif tidak memiliki pendanaan. Dana harus 0.'])
-                        ->withInput();
-                }
+                // PKM Insentif — dana harus 0
+                $danaBelmawa = 0;
+                $danaOperator = 0;
             } else {
-                // Validasi untuk PKM Pendanaan
-                if (!$request->dana_diajukan || $request->dana_diajukan < 1000000) {
+                if ($danaBelmawa > $maxBelmawa) {
                     return back()
-                        ->withErrors(['dana_diajukan' => 'Dana yang diajukan minimal Rp 1.000.000 untuk PKM Pendanaan.'])
+                        ->withErrors(['dana_diajukan_belmawa' => 'Dana Belmawa maksimal Rp ' . number_format($maxBelmawa, 0, ',', '.') . '.'])
                         ->withInput();
                 }
-                if ($request->dana_diajukan > 15000000) {
+                if ($danaOperator > $maxOperator) {
                     return back()
-                        ->withErrors(['dana_diajukan' => 'Dana yang diajukan maksimal Rp 15.000.000.'])
+                        ->withErrors(['dana_diajukan_operator' => 'Dana Universitas maksimal Rp ' . number_format($maxOperator, 0, ',', '.') . '.'])
                         ->withInput();
                 }
             }
@@ -198,6 +204,17 @@ class ProposalController extends Controller
 
             // Cek apakah ketua tim sudah terdaftar dalam proposal lain di tahun akademik yang sama
             $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            
+            // Validasi batas maksimal 10 kelompok per dosen
+            if ($request->dosen_id) {
+                $dosenLimitCount = ProposalHelper::checkDosenLimit($request->dosen_id, $tahunAjaran);
+                if ($dosenLimitCount >= 10) {
+                    return back()
+                        ->withErrors(['dosen_id' => "Dosen pendamping yang dipilih sudah membimbing maksimal 10 kelompok pada tahun ajaran {$tahunAjaran}."])
+                        ->withInput();
+                }
+            }
+            
             $existingProposal = ProposalHelper::checkStudentInProposal($request->ketua_nim, null, $tahunAjaran);
                 
             // Jika ada proposal lama yang ditolak, hapus file proposal lamanya
@@ -258,11 +275,7 @@ class ProposalController extends Controller
                 $proposalFile = StorageHelper::store('proposals', $file);
             }
 
-            // Set dana untuk PKM Insentif
-            $danaDiajukan = $request->dana_diajukan;
-            if (in_array($request->skim, ['GFT', 'AI'])) {
-                $danaDiajukan = 0; // PKM Insentif tidak memiliki pendanaan
-            }
+            // (dana dihitung di atas — $danaBelmawa dan $danaOperator)
 
             // Tentukan tahun ajaran dari tanggal pengajuan (jika tidak ada atau tidak sesuai)
             $tanggalPengajuan = now();
@@ -281,7 +294,9 @@ class ProposalController extends Controller
                 'tanggal_pengajuan' => $tanggalPengajuan,
                 'skim' => $request->skim,
                 'dosen_pembimbing' => $request->dosen_pembimbing,
-                'dana_diajukan' => $danaDiajukan,
+                'dana_diajukan'          => $danaBelmawa + $danaOperator, // total (legacy field)
+                'dana_diajukan_belmawa'  => $danaBelmawa,
+                'dana_diajukan_operator' => $danaOperator,
                 'tahun_ajaran' => $tahunAjaran,
                 'status_validasi' => 'pending',
                 'status_final' => 'submitted',
@@ -593,8 +608,18 @@ class ProposalController extends Controller
         try {
             DB::beginTransaction();
 
-            // Validasi keunikan NIM (exclude current proposal)
-            $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all(), $proposal->id_proposal);
+            // Validasi keunikan NIM anggota (di luar anggota yang sama)
+            $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all(), $id, $proposal->tahun_ajaran);
+            
+            // Validasi batas maksimal 10 kelompok per dosen
+            if ($request->dosen_id && $request->dosen_id != $proposal->dosen_id) {
+                $dosenLimitCount = ProposalHelper::checkDosenLimit($request->dosen_id, $proposal->tahun_ajaran, $id);
+                if ($dosenLimitCount >= 10) {
+                    return back()
+                        ->withErrors(['dosen_id' => "Dosen pendamping yang dipilih sudah membimbing maksimal 10 kelompok pada tahun ajaran {$proposal->tahun_ajaran}."])
+                        ->withInput();
+                }
+            }
             if (!empty($nimErrors)) {
                 return back()
                     ->withErrors(['nim_duplicate' => $nimErrors])
