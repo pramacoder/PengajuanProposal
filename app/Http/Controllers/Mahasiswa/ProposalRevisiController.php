@@ -350,7 +350,9 @@ class ProposalRevisiController extends Controller
             ]);
 
             $proposal->update([
-                'status' => 'revisi_submitted',
+                // Keep status as 'revisi' so Operator knows it's still being revised/validated
+                // Set status_validasi to 'pending' so Dosen can see and validate it
+                'status_validasi' => 'pending',
                 'updated_at' => now(),
             ]);
 
@@ -358,12 +360,12 @@ class ProposalRevisiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Revisi proposal berhasil diupload! Proposal akan direview kembali oleh reviewer.',
+                'message' => 'Revisi proposal berhasil diupload! Proposal akan divalidasi kembali oleh dosen pendamping.',
                 'data' => [
                     'proposal_id' => $proposal->id_proposal,
                     'file_name' => $fileName,
                     'file_size' => $revisiFile->getSize(),
-                    'status' => 'revisi_submitted'
+                    'status' => 'revisi'
                 ]
             ]);
 

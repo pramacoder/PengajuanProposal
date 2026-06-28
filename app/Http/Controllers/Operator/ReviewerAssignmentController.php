@@ -192,7 +192,7 @@ class ReviewerAssignmentController extends Controller
         $filter = $request->get('filter', 'all');
 
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif'])
-            ->whereIn('status', ['revisi', 'review_substantif_seleksi'])
+            ->whereIn('status', ['revisi', 'revisi_submitted', 'review_substantif_seleksi'])
             ->where(function ($query) {
                 $query->whereNull('id_reviewer_substantif_seleksi_1')
                     ->orWhereNull('id_reviewer_substantif_seleksi_2');

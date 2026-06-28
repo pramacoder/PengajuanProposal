@@ -71,6 +71,11 @@ return [
             'use_path_style_endpoint' => true,
             'throw' => false,
             'report' => false,
+            'http' => [
+                'timeout' => 1.5,
+                'connect_timeout' => 1.5,
+            ],
+            'retries' => 0,
         ],
 
     ],

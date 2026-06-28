@@ -14,9 +14,13 @@ class ProposalReviewController extends Controller
 {
     public function getAdministrativeReview($id)
     {
+        $user = auth()->user();
         try {
             $proposal = Proposal::where('id_proposal', $id)
-                ->where('id_mahasiswa', auth()->user()->id)
+                ->where(function($query) use ($user) {
+                    $query->where('id_mahasiswa', $user->id)
+                          ->orWhere('team_id', $user->getTeamId());
+                })
                 ->firstOrFail();
 
             $administrativeReview = NilaiAdministratif::where('id_proposal', $id)
@@ -67,9 +71,13 @@ class ProposalReviewController extends Controller
 
     public function getSubstantiveReview($id)
     {
+        $user = auth()->user();
         try {
             $proposal = Proposal::where('id_proposal', $id)
-                ->where('id_mahasiswa', auth()->user()->id)
+                ->where(function($query) use ($user) {
+                    $query->where('id_mahasiswa', $user->id)
+                          ->orWhere('team_id', $user->getTeamId());
+                })
                 ->firstOrFail();
 
             $substantiveReviews = NilaiSubstantif::where('id_proposal', $id)

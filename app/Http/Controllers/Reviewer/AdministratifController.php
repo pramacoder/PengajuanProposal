@@ -100,11 +100,13 @@ class AdministratifController extends Controller
             }
 
             if ($isAdministratif) {
+                $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm('administratif', $proposal->skim);
                 $checklist = ProposalHelper::getReviewChecklist($proposal->skim);
-                return view('reviewer.detail_proposal_administratif', compact('proposal', 'checklist'));
+                return view('reviewer.detail_proposal_administratif', compact('proposal', 'checklist', 'dynamicForm'));
             } else {
+                $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm('substantif', $proposal->skim);
                 $adminReviewCompleted = $this->reviewCompletionService->isAdminReviewCompleted($proposal);
-                return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted'));
+                return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted', 'dynamicForm'));
             }
             
         } catch (\Exception $e) {
@@ -115,14 +117,28 @@ class AdministratifController extends Controller
     public function submitReviewAdministratif(Request $request, $id)
     {
         try {
-            $request->validate([
-                'catatan' => 'required|string|max:1000',
-                'kesalahan_administratif' => 'required|array|min:1',
-                'kesalahan_administratif.*' => 'string'
-            ]);
-
             $reviewer = Auth::user();
             $proposal = Proposal::findOrFail($id);
+            $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm('administratif', $proposal->skim);
+
+            if ($dynamicForm) {
+                $validationRules = [
+                    'catatan' => 'required|string|max:1000',
+                    'extra_fields' => 'nullable|array'
+                ];
+                foreach ($dynamicForm->fields as $idx => $field) {
+                    if (!empty($field['required'])) {
+                        $validationRules['extra_fields.field_' . $idx] = 'required';
+                    }
+                }
+                $request->validate($validationRules);
+            } else {
+                $request->validate([
+                    'catatan' => 'required|string|max:1000',
+                    'kesalahan_administratif' => 'required|array|min:1',
+                    'kesalahan_administratif.*' => 'string'
+                ]);
+            }
 
             if ($proposal->status_validasi !== 'valid') {
                 return response()->json(['success' => false, 'message' => 'Proposal belum divalidasi dan tidak dapat direview'], 403);
@@ -137,7 +153,20 @@ class AdministratifController extends Controller
             }
 
             $catatan = $request->input('catatan');
-            $kesalahanAdministratif = $request->input('kesalahan_administratif');
+            $extraFields = $request->input('extra_fields', []);
+            $kesalahanAdministratif = [];
+
+            if ($dynamicForm) {
+                foreach ($dynamicForm->fields as $idx => $field) {
+                    $fieldKey = 'field_' . $idx;
+                    // Checkbox submitted as '1' or true
+                    if (($field['type'] ?? '') === 'checkbox' && !empty($extraFields[$fieldKey])) {
+                        $kesalahanAdministratif[] = $field['label'];
+                    }
+                }
+            } else {
+                $kesalahanAdministratif = $request->input('kesalahan_administratif', []);
+            }
             
             $nilaiAdmin = NilaiAdministratif::updateOrCreate(
                 [
@@ -147,6 +176,7 @@ class AdministratifController extends Controller
                 [
                     'note_administratif' => $catatan,
                     'checklist' => $kesalahanAdministratif,
+                    'extra_fields' => !empty($extraFields) ? $extraFields : null,
                     'updated_at' => now()
                 ]
             );

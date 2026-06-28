@@ -292,7 +292,7 @@
                         </h5>
                         <div class="pdf-controls">
                             @if($proposal->dokumen && $proposal->dokumen->path_file)
-                                <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" 
+                                <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file], false) }}" 
                                    class="btn btn-sm btn-primary me-2" target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
                                 </a>
@@ -311,7 +311,7 @@
                         <div class="pdf-container-full">
                             <iframe 
                                 id="pdfViewer"
-                                src="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}"
+                                src="{{ route('file.serve', ['path' => $proposal->dokumen->path_file], false) }}"
                                 style="width: 100%; height: 80vh; border: none; border-radius: 8px;"
                                 frameborder="0"
                                 allowfullscreen>
@@ -598,170 +598,172 @@
                         @endif
 
                         <!-- Form Penilaian Substantif -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold mb-3">Penilaian Substantif <span class="text-danger">*</span></label>
-                            
-                            @if(empty($criteriaItems))
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Kriteria penilaian untuk skim {{ $proposal->skim }} belum tersedia.
-                                </div>
-                            @else
-                                @php
-                                    // Flatten struktur untuk perhitungan dan input
-                                    $flattenedCriteria = [];
-                                    $criteriaIndex = 0;
-                                    $mainCriteriaNumber = 0;
-                                    
-                                    foreach($criteriaItems as $mainItem) {
-                                        if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
-                                            // Kriteria utama dengan sub-kriteria
-                                            $mainCriteriaNumber++;
-                                            
-                                            // Tambahkan header kriteria utama (baris pertama dengan nomor)
-                                            $flattenedCriteria[] = [
-                                                'main_number' => $mainCriteriaNumber,
-                                                'is_sub' => false,
-                                                'is_header' => true,
-                                                'kriteria' => $mainItem['kriteria'],
-                                                'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')), // Total bobot sub-kriteria
-                                                'index' => -1, // Header tidak punya input skor
-                                                'has_sub' => true
-                                            ];
-                                            
-                                            // Tambahkan sub-kriteria
-                                            foreach($mainItem['sub_kriteria'] as $subItem) {
+                        @if(!$dynamicForm)
+                            <div class="mb-4">
+                                <label class="form-label fw-bold mb-3">Penilaian Substantif <span class="text-danger">*</span></label>
+                                
+                                @if(empty($criteriaItems))
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Kriteria penilaian untuk skim {{ $proposal->skim }} belum tersedia.
+                                    </div>
+                                @else
+                                    @php
+                                        // Flatten struktur untuk perhitungan dan input
+                                        $flattenedCriteria = [];
+                                        $criteriaIndex = 0;
+                                        $mainCriteriaNumber = 0;
+                                        
+                                        foreach($criteriaItems as $mainItem) {
+                                            if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
+                                                // Kriteria utama dengan sub-kriteria
+                                                $mainCriteriaNumber++;
+                                                
+                                                // Tambahkan header kriteria utama (baris pertama dengan nomor)
                                                 $flattenedCriteria[] = [
                                                     'main_number' => $mainCriteriaNumber,
-                                                    'is_sub' => true,
+                                                    'is_sub' => false,
+                                                    'is_header' => true,
+                                                    'kriteria' => $mainItem['kriteria'],
+                                                    'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')), // Total bobot sub-kriteria
+                                                    'index' => -1, // Header tidak punya input skor
+                                                    'has_sub' => true
+                                                ];
+                                                
+                                                // Tambahkan sub-kriteria
+                                                foreach($mainItem['sub_kriteria'] as $subItem) {
+                                                    $flattenedCriteria[] = [
+                                                        'main_number' => $mainCriteriaNumber,
+                                                        'is_sub' => true,
+                                                        'is_header' => false,
+                                                        'kriteria' => $subItem['kriteria'],
+                                                        'bobot' => $subItem['bobot'],
+                                                        'index' => $criteriaIndex++,
+                                                        'has_sub' => false
+                                                    ];
+                                                }
+                                            } else {
+                                                // Kriteria utama tanpa sub-kriteria
+                                                $mainCriteriaNumber++;
+                                                $flattenedCriteria[] = [
+                                                    'main_number' => $mainCriteriaNumber,
+                                                    'is_sub' => false,
                                                     'is_header' => false,
-                                                    'kriteria' => $subItem['kriteria'],
-                                                    'bobot' => $subItem['bobot'],
+                                                    'kriteria' => $mainItem['kriteria'],
+                                                    'bobot' => $mainItem['bobot'],
                                                     'index' => $criteriaIndex++,
                                                     'has_sub' => false
                                                 ];
                                             }
-                                        } else {
-                                            // Kriteria utama tanpa sub-kriteria
-                                            $mainCriteriaNumber++;
-                                            $flattenedCriteria[] = [
-                                                'main_number' => $mainCriteriaNumber,
-                                                'is_sub' => false,
-                                                'is_header' => false,
-                                                'kriteria' => $mainItem['kriteria'],
-                                                'bobot' => $mainItem['bobot'],
-                                                'index' => $criteriaIndex++,
-                                                'has_sub' => false
-                                            ];
                                         }
-                                    }
-                                @endphp
-                                
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-hover">
-                                        <thead class="table-success">
-                                            <tr>
-                                                <th width="5%">No</th>
-                                                <th width="50%">Kriteria Penilaian</th>
-                                                <th width="10%" class="text-center">Bobot (%)</th>
-                                                <th width="15%" class="text-center">Skor (0-10)</th>
-                                                <th width="15%" class="text-center">Nilai</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @php
-                                                $currentMainNumber = 0;
-                                            @endphp
-                                            @foreach($flattenedCriteria as $item)
-                                                @php
-                                                    // Untuk header, tidak ada skor (index = -1)
-                                                    if ($item['index'] >= 0) {
-                                                        $skorValue = isset($existingSkor[$item['index']]) ? $existingSkor[$item['index']] : '';
-                                                        $nilai = $skorValue ? ($item['bobot'] * $skorValue) : 0;
-                                                    } else {
-                                                        $skorValue = '';
-                                                        $nilai = 0;
-                                                    }
-                                                    
-                                                    // Tampilkan nomor untuk kriteria utama (header atau tanpa sub)
-                                                    $showNumber = false;
-                                                    if (!$item['is_sub']) {
-                                                        $showNumber = true;
-                                                        $currentMainNumber = $item['main_number'];
-                                                    }
-                                                @endphp
+                                    @endphp
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-success">
                                                 <tr>
+                                                    <th width="5%">No</th>
+                                                    <th width="50%">Kriteria Penilaian</th>
+                                                    <th width="10%" class="text-center">Bobot (%)</th>
+                                                    <th width="15%" class="text-center">Skor (0-10)</th>
+                                                    <th width="15%" class="text-center">Nilai</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php
+                                                    $currentMainNumber = 0;
+                                                @endphp
+                                                @foreach($flattenedCriteria as $item)
+                                                    @php
+                                                        // Untuk header, tidak ada skor (index = -1)
+                                                        if ($item['index'] >= 0) {
+                                                            $skorValue = isset($existingSkor[$item['index']]) ? $existingSkor[$item['index']] : '';
+                                                            $nilai = $skorValue ? ($item['bobot'] * $skorValue) : 0;
+                                                        } else {
+                                                            $skorValue = '';
+                                                            $nilai = 0;
+                                                        }
+                                                        
+                                                        // Tampilkan nomor untuk kriteria utama (header atau tanpa sub)
+                                                        $showNumber = false;
+                                                        if (!$item['is_sub']) {
+                                                            $showNumber = true;
+                                                            $currentMainNumber = $item['main_number'];
+                                                        }
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="text-center">
+                                                            @if($showNumber)
+                                                                {{ $item['main_number'] }}
+                                                            @elseif($item['is_sub'])
+                                                                <span class="text-muted" style="font-size: 0.85em;">└─</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if($item['is_sub'])
+                                                                <span style="padding-left: 1.5rem; color: #6c757d; font-size: 0.95em;">{{ $item['kriteria'] }}</span>
+                                                            @else
+                                                                <strong>{{ $item['kriteria'] }}</strong>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center fw-bold">
+                                                            @if($item['is_header'])
+                                                                <span class="text-muted">-</span>
+                                                            @else
+                                                                @formatId($item['bobot'], 2)
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if($item['is_header'])
+                                                                <span class="text-muted">-</span>
+                                                            @else
+                                                                <input type="number" 
+                                                                       class="form-control form-control-sm skor-input text-center" 
+                                                                       name="skor[{{ $item['index'] }}]" 
+                                                                       value="{{ $skorValue }}"
+                                                                       min="0" 
+                                                                       max="10" 
+                                                                       step="0.1"
+                                                                       data-index="{{ $item['index'] }}"
+                                                                       data-bobot="{{ $item['bobot'] }}"
+                                                                       required>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center">
+                                                            @if($item['is_header'])
+                                                                <span class="text-muted">-</span>
+                                                            @else
+                                                                <span class="nilai-display fw-bold" data-index="{{ $item['index'] }}">
+                                                                    @if($nilai > 0)@formatId($nilai, 2)@else 0,00 @endif
+                                                                </span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot class="table-secondary">
+                                                <tr>
+                                                    <td colspan="2" class="text-end fw-bold">Total</td>
+                                                    <td class="text-center fw-bold">100.00</td>
                                                     <td class="text-center">
-                                                        @if($showNumber)
-                                                            {{ $item['main_number'] }}
-                                                        @elseif($item['is_sub'])
-                                                            <span class="text-muted" style="font-size: 0.85em;">└─</span>
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        @if($item['is_sub'])
-                                                            <span style="padding-left: 1.5rem; color: #6c757d; font-size: 0.95em;">{{ $item['kriteria'] }}</span>
-                                                        @else
-                                                            <strong>{{ $item['kriteria'] }}</strong>
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center fw-bold">
-                                                        @if($item['is_header'])
-                                                            <span class="text-muted">-</span>
-                                                        @else
-                                                            @formatId($item['bobot'], 2)
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        @if($item['is_header'])
-                                                            <span class="text-muted">-</span>
-                                                        @else
-                                                            <input type="number" 
-                                                                   class="form-control form-control-sm skor-input text-center" 
-                                                                   name="skor[{{ $item['index'] }}]" 
-                                                                   value="{{ $skorValue }}"
-                                                                   min="0" 
-                                                                   max="10" 
-                                                                   step="0.1"
-                                                                   data-index="{{ $item['index'] }}"
-                                                                   data-bobot="{{ $item['bobot'] }}"
-                                                                   required>
-                                                        @endif
+                                                        <span class="total-skor-display fw-bold">@if($existingAvgSkor > 0)@formatId($existingAvgSkor, 2)@else 0,00 @endif</span>
                                                     </td>
                                                     <td class="text-center">
-                                                        @if($item['is_header'])
-                                                            <span class="text-muted">-</span>
-                                                        @else
-                                                            <span class="nilai-display fw-bold" data-index="{{ $item['index'] }}">
-                                                                @if($nilai > 0)@formatId($nilai, 2)@else 0,00 @endif
-                                                            </span>
-                                                        @endif
+                                                        <span class="total-nilai-display fw-bold">@if($existingTotalNilai > 0)@formatId($existingTotalNilai, 2)@else 0,00 @endif</span>
                                                     </td>
                                                 </tr>
-                                            @endforeach
-                                        </tbody>
-                                        <tfoot class="table-secondary">
-                                            <tr>
-                                                <td colspan="2" class="text-end fw-bold">Total</td>
-                                                <td class="text-center fw-bold">100.00</td>
-                                                <td class="text-center">
-                                                    <span class="total-skor-display fw-bold">@if($existingAvgSkor > 0)@formatId($existingAvgSkor, 2)@else 0,00 @endif</span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="total-nilai-display fw-bold">@if($existingTotalNilai > 0)@formatId($existingTotalNilai, 2)@else 0,00 @endif</span>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
-                                                <td class="text-center">
-                                                    <span class="nilai-akhir-display fw-bold text-primary" style="font-size: 1.2em;">@if($existingNilaiAkhir > 0)@formatId($existingNilaiAkhir, 2)@else 0,00 @endif</span>
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            @endif
-                        </div>
+                                                <tr>
+                                                    <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
+                                                    <td class="text-center">
+                                                        <span class="nilai-akhir-display fw-bold text-primary" style="font-size: 1.2em;">@if($existingNilaiAkhir > 0)@formatId($existingNilaiAkhir, 2)@else 0,00 @endif</span>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
 
                         {{-- Dynamic Fields from FormPenilaian (operator) --}}
                         @include('reviewer.partials.dynamic_fields', [
@@ -1031,22 +1033,24 @@
                 const skorInputs = document.querySelectorAll('.skor-input');
                 let missingSkor = [];
                 let validIndex = 0;
-                skorInputs.forEach((input) => {
-                    // Skip header (index < 0 atau disabled)
-                    if (input.disabled || input.hasAttribute('data-header') || parseInt(input.dataset.index) < 0) {
-                        return;
-                    }
+                if (skorInputs.length > 0) {
+                    skorInputs.forEach((input) => {
+                        // Skip header (index < 0 atau disabled)
+                        if (input.disabled || input.hasAttribute('data-header') || parseInt(input.dataset.index) < 0) {
+                            return;
+                        }
+                        
+                        validIndex++;
+                        const skor = parseFloat(input.value);
+                        if (isNaN(skor) || skor < 0 || skor > 10) {
+                            missingSkor.push(validIndex);
+                        }
+                    });
                     
-                    validIndex++;
-                    const skor = parseFloat(input.value);
-                    if (isNaN(skor) || skor < 0 || skor > 10) {
-                        missingSkor.push(validIndex);
+                    if (missingSkor.length > 0) {
+                        errorMessage = `Mohon isi semua skor dengan nilai 0-10. Kriteria yang belum diisi: ${missingSkor.join(', ')}`;
+                        isValid = false;
                     }
-                });
-                
-                if (missingSkor.length > 0) {
-                    errorMessage = `Mohon isi semua skor dengan nilai 0-10. Kriteria yang belum diisi: ${missingSkor.join(', ')}`;
-                    isValid = false;
                 }
                 
                 if (!isValid) {
@@ -1108,10 +1112,10 @@
                 });
                 
                 // Kumpulkan semua data form
-                const formData = new FormData();
-                formData.append('catatan', catatanField.value);
-                formData.append('skim', '{{ $proposal->skim }}');
-                formData.append('_token', '{{ csrf_token() }}');
+                const formData = new FormData(form);
+                formData.set('catatan', catatanField.value);
+                formData.set('skim', '{{ $proposal->skim }}');
+                formData.set('_token', '{{ csrf_token() }}');
                 
                 // Append skor sebagai array
                 Object.keys(skorData).forEach(key => {

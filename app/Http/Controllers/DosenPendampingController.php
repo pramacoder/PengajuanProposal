@@ -112,8 +112,24 @@ class DosenPendampingController extends Controller
             'status_validasi' => $statusValidasi,
             'catatan' => $request->catatan,
             'tanggal_validasi' => now(),
-            'status' => $statusValidasi === 'valid' ? 'submitted' : 'tidak_valid'
         ];
+
+        if ($statusValidasi === 'valid') {
+            if ($proposal->status === 'revisi') {
+                $updateData['status'] = 'revisi_submitted';
+            } elseif ($proposal->status === 'revisi_akhir') {
+                $updateData['status'] = 'validasi_akhir_dosen_univ';
+            } else {
+                $updateData['status'] = 'submitted';
+            }
+        } else {
+            if ($proposal->status === 'revisi' || $proposal->status === 'revisi_akhir') {
+                // If rejected, keep status as revisi so they can revise again
+                $updateData['status'] = $proposal->status;
+            } else {
+                $updateData['status'] = 'tidak_valid';
+            }
+        }
 
         if ($request->hasFile('review_pdf')) {
             $file = $request->file('review_pdf');

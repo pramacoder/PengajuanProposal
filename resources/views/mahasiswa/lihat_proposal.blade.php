@@ -1145,10 +1145,14 @@
                             <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '{{ $proposal->id_proposal }}')">
                                 <i class="fas fa-clipboard-check me-1"></i>Review
                             </button>
-                            @if($proposal->status === 'revisi')
+                            @if($proposal->status === 'revisi' && $proposal->status_validasi !== 'pending')
                             <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit me-1"></i>Revisi
                             </a>
+                            @elseif($proposal->status === 'revisi' && $proposal->status_validasi === 'pending')
+                            <button class="btn btn-info btn-sm" disabled>
+                                <i class="fas fa-clock me-1"></i>Menunggu Validasi Dosen
+                            </button>
                             @elseif($proposal->status === 'revisi_akhir')
                             <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
                                 <i class="fas fa-edit me-1"></i>Revisi Akhir

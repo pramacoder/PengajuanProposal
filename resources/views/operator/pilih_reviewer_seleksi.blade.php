@@ -496,7 +496,7 @@ function updateAssignedProposalsTable(proposals) {
     tbody.innerHTML = proposals.map((p, i) => {
         const judul = p.judul_proposal || p.judul || 'Judul tidak tersedia';
         const skim = p.skim || 'N/A';
-        const ketua = p.mahasiswa?.nama_mhs || 'N/A';
+        const ketua = p.mahasiswa?.name || 'N/A';
         const rev1 = p.reviewer_substantif_seleksi_1?.name || p.reviewer_substantif_seleksi_1?.nama_reviewer || 'Belum ditugaskan';
         const rev2 = p.reviewer_substantif_seleksi_2?.name || p.reviewer_substantif_seleksi_2?.nama_reviewer || 'Belum ditugaskan';
         const status = p.status || 'N/A';

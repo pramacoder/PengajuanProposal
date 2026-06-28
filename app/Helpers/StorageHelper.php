@@ -11,13 +11,20 @@ class StorageHelper
 
     public static function getDisk(): string
     {
+        // If the configured key is a JWT (starts with 'ey'), it's invalid for S3 and will timeout.
+        // Fallback to 'public' to prevent slow loading times.
+        $key = config('filesystems.disks.supabase.key', '');
+        if (str_starts_with($key, 'ey')) {
+            return 'public';
+        }
+        
         return static::$disk;
     }
 
     public static function store(string $path, $file, ?string $filename = null): ?string
     {
         try {
-            $disk = Storage::disk(static::$disk);
+            $disk = Storage::disk(static::getDisk());
 
             $result = $filename ? $disk->putFileAs($path, $file, $filename) : $disk->putFile($path, $file);
 
@@ -36,7 +43,7 @@ class StorageHelper
     public static function url(string $path): string
     {
         try {
-            $disk = Storage::disk(static::$disk);
+            $disk = Storage::disk(static::getDisk());
             return $disk->temporaryUrl($path, now()->addMinutes(60));
         } catch (\Throwable $e) {
             Log::warning("Supabase temporary URL failed, trying public disk: {$e->getMessage()}");
@@ -47,7 +54,7 @@ class StorageHelper
     public static function download(string $path): mixed
     {
         try {
-            $disk = Storage::disk(static::$disk);
+            $disk = Storage::disk(static::getDisk());
             if ($disk->exists($path)) {
                 return $disk->download($path);
             }
@@ -61,7 +68,7 @@ class StorageHelper
     public static function get(string $path): ?string
     {
         try {
-            $disk = Storage::disk(static::$disk);
+            $disk = Storage::disk(static::getDisk());
             if ($disk->exists($path)) {
                 return $disk->get($path);
             }
@@ -75,7 +82,7 @@ class StorageHelper
     public static function exists(string $path): bool
     {
         try {
-            if (Storage::disk(static::$disk)->exists($path)) {
+            if (Storage::disk(static::getDisk())->exists($path)) {
                 return true;
             }
         } catch (\Throwable $e) {
@@ -88,7 +95,7 @@ class StorageHelper
     public static function delete(string $path): bool
     {
         try {
-            Storage::disk(static::$disk)->delete($path);
+            Storage::disk(static::getDisk())->delete($path);
             return true;
         } catch (\Throwable $e) {
             Log::warning("Supabase delete failed: {$e->getMessage()}");

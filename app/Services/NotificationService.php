@@ -17,36 +17,38 @@ class NotificationService
      */
     public function notifyMahasiswa(Proposal $proposal, string $type, string $title, string $message, array $data = []): void
     {
-        try {
-            // Dapatkan semua anggota tim proposal (termasuk ketua)
-            $teamMembers = $proposal->semuaAnggotaTim;
-            
-            // Jika tidak ada anggota tim, gunakan mahasiswa pengaju
-            if ($teamMembers->isEmpty() && $proposal->mahasiswa) {
-                $teamMembers = collect([$proposal->mahasiswa]);
-            }
-            
-            foreach ($teamMembers as $member) {
-                $payload = [
-                    'user_identifier' => $member->identifier,
-                    'user_type' => 'mahasiswa',
-                    'title' => $title,
-                    'message' => $message,
-                    'type' => $type,
-                    'data' => array_merge($data, [
+        defer(function () use ($proposal, $type, $title, $message, $data) {
+            try {
+                // Dapatkan semua anggota tim proposal (termasuk ketua)
+                $teamMembers = $proposal->semuaAnggotaTim;
+                
+                // Jika tidak ada anggota tim, gunakan mahasiswa pengaju
+                if ($teamMembers->isEmpty() && $proposal->mahasiswa) {
+                    $teamMembers = collect([$proposal->mahasiswa]);
+                }
+                
+                foreach ($teamMembers as $member) {
+                    $payload = [
+                        'user_identifier' => $member->identifier,
+                        'user_type' => 'mahasiswa',
+                        'title' => $title,
+                        'message' => $message,
+                        'type' => $type,
+                        'data' => array_merge($data, [
+                            'proposal_id' => $proposal->id_proposal,
+                            'nim' => $member->identifier,
+                            'judul_proposal' => $proposal->judul_proposal ?? $proposal->judul
+                        ]),
                         'proposal_id' => $proposal->id_proposal,
-                        'nim' => $member->identifier,
-                        'judul_proposal' => $proposal->judul_proposal ?? $proposal->judul
-                    ]),
-                    'proposal_id' => $proposal->id_proposal,
-                ];
-                Notification::create($payload);
+                    ];
+                    Notification::create($payload);
+                }
+                
+                Log::info("Notifikasi berhasil dikirim ke mahasiswa untuk proposal {$proposal->id_proposal}");
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim notifikasi ke mahasiswa: " . $e->getMessage());
             }
-            
-            Log::info("Notifikasi berhasil dikirim ke mahasiswa untuk proposal {$proposal->id_proposal}");
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi ke mahasiswa: " . $e->getMessage());
-        }
+        });
     }
 
     /**
@@ -54,30 +56,32 @@ class NotificationService
      */
     public function notifyDosen(Proposal $proposal, string $type, string $title, string $message, array $data = []): void
     {
-        try {
-            if ($proposal->id_dosen) {
-                $dosen = $proposal->dosen;
-                if ($dosen) {
-                    $payload = [
-                        'user_identifier' => $dosen->identifier,
-                        'user_type' => 'dosen',
-                        'title' => $title,
-                        'message' => $message,
-                        'type' => $type,
-                        'data' => array_merge($data, [
+        defer(function () use ($proposal, $type, $title, $message, $data) {
+            try {
+                if ($proposal->id_dosen) {
+                    $dosen = $proposal->dosen;
+                    if ($dosen) {
+                        $payload = [
+                            'user_identifier' => $dosen->identifier,
+                            'user_type' => 'dosen',
+                            'title' => $title,
+                            'message' => $message,
+                            'type' => $type,
+                            'data' => array_merge($data, [
+                                'proposal_id' => $proposal->id_proposal,
+                                'mahasiswa_nama' => $proposal->mahasiswa->name ?? 'N/A'
+                            ]),
                             'proposal_id' => $proposal->id_proposal,
-                            'mahasiswa_nama' => $proposal->mahasiswa->name ?? 'N/A'
-                        ]),
-                        'proposal_id' => $proposal->id_proposal,
-                    ];
-                    Notification::create($payload);
+                        ];
+                        Notification::create($payload);
+                    }
                 }
+                
+                Log::info("Notifikasi berhasil dikirim ke dosen untuk proposal {$proposal->id_proposal}");
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim notifikasi ke dosen: " . $e->getMessage());
             }
-            
-            Log::info("Notifikasi berhasil dikirim ke dosen untuk proposal {$proposal->id_proposal}");
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi ke dosen: " . $e->getMessage());
-        }
+        });
     }
 
     /**
@@ -85,46 +89,48 @@ class NotificationService
      */
     public function notifyReviewer(Proposal $proposal, string $type, string $title, string $message, array $data = []): void
     {
-        try {
-            $reviewers = [];
-            
-            // Reviewer administratif
-            if ($proposal->id_reviewer_administratif) {
-                $reviewers[] = $proposal->reviewerAdministratif;
-            }
-            
-            // Reviewer substantif 1
-            if ($proposal->id_reviewer_substantif_1) {
-                $reviewers[] = $proposal->reviewerSubstantif1;
-            }
-            
-            // Reviewer substantif 2
-            if ($proposal->id_reviewer_substantif_2) {
-                $reviewers[] = $proposal->reviewerSubstantif2;
-            }
-            
-            foreach ($reviewers as $reviewer) {
-                if ($reviewer) {
-                    $payload = [
-                        'user_identifier' => $reviewer->identifier,
-                        'user_type' => 'reviewer',
-                        'title' => $title,
-                        'message' => $message,
-                        'type' => $type,
-                        'data' => array_merge($data, [
-                            'proposal_id' => $proposal->id_proposal,
-                            'review_type' => $this->getReviewType($proposal, $reviewer->id)
-                        ]),
-                        'proposal_id' => $proposal->id_proposal,
-                    ];
-                    Notification::create($payload);
+        defer(function () use ($proposal, $type, $title, $message, $data) {
+            try {
+                $reviewers = [];
+                
+                // Reviewer administratif
+                if ($proposal->id_reviewer_administratif) {
+                    $reviewers[] = $proposal->reviewerAdministratif;
                 }
+                
+                // Reviewer substantif 1
+                if ($proposal->id_reviewer_substantif_1) {
+                    $reviewers[] = $proposal->reviewerSubstantif1;
+                }
+                
+                // Reviewer substantif 2
+                if ($proposal->id_reviewer_substantif_2) {
+                    $reviewers[] = $proposal->reviewerSubstantif2;
+                }
+                
+                foreach ($reviewers as $reviewer) {
+                    if ($reviewer) {
+                        $payload = [
+                            'user_identifier' => $reviewer->identifier,
+                            'user_type' => 'reviewer',
+                            'title' => $title,
+                            'message' => $message,
+                            'type' => $type,
+                            'data' => array_merge($data, [
+                                'proposal_id' => $proposal->id_proposal,
+                                'review_type' => $this->getReviewType($proposal, $reviewer->id)
+                            ]),
+                            'proposal_id' => $proposal->id_proposal,
+                        ];
+                        Notification::create($payload);
+                    }
+                }
+                
+                Log::info("Notifikasi berhasil dikirim ke reviewer untuk proposal {$proposal->id_proposal}");
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim notifikasi ke reviewer: " . $e->getMessage());
             }
-            
-            Log::info("Notifikasi berhasil dikirim ke reviewer untuk proposal {$proposal->id_proposal}");
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi ke reviewer: " . $e->getMessage());
-        }
+        });
     }
 
     /**
@@ -132,27 +138,29 @@ class NotificationService
      */
     public function notifyOperator(string $type, string $title, string $message, array $data = []): void
     {
-        try {
-            $operators = User::whereIn('role', ['operator', 'pimpinan_pt'])
-                ->where('is_active', true)
-                ->get();
+        defer(function () use ($type, $title, $message, $data) {
+            try {
+                $operators = User::whereIn('role', ['operator', 'pimpinan_pt'])
+                    ->where('is_active', true)
+                    ->get();
 
-            foreach ($operators as $operator) {
-                $payload = [
-                    'user_identifier' => $operator->identifier,
-                    'user_type' => 'operator',
-                    'title' => $title,
-                    'message' => $message,
-                    'type' => $type,
-                    'data' => $data,
-                ];
-                Notification::create($payload);
+                foreach ($operators as $operator) {
+                    $payload = [
+                        'user_identifier' => $operator->identifier,
+                        'user_type' => 'operator',
+                        'title' => $title,
+                        'message' => $message,
+                        'type' => $type,
+                        'data' => $data,
+                    ];
+                    Notification::create($payload);
+                }
+                
+                Log::info("Notifikasi berhasil dikirim ke operator");
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim notifikasi ke operator: " . $e->getMessage());
             }
-            
-            Log::info("Notifikasi berhasil dikirim ke operator");
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi ke operator: " . $e->getMessage());
-        }
+        });
     }
 
     /**
@@ -770,25 +778,35 @@ class NotificationService
      */
     public function notifyAllMahasiswa(string $type, string $title, string $message, array $data = []): void
     {
-        try {
-            $mahasiswas = User::where('role', 'mahasiswa')->where('is_active', true)->get();
+        defer(function () use ($type, $title, $message, $data) {
+            try {
+                $mahasiswas = User::where('role', 'mahasiswa')->where('is_active', true)->get();
 
-            foreach ($mahasiswas as $mahasiswa) {
-                $payload = [
-                    'user_identifier' => $mahasiswa->identifier,
-                    'user_type' => 'mahasiswa',
-                    'title' => $title,
-                    'message' => $message,
-                    'type' => $type,
-                    'data' => $data,
-                ];
-                Notification::create($payload);
-                $this->writeToFirestore($payload);
+                foreach ($mahasiswas as $mahasiswa) {
+                    $payload = [
+                        'user_identifier' => $mahasiswa->identifier,
+                        'user_type' => 'mahasiswa',
+                        'title' => $title,
+                        'message' => $message,
+                        'type' => $type,
+                        'data' => $data,
+                    ];
+                    Notification::create($payload);
+                    $this->writeToFirestore($payload);
+                }
+                
+                Log::info("Notifikasi broadcast berhasil dikirim ke semua mahasiswa");
+            } catch (\Exception $e) {
+                Log::error("Gagal mengirim notifikasi broadcast: " . $e->getMessage());
             }
-            
-            Log::info("Notifikasi broadcast berhasil dikirim ke semua mahasiswa");
-        } catch (\Exception $e) {
-            Log::error("Gagal mengirim notifikasi broadcast: " . $e->getMessage());
-        }
+        });
+    }
+
+    /**
+     * Tulis notifikasi ke Firestore jika terkonfigurasi (opsional)
+     */
+    protected function writeToFirestore(array $payload): void
+    {
+        // Fitur Firestore bersifat opsional, saat ini dinonaktifkan
     }
 }

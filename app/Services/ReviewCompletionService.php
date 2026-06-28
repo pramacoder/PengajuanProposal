@@ -152,7 +152,8 @@ class ReviewCompletionService
 
             return !empty($adminReview->note_administratif) && 
                    $adminReview->note_administratif !== 'Review dimulai' &&
-                   !empty($adminReview->checklist);
+                   $adminReview->note_administratif !== 'Review administratif dimulai' &&
+                   ($adminReview->checklist !== null || $adminReview->extra_fields !== null);
 
         } catch (\Exception $e) {
             Log::error('Error checking admin review completion', [
@@ -175,7 +176,8 @@ class ReviewCompletionService
                 $adminReview = $proposal->nilaiAdministratif->where('id_reviewer', $adminReviewer)->first();
                 $adminCompleted = $adminReview && $adminReview->note_administratif && 
                                 $adminReview->note_administratif !== 'Review administratif dimulai' &&
-                                !empty($adminReview->checklist);
+                                $adminReview->note_administratif !== 'Review dimulai' &&
+                                ($adminReview->checklist !== null || $adminReview->extra_fields !== null);
                 
                 if ($adminCompleted && $proposal->status === 'review_administratif') {
                     $proposal->update(['status' => 'review_substantif']);

@@ -66,6 +66,22 @@
                            value="{{ $savedVal }}"
                            {{ $isRequired ? 'required' : '' }}>
 
+                @elseif($fieldType === 'checkbox' || $fieldType === 'boolean')
+                    {{-- Checkbox / Boolean --}}
+                    <div class="form-check mt-1">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="{{ $inputId }}"
+                               name="{{ $inputName }}"
+                               value="1"
+                               {{ $savedVal == '1' || $savedVal === true ? 'checked' : '' }}
+                               {{ $isRequired ? 'required' : '' }}
+                               style="cursor:pointer; width: 1.25rem; height: 1.25rem; accent-color: var(--primary-700);">
+                        <label class="form-check-label ms-2" for="{{ $inputId }}" style="font-size: 0.85rem; color: var(--text-600); cursor:pointer; line-height: 1.25rem;">
+                            Ya (Terpenuhi / Sesuai)
+                        </label>
+                    </div>
+
                 @else
                     {{-- Textarea --}}
                     <textarea class="form-control form-control-sm"

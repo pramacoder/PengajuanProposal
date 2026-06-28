@@ -483,8 +483,12 @@ class ProposalController extends Controller
      */
     public function download($id, $jenis)
     {
+        $user = auth()->user();
         $proposal = Proposal::where('id_proposal', $id)
-            ->where('id_mahasiswa', auth()->user()->id)
+            ->where(function($query) use ($user) {
+                $query->where('id_mahasiswa', $user->id)
+                      ->orWhere('team_id', $user->getTeamId());
+            })
             ->with('dokumen')
             ->firstOrFail();
 
@@ -512,8 +516,12 @@ class ProposalController extends Controller
     public function viewPdf($id)
     {
         try {
+            $user = auth()->user();
             $proposal = Proposal::where('id_proposal', $id)
-                ->where('id_mahasiswa', auth()->user()->id)
+                ->where(function($query) use ($user) {
+                    $query->where('id_mahasiswa', $user->id)
+                          ->orWhere('team_id', $user->getTeamId());
+                })
                 ->with('dokumen')
                 ->firstOrFail();
 

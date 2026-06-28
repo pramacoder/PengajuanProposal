@@ -83,8 +83,11 @@ class SubstantifController extends Controller
             $adminReviewCompleted = $this->reviewCompletionService->isAdminReviewCompleted($proposal);
 
             $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
+            
+            $jenisForm = $isSeleksiMode ? 'substantif_seleksi' : 'substantif';
+            $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm($jenisForm, $proposal->skim);
 
-            return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted', 'criteria'));
+            return view('reviewer.detail_proposal_substantif', compact('proposal', 'adminReviewCompleted', 'criteria', 'dynamicForm'));
             
         } catch (\Exception $e) {
             abort(500, 'Terjadi kesalahan saat mengakses detail proposal substantif: ' . $e->getMessage());
@@ -94,21 +97,35 @@ class SubstantifController extends Controller
     public function submitReviewSubstantif(Request $request, $id)
     {
         try {
-            $criteria = ProposalHelper::getSubstantifCriteria($request->skim ?? 'default');
-            
-            $validationRules = [
-                'catatan' => 'required|string|min:50|max:1000',
-                'skor' => 'required|array',
-                'skor.*' => 'required|numeric|min:0|max:10'
-            ];
-
-            $request->validate($validationRules);
-
             $reviewer = Auth::user();
             $proposal = Proposal::findOrFail($id);
-            
-            if (empty($criteria)) {
-                $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
+            $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm('substantif', $proposal->skim);
+
+            if ($dynamicForm) {
+                $validationRules = [
+                    'catatan' => 'required|string|min:50|max:1000',
+                    'extra_fields' => 'nullable|array'
+                ];
+                foreach ($dynamicForm->fields as $idx => $field) {
+                    if (!empty($field['required'])) {
+                        $validationRules['extra_fields.field_' . $idx] = 'required';
+                    }
+                }
+                $request->validate($validationRules);
+            } else {
+                $criteria = ProposalHelper::getSubstantifCriteria($request->skim ?? 'default');
+                
+                $validationRules = [
+                    'catatan' => 'required|string|min:50|max:1000',
+                    'skor' => 'required|array',
+                    'skor.*' => 'required|numeric|min:0|max:10'
+                ];
+
+                $request->validate($validationRules);
+                
+                if (empty($criteria)) {
+                    $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
+                }
             }
 
             if ($proposal->status_validasi !== 'valid') {
@@ -129,50 +146,76 @@ class SubstantifController extends Controller
             }
 
             $catatan = $request->input('catatan');
-            $skorPerKriteriaRaw = $request->input('skor', []);
-            
-            if (!is_array($skorPerKriteriaRaw)) {
-                return response()->json(['success' => false, 'message' => 'Data skor tidak valid. Silakan refresh halaman dan coba lagi.'], 422);
-            }
+            $extraFields = $request->input('extra_fields', []);
             
             $skorPerKriteria = [];
-            foreach ($skorPerKriteriaRaw as $key => $value) {
-                if ($value === null || $value === '' || $value === false) {
-                    continue;
+            $totalNilai = null;
+            $nilaiAkhir = null;
+            $scoreCalculation = ['total_nilai' => null, 'nilai_akhir' => null];
+
+            if ($dynamicForm) {
+                $totalBobot = 0;
+                $criteriaIndex = 0;
+                foreach ($dynamicForm->fields as $idx => $field) {
+                    $fieldKey = 'field_' . $idx;
+                    if (($field['type'] ?? '') === 'integer_scale') {
+                        $skor = (float) ($extraFields[$fieldKey] ?? 0);
+                        $bobot = (float) ($field['weight'] ?? 0);
+                        $totalNilai += $bobot * $skor;
+                        $totalBobot += $bobot;
+                        $skorPerKriteria[$criteriaIndex++] = $skor;
+                    }
+                }
+                $nilaiAkhir = ($totalBobot > 0) ? (($totalNilai / ($totalBobot * 7)) * 100) : 0;
+                $scoreCalculation = ['total_nilai' => $totalNilai, 'nilai_akhir' => $nilaiAkhir];
+            } else {
+                $skorPerKriteriaRaw = $request->input('skor', []);
+                
+                if (!is_array($skorPerKriteriaRaw)) {
+                    return response()->json(['success' => false, 'message' => 'Data skor tidak valid. Silakan refresh halaman dan coba lagi.'], 422);
                 }
                 
-                $index = (int) $key;
-                $skorValue = (float) $value;
+                foreach ($skorPerKriteriaRaw as $key => $value) {
+                    if ($value === null || $value === '' || $value === false) {
+                        continue;
+                    }
+                    
+                    $index = (int) $key;
+                    $skorValue = (float) $value;
+                    
+                    if ($skorValue < 0) {
+                        $skorValue = 0;
+                    } elseif ($skorValue > 10) {
+                        $skorValue = 10;
+                    }
+                    
+                    $skorPerKriteria[$index] = $skorValue;
+                }
+                ksort($skorPerKriteria);
                 
-                if ($skorValue < 0) {
-                    $skorValue = 0;
-                } elseif ($skorValue > 10) {
-                    $skorValue = 10;
+                $expectedCount = ProposalHelper::countActualCriteria($criteria);
+                $actualCount = count($skorPerKriteria);
+                
+                if ($actualCount !== $expectedCount) {
+                    return response()->json(['success' => false, 'message' => "Jumlah skor tidak sesuai. Diharapkan: {$expectedCount}, Diterima: {$actualCount}. Silakan pastikan semua skor sudah diisi."], 422);
                 }
                 
-                $skorPerKriteria[$index] = $skorValue;
+                $scoreCalculation = ProposalHelper::calculateSubstantifScore($criteria, $skorPerKriteria);
+                $totalNilai = $scoreCalculation['total_nilai'] ?? null;
+                $nilaiAkhir = $scoreCalculation['nilai_akhir'] ?? null;
             }
-            
-            ksort($skorPerKriteria);
-            
-            $expectedCount = ProposalHelper::countActualCriteria($criteria);
-            $actualCount = count($skorPerKriteria);
-            
-            if ($actualCount !== $expectedCount) {
-                return response()->json(['success' => false, 'message' => "Jumlah skor tidak sesuai. Diharapkan: {$expectedCount}, Diterima: {$actualCount}. Silakan pastikan semua skor sudah diisi."], 422);
-            }
-            
-            $scoreCalculation = ProposalHelper::calculateSubstantifScore($criteria, $skorPerKriteria);
             
             $dataToSave = [
                 'note_substantif' => $catatan,
                 'skor_per_kriteria' => !empty($skorPerKriteria) ? $skorPerKriteria : null,
-                'total_nilai' => $scoreCalculation['total_nilai'] ?? null,
-                'nilai_akhir' => $scoreCalculation['nilai_akhir'] ?? null,
+                'total_nilai' => $totalNilai,
+                'nilai_akhir' => $nilaiAkhir,
+                'extra_fields' => !empty($extraFields) ? $extraFields : null,
                 'updated_at' => now()
             ];
             
-            if (empty($dataToSave['skor_per_kriteria']) || !is_array($dataToSave['skor_per_kriteria'])) {
+            // Skip this check for dynamic forms — they may have skor from integer_scale fields
+            if (!$dynamicForm && (empty($dataToSave['skor_per_kriteria']) || !is_array($dataToSave['skor_per_kriteria']))) {
                 return response()->json(['success' => false, 'message' => 'Data skor tidak valid. Silakan coba lagi.'], 422);
             }
             
@@ -207,12 +250,12 @@ class SubstantifController extends Controller
                     $verificationErrors[] = 'skor_per_kriteria is empty or not array';
                 }
                 
-                if (is_null($nilaiSubstantif->total_nilai)) {
+                if (is_null($nilaiSubstantif->total_nilai) && !$dynamicForm) {
                     $verificationPassed = false;
                     $verificationErrors[] = 'total_nilai is null';
                 }
                 
-                if (is_null($nilaiSubstantif->nilai_akhir)) {
+                if (is_null($nilaiSubstantif->nilai_akhir) && !$dynamicForm) {
                     $verificationPassed = false;
                     $verificationErrors[] = 'nilai_akhir is null';
                 }
@@ -287,14 +330,34 @@ class SubstantifController extends Controller
 
     public function submitReviewSubstantifSeleksi(Request $request, $id)
     {
+        $reviewer = Auth::user();
+        $proposal = Proposal::findOrFail($id);
+        $dynamicForm = \App\Http\Controllers\FormPenilaianController::getActiveForm('substantif_seleksi', $proposal->skim);
+
         try {
-            $criteria = ProposalHelper::getSubstantifCriteria($request->skim ?? 'default');
-            $validationRules = [
-                'catatan' => 'required|string|min:50|max:1000',
-                'skor' => 'required|array',
-                'skor.*' => 'required|numeric|min:0|max:10'
-            ];
-            $request->validate($validationRules);
+            if ($dynamicForm) {
+                $validationRules = [
+                    'catatan' => 'required|string|min:50|max:1000',
+                    'extra_fields' => 'nullable|array'
+                ];
+                foreach ($dynamicForm->fields as $idx => $field) {
+                    if (!empty($field['required'])) {
+                        $validationRules['extra_fields.field_' . $idx] = 'required';
+                    }
+                }
+                $request->validate($validationRules);
+            } else {
+                $criteria = ProposalHelper::getSubstantifCriteria($request->skim ?? 'default');
+                $validationRules = [
+                    'catatan' => 'required|string|min:50|max:1000',
+                    'skor' => 'required|array',
+                    'skor.*' => 'required|numeric|min:0|max:10'
+                ];
+                $request->validate($validationRules);
+                if (empty($criteria)) {
+                    $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
+                }
+            }
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
@@ -302,9 +365,6 @@ class SubstantifController extends Controller
                 'errors' => $e->errors()
             ], 422);
         }
-
-        $reviewer = Auth::user();
-        $proposal = Proposal::findOrFail($id);
 
         if ($proposal->status_validasi !== 'valid') {
             return response()->json(['success' => false, 'message' => 'Proposal belum divalidasi dan tidak dapat direview'], 403);
@@ -322,44 +382,65 @@ class SubstantifController extends Controller
             return response()->json(['success' => false, 'message' => 'Proposal belum siap untuk review substantif seleksi. Status: ' . $proposal->status], 403);
         }
 
-        if (empty($criteria)) {
-            $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
-        }
-
         $catatan = $request->input('catatan');
-        $skorPerKriteriaRaw = $request->input('skor', []);
-        if (!is_array($skorPerKriteriaRaw)) {
-            return response()->json(['success' => false, 'message' => 'Data skor tidak valid.'], 422);
-        }
-
+        $extraFields = $request->input('extra_fields', []);
+        
         $skorPerKriteria = [];
-        foreach ($skorPerKriteriaRaw as $key => $value) {
-            if ($value === null || $value === '' || $value === false) {
-                continue;
-            }
-            $index = (int) $key;
-            $skorValue = (float) $value;
-            if ($skorValue < 0) {
-                $skorValue = 0;
-            } elseif ($skorValue > 10) {
-                $skorValue = 10;
-            }
-            $skorPerKriteria[$index] = $skorValue;
-        }
-        ksort($skorPerKriteria);
+        $totalNilai = null;
+        $nilaiAkhir = null;
 
-        $expectedCount = ProposalHelper::countActualCriteria($criteria);
-        if (count($skorPerKriteria) !== $expectedCount) {
-            return response()->json(['success' => false, 'message' => "Jumlah skor tidak sesuai. Diharapkan: {$expectedCount}, Diterima: " . count($skorPerKriteria)], 422);
+        if ($dynamicForm) {
+            $totalBobot = 0;
+            $criteriaIndex = 0;
+            foreach ($dynamicForm->fields as $idx => $field) {
+                $fieldKey = 'field_' . $idx;
+                if (($field['type'] ?? '') === 'integer_scale') {
+                    $skor = (float) ($extraFields[$fieldKey] ?? 0);
+                    $bobot = (float) ($field['weight'] ?? 0);
+                    $totalNilai += $bobot * $skor;
+                    $totalBobot += $bobot;
+                    $skorPerKriteria[$criteriaIndex++] = $skor;
+                }
+            }
+            $nilaiAkhir = ($totalBobot > 0) ? (($totalNilai / ($totalBobot * 7)) * 100) : 0;
+        } else {
+            $skorPerKriteriaRaw = $request->input('skor', []);
+            if (!is_array($skorPerKriteriaRaw)) {
+                return response()->json(['success' => false, 'message' => 'Data skor tidak valid.'], 422);
+            }
+
+            foreach ($skorPerKriteriaRaw as $key => $value) {
+                if ($value === null || $value === '' || $value === false) {
+                    continue;
+                }
+                $index = (int) $key;
+                $skorValue = (float) $value;
+                if ($skorValue < 0) {
+                    $skorValue = 0;
+                } elseif ($skorValue > 10) {
+                    $skorValue = 10;
+                }
+                $skorPerKriteria[$index] = $skorValue;
+            }
+            ksort($skorPerKriteria);
+
+            $expectedCount = ProposalHelper::countActualCriteria($criteria);
+            if (count($skorPerKriteria) !== $expectedCount) {
+                return response()->json(['success' => false, 'message' => "Jumlah skor tidak sesuai. Diharapkan: {$expectedCount}, Diterima: " . count($skorPerKriteria)], 422);
+            }
+
+            $scoreCalculation = ProposalHelper::calculateSubstantifScore($criteria, $skorPerKriteria);
+            $totalNilai = $scoreCalculation['total_nilai'] ?? null;
+            $nilaiAkhir = $scoreCalculation['nilai_akhir'] ?? null;
         }
 
-        $scoreCalculation = ProposalHelper::calculateSubstantifScore($criteria, $skorPerKriteria);
         $dataToSave = [
             'note_substantif' => $catatan,
             'skor_per_kriteria' => $skorPerKriteria,
-            'total_nilai' => $scoreCalculation['total_nilai'] ?? null,
-            'nilai_akhir' => $scoreCalculation['nilai_akhir'] ?? null,
+            'total_nilai' => $totalNilai,
+            'nilai_akhir' => $nilaiAkhir,
             'jenis_review' => 'seleksi',
+            'extra_fields' => !empty($extraFields) ? $extraFields : null,
             'updated_at' => now()
         ];
 

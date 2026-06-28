@@ -1,0 +1,726 @@
+<?php
+
+namespace App\Helpers;
+
+use App\Models\Proposal;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+
+class ProposalHelper
+{
+    public static function parseAngka(string|int|float|null $value): float
+    {
+        return NumberFormatHelper::parse($value);
+    }
+
+    /**
+     * Validasi data proposal sesuai aturan sistem PKM
+     */
+    public static function validateProposalData($data)
+    {
+        // Tentukan validasi dana berdasarkan skim
+        $skim = $data['skim'] ?? '';
+        $insentifSkims = ['GFT', 'AI'];
+        $isInsentif = in_array($skim, $insentifSkims);
+        
+        $danaRules = $isInsentif 
+            ? 'required|numeric|min:0|max:0' 
+            : 'required|numeric|min:1000000|max:15000000';
+
+        $rules = [
+            // Informasi dasar proposal
+            'judul' => 'required|string|min:10|max:200',
+            'skim' => 'required|in:RE,RSH,KC,PM,PI,K,KI,VGK,AI,GFT',
+            'dosen_pembimbing' => 'required|string',
+            'dana_diajukan' => $danaRules,
+            'tahun_ajaran' => 'required|string',
+            
+            // Data ketua tim (wajib)
+            'ketua_nama' => 'required|string|max:255',
+            'ketua_nim' => 'required|string|min:8|max:20',
+            'ketua_prodi' => 'required|string|max:255',
+            'ketua_fakultas' => 'required|string|max:255',
+            'ketua_email' => 'required|email|max:255',
+            'ketua_no_hp' => 'required|string|min:10|max:15',
+            
+            // Data anggota 1 (wajib)
+            'anggota1_nama' => 'required|string|max:255',
+            'anggota1_nim' => 'required|string|min:8|max:20',
+            'anggota1_prodi' => 'required|string|max:255',
+            'anggota1_fakultas' => 'required|string|max:255',
+            'anggota1_email' => 'required|email|max:255',
+            'anggota1_no_hp' => 'required|string|min:10|max:15',
+            
+            // Data anggota 2 (wajib)
+            'anggota2_nama' => 'required|string|max:255',
+            'anggota2_nim' => 'required|string|min:8|max:20',
+            'anggota2_prodi' => 'required|string|max:255',
+            'anggota2_fakultas' => 'required|string|max:255',
+            'anggota2_email' => 'required|email|max:255',
+            'anggota2_no_hp' => 'required|string|min:10|max:15',
+            
+            // Data anggota 3 (opsional)
+            'anggota3_nama' => 'nullable|string|max:255',
+            'anggota3_nim' => 'nullable|string|min:8|max:20',
+            'anggota3_prodi' => 'nullable|string|max:255',
+            'anggota3_fakultas' => 'nullable|string|max:255',
+            'anggota3_email' => 'nullable|email|max:255',
+            'anggota3_no_hp' => 'nullable|string|min:10|max:15',
+            
+            // Data anggota 4 (opsional)
+            'anggota4_nama' => 'nullable|string|max:255',
+            'anggota4_nim' => 'nullable|string|min:8|max:20',
+            'anggota4_prodi' => 'nullable|string|max:255',
+            'anggota4_fakultas' => 'nullable|string|max:255',
+            'anggota4_email' => 'nullable|email|max:255',
+            'anggota4_no_hp' => 'nullable|string|min:10|max:15',
+        ];
+
+        $messages = [
+            'judul.required' => 'Judul proposal wajib diisi',
+            'judul.min' => 'Judul proposal minimal 10 karakter',
+            'judul.max' => 'Judul proposal maksimal 200 karakter',
+            'skim.required' => 'Skim PKM wajib dipilih',
+            'dosen_pembimbing.required' => 'Dosen pendamping wajib dipilih',
+            'dana_diajukan.required' => 'Dana yang diajukan wajib diisi',
+            'dana_diajukan.min' => $isInsentif ? 'PKM Insentif tidak memiliki pendanaan. Dana harus 0.' : 'Dana minimal Rp 1.000.000',
+            'dana_diajukan.max' => $isInsentif ? 'PKM Insentif tidak memiliki pendanaan. Dana harus 0.' : 'Dana maksimal Rp 15.000.000',
+            'ketua_nama.required' => 'Nama ketua tim wajib diisi',
+            'ketua_nim.required' => 'NIM ketua tim wajib diisi',
+            'ketua_nim.min' => 'NIM ketua tim minimal 8 digit',
+            'ketua_prodi.required' => 'Program studi ketua tim wajib diisi',
+            'ketua_fakultas.required' => 'Fakultas ketua tim wajib diisi',
+            'ketua_email.required' => 'Email ketua tim wajib diisi',
+            'ketua_email.email' => 'Format email ketua tim tidak valid',
+            'ketua_no_hp.required' => 'No. HP ketua tim wajib diisi',
+            'ketua_no_hp.min' => 'No. HP ketua tim minimal 10 digit',
+            'anggota1_nama.required' => 'Nama anggota 1 wajib diisi',
+            'anggota1_nim.required' => 'NIM anggota 1 wajib diisi',
+            'anggota1_nim.min' => 'NIM anggota 1 minimal 8 digit',
+            'anggota1_prodi.required' => 'Program studi anggota 1 wajib diisi',
+            'anggota1_fakultas.required' => 'Fakultas anggota 1 wajib diisi',
+            'anggota1_email.required' => 'Email anggota 1 wajib diisi',
+            'anggota1_email.email' => 'Format email anggota 1 tidak valid',
+            'anggota1_no_hp.required' => 'No. HP anggota 1 wajib diisi',
+            'anggota1_no_hp.min' => 'No. HP anggota 1 minimal 10 digit',
+            'anggota2_nama.required' => 'Nama anggota 2 wajib diisi',
+            'anggota2_nim.required' => 'NIM anggota 2 wajib diisi',
+            'anggota2_nim.min' => 'NIM anggota 2 minimal 8 digit',
+            'anggota2_prodi.required' => 'Program studi anggota 2 wajib diisi',
+            'anggota2_fakultas.required' => 'Fakultas anggota 2 wajib diisi',
+            'anggota2_email.required' => 'Email anggota 2 wajib diisi',
+            'anggota2_email.email' => 'Format email anggota 2 tidak valid',
+            'anggota2_no_hp.required' => 'No. HP anggota 2 wajib diisi',
+            'anggota2_no_hp.min' => 'No. HP anggota 2 minimal 10 digit',
+        ];
+
+        return Validator::make($data, $rules, $messages);
+    }
+
+    /**
+     * Validasi keunikan NIM dalam tim
+     */
+    public static function validateTeamNIMs($data)
+    {
+        $errors = [];
+        $nims = [];
+
+        // Collect all NIMs
+        if (!empty($data['ketua_nim'])) $nims[] = $data['ketua_nim'];
+        if (!empty($data['anggota1_nim'])) $nims[] = $data['anggota1_nim'];
+        if (!empty($data['anggota2_nim'])) $nims[] = $data['anggota2_nim'];
+        if (!empty($data['anggota3_nim'])) $nims[] = $data['anggota3_nim'];
+        if (!empty($data['anggota4_nim'])) $nims[] = $data['anggota4_nim'];
+
+        // Check for duplicates within the team
+        $duplicates = array_diff_assoc($nims, array_unique($nims));
+        if (!empty($duplicates)) {
+            $errors[] = 'NIM tidak boleh duplikat dalam satu tim: ' . implode(', ', array_unique($duplicates));
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validasi keunikan NIM di seluruh proposal menggunakan tabel mahasiswa
+     * dengan pertimbangan tahun akademik
+     */
+    public static function validateNIMsAcrossProposals($data, $excludeProposalId = null, $tahunAjaran = null)
+    {
+        $errors = [];
+        $nims = [];
+
+        if (!empty($data['ketua_nim'])) $nims[] = $data['ketua_nim'];
+        if (!empty($data['anggota1_nim'])) $nims[] = $data['anggota1_nim'];
+        if (!empty($data['anggota2_nim'])) $nims[] = $data['anggota2_nim'];
+        if (!empty($data['anggota3_nim'])) $nims[] = $data['anggota3_nim'];
+        if (!empty($data['anggota4_nim'])) $nims[] = $data['anggota4_nim'];
+
+        foreach ($nims as $nim) {
+            $user = \App\Models\User::where('role', 'mahasiswa')
+                ->where('identifier', $nim)
+                ->whereRaw("(metadata->>'team_id') IS NOT NULL")
+                ->first();
+
+            if ($user && $user->getTeamId()) {
+                $query = \App\Models\Proposal::where('team_id', $user->getTeamId());
+
+                if ($excludeProposalId) {
+                    $query->where('id_proposal', '!=', $excludeProposalId);
+                }
+
+                if ($tahunAjaran) {
+                    $query->where('tahun_ajaran', $tahunAjaran);
+                }
+
+                // Proposal yang ditolak dosen (status_validasi/status = tidak_valid) TIDAK boleh memblokir
+                $query->where(function($q) {
+                    $q->whereIn('status_validasi', ['pending', 'valid'])
+                      ->orWhereIn('status', [
+                          'review_administratif',
+                          'review_substantif',
+                          'revisi',
+                          'lolos',
+                          'tidak_lolos',
+                          'validasi_akhir_dosen_univ',
+                          'pimpinan_pt',
+                          'revisi_akhir',
+                      ]);
+                })->where(function ($q) {
+                    $q->whereNull('status')
+                      ->orWhere('status', '!=', 'tidak_valid');
+                })->where(function ($q) {
+                    $q->whereNull('status_validasi')
+                      ->orWhere('status_validasi', '!=', 'tidak_valid');
+                });
+
+                $proposal = $query->first();
+
+                if ($proposal) {
+                    $tahunInfo = $tahunAjaran ? " tahun {$tahunAjaran}" : "";
+                    $memberType = $user->isKetuaTim() ? "Ketua" : "Anggota";
+                    $errors[] = "{$memberType} dengan NIM {$nim} sudah terdaftar dalam proposal{$tahunInfo}: \"{$proposal->judul}\"";
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Validasi kelengkapan data anggota opsional
+     */
+    public static function validateOptionalMembers($data)
+    {
+        $errors = [];
+
+        // Validasi anggota 3
+        $hasAnggota3Data = !empty($data['anggota3_nama']) || !empty($data['anggota3_nim']) || 
+                          !empty($data['anggota3_prodi']) || !empty($data['anggota3_fakultas']) || 
+                          !empty($data['anggota3_email']) || !empty($data['anggota3_no_hp']);
+
+        if ($hasAnggota3Data) {
+            if (empty($data['anggota3_nama'])) $errors[] = 'Nama anggota 3 wajib diisi jika ada data anggota';
+            if (empty($data['anggota3_nim'])) $errors[] = 'NIM anggota 3 wajib diisi jika ada data anggota';
+            if (empty($data['anggota3_prodi'])) $errors[] = 'Program studi anggota 3 wajib diisi jika ada data anggota';
+            if (empty($data['anggota3_fakultas'])) $errors[] = 'Fakultas anggota 3 wajib diisi jika ada data anggota';
+            if (empty($data['anggota3_email'])) $errors[] = 'Email anggota 3 wajib diisi jika ada data anggota';
+            if (empty($data['anggota3_no_hp'])) $errors[] = 'No. HP anggota 3 wajib diisi jika ada data anggota';
+        }
+
+        // Validasi anggota 4
+        $hasAnggota4Data = !empty($data['anggota4_nama']) || !empty($data['anggota4_nim']) || 
+                          !empty($data['anggota4_prodi']) || !empty($data['anggota4_fakultas']) || 
+                          !empty($data['anggota4_email']) || !empty($data['anggota4_no_hp']);
+
+        if ($hasAnggota4Data) {
+            if (empty($data['anggota4_nama'])) $errors[] = 'Nama anggota 4 wajib diisi jika ada data anggota';
+            if (empty($data['anggota4_nim'])) $errors[] = 'NIM anggota 4 wajib diisi jika ada data anggota';
+            if (empty($data['anggota4_prodi'])) $errors[] = 'Program studi anggota 4 wajib diisi jika ada data anggota';
+            if (empty($data['anggota4_fakultas'])) $errors[] = 'Fakultas anggota 4 wajib diisi jika ada data anggota';
+            if (empty($data['anggota4_email'])) $errors[] = 'Email anggota 4 wajib diisi jika ada data anggota';
+            if (empty($data['anggota4_no_hp'])) $errors[] = 'No. HP anggota 4 wajib diisi jika ada data anggota';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Cek apakah mahasiswa sudah terdaftar dalam proposal lain menggunakan tabel mahasiswa
+     * dengan pertimbangan tahun akademik
+     */
+    public static function checkStudentInProposal($nim, $excludeProposalId = null, $tahunAjaran = null)
+    {
+        $user = \App\Models\User::where('role', 'mahasiswa')
+            ->where('identifier', $nim)
+            ->whereRaw("(metadata->>'team_id') IS NOT NULL")
+            ->first();
+
+        if (!$user) {
+            return null;
+        }
+
+        $proposalQuery = Proposal::where('team_id', $user->getTeamId());
+        
+        if ($excludeProposalId) {
+            $proposalQuery->where('id_proposal', '!=', $excludeProposalId);
+        }
+
+        if ($tahunAjaran) {
+            $proposalQuery->where('tahun_ajaran', $tahunAjaran);
+        }
+        
+        // Logika validasi berdasarkan skenario:
+        // 1. Proposal ditolak validasi → Mahasiswa bisa ajukan proposal baru saat pendaftaran terbuka
+        // 2. Proposal setelah review → Mahasiswa tidak bisa ajukan proposal baru, hanya revisi
+        // 3. Proposal masih dalam proses → Mahasiswa tidak bisa ajukan proposal baru
+        // 4. Proposal sudah lolos → Mahasiswa tidak bisa ajukan proposal baru
+        
+        // Hanya proposal yang menghalangi pengajuan baru.
+        // Proposal dengan status penolakan dosen (tidak_valid) tidak memblokir pengajuan ulang.
+        $proposalQuery->where(function($query) {
+            $query->whereIn('status_validasi', ['pending', 'valid'])
+                  ->orWhereIn('status', [
+                      'review_administratif',
+                      'review_substantif',
+                      'revisi',
+                      'lolos',
+                      'tidak_lolos',
+                      'validasi_akhir_dosen_univ',
+                      'pimpinan_pt',
+                      'revisi_akhir',
+                  ]);
+        })->where(function ($q) {
+            $q->whereNull('status')
+              ->orWhere('status', '!=', 'tidak_valid');
+        })->where(function ($q) {
+            $q->whereNull('status_validasi')
+              ->orWhere('status_validasi', '!=', 'tidak_valid');
+        });
+        
+        return $proposalQuery->first();
+    }
+
+    /**
+     * Dapatkan jumlah anggota tim menggunakan tabel mahasiswa
+     */
+    public static function getTeamSize($proposalId)
+    {
+        $proposal = Proposal::find($proposalId);
+        if (!$proposal || !$proposal->team_id) {
+            return 0;
+        }
+        
+        return \App\Models\User::where('role', 'mahasiswa')
+            ->whereRaw("metadata->>'team_id' = ?", [(string) $proposal->team_id])
+            ->count();
+    }
+
+    /**
+     * Validasi ukuran tim
+     */
+    public static function validateTeamSize($data)
+    {
+        $count = 1; // Ketua tim
+
+        if (!empty($data['anggota1_nim'])) $count++;
+        if (!empty($data['anggota2_nim'])) $count++;
+        if (!empty($data['anggota3_nim'])) $count++;
+        if (!empty($data['anggota4_nim'])) $count++;
+
+        if ($count < 3) {
+            return ['Tim minimal harus terdiri dari 3 orang (1 ketua + 2 anggota)'];
+        }
+
+        if ($count > 5) {
+            return ['Tim maksimal terdiri dari 5 orang'];
+        }
+
+        return [];
+    }
+
+    /**
+     * Dapatkan status proposal dalam bahasa Indonesia
+     */
+    public static function getStatusLabel($status)
+    {
+        $labels = [
+            'pending' => 'Menunggu',
+            'valid' => 'Valid',
+            'tidak_valid' => 'Tidak Valid',
+            'submitted' => 'Telah Diajukan',
+            'review_administratif' => 'Review Administratif',
+            'review_substantif' => 'Review Substantif',
+            'revisi' => 'Revisi',
+            'lolos' => 'Lolos',
+            'tidak_lolos' => 'Tidak Lolos'
+        ];
+
+        return $labels[$status] ?? $status;
+    }
+
+    /**
+     * Dapatkan label skim PKM
+     */
+    public static function getSkimLabel($skim)
+    {
+        $labels = [
+            'RE' => 'PKM-RE (Riset Eksak)',
+            'RSH' => 'PKM-RSH (Riset Sosial Humaniora)',
+            'KC' => 'PKM-KC (Karsa Cipta)',
+            'PM' => 'PKM-PM (Pengabdian Masyarakat)',
+            'PI' => 'PKM-PI (Penerapan Iptek)',
+            'K' => 'PKM-K (Kewirausahaan)',
+            'KI' => 'PKM-KI (Karsa Cipta)',
+            'VGK' => 'PKM-VGK (Video Gagasan Konstruktif)',
+            'AI' => 'PKM-AI (Artikel Ilmiah)',
+            'GFT' => 'PKM-GFT (Gagasan Futuristik Tertulis)'
+        ];
+
+        return $labels[$skim] ?? $skim;
+    }
+
+    /**
+     * Buat anggota tim dari form data
+     * 
+     * Konsep: 1 proposal = 1 tim dengan 3-5 anggota
+     * Setiap anggota tim disimpan sebagai mahasiswa dengan team_id yang sama
+     */
+    public static function createTeamData($proposalId, $data)
+    {
+        $proposal = Proposal::find($proposalId);
+        if (!$proposal) {
+            throw new \Exception('Proposal tidak ditemukan');
+        }
+
+        // Generate team_id unik (bisa menggunakan proposal_id)
+        $teamId = $proposalId;
+        
+        // Update proposal dengan team_id
+        $proposal->update(['team_id' => $teamId]);
+
+        $teamMembers = [];
+
+        // Ketua tim (wajib)
+        if (!empty($data['ketua_nim'])) {
+            $ketua = self::createOrUpdateMahasiswa([
+                'nim' => $data['ketua_nim'],
+                'nama_mhs' => $data['ketua_nama'],
+                'prodi_mhs' => $data['ketua_prodi'],
+                'fakultas_mhs' => $data['ketua_fakultas'],
+                'email_mhs' => $data['ketua_email'],
+                'no_hp_mhs' => $data['ketua_no_hp'],
+                'team_id' => $teamId,
+                'is_ketua' => true,
+            ]);
+            $teamMembers[] = $ketua;
+        }
+
+        // Anggota 1 (wajib)
+        if (!empty($data['anggota1_nim'])) {
+            $anggota1 = self::createOrUpdateMahasiswa([
+                'nim' => $data['anggota1_nim'],
+                'nama_mhs' => $data['anggota1_nama'],
+                'prodi_mhs' => $data['anggota1_prodi'],
+                'fakultas_mhs' => $data['anggota1_fakultas'],
+                'email_mhs' => $data['anggota1_email'],
+                'no_hp_mhs' => $data['anggota1_no_hp'],
+                'team_id' => $teamId,
+                'is_ketua' => false,
+            ]);
+            $teamMembers[] = $anggota1;
+        }
+
+        // Anggota 2 (wajib)
+        if (!empty($data['anggota2_nim'])) {
+            $anggota2 = self::createOrUpdateMahasiswa([
+                'nim' => $data['anggota2_nim'],
+                'nama_mhs' => $data['anggota2_nama'],
+                'prodi_mhs' => $data['anggota2_prodi'],
+                'fakultas_mhs' => $data['anggota2_fakultas'],
+                'email_mhs' => $data['anggota2_email'],
+                'no_hp_mhs' => $data['anggota2_no_hp'],
+                'team_id' => $teamId,
+                'is_ketua' => false,
+            ]);
+            $teamMembers[] = $anggota2;
+        }
+
+        // Anggota 3 (opsional)
+        if (!empty($data['anggota3_nim'])) {
+            $anggota3 = self::createOrUpdateMahasiswa([
+                'nim' => $data['anggota3_nim'],
+                'nama_mhs' => $data['anggota3_nama'],
+                'prodi_mhs' => $data['anggota3_prodi'],
+                'fakultas_mhs' => $data['anggota3_fakultas'],
+                'email_mhs' => $data['anggota3_email'],
+                'no_hp_mhs' => $data['anggota3_no_hp'],
+                'team_id' => $teamId,
+                'is_ketua' => false,
+            ]);
+            $teamMembers[] = $anggota3;
+        }
+
+        // Anggota 4 (opsional)
+        if (!empty($data['anggota4_nim'])) {
+            $anggota4 = self::createOrUpdateMahasiswa([
+                'nim' => $data['anggota4_nim'],
+                'nama_mhs' => $data['anggota4_nama'],
+                'prodi_mhs' => $data['anggota4_prodi'],
+                'fakultas_mhs' => $data['anggota4_fakultas'],
+                'email_mhs' => $data['anggota4_email'],
+                'no_hp_mhs' => $data['anggota4_no_hp'],
+                'team_id' => $teamId,
+                'is_ketua' => false,
+            ]);
+            $teamMembers[] = $anggota4;
+        }
+
+        return $teamMembers;
+    }
+
+    /**
+     * Dapatkan checklist review administratif berdasarkan skim proposal
+     * 
+     * @param string $skim Skim proposal (RE, RSH, K, KI, KC, VGK, PM, PI, AI, GFT)
+     * @return array Array dengan struktur ['kategori' => ['item1', 'item2', ...]]
+     */
+    public static function getReviewChecklist($skim)
+    {
+        $checklistConfig = config('review_checklist');
+        
+        if (!$checklistConfig) {
+            // Fallback jika config tidak ditemukan
+            return $checklistConfig['default'] ?? [];
+        }
+        
+        // Normalize skim (uppercase)
+        $skim = strtoupper(trim($skim));
+        
+        // Cek apakah skim ada di config
+        if (isset($checklistConfig[$skim])) {
+            $checklist = $checklistConfig[$skim];
+            
+            // Jika value adalah string (alias), resolve ke config yang benar
+            if (is_string($checklist)) {
+                return self::getReviewChecklist($checklist);
+            }
+            
+            // Jika value adalah array, return langsung
+            if (is_array($checklist)) {
+                return $checklist;
+            }
+        }
+        
+        // Fallback ke default jika skim tidak dikenali
+        return $checklistConfig['default'] ?? [];
+    }
+
+    /**
+     * Dapatkan kriteria penilaian substantif berdasarkan skim proposal
+     * 
+     * @param string $skim Skim proposal (RE, RSH, K, KI, KC, VGK, PM, PI, AI, GFT)
+     * @return array Array dengan struktur [['kriteria' => '...', 'bobot' => ...], ...]
+     */
+    public static function getSubstantifCriteria($skim)
+    {
+        $criteriaConfig = config('review_substantif_criteria');
+        
+        if (!$criteriaConfig || !is_array($criteriaConfig)) {
+            // Fallback jika config tidak ditemukan
+            \Log::warning('Review substantif criteria config not found or invalid');
+            return $criteriaConfig['default'] ?? [];
+        }
+        
+        // Normalize skim (uppercase, remove prefix PKM- jika ada)
+        $skim = strtoupper(trim($skim));
+        $skim = str_replace('PKM-', '', $skim);
+        $skim = str_replace('PKM ', '', $skim);
+        $skim = trim($skim);
+        
+        \Log::info('Getting substantif criteria', [
+            'original_skim' => $skim,
+            'normalized_skim' => $skim,
+            'config_keys' => array_keys($criteriaConfig)
+        ]);
+        
+        // Cek apakah skim ada di config
+        if (isset($criteriaConfig[$skim])) {
+            $criteria = $criteriaConfig[$skim];
+            
+            // Jika value adalah string (alias), resolve ke config yang benar
+            if (is_string($criteria)) {
+                return self::getSubstantifCriteria($criteria);
+            }
+            
+            // Jika value adalah array, return langsung
+            if (is_array($criteria) && !empty($criteria)) {
+                \Log::info('Found criteria for skim', [
+                    'skim' => $skim,
+                    'criteria_count' => count($criteria)
+                ]);
+                return $criteria;
+            }
+        }
+        
+        // Fallback ke default jika skim tidak dikenali
+        \Log::warning('Skim not found in config, using default', [
+            'skim' => $skim,
+            'available_skims' => array_keys($criteriaConfig)
+        ]);
+        return $criteriaConfig['default'] ?? [];
+    }
+
+    /**
+     * Hitung total nilai dari skor per kriteria
+     * 
+     * @param array $criteria Array kriteria dengan bobot (bisa hierarkis dengan sub_kriteria)
+     * @param array $skorPerKriteria Array skor per kriteria (index sesuai dengan kriteria yang sudah di-flatten)
+     * @return array ['total_nilai' => ..., 'nilai_akhir' => ...]
+     */
+    public static function calculateSubstantifScore($criteria, $skorPerKriteria)
+    {
+        $totalNilai = 0;
+        $index = 0;
+        
+        foreach ($criteria as $item) {
+            if (isset($item['sub_kriteria']) && !empty($item['sub_kriteria'])) {
+                // Kriteria dengan sub-kriteria
+                foreach ($item['sub_kriteria'] as $subItem) {
+                    $skor = isset($skorPerKriteria[$index]) ? (float) $skorPerKriteria[$index] : 0;
+                    $bobot = (float) $subItem['bobot'];
+                    
+                    // Nilai = Bobot × Skor
+                    $nilai = $bobot * $skor;
+                    $totalNilai += $nilai;
+                    $index++;
+                }
+            } else {
+                // Kriteria tanpa sub-kriteria
+                $skor = isset($skorPerKriteria[$index]) ? (float) $skorPerKriteria[$index] : 0;
+                $bobot = (float) $item['bobot'];
+                
+                // Nilai = Bobot × Skor
+                $nilai = $bobot * $skor;
+                $totalNilai += $nilai;
+                $index++;
+            }
+        }
+        
+        // Nilai akhir = Total nilai / 10 (konversi dari 0-1000 ke 0-100)
+        $nilaiAkhir = $totalNilai / 10;
+        
+        return [
+            'total_nilai' => round($totalNilai, 2),
+            'nilai_akhir' => round($nilaiAkhir, 2)
+        ];
+    }
+
+    /**
+     * Hitung jumlah kriteria yang sebenarnya (tanpa header)
+     * 
+     * @param array $criteria Array kriteria dengan bobot (bisa hierarkis dengan sub_kriteria)
+     * @return int Jumlah kriteria yang sebenarnya
+     */
+    public static function countActualCriteria($criteria)
+    {
+        $count = 0;
+        
+        foreach ($criteria as $item) {
+            if (isset($item['sub_kriteria']) && !empty($item['sub_kriteria'])) {
+                // Kriteria dengan sub-kriteria: hitung sub-kriteria
+                $count += count($item['sub_kriteria']);
+            } else {
+                // Kriteria tanpa sub-kriteria: hitung 1
+                $count++;
+            }
+        }
+        
+        return $count;
+    }
+
+    /**
+     * Update anggota tim dari form data
+     * 
+     * Konsep: Hapus semua anggota tim lama, lalu buat yang baru
+     */
+    public static function updateTeamData($proposalId, $data)
+    {
+        $proposal = Proposal::find($proposalId);
+        if (!$proposal || !$proposal->team_id) {
+            return self::createTeamData($proposalId, $data);
+        }
+
+        $teamMembers = \App\Models\User::where('role', 'mahasiswa')
+            ->whereRaw("metadata->>'team_id' = ?", [(string) $proposal->team_id])
+            ->get();
+
+        foreach ($teamMembers as $member) {
+            $metadata = $member->metadata ?? [];
+            unset($metadata['team_id'], $metadata['is_ketua']);
+            $member->update(['metadata' => $metadata]);
+        }
+
+        return self::createTeamData($proposalId, $data);
+    }
+
+    private static function createOrUpdateMahasiswa($data)
+    {
+        try {
+            $user = \App\Models\User::where('role', 'mahasiswa')
+                ->where('identifier', $data['nim'])
+                ->first();
+
+            $metadata = [
+                'prodi_name' => $data['prodi_mhs'],
+                'fakultas_name' => $data['fakultas_mhs'],
+                'team_id' => $data['team_id'],
+                'is_ketua' => $data['is_ketua'],
+            ];
+
+            if ($user) {
+                $existingMeta = $user->metadata ?? [];
+                $user->update([
+                    'name' => $data['nama_mhs'],
+                    'email' => $data['email_mhs'],
+                    'phone' => $data['no_hp_mhs'],
+                    'metadata' => array_merge($existingMeta, $metadata),
+                ]);
+
+                Log::info('User (mahasiswa) updated for team', [
+                    'nim' => $data['nim'],
+                    'team_id' => $data['team_id'],
+                    'is_ketua' => $data['is_ketua']
+                ]);
+            } else {
+                $user = \App\Models\User::create([
+                    'identifier' => $data['nim'],
+                    'name' => $data['nama_mhs'],
+                    'email' => $data['email_mhs'],
+                    'phone' => $data['no_hp_mhs'],
+                    'password' => bcrypt('default123'),
+                    'role' => 'mahasiswa',
+                    'is_active' => true,
+                    'metadata' => $metadata,
+                ]);
+
+                Log::info('User (mahasiswa) created for team', [
+                    'nim' => $data['nim'],
+                    'team_id' => $data['team_id'],
+                    'is_ketua' => $data['is_ketua']
+                ]);
+            }
+
+            return $user;
+
+        } catch (\Exception $e) {
+            Log::error('Error in createOrUpdateMahasiswa', [
+                'nim' => $data['nim'],
+                'error' => $e->getMessage(),
+                'data' => $data
+            ]);
+            throw $e;
+        }
+    }
+}

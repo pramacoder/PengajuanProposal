@@ -1066,10 +1066,14 @@
         <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-action">
             <i class="fas fa-redo me-2"></i>Ajukan Ulang Proposal
         </a>
-        @elseif($proposal->status === 'revisi')
+        @elseif($proposal->status === 'revisi' && $proposal->status_validasi !== 'pending')
         <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
             <i class="fas fa-edit me-2"></i>Revisi Proposal
         </a>
+        @elseif($proposal->status === 'revisi' && $proposal->status_validasi === 'pending')
+        <span class="btn btn-info btn-action disabled">
+            <i class="fas fa-clock me-2"></i>Menunggu Validasi Dosen Pendamping
+        </span>
         @elseif($proposal->status === 'revisi_akhir')
         <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
             <i class="fas fa-edit me-2"></i>Revisi Akhir Proposal

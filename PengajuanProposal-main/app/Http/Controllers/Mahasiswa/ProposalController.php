@@ -1,0 +1,769 @@
+<?php
+
+namespace App\Http\Controllers\Mahasiswa;
+
+use App\Http\Controllers\Controller;
+
+use App\Models\Proposal;
+use App\Models\ProposalRevisi;
+use App\Models\User;
+use App\Models\NilaiAdministratif;
+use App\Models\NilaiSubstantif;
+use App\Models\HasilFinal;
+use App\Models\RuangKontrol;
+use App\Helpers\ProposalHelper;
+use App\Helpers\StorageHelper;
+use App\Helpers\TahunAjaranHelper;
+use App\Services\NotificationService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class ProposalController extends Controller
+{
+    /**
+     * Dashboard mahasiswa - menampilkan proposal yang sudah ada
+     */
+    public function dashboard()
+    {
+        // Cek user yang sedang login dari guard mahasiswa
+        if (!auth()->check()) {
+            return redirect('/login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
+        }
+
+        $user = auth()->user();
+        
+        // Ambil proposal mahasiswa
+        $proposals = Proposal::where(function($query) use ($user) {
+            // Proposal yang dibuat oleh mahasiswa ini
+            $query->where('id_mahasiswa', $user->id)
+                  // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                      ->orWhere('team_id', $user->getTeamId());
+        })
+        ->with(['mahasiswa', 'dosen', 'dokumen'])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        // Hitung statistik
+        $totalProposals = $proposals->count();
+        $underReview = $proposals->whereIn('status', ['review_administratif', 'review_substantif', 'review_completed'])->count();
+        $waitingValidation = $proposals->where('status', 'submitted')->count();
+        $approved = $proposals->where('status', 'finalized')->count();
+        $revision = $proposals->where('status', 'revisi')->count();
+
+        // Cek apakah ada proposal yang perlu direvisi
+        $proposalForRevision = $proposals->where('status', 'revisi')->first();
+        
+        // Cek status ruang kontrol - ambil yang aktif untuk tahun ajaran terbaru
+        $tahunAjaranTerbaru = \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = \App\Models\RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+        
+        // Fallback: jika tidak ada yang aktif, ambil yang pertama untuk tahun ajaran terbaru
+        if (!$ruangKontrol) {
+            $ruangKontrol = \App\Models\RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+
+        // Proposal aktif yang benar-benar memblokir pengajuan baru (proposal ditolak tidak termasuk)
+        $blockingProposal = ProposalHelper::checkStudentInProposal($user->identifier, null, $tahunAjaranTerbaru);
+
+        return view('mahasiswa.dashboard', compact(
+            'proposals', 
+            'totalProposals', 
+            'underReview', 
+            'waitingValidation', 
+            'approved',
+            'revision',
+            'proposalForRevision',
+            'ruangKontrol',
+            'blockingProposal'
+        ));
+    }
+
+    /**
+     * Menampilkan form pengajuan proposal
+     */
+    public function create(Request $request)
+    {
+        $dosens = User::dosen()->get();
+        $fakultas = \App\Models\Fakultas::orderBy('nama_fakultas')->get();
+        
+        // Cek user yang sedang login dari guard mahasiswa
+        if (auth()->check()) {
+            $user = auth()->user();
+            
+            // Cek apakah mahasiswa sudah memiliki proposal di tahun akademik yang sama
+            $tahunAjaran = $request->input('tahun_ajaran', \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru());
+            $existingProposal = \App\Helpers\ProposalHelper::checkStudentInProposal($user->identifier, null, $tahunAjaran);
+            if ($existingProposal) {
+                return redirect()->route('mahasiswa.proposal.index')
+                    ->with('warning', "Anda sudah terdaftar dalam proposal tahun {$tahunAjaran}: \"{$existingProposal->judul}\". Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.");
+            }
+            
+            // Debug: Log user data
+            \Log::info('User data for auto-fill:', [
+                'nim' => $user->nim ?? 'null',
+                'nama_mhs' => $user->nama_mhs ?? 'null',
+                'prodi_mhs' => $user->prodi_mhs ?? 'null',
+                'fakultas_mhs' => $user->fakultas_mhs ?? 'null',
+                'email_mhs' => $user->email_mhs ?? 'null',
+                'no_hp_mhs' => $user->no_hp_mhs ?? 'null'
+            ]);
+        } else {
+            // Jika tidak ada user yang login, redirect ke login
+            return redirect('/login')->withErrors(['email' => 'Silakan login terlebih dahulu.']);
+        }
+        
+        // Cek status ruang kontrol untuk pendaftaran
+        $statusPendaftaran = \App\Helpers\RuangKontrolHelper::isPendaftaranActive() ? 'terbuka' : 'tertutup';
+        
+        return view('mahasiswa.ajukanproposal', compact('dosens', 'fakultas', 'user', 'statusPendaftaran'));
+    }
+
+    /**
+     * Menyimpan proposal baru
+     */
+    public function store(\App\Http\Requests\StoreProposalRequest $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Validasi khusus untuk PKM Insentif (tidak ada pendanaan)
+            $insentifSkims = ['GFT', 'AI'];
+            if (in_array($request->skim, $insentifSkims)) {
+                if ($request->dana_diajukan != 0) {
+                    return back()
+                        ->withErrors(['dana_diajukan' => 'PKM Insentif tidak memiliki pendanaan. Dana harus 0.'])
+                        ->withInput();
+                }
+            } else {
+                // Validasi untuk PKM Pendanaan
+                if (!$request->dana_diajukan || $request->dana_diajukan < 1000000) {
+                    return back()
+                        ->withErrors(['dana_diajukan' => 'Dana yang diajukan minimal Rp 1.000.000 untuk PKM Pendanaan.'])
+                        ->withInput();
+                }
+                if ($request->dana_diajukan > 15000000) {
+                    return back()
+                        ->withErrors(['dana_diajukan' => 'Dana yang diajukan maksimal Rp 15.000.000.'])
+                        ->withInput();
+                }
+            }
+
+            // Validasi keunikan NIM dalam tim
+            $teamNimErrors = ProposalHelper::validateTeamNIMs($request->all());
+            if (!empty($teamNimErrors)) {
+                return back()
+                    ->withErrors(['team_nim' => $teamNimErrors])
+                    ->withInput();
+            }
+
+            // Validasi keunikan NIM di seluruh proposal dengan pertimbangan tahun akademik
+            $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all(), null, $tahunAjaran);
+            if (!empty($nimErrors)) {
+                \Log::warning('NIM duplicate detected', [
+                    'nim_errors' => $nimErrors,
+                    'request_data' => [
+                        'ketua_nim' => $request->ketua_nim,
+                        'anggota1_nim' => $request->anggota1_nim,
+                        'anggota2_nim' => $request->anggota2_nim,
+                        'anggota3_nim' => $request->anggota3_nim,
+                        'anggota4_nim' => $request->anggota4_nim,
+                    ]
+                ]);
+                
+                return back()
+                    ->withErrors(['nim_duplicate' => $nimErrors])
+                    ->withInput();
+            }
+
+            // Validasi ukuran tim
+            $teamSizeErrors = ProposalHelper::validateTeamSize($request->all());
+            if (!empty($teamSizeErrors)) {
+                return back()
+                    ->withErrors(['team_size' => $teamSizeErrors])
+                    ->withInput();
+            }
+
+            // Validasi anggota opsional
+            $optionalErrors = ProposalHelper::validateOptionalMembers($request->all());
+            if (!empty($optionalErrors)) {
+                return back()
+                    ->withErrors(['optional_members' => $optionalErrors])
+                    ->withInput();
+            }
+
+            // Cek apakah ketua tim sudah terdaftar dalam proposal lain di tahun akademik yang sama
+            $tahunAjaran = $request->input('tahun_ajaran', date('Y') . '/' . (date('Y') + 1));
+            $existingProposal = ProposalHelper::checkStudentInProposal($request->ketua_nim, null, $tahunAjaran);
+                
+            // Jika ada proposal lama yang ditolak, hapus file proposal lamanya
+            if ($existingProposal && $existingProposal->status_validasi === 'tidak_valid') {
+                // Hapus file proposal lama (file koreksi dari dosen)
+                if ($existingProposal->dokumen && $existingProposal->dokumen->path_file) {
+                    $oldFilePath = $existingProposal->dokumen->path_file;
+                    if (StorageHelper::exists($oldFilePath)) {
+                        StorageHelper::delete($oldFilePath);
+                        \Log::info('Old proposal file deleted', [
+                            'proposal_id' => $existingProposal->id_proposal,
+                            'file_path' => $oldFilePath
+                        ]);
+                    }
+                    
+                    // Jika ada backup file asli, hapus juga
+                    if ($existingProposal->dokumen->path_file_original) {
+                        $originalFilePath = $existingProposal->dokumen->path_file_original;
+                        if (StorageHelper::exists($originalFilePath)) {
+                            StorageHelper::delete($originalFilePath);
+                            \Log::info('Original proposal file deleted', [
+                                'proposal_id' => $existingProposal->id_proposal,
+                                'file_path' => $originalFilePath
+                            ]);
+                        }
+                    }
+                }
+                
+                // Hapus review PDF dosen jika ada
+                if ($existingProposal->path_review_dosen && StorageHelper::exists($existingProposal->path_review_dosen)) {
+                    StorageHelper::delete($existingProposal->path_review_dosen);
+                }
+            } else if ($existingProposal) {
+                // Jika proposal lama masih aktif (bukan ditolak), tidak boleh membuat proposal baru
+                return back()
+                    ->withErrors(['ketua_nim' => "Ketua tim dengan NIM {$request->ketua_nim} sudah terdaftar dalam proposal tahun {$tahunAjaran}: {$existingProposal->judul}"])
+                    ->withInput();
+            }
+
+            // Upload file proposal
+            $proposalFile = null;
+            if ($request->hasFile('proposal_file')) {
+                $file = $request->file('proposal_file');
+                
+                // Validasi file
+                if ($file->getSize() > 5 * 1024 * 1024) { // 5MB
+                    return back()
+                        ->withErrors(['proposal_file' => 'Ukuran file maksimal 5MB'])
+                        ->withInput();
+                }
+                
+                if ($file->getClientOriginalExtension() !== 'pdf') {
+                    return back()
+                        ->withErrors(['proposal_file' => 'File harus berformat PDF'])
+                        ->withInput();
+                }
+                
+                $proposalFile = StorageHelper::store('proposals', $file);
+            }
+
+            // Set dana untuk PKM Insentif
+            $danaDiajukan = $request->dana_diajukan;
+            if (in_array($request->skim, ['GFT', 'AI'])) {
+                $danaDiajukan = 0; // PKM Insentif tidak memiliki pendanaan
+            }
+
+            // Tentukan tahun ajaran dari tanggal pengajuan (jika tidak ada atau tidak sesuai)
+            $tanggalPengajuan = now();
+            $tahunAjaranDariTanggal = \App\Helpers\TahunAjaranHelper::getTahunAjaranByDate($tanggalPengajuan);
+            $tahunAjaran = $request->tahun_ajaran;
+            
+            // Jika tahun ajaran dari request tidak sesuai dengan tanggal pengajuan, gunakan yang dari tanggal
+            if (empty($tahunAjaran) || $tahunAjaran !== $tahunAjaranDariTanggal) {
+                $tahunAjaran = $tahunAjaranDariTanggal;
+            }
+            
+            // Buat proposal dengan data tim (untuk kompatibilitas dengan sistem lama)
+            $proposal = Proposal::create([
+                'judul_proposal' => $request->judul,
+                'judul' => $request->judul,
+                'tanggal_pengajuan' => $tanggalPengajuan,
+                'skim' => $request->skim,
+                'dosen_pembimbing' => $request->dosen_pembimbing,
+                'dana_diajukan' => $danaDiajukan,
+                'tahun_ajaran' => $tahunAjaran,
+                'status_validasi' => 'pending',
+                'status_final' => 'submitted',
+                'status' => 'submitted',
+                'id_mahasiswa' => auth()->user()->id,
+                'id_dosen' => $this->getDosenIdByName($request->dosen_pembimbing),
+                
+                // Data ketua tim (wajib)
+                'ketua_nama' => $request->ketua_nama,
+                'ketua_nim' => $request->ketua_nim,
+                'ketua_prodi' => $request->ketua_prodi,
+                'ketua_fakultas' => $request->ketua_fakultas,
+                'ketua_email' => $request->ketua_email,
+                'ketua_no_hp' => $request->ketua_no_hp,
+                
+                // Data anggota 1 (wajib)
+                'anggota1_nama' => $request->anggota1_nama,
+                'anggota1_nim' => $request->anggota1_nim,
+                'anggota1_prodi' => $request->anggota1_prodi,
+                'anggota1_fakultas' => $request->anggota1_fakultas,
+                'anggota1_email' => $request->anggota1_email,
+                'anggota1_no_hp' => $request->anggota1_no_hp,
+                
+                // Data anggota 2 (wajib)
+                'anggota2_nama' => $request->anggota2_nama,
+                'anggota2_nim' => $request->anggota2_nim,
+                'anggota2_prodi' => $request->anggota2_prodi,
+                'anggota2_fakultas' => $request->anggota2_fakultas,
+                'anggota2_email' => $request->anggota2_email,
+                'anggota2_no_hp' => $request->anggota2_no_hp,
+                
+                // Data anggota 3 (opsional)
+                'anggota3_nama' => $request->anggota3_nama,
+                'anggota3_nim' => $request->anggota3_nim,
+                'anggota3_prodi' => $request->anggota3_prodi,
+                'anggota3_fakultas' => $request->anggota3_fakultas,
+                'anggota3_email' => $request->anggota3_email,
+                'anggota3_no_hp' => $request->anggota3_no_hp,
+                
+                // Data anggota 4 (opsional)
+                'anggota4_nama' => $request->anggota4_nama,
+                'anggota4_nim' => $request->anggota4_nim,
+                'anggota4_prodi' => $request->anggota4_prodi,
+                'anggota4_fakultas' => $request->anggota4_fakultas,
+                'anggota4_email' => $request->anggota4_email,
+                'anggota4_no_hp' => $request->anggota4_no_hp,
+            ]);
+
+            \Log::info('Proposal created successfully', [
+                'proposal_id' => $proposal->id_proposal,
+                'judul' => $proposal->judul,
+                'ketua_nama' => $proposal->ketua_nama,
+                'ketua_nim' => $proposal->ketua_nim
+            ]);
+
+            // Buat data tim di tabel teams untuk sistem yang lebih terstruktur
+            $teamData = [
+                'ketua_nama' => $request->ketua_nama,
+                'ketua_nim' => $request->ketua_nim,
+                'ketua_prodi' => $request->ketua_prodi,
+                'ketua_fakultas' => $request->ketua_fakultas,
+                'ketua_email' => $request->ketua_email,
+                'ketua_no_hp' => $request->ketua_no_hp,
+                'anggota1_nama' => $request->anggota1_nama,
+                'anggota1_nim' => $request->anggota1_nim,
+                'anggota1_prodi' => $request->anggota1_prodi,
+                'anggota1_fakultas' => $request->anggota1_fakultas,
+                'anggota1_email' => $request->anggota1_email,
+                'anggota1_no_hp' => $request->anggota1_no_hp,
+                'anggota2_nama' => $request->anggota2_nama,
+                'anggota2_nim' => $request->anggota2_nim,
+                'anggota2_prodi' => $request->anggota2_prodi,
+                'anggota2_fakultas' => $request->anggota2_fakultas,
+                'anggota2_email' => $request->anggota2_email,
+                'anggota2_no_hp' => $request->anggota2_no_hp,
+                'anggota3_nama' => $request->anggota3_nama,
+                'anggota3_nim' => $request->anggota3_nim,
+                'anggota3_prodi' => $request->anggota3_prodi,
+                'anggota3_fakultas' => $request->anggota3_fakultas,
+                'anggota3_email' => $request->anggota3_email,
+                'anggota3_no_hp' => $request->anggota3_no_hp,
+                'anggota4_nama' => $request->anggota4_nama,
+                'anggota4_nim' => $request->anggota4_nim,
+                'anggota4_prodi' => $request->anggota4_prodi,
+                'anggota4_fakultas' => $request->anggota4_fakultas,
+                'anggota4_email' => $request->anggota4_email,
+                'anggota4_no_hp' => $request->anggota4_no_hp,
+            ];
+
+            // Buat tim menggunakan ProposalHelper
+            ProposalHelper::createTeamData($proposal->id_proposal, $teamData);
+            
+            \Log::info('Team data creation completed', [
+                'proposal_id' => $proposal->id_proposal,
+                'team_data_count' => count($teamData)
+            ]);
+
+            // Buat dokumen jika ada file
+            if ($proposalFile) {
+                $proposal->dokumen()->create([
+                    'skim' => $request->skim,
+                    'path_file' => $proposalFile,
+                    'file_proposal' => $proposalFile,
+                    'tgl_upload' => now(),
+                ]);
+            }
+
+            DB::commit();
+
+            // Kirim notifikasi ke mahasiswa
+            try {
+                $notificationService = app(NotificationService::class);
+                $notificationService->notifyProposalUploaded($proposal);
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim notifikasi proposal uploaded: ' . $e->getMessage());
+            }
+
+            return redirect()->route('mahasiswa.proposal.index')
+                ->with('success', 'Proposal berhasil diajukan! Silakan tunggu validasi dari dosen pendamping.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            // Hapus file jika ada error
+            if ($proposalFile && StorageHelper::exists($proposalFile)) {
+                StorageHelper::delete($proposalFile);
+            }
+            
+            return back()
+                ->withErrors(['general' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Menampilkan daftar proposal mahasiswa
+     */
+    public function index()
+    {
+        $user = auth()->user();
+        
+        // Ambil proposal yang dimiliki oleh mahasiswa yang login (sebagai pengaju)
+        // ATAU proposal di mana mahasiswa terdaftar sebagai anggota tim
+        $proposals = Proposal::with(['dosen', 'dokumen', 'proposalRevisi', 'hasilFinal'])
+            ->where(function($query) use ($user) {
+                // Proposal yang dibuat oleh mahasiswa ini
+                $query->where('id_mahasiswa', $user->id)
+                      // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                      ->orWhere('team_id', $user->getTeamId());
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalProposals = $proposals->count();
+        $pendingValidation = $proposals->where('status_validasi', 'pending')->count();
+        $underReview = $proposals->where('status_validasi', 'valid')->where('status_final', '!=', 'approved')->count();
+        $approved = $proposals->where('status_final', 'approved')->count();
+
+        return view('mahasiswa.lihat_proposal', compact('proposals', 'totalProposals', 'pendingValidation', 'underReview', 'approved', 'user'));
+    }
+
+    /**
+     * Menampilkan detail proposal dengan PDF viewer
+     */
+    public function show($id)
+    {
+        $user = auth()->user();
+        
+        $proposal = Proposal::with([
+                'dosen', 
+                'dosenPendampingUniversitas', 
+                'dokumen', 
+                'mahasiswa', 
+                'nilaiAdministratif.reviewer',
+                'nilaiSubstantif.reviewer',
+                'hasilSemiFinal',
+                'hasilFinal',
+                'proposalRevisi' => function($query) {
+                $query->orderBy('tanggal_submit', 'desc');
+                }
+            ])
+            ->where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                // Proposal yang dibuat oleh mahasiswa ini
+                $query->where('id_mahasiswa', $user->id)
+                      // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                      ->orWhere('team_id', $user->getTeamId());
+            })
+            ->firstOrFail();
+
+        $ketua = $proposal->ketuaTim;
+        $anggota = $proposal->anggotaTim;
+
+        return view('mahasiswa.detail_proposal', compact('proposal', 'ketua', 'anggota', 'user'));
+    }
+
+    /**
+     * Download dokumen proposal
+     */
+    public function download($id, $jenis)
+    {
+        $proposal = Proposal::where('id_proposal', $id)
+            ->where('id_mahasiswa', auth()->user()->id)
+            ->with('dokumen')
+            ->firstOrFail();
+
+        if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+            return back()->with('error', 'Dokumen tidak ditemukan.');
+        }
+
+        $path = $proposal->dokumen->path_file;
+        
+        if (!StorageHelper::exists($path)) {
+            return back()->with('error', 'File tidak ditemukan.');
+        }
+
+        // Get original filename or use path basename
+        $filename = $proposal->dokumen->path_file_original 
+            ? basename($proposal->dokumen->path_file_original)
+            : basename($path);
+
+        return StorageHelper::download($path);
+    }
+
+    /**
+     * Menampilkan PDF secara langsung untuk iframe
+     */
+    public function viewPdf($id)
+    {
+        try {
+            $proposal = Proposal::where('id_proposal', $id)
+                ->where('id_mahasiswa', auth()->user()->id)
+                ->with('dokumen')
+                ->firstOrFail();
+
+            if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
+                abort(404, 'Dokumen tidak ditemukan.');
+            }
+
+            $path = $proposal->dokumen->path_file;
+            $filename = basename($path);
+
+            return StorageHelper::response($path, $filename);
+        } catch (\Exception $e) {
+            \Log::error('Error in viewPdf: ' . $e->getMessage());
+            abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
+        }
+    }
+
+
+
+    /**
+     * Menampilkan form edit proposal
+     */
+    public function edit($id)
+    {
+        $user = auth()->user();
+        
+        $proposal = Proposal::where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                // Proposal yang dibuat oleh mahasiswa ini
+                $query->where('id_mahasiswa', $user->id)
+                      // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+            })
+            ->firstOrFail();
+
+        // Hanya bisa edit jika status masih draft atau pending
+        if (!in_array($proposal->status, ['draft', 'pending'])) {
+            return redirect()->route('mahasiswa.proposal.show', $id)
+                ->with('error', 'Proposal tidak dapat diedit karena sudah diproses.');
+        }
+
+        $dosens = User::dosen()->get();
+        
+        return view('mahasiswa.edit_proposal', compact('proposal', 'dosens'));
+    }
+
+    /**
+     * Update proposal
+     */
+    public function update(\App\Http\Requests\UpdateProposalRequest $request, $id)
+    {
+        $user = auth()->user();
+        
+        $proposal = Proposal::where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                // Proposal yang dibuat oleh mahasiswa ini
+                $query->where('id_mahasiswa', $user->id)
+                      // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+            })
+            ->firstOrFail();
+
+        // Hanya bisa edit jika status masih draft atau pending
+        if (!in_array($proposal->status, ['draft', 'pending'])) {
+            return redirect()->route('mahasiswa.proposal.show', $id)
+                ->with('error', 'Proposal tidak dapat diedit karena sudah diproses.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Validasi keunikan NIM (exclude current proposal)
+            $nimErrors = ProposalHelper::validateNIMsAcrossProposals($request->all(), $proposal->id_proposal);
+            if (!empty($nimErrors)) {
+                return back()
+                    ->withErrors(['nim_duplicate' => $nimErrors])
+                    ->withInput();
+            }
+
+            // Update proposal (tanpa data tim)
+            $proposal->update([
+                'judul_proposal' => $request->judul,
+                'judul' => $request->judul,
+                'skim' => $request->skim,
+                'dosen_pembimbing' => $request->dosen_pembimbing,
+                'dana_diajukan' => $request->dana_diajukan,
+                'tahun_ajaran' => $request->tahun_ajaran,
+                'id_dosen' => $this->getDosenIdByName($request->dosen_pembimbing),
+            ]);
+
+            // Update data tim menggunakan ProposalHelper
+            $teamData = [
+                'ketua_nama' => $request->ketua_nama,
+                'ketua_nim' => $request->ketua_nim,
+                'ketua_prodi' => $request->ketua_prodi,
+                'ketua_fakultas' => $request->ketua_fakultas,
+                'ketua_email' => $request->ketua_email,
+                'ketua_no_hp' => $request->ketua_no_hp,
+                'anggota1_nama' => $request->anggota1_nama,
+                'anggota1_nim' => $request->anggota1_nim,
+                'anggota1_prodi' => $request->anggota1_prodi,
+                'anggota1_fakultas' => $request->anggota1_fakultas,
+                'anggota1_email' => $request->anggota1_email,
+                'anggota1_no_hp' => $request->anggota1_no_hp,
+                'anggota2_nama' => $request->anggota2_nama,
+                'anggota2_nim' => $request->anggota2_nim,
+                'anggota2_prodi' => $request->anggota2_prodi,
+                'anggota2_fakultas' => $request->anggota2_fakultas,
+                'anggota2_email' => $request->anggota2_email,
+                'anggota2_no_hp' => $request->anggota2_no_hp,
+                'anggota3_nama' => $request->anggota3_nama,
+                'anggota3_nim' => $request->anggota3_nim,
+                'anggota3_prodi' => $request->anggota3_prodi,
+                'anggota3_fakultas' => $request->anggota3_fakultas,
+                'anggota3_email' => $request->anggota3_email,
+                'anggota3_no_hp' => $request->anggota3_no_hp,
+                'anggota4_nama' => $request->anggota4_nama,
+                'anggota4_nim' => $request->anggota4_nim,
+                'anggota4_prodi' => $request->anggota4_prodi,
+                'anggota4_fakultas' => $request->anggota4_fakultas,
+                'anggota4_email' => $request->anggota4_email,
+                'anggota4_no_hp' => $request->anggota4_no_hp,
+            ];
+
+            // Update tim menggunakan ProposalHelper
+            ProposalHelper::updateTeamData($proposal->id_proposal, $teamData);
+
+            DB::commit();
+
+            return redirect()->route('mahasiswa.proposal.show', $id)
+                ->with('success', 'Proposal berhasil diperbarui!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return back()
+                ->withErrors(['general' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Hapus proposal
+     */
+    public function destroy($id)
+    {
+        $user = auth()->user();
+        
+        $proposal = Proposal::where('id_proposal', $id)
+            ->where(function($query) use ($user) {
+                // Proposal yang dibuat oleh mahasiswa ini
+                $query->where('id_mahasiswa', $user->id)
+                      // ATAU proposal di mana mahasiswa ini terdaftar sebagai anggota tim
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+            })
+            ->firstOrFail();
+
+        // Hanya bisa hapus jika status masih draft
+        if ($proposal->status !== 'draft') {
+            return redirect()->route('mahasiswa.proposal.show', $id)
+                ->with('error', 'Proposal tidak dapat dihapus karena sudah diproses.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Hapus dokumen terkait
+            if ($proposal->dokumen) {
+                if ($proposal->dokumen->path_file && StorageHelper::exists($proposal->dokumen->path_file)) {
+                    StorageHelper::delete($proposal->dokumen->path_file);
+                }
+                $proposal->dokumen->delete();
+            }
+
+            // Hapus data tim (akan terhapus otomatis karena foreign key cascade)
+            // Team::where('id_proposal', $proposal->id_proposal)->delete();
+
+            // Hapus proposal
+            $proposal->delete();
+
+            DB::commit();
+
+            return redirect()->route('mahasiswa.proposal.index')
+                ->with('success', 'Proposal berhasil dihapus!');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return back()
+                ->withErrors(['general' => 'Terjadi kesalahan: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Helper method untuk mendapatkan ID dosen berdasarkan nama
+     */
+    private function getDosenIdByName($namaDosen)
+    {
+        $nama = explode(',', $namaDosen)[0];
+
+        $dosen = User::dosen()->where('name', 'LIKE', "%{$nama}%")->first();
+
+        return $dosen ? $dosen->id : null;
+    }
+
+    /**
+     * API untuk cek apakah mahasiswa sudah terdaftar dalam proposal
+     */
+    public function checkStudentProposal($nim, $tahunAjaran = null)
+    {
+        $proposal = ProposalHelper::checkStudentInProposal($nim, null, $tahunAjaran);
+        
+        return response()->json([
+            'success' => true,
+            'hasProposal' => $proposal !== null,
+            'proposalTitle' => $proposal ? $proposal->judul : null,
+            'proposalStatus' => $proposal ? $proposal->status : null,
+            'tahunAjaran' => $proposal ? $proposal->tahun_ajaran : null,
+        ]);
+    }
+
+    /**
+     * API untuk mendapatkan data mahasiswa berdasarkan NIM
+     */
+    public function getStudentByNim($nim)
+    {
+        $mahasiswa = User::where('role', 'mahasiswa')->where('identifier', $nim)->first();
+
+        if (!$mahasiswa) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mahasiswa tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'nama' => $mahasiswa->name,
+                'nim' => $mahasiswa->identifier,
+                'prodi' => $mahasiswa->getProdiName(),
+                'fakultas' => $mahasiswa->getFakultasName(),
+                'email' => $mahasiswa->email,
+                'no_hp' => $mahasiswa->phone,
+            ]
+        ]);
+    }
+
+    /**
+     * Menampilkan form revisi proposal
+     */
+
+} 

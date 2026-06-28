@@ -803,10 +803,10 @@ function updateAssignedProposalsTable(proposals) {
         
         const judul = proposal.judul_proposal || proposal.judul || 'Judul tidak tersedia';
         const skim = proposal.skim || 'N/A';
-        const ketua = proposal.mahasiswa?.nama_mhs || 'Nama tidak tersedia';
-        const reviewerAdmin = proposal.reviewer_administratif?.nama_reviewer || 'Belum ditugaskan';
-        const reviewerSub1 = proposal.reviewer_substantif1?.nama_reviewer || 'Belum ditugaskan';
-        const reviewerSub2 = proposal.reviewer_substantif2?.nama_reviewer || 'Belum ditugaskan';
+        const ketua = proposal.mahasiswa?.name || 'Nama tidak tersedia';
+        const reviewerAdmin = proposal.reviewer_administratif?.name || 'Belum ditugaskan';
+        const reviewerSub1 = proposal.reviewer_substantif1?.name || 'Belum ditugaskan';
+        const reviewerSub2 = proposal.reviewer_substantif2?.name || 'Belum ditugaskan';
         const status = proposal.status || 'N/A';
         const updatedAt = proposal.updated_at || 'N/A';
         

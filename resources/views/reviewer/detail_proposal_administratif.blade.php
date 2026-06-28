@@ -262,7 +262,7 @@
                         </h5>
                         <div class="pdf-controls">
                             @if($proposal->dokumen && $proposal->dokumen->path_file)
-                                <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" 
+                                <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file], false) }}" 
                                    class="btn btn-sm btn-primary me-2" target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
                                 </a>
@@ -281,7 +281,7 @@
                         <div class="pdf-container-full">
                             <iframe 
                                 id="pdfViewer"
-                                src="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}"
+                                src="{{ route('file.serve', ['path' => $proposal->dokumen->path_file], false) }}"
                                 style="width: 100%; height: 80vh; border: none; border-radius: 8px;"
                                 frameborder="0"
                                 allowfullscreen>
@@ -487,39 +487,92 @@
                                 }
                             @endphp
                             
-                            @if(empty($checklistItems))
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Checklist untuk skim {{ $proposal->skim }} belum tersedia. Menggunakan checklist umum.
-                                </div>
-                            @endif
-                            
-                            @foreach($checklistItems as $kategori => $items)
-                                @if(is_array($items) && count($items) > 0)
+                            @if(!$dynamicForm)
+                                @if(empty($checklistItems))
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        Checklist untuk skim {{ $proposal->skim }} belum tersedia. Menggunakan checklist umum.
+                                    </div>
+                                @endif
+                                
+                                @foreach($checklistItems as $kategori => $items)
+                                    @if(is_array($items) && count($items) > 0)
+                                        <div class="checklist-category mb-4">
+                                            <div class="card border-primary mb-3">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-list-check me-2"></i>{{ $kategori }}
+                                                        <span class="badge bg-light text-primary ms-2" id="counter-{{ md5($kategori) }}">
+                                                            0 / {{ count($items) }}
+                                                        </span>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        @php
+                                                            $itemsPerColumn = ceil(count($items) / 2);
+                                                            $itemsArray = array_values($items);
+                                                        @endphp
+                                                        
+                                                        @for($i = 0; $i < 2; $i++)
+                                                            <div class="col-md-6">
+                                                                @for($j = $i * $itemsPerColumn; $j < min(($i + 1) * $itemsPerColumn, count($itemsArray)); $j++)
+                                                                    @php
+                                                                        $item = $itemsArray[$j];
+                                                                        $itemId = 'error_' . md5($kategori . '_' . $item);
+                                                                        $isChecked = in_array($item, $existingChecklist);
+                                                                    @endphp
+                                                                    <div class="form-check mb-2">
+                                                                        <input class="form-check-input checklist-item" 
+                                                                               type="checkbox" 
+                                                                               name="kesalahan_administratif[]" 
+                                                                               value="{{ $item }}" 
+                                                                               id="{{ $itemId }}"
+                                                                               data-category="{{ md5($kategori) }}"
+                                                                               {{ $isChecked ? 'checked' : '' }}>
+                                                                        <label class="form-check-label" for="{{ $itemId }}">
+                                                                            {{ $item }}
+                                                                        </label>
+                                                                    </div>
+                                                                @endfor
+                                                            </div>
+                                                        @endfor
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                                
+                                {{-- Tampilkan item dari review lama yang tidak ada di checklist baru (backward compatibility) --}}
+                                @if(!empty($orphanedItems))
                                     <div class="checklist-category mb-4">
-                                        <div class="card border-primary mb-3">
-                                            <div class="card-header bg-primary text-white">
+                                        <div class="card border-warning mb-3">
+                                            <div class="card-header bg-warning text-dark">
                                                 <h6 class="mb-0">
-                                                    <i class="fas fa-list-check me-2"></i>{{ $kategori }}
-                                                    <span class="badge bg-light text-primary ms-2" id="counter-{{ md5($kategori) }}">
-                                                        0 / {{ count($items) }}
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>Item dari Review Sebelumnya
+                                                    <span class="badge bg-light text-warning ms-2">
+                                                        {{ count($orphanedItems) }} item
                                                     </span>
                                                 </h6>
                                             </div>
                                             <div class="card-body">
+                                                <div class="alert alert-info mb-3">
+                                                    <small>
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Item berikut berasal dari review sebelumnya dan tidak ada di checklist baru untuk skim ini.
+                                                    </small>
+                                                </div>
                                                 <div class="row">
                                                     @php
-                                                        $itemsPerColumn = ceil(count($items) / 2);
-                                                        $itemsArray = array_values($items);
+                                                        $orphanedPerColumn = ceil(count($orphanedItems) / 2);
                                                     @endphp
-                                                    
                                                     @for($i = 0; $i < 2; $i++)
                                                         <div class="col-md-6">
-                                                            @for($j = $i * $itemsPerColumn; $j < min(($i + 1) * $itemsPerColumn, count($itemsArray)); $j++)
+                                                            @for($j = $i * $orphanedPerColumn; $j < min(($i + 1) * $orphanedPerColumn, count($orphanedItems)); $j++)
                                                                 @php
-                                                                    $item = $itemsArray[$j];
-                                                                    $itemId = 'error_' . md5($kategori . '_' . $item);
-                                                                    $isChecked = in_array($item, $existingChecklist);
+                                                                    $item = $orphanedItems[$j];
+                                                                    $itemId = 'error_orphaned_' . md5($item);
                                                                 @endphp
                                                                 <div class="form-check mb-2">
                                                                     <input class="form-check-input checklist-item" 
@@ -527,8 +580,7 @@
                                                                            name="kesalahan_administratif[]" 
                                                                            value="{{ $item }}" 
                                                                            id="{{ $itemId }}"
-                                                                           data-category="{{ md5($kategori) }}"
-                                                                           {{ $isChecked ? 'checked' : '' }}>
+                                                                           checked>
                                                                     <label class="form-check-label" for="{{ $itemId }}">
                                                                         {{ $item }}
                                                                     </label>
@@ -541,62 +593,12 @@
                                         </div>
                                     </div>
                                 @endif
-                            @endforeach
-                            
-                            {{-- Tampilkan item dari review lama yang tidak ada di checklist baru (backward compatibility) --}}
-                            @if(!empty($orphanedItems))
-                                <div class="checklist-category mb-4">
-                                    <div class="card border-warning mb-3">
-                                        <div class="card-header bg-warning text-dark">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-exclamation-triangle me-2"></i>Item dari Review Sebelumnya
-                                                <span class="badge bg-light text-warning ms-2">
-                                                    {{ count($orphanedItems) }} item
-                                                </span>
-                                            </h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="alert alert-info mb-3">
-                                                <small>
-                                                    <i class="fas fa-info-circle me-1"></i>
-                                                    Item berikut berasal dari review sebelumnya dan tidak ada di checklist baru untuk skim ini.
-                                                </small>
-                                            </div>
-                                            <div class="row">
-                                                @php
-                                                    $orphanedPerColumn = ceil(count($orphanedItems) / 2);
-                                                @endphp
-                                                @for($i = 0; $i < 2; $i++)
-                                                    <div class="col-md-6">
-                                                        @for($j = $i * $orphanedPerColumn; $j < min(($i + 1) * $orphanedPerColumn, count($orphanedItems)); $j++)
-                                                            @php
-                                                                $item = $orphanedItems[$j];
-                                                                $itemId = 'error_orphaned_' . md5($item);
-                                                            @endphp
-                                                            <div class="form-check mb-2">
-                                                                <input class="form-check-input checklist-item" 
-                                                                       type="checkbox" 
-                                                                       name="kesalahan_administratif[]" 
-                                                                       value="{{ $item }}" 
-                                                                       id="{{ $itemId }}"
-                                                                       checked>
-                                                                <label class="form-check-label" for="{{ $itemId }}">
-                                                                    {{ $item }}
-                                                                </label>
-                                                            </div>
-                                                        @endfor
-                                                    </div>
-                                                @endfor
-                                            </div>
-                                        </div>
-                                    </div>
+                                
+                                <div class="form-text text-danger" id="errorKesalahan" style="display: none;">
+                                    Pilih minimal satu kesalahan administratif
                                 </div>
+                                <div class="form-text text-danger" id="serverErrorKesalahan" style="display: none;"></div>
                             @endif
-                            
-                            <div class="form-text text-danger" id="errorKesalahan" style="display: none;">
-                                Pilih minimal satu kesalahan administratif
-                            </div>
-                            <div class="form-text text-danger" id="serverErrorKesalahan" style="display: none;"></div>
                         </div>
 
                         {{-- Dynamic Fields from FormPenilaian (operator) --}}
@@ -824,9 +826,9 @@
             console.log('Form submission started for administratif review');
         
         // Reset error messages
-        document.getElementById('errorKesalahan').style.display = 'none';
+        if (document.getElementById('errorKesalahan')) document.getElementById('errorKesalahan').style.display = 'none';
         document.getElementById('errorCatatan').style.display = 'none';
-        document.getElementById('serverErrorKesalahan').style.display = 'none';
+        if (document.getElementById('serverErrorKesalahan')) document.getElementById('serverErrorKesalahan').style.display = 'none';
         document.getElementById('serverErrorCatatan').style.display = 'none';
         
         // Get form data
@@ -847,8 +849,9 @@
             isValid = false;
         }
         
-        if (kesalahanCheckboxes.length === 0) {
-            document.getElementById('errorKesalahan').style.display = 'block';
+        const hasHardcodedChecklist = document.querySelectorAll('input[name="kesalahan_administratif[]"]').length > 0;
+        if (hasHardcodedChecklist && kesalahanCheckboxes.length === 0) {
+            if (document.getElementById('errorKesalahan')) document.getElementById('errorKesalahan').style.display = 'block';
             isValid = false;
         }
         
