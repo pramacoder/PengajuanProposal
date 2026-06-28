@@ -1,6 +1,6 @@
-# 📋 Sistem Pengajuan Proposal PKM
+#  Sistem Pengajuan Proposal PKM
 
-## 📖 Deskripsi Sistem
+##  Deskripsi Sistem
 
 Sistem Pengajuan Proposal PKM (Program Kreativitas Mahasiswa) adalah aplikasi web berbasis Laravel 12 yang mengelola seluruh alur kerja proposal PKM dari pengajuan oleh mahasiswa hingga pengumuman hasil final. Sistem ini mendukung multi-role user dengan autentikasi unified, sistem penilaian dinamis berdasarkan skim proposal, dan notifikasi database channel untuk semua pengguna.
 
@@ -34,7 +34,7 @@ Sistem Pengajuan Proposal PKM (Program Kreativitas Mahasiswa) adalah aplikasi we
 
 ---
 
-## 🏗️ Overview & Arsitektur Sistem
+##  Overview & Arsitektur Sistem
 
 ### Teknologi yang Digunakan
 
@@ -120,7 +120,7 @@ database/migrations/                        # Database migrations
 
 ---
 
-## 🔄 Flow Lengkap Proposal PKM
+## Flow Lengkap Proposal PKM
 
 ### Diagram Flow Proposal
 
@@ -147,7 +147,7 @@ graph TD
 
 ### Fase-Fase Lengkap
 
-#### **FASE 1: Upload oleh Mahasiswa** 📤
+#### **FASE 1: Upload oleh Mahasiswa** 
 
 - **Route:** `/mahasiswa/proposal/create`
 - **Controller:** `ProposalController@store`
@@ -165,7 +165,7 @@ graph TD
     - Format angka dengan titik sebagai pemisah ribuan
     - Validasi dana berdasarkan min/max dari `ruang_kontrols`
 
-#### **FASE 2: Validasi oleh Dosen Pendamping** ✅
+#### **FASE 2: Validasi oleh Dosen Pendamping** 
 
 - **Route:** `/dosen/validasi-proposal`
 - **Controller:** `DosenController@validasiProposalAction`
@@ -177,7 +177,7 @@ graph TD
     - Set status validasi dengan catatan (opsional)
     - Notifikasi otomatis ke mahasiswa
 
-#### **FASE 3: Assignment Reviewer oleh Operator** 👨‍💼
+#### **FASE 3: Assignment Reviewer oleh Operator** 👨
 
 - **Route:** `/operator/pilih-reviewer`
 - **Controller:** `ReviewerAssignmentController@assignReviewer`
@@ -195,7 +195,7 @@ graph TD
     - Validasi: Harus assign 3 reviewer lengkap
     - Notifikasi ke reviewer setelah assignment
 
-#### **FASE 4: Review Administratif** 📝
+#### **FASE 4: Review Administratif** 
 
 - **Route:** `/reviewer/review-administratif`
 - **Controller:** `ReviewerController@submitReviewAdministratif`
@@ -211,7 +211,7 @@ graph TD
     - Submit → Data disimpan di `nilai_administratifs`
 - **Status Transisi:** `review_administratif` → `review_substantif`
 
-#### **FASE 5: Review Substantif Pertama** 📊
+#### **FASE 5: Review Substantif Pertama** 
 
 - **Route:** `/reviewer/review-substantif`
 - **Controller:** `ReviewerController@submitReviewSubstantif`
@@ -223,7 +223,7 @@ graph TD
     - Submit → Data disimpan di `nilai_substantifs` dengan `jenis_review = 'pertama'`
 - **Status Transisi:** `review_substantif` → `revisi` (setelah kedua reviewer selesai)
 
-#### **FASE 6: Revisi oleh Mahasiswa** 🔄
+#### **FASE 6: Revisi oleh Mahasiswa** 
 
 - **Route:** `/mahasiswa/proposal/{id}/revisi`
 - **Controller:** `ProposalController@submitRevisi`
@@ -239,7 +239,7 @@ graph TD
     - Semua file revisi disimpan untuk historis
     - Ruang kontrol: Hanya bisa upload revisi jika `status_perbaikan = 'terbuka'`
 
-#### **FASE 7: Validasi 2 oleh Dosen Pendamping** ✅
+#### **FASE 7: Validasi 2 oleh Dosen Pendamping** 
 
 - **Route:** `/dosen/validasi-proposal-2`
 - **Controller:** `DosenController@validasiProposal2Action`
