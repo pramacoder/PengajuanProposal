@@ -25,75 +25,93 @@ class MahasiswaRegistrationController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate([
-            'nama_mahasiswa' => 'required|string|max:255',
-            'nim' => 'required|string|max:20',
-            'email_mahasiswa' => 'required|email|max:255',
-            'nama_dosen' => 'required|string|max:255',
-            'nuptk_dosen' => 'required|string|max:20',
-            'email_dosen' => 'required|email|max:255'
-        ]);
+        $roleType = $request->input('role_type', 'mahasiswa');
 
-        try {
-            $mahasiswa = User::where('role', 'mahasiswa')
-                ->where('identifier', $request->nim)
-                ->first();
+        if ($roleType === 'mahasiswa') {
+            $request->validate([
+                'nama_mahasiswa' => 'required|string|max:255',
+                'nim' => 'required|string|max:20',
+                'email_mahasiswa' => 'required|email|max:255'
+            ]);
 
-            if (!$mahasiswa) {
+            try {
+                $mahasiswa = User::where('role', 'mahasiswa')
+                    ->where('identifier', $request->nim)
+                    ->first();
+
+                if (!$mahasiswa) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', 'NIM tidak ditemukan dalam database. Silakan hubungi administrator.');
+                }
+
+                $defaultPassword = 'password123';
+
+                if (!$mahasiswa->password) {
+                    $mahasiswa->update(['password' => Hash::make($defaultPassword)]);
+                }
+
+                $this->emailService->sendRegistrationEmail(
+                    $request->email_mahasiswa,
+                    $request->nama_mahasiswa,
+                    $mahasiswa->identifier,
+                    $defaultPassword,
+                    'mahasiswa',
+                    $mahasiswa->email
+                );
+
+                return redirect()->route('login')
+                    ->with('success', 'Kredensial login berhasil dikirim! Silakan cek Gmail Anda untuk mendapatkan kredensial login.');
+
+            } catch (\Exception $e) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'NIM tidak ditemukan dalam database. Silakan hubungi administrator.');
+                    ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
             }
 
-            $dosen = User::where('role', 'dosen')
-                ->where('identifier', $request->nuptk_dosen)
-                ->first();
+        } elseif ($roleType === 'dosen') {
+            $request->validate([
+                'nama_dosen' => 'required|string|max:255',
+                'nuptk_dosen' => 'required|string|max:20',
+                'email_dosen' => 'required|email|max:255'
+            ]);
 
-            if (!$dosen) {
+            try {
+                $dosen = User::where('role', 'dosen')
+                    ->where('identifier', $request->nuptk_dosen)
+                    ->first();
+
+                if (!$dosen) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', 'NUPTK/NIDN dosen tidak ditemukan dalam database. Silakan hubungi administrator.');
+                }
+
+                $defaultPassword = 'password123';
+
+                if (!$dosen->password) {
+                    $dosen->update(['password' => Hash::make($defaultPassword)]);
+                }
+
+                $this->emailService->sendRegistrationEmail(
+                    $request->email_dosen,
+                    $request->nama_dosen,
+                    $dosen->identifier,
+                    $defaultPassword,
+                    'dosen',
+                    $dosen->email
+                );
+
+                return redirect()->route('login')
+                    ->with('success', 'Kredensial login berhasil dikirim! Silakan cek Gmail Anda untuk mendapatkan kredensial login.');
+
+            } catch (\Exception $e) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'NUPTK dosen tidak ditemukan dalam database. Silakan hubungi administrator.');
+                    ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
             }
-
-            $metadata = $mahasiswa->metadata ?? [];
-            $metadata['id_dosen_pembimbing'] = $dosen->id;
-            $mahasiswa->update(['metadata' => $metadata]);
-
-            $defaultPassword = 'password123';
-
-            if (!$mahasiswa->password) {
-                $mahasiswa->update(['password' => Hash::make($defaultPassword)]);
-            }
-
-            if (!$dosen->password) {
-                $dosen->update(['password' => Hash::make($defaultPassword)]);
-            }
-
-            $this->emailService->sendRegistrationEmail(
-                $request->email_mahasiswa,
-                $request->nama_mahasiswa,
-                $mahasiswa->identifier,
-                $defaultPassword,
-                'mahasiswa',
-                $mahasiswa->email
-            );
-
-            $this->emailService->sendRegistrationEmail(
-                $request->email_dosen,
-                $request->nama_dosen,
-                $dosen->identifier,
-                $defaultPassword,
-                'dosen',
-                $dosen->email
-            );
-
-            return redirect()->route('login')
-                ->with('success', 'Kredensial login berhasil dikirim! Silakan cek Gmail mahasiswa dan dosen pembimbing untuk mendapatkan kredensial login.');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+
+        return redirect()->back()->with('error', 'Invalid role type.');
     }
 }

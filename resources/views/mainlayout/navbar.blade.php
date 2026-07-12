@@ -30,6 +30,22 @@
                         </button>
                     </div>
                     <div class="dropdown-divider"></div>
+                    @php
+                        $navJadwal = \App\Models\RuangKontrol::where('is_active', true)->first();
+                    @endphp
+                    @if($navJadwal)
+                    <div class="notification-item unread" style="background: rgba(8, 145, 178, 0.05); border-bottom: 1px solid var(--border);">
+                        <div class="notification-content">
+                            <div class="notification-icon-small" style="background: rgba(8, 145, 178, 0.1); color: #0891B2;">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="notification-text">
+                                <div class="notification-title" style="font-weight: 600;">Jadwal Pengajuan Proposal</div>
+                                <div class="notification-message">Pendaftaran dibuka: {{ \Carbon\Carbon::parse($navJadwal->tanggal_pendaftaran_mulai)->format('d M Y') }} - {{ \Carbon\Carbon::parse($navJadwal->tanggal_pendaftaran_selesai)->format('d M Y') }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                     <div id="notificationList">
                         <!-- Notifications will be populated here -->
                     </div>

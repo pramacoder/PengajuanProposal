@@ -133,12 +133,45 @@
                         <i class="fas fa-chart-bar me-2"></i>Laporan SIMBELMAWA
                     </a></li>
                     @elseif($isPimpinanPT)
+                        {{-- Dashboard --}}
                         <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard')) active @endif">
-                            <i class="fas fa-home me-2"></i>Beranda
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
                         </a></li>
-                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.dashboard') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
-                            <i class="fas fa-trophy me-2"></i>Hasil Final
+
+                        {{-- Fase 2: Monitoring Reviewer --}}
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.pilih.reviewer') }}" class="@if(request()->routeIs('pimpinan_pt.pilih.reviewer')) active @endif">
+                            <i class="fas fa-user-plus me-2"></i>Pilih Reviewer
                         </a></li>
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.pilih.reviewer.seleksi') }}" class="@if(request()->routeIs('pimpinan_pt.pilih.reviewer.seleksi')) active @endif">
+                            <i class="fas fa-user-check me-2"></i>Pilih Reviewer Seleksi
+                        </a></li>
+
+                        {{-- Ruang Kontrol --}}
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.ruang.kontrol') }}" class="@if(request()->routeIs('pimpinan_pt.ruang.kontrol')) active @endif">
+                            <i class="fas fa-cogs me-2"></i>Ruang Kontrol
+                        </a></li>
+
+                        {{-- Fase 3: Hasil Semi Final --}}
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.hasil.semi.final') }}" class="@if(request()->routeIs('pimpinan_pt.hasil.semi.final*') || request()->routeIs('pimpinan_pt.detail.hasil.semi.final')) active @endif">
+                            <i class="fas fa-clipboard-check me-2"></i>Hasil Semi Final
+                        </a></li>
+
+                        {{-- Fase 4: Penilaian Final (Khusus Pimpinan PT) --}}
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
+                            <i class="fas fa-trophy me-2"></i>Penilaian Final
+                        </a></li>
+
+                        {{-- Form Penilaian (Read-only) --}}
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.form.penilaian') }}" class="@if(request()->routeIs('pimpinan_pt.form.penilaian')) active @endif">
+                            <i class="fas fa-file-alt me-2"></i>Form Penilaian
+                        </a></li>
+
+                        {{-- Laporan SIMBELMAWA (Read-only) --}}
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.laporan.simbelmawa') }}" class="@if(request()->routeIs('pimpinan_pt.laporan.simbelmawa')) active @endif">
+                            <i class="fas fa-chart-bar me-2"></i>Laporan SIMBELMAWA
+                        </a></li>
+
+                        {{-- Manajemen Akun (Khusus Pimpinan PT) --}}
                         <li class="menu-operator"><a href="{{ route('pimpinan_pt.manage.accounts') }}" class="@if(request()->routeIs('pimpinan_pt.manage.accounts*')) active @endif">
                             <i class="fas fa-id-card me-2"></i>Manajemen Akun
                         </a></li>

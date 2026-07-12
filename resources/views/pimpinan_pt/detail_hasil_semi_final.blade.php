@@ -1,6 +1,6 @@
 @extends('mainlayout.app')
 
-@section('title', 'Detail Hasil Final - Pimpinan PT')
+@section('title', 'Detail Hasil Semi Final - Pimpinan PT')
 
 @section('styles')
 <style>
@@ -143,20 +143,20 @@
 <div class="container-fluid">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
-        ['label' => 'Hasil Final', 'url' => route('pimpinan_pt.hasil.final')],
+        ['label' => 'Hasil Semi Final', 'url' => route('pimpinan_pt.hasil.semi.final')],
         ['label' => 'Detail Proposal', 'active' => true],
     ]" />
 
     <!-- Header Section -->
     <x-page-header 
-        title="DETAIL HASIL FINAL" 
+        title="DETAIL HASIL SEMI FINAL" 
         subtitle="UNIVERSITAS UDAYANA" />
     
     <!-- Back Button -->
     <div class="row mb-4">
         <div class="col-12">
-            <a href="{{ route('pimpinan_pt.hasil.final') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Kembali ke Hasil Final
+            <a href="{{ route('pimpinan_pt.hasil.semi.final') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Kembali ke Hasil Semi Final
             </a>
         </div>
     </div>
@@ -241,7 +241,7 @@
                             @foreach($latestProposals as $latest)
                                 <div class="list-group-item px-0 py-2 border-bottom">
                                     <h6 class="mb-1" style="font-size: 0.9rem;">
-                                        <a href="{{ route('pimpinan_pt.detail.hasil.final', $latest->id_proposal) }}" class="text-decoration-none">
+                                        <a href="{{ route('pimpinan_pt.detail.hasil.semi.final', $latest->id_proposal) }}" class="text-decoration-none">
                                             {{ Str::limit($latest->judul_proposal, 50) }}
                                         </a>
                                     </h6>
@@ -271,14 +271,25 @@
     </div>
 
     <!-- PDF Proposal Viewer Section -->
-    @if($proposal->dokumen && $proposal->dokumen->path_file)
+    @php
+        // Ambil revisi terakhir (jenis_revisi = 'revisi_biasa') untuk hasil semi final
+        $latestRevisi = $proposal->proposalRevisi->where('jenis_revisi', 'revisi_biasa')->first();
+        $hasRevisi = $latestRevisi !== null;
+        $displayDocument = $hasRevisi ? $latestRevisi : ($proposal->dokumen ?? null);
+    @endphp
+    
+    @if($displayDocument)
     <div class="row mb-4">
         <div class="col-12">
             <div class="card card-custom">
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
                         <i class="fas fa-file-pdf me-2"></i>
+                        @if($hasRevisi)
+                            Dokumen Revisi Terakhir
+                        @else
                         Dokumen Proposal
+                        @endif
                     </h5>
                 </div>
                 <div class="card-body p-0">
@@ -286,23 +297,43 @@
                         <div class="pdf-header">
                             <h5 class="pdf-title">
                                 <i class="fas fa-file-pdf me-2"></i>
-                                <span id="pdfProposalTitle">{{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}</span>
+                                <span id="pdfProposalTitle">
+                                    @if($hasRevisi)
+                                        {{ $latestRevisi->nama_file }}
+                                    @else
+                                        {{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}
+                                    @endif
+                                </span>
+                                @if($hasRevisi)
+                                    <br><small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Diupload: {{ \Carbon\Carbon::parse($latestRevisi->tanggal_submit)->format('d M Y H:i') }}
+                                    </small>
+                                @endif
                             </h5>
                             <div class="pdf-controls">
                                 <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm me-2">
                                     <i class="fas fa-expand me-1"></i>Fullscreen
                                 </button>
+                                @if($hasRevisi)
+                                    <a href="{{ route('pimpinan_pt.revisi.download', $latestRevisi->id_revisi) }}" 
+                                       class="btn btn-outline-primary btn-sm" 
+                                       target="_blank">
+                                        <i class="fas fa-download me-1"></i>Download
+                                    </a>
+                                @else
                                 <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
                                    class="btn btn-outline-primary btn-sm" 
                                    target="_blank">
                                     <i class="fas fa-download me-1"></i>Download
                                 </a>
+                                @endif
                             </div>
                         </div>
                         <div id="pdfProposalViewer" class="pdf-loading">
                             <div class="spinner"></div>
                             <iframe id="proposalPdfIframe" 
-                                    src="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
+                                    src="{{ $hasRevisi ? route('pimpinan_pt.revisi.view', $latestRevisi->id_revisi) : route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
                                     class="pdf-iframe" 
                                     style="display: none;">
                             </iframe>
@@ -347,7 +378,7 @@
                             </div>
                             <div>
                                 <button class="btn btn-sm btn-outline-info me-2 view-pdf-btn" 
-                                        data-pdf-url="{{ route('pimpinan_pt.revisi.view', $revisi->id_revisi) }}"
+                                        data-pdf-url="{{ route('pimpinan_pt.revisi.download', $revisi->id_revisi) }}"
                                         data-pdf-name="{{ $revisi->nama_file }}">
                                     <i class="fas fa-eye me-1"></i>Lihat
                                 </button>
@@ -388,11 +419,88 @@
     </div>
     @endif
 
+    <!-- Tabel Penilaian Substantif Seleksi dari 2 Reviewer (Jika Ada) -->
+    @if($nilaiSubstantifSeleksi1 || $nilaiSubstantifSeleksi2)
+    <div class="card card-custom mt-4 mb-4">
+        <div class="card-header card-header-custom bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-award me-2"></i>
+                Referensi Penilaian Substantif Seleksi dari Reviewer
+            </h5>
+        </div>
+        <div class="card-body">
+            @if($nilaiSubstantifSeleksi1)
+            <div class="mb-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-user-check me-2"></i>
+                            Reviewer Seleksi 1
+                            @if($nilaiSubstantifSeleksi1->reviewer)
+                                - {{ $nilaiSubstantifSeleksi1->reviewer->nama_reviewer }}
+                            @endif
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3 mb-md-0">
+                                <div class="display-4 text-primary fw-bold">@formatId($nilaiSubstantifSeleksi1->total_nilai)</div>
+                                <div class="text-muted small">Total Nilai</div>
+                            </div>
+                            <div class="col-md-9">
+                                @if($nilaiSubstantifSeleksi1->catatan)
+                                <div class="bg-white p-3 rounded border">
+                                    <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
+                                    {{ $nilaiSubstantifSeleksi1->catatan }}
+                                </div>
+                                @else
+                                <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            @if($nilaiSubstantifSeleksi2)
+            <div>
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-user-check me-2"></i>
+                            Reviewer Seleksi 2
+                            @if($nilaiSubstantifSeleksi2->reviewer)
+                                - {{ $nilaiSubstantifSeleksi2->reviewer->nama_reviewer }}
+                            @endif
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3 mb-md-0">
+                                <div class="display-4 text-success fw-bold">@formatId($nilaiSubstantifSeleksi2->total_nilai)</div>
+                                <div class="text-muted small">Total Nilai</div>
+                            </div>
+                            <div class="col-md-9">
+                                @if($nilaiSubstantifSeleksi2->catatan)
+                                <div class="bg-white p-3 rounded border">
+                                    <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
+                                    {{ $nilaiSubstantifSeleksi2->catatan }}
+                                </div>
+                                @else
+                                <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Form Hasil Final -->
     <!-- Tabel Penilaian Substantif dari 2 Reviewer -->
     @if($nilaiSubstantif1 || $nilaiSubstantif2)
-    <div class="row mb-4">
-        <div class="col-12">
+        <div class="row mb-4">
+            <div class="col-12">
                 <h5 class="mb-3">
                     <i class="fas fa-clipboard-list me-2"></i>
                     Referensi Penilaian Substantif dari Reviewer
@@ -479,7 +587,7 @@
                                             @php
                                                 if ($item['index'] >= 0) {
                                                     $skorValue = isset($skor1[$item['index']]) ? $skor1[$item['index']] : 0;
-                                                    $nilai = $item['bobot'] * $skorValue;
+                                                $nilai = $item['bobot'] * $skorValue;
                                                 } else {
                                                     $skorValue = '-';
                                                     $nilai = '-';
@@ -545,10 +653,10 @@
                                 </div>
                             @endif
                         </div>
-        </div>
-    </div>
-    @endif
-
+                    </div>
+                </div>
+            @endif
+            
             @if($nilaiSubstantif2)
                 <div class="col-md-6 mb-4">
                     <div class="card">
@@ -629,7 +737,7 @@
                                             @php
                                                 if ($item['index'] >= 0) {
                                                     $skorValue = isset($skor2[$item['index']]) ? $skor2[$item['index']] : 0;
-                                                    $nilai = $item['bobot'] * $skorValue;
+                                                $nilai = $item['bobot'] * $skorValue;
                                                 } else {
                                                     $skorValue = '-';
                                                     $nilai = '-';
@@ -707,64 +815,62 @@
                 <div class="card-header card-header-custom">
                     <h5 class="mb-0">
                         <i class="fas fa-gavel me-2"></i>
-                        Penilaian Hasil Final
+                        Penilaian Hasil Semi Final
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if($proposal->hasilFinal)
+                    @if($proposal->hasilSemiFinal)
                         <!-- Display existing result -->
                         <div class="alert alert-info mb-3">
-                            <h6><i class="fas fa-info-circle me-2"></i>Hasil Final Sudah Ditentukan</h6>
+                            <h6><i class="fas fa-info-circle me-2"></i>Hasil Semi Final Sudah Ditentukan</h6>
                             <div class="row">
                                 <div class="col-md-4">
                                     <p><strong>Status:</strong> 
-                                        <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }}">
-                                            {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                                        <span class="badge bg-{{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'success' : 'danger' }}">
+                                            {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'Lolos Tingkat Universitas' : 'Tidak Lolos Tingkat Universitas' }}
                                         </span>
                                     </p>
                                     <p><strong>Nilai:</strong> 
-                                        <span class="badge bg-primary fs-6">@formatId($proposal->hasilFinal->nilai, 2)</span>
+                                        <span class="badge bg-primary fs-6">@formatId($proposal->hasilSemiFinal->nilai, 2)</span>
                                     </p>
                                 </div>
                                 <div class="col-md-4">
-                                    @if($proposal->hasilFinal && ($proposal->hasilFinal->dana_disetujui_belmawa || $proposal->hasilFinal->dana_disetujui_operator))
-                                        <p><strong>Dana yang Disetujui (Belmawa):</strong> 
-                                            <span class="badge bg-primary fs-6">@rupiahId($proposal->hasilFinal->dana_disetujui_belmawa ?? 0)</span>
-                                        </p>
-                                        <p><strong>Dana yang Disetujui (Universitas):</strong> 
-                                            <span class="badge bg-success fs-6">@rupiahId($proposal->hasilFinal->dana_disetujui_operator ?? 0)</span>
+                                    @if($proposal->dosenPendampingUniversitas)
+                                        <p><strong>Dosen Pendamping Universitas:</strong> 
+                                            <span class="badge bg-info">{{ $proposal->dosenPendampingUniversitas->nama_dosen }}</span>
+                                            <br><small class="text-muted">{{ $proposal->dosenPendampingUniversitas->email_dosen }}</small>
                                         </p>
                                     @endif
-                                    <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilFinal->created_at)->format('d M Y H:i') }}</p>
+                                    <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilSemiFinal->created_at)->format('d M Y H:i') }}</p>
                                 </div>
                                 <div class="col-md-4">
-                            @if($proposal->hasilFinal->catatan_final)
-                                        <p><strong>Catatan:</strong> {{ Str::limit($proposal->hasilFinal->catatan_final, 100) }}</p>
+                                    @if($proposal->hasilSemiFinal->catatan_final)
+                                        <p><strong>Catatan:</strong> {{ Str::limit($proposal->hasilSemiFinal->catatan_final, 100) }}</p>
                                     @endif
                                 </div>
                             </div>
-                            @if($proposal->hasilFinal->catatan_final && strlen($proposal->hasilFinal->catatan_final) > 100)
-                                <p><strong>Catatan Lengkap:</strong> {{ $proposal->hasilFinal->catatan_final }}</p>
+                            @if($proposal->hasilSemiFinal->catatan_final && strlen($proposal->hasilSemiFinal->catatan_final) > 100)
+                                <p><strong>Catatan Lengkap:</strong> {{ $proposal->hasilSemiFinal->catatan_final }}</p>
                             @endif
                         </div>
                         
                         <!-- Edit button -->
                         <button type="button" class="btn btn-warning mb-3" onclick="toggleEditForm()">
-                            <i class="fas fa-edit me-2"></i>Edit Hasil Final
+                            <i class="fas fa-edit me-2"></i>Edit Hasil Semi Final
                         </button>
                     @endif
 
                     <!-- Form for input/update -->
-                    <form id="hasilFinalForm" action="{{ route('pimpinan_pt.update.hasil.final') }}" method="POST" 
-                          @if($proposal->hasilFinal) style="display: none;" @endif>
+                    <form id="hasilSemiFinalForm" action="{{ route('pimpinan_pt.update.hasil.semi.final') }}" method="POST" 
+                          @if($proposal->hasilSemiFinal) style="display: none;" @endif>
                         @csrf
                         <input type="hidden" name="proposal_id" value="{{ $proposal->id_proposal }}">
                         <input type="hidden" name="skim" value="{{ $proposal->skim }}">
                         
                         @php
                             $criteriaItems = $criteria ?? [];
-                            $existingHasilFinal = $proposal->hasilFinal;
-                            $existingSkorFinalRaw = $existingHasilFinal ? ($existingHasilFinal->skor_per_kriteria ?? []) : [];
+                            $existingHasilSemiFinal = $proposal->hasilSemiFinal;
+                            $existingSkorFinalRaw = $existingHasilSemiFinal ? ($existingHasilSemiFinal->skor_per_kriteria ?? []) : [];
                             
                             // Normalize existing skor untuk memastikan index numerik
                             $existingSkorFinal = [];
@@ -945,62 +1051,53 @@
                         <div class="row mt-4">
                             <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label required-field">Status Final</label>
-                                    <select class="form-select" name="status_final" required>
-                                        <option value="">Pilih status final</option>
-                                        <option value="lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_final == 'lolos' ? 'selected' : '' }}>Lolos</option>
-                                        <option value="tidak_lolos" {{ $proposal->hasilFinal && $proposal->hasilFinal->status_final == 'tidak_lolos' ? 'selected' : '' }}>Tidak Lolos</option>
+                                    <label class="form-label required-field">Status Semi Final</label>
+                                    <select class="form-select" name="status_final" id="statusSemiFinalSelect" required>
+                                        <option value="">Pilih status semi final</option>
+                                        <option value="lolos_tingkat_universitas" {{ $proposal->hasilSemiFinal && $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'selected' : '' }}>Lolos Tingkat Universitas</option>
+                                        <option value="tidak_lolos_tingkat_universitas" {{ $proposal->hasilSemiFinal && $proposal->hasilSemiFinal->status_final == 'tidak_lolos_tingkat_universitas' ? 'selected' : '' }}>Tidak Lolos Tingkat Universitas</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label required-field">Nilai Final (Otomatis dari Penilaian)</label>
-                                    <input type="number" class="form-control" name="nilai" id="nilaiFinalInput"
-                                           value="{{ $proposal->hasilFinal ? $proposal->hasilFinal->nilai : '' }}"
+                                    <label class="form-label required-field">Nilai Semi Final (Otomatis dari Penilaian)</label>
+                                    <input type="number" class="form-control" name="nilai" id="nilaiSemiFinalInput"
+                                           value="{{ $proposal->hasilSemiFinal ? $proposal->hasilSemiFinal->nilai : '' }}"
                                            min="0" max="100" step="0.01" required
                                            placeholder="Akan terisi otomatis"
                                            readonly>
                                     <div class="form-text">Nilai akan terisi otomatis berdasarkan penilaian di atas</div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Dana Disetujui (Belmawa)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">Rp</span>
-                                            <input type="text" class="form-control js-format-id-int" name="dana_disetujui_belmawa" 
-                                                   value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_disetujui_belmawa > 0 ? (int)$proposal->hasilFinal->dana_disetujui_belmawa : '') : '' }}" 
-                                                   placeholder="0" max="8000000">
-                                        </div>
-                                        <div class="form-text">Maksimal 8.000.000</div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Dana Disetujui (Universitas)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">Rp</span>
-                                            <input type="text" class="form-control js-format-id-int" name="dana_disetujui_operator" 
-                                                   value="{{ $proposal->hasilFinal ? ($proposal->hasilFinal->dana_disetujui_operator > 0 ? (int)$proposal->hasilFinal->dana_disetujui_operator : '') : '' }}" 
-                                                   placeholder="0" max="2000000">
-                                        </div>
-                                        <div class="form-text">Maksimal 2.000.000</div>
-                                    </div>
+                            <div class="col-md-4" id="dosenUniversitasField" style="display: none;">
+                                <div class="mb-3">
+                                    <label class="form-label required-field">Dosen Pendamping Universitas <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="id_dosen_pendamping_universitas" id="dosenUniversitasSelect">
+                                        <option value="">Pilih Dosen Pendamping Universitas</option>
+                                        @foreach($dosens as $dosen)
+                                            <option value="{{ $dosen->id_dosen }}" 
+                                                    {{ $proposal->id_dosen_pendamping_universitas == $dosen->id_dosen ? 'selected' : '' }}>
+                                                {{ $dosen->nama_dosen }} ({{ $dosen->email_dosen }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-text">Wajib dipilih jika status "Lolos Tingkat Universitas"</div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Catatan Final</label>
+                            <label class="form-label">Catatan Semi Final</label>
                             <textarea class="form-control" name="catatan_final" rows="4" 
-                                      placeholder="Berikan catatan untuk mahasiswa...">{{ $proposal->hasilFinal ? $proposal->hasilFinal->catatan_final : '' }}</textarea>
+                                      placeholder="Berikan catatan untuk mahasiswa...">{{ $proposal->hasilSemiFinal ? $proposal->hasilSemiFinal->catatan_final : '' }}</textarea>
                         </div>
                         
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>{{ $proposal->hasilFinal ? 'Update Hasil Final' : 'Simpan Hasil Final' }}
+                                <i class="fas fa-save me-2"></i>{{ $proposal->hasilSemiFinal ? 'Update Hasil Semi Final' : 'Simpan Hasil Semi Final' }}
                             </button>
-                            @if($proposal->hasilFinal)
+                            @if($proposal->hasilSemiFinal)
                                 <button type="button" class="btn btn-secondary" onclick="toggleEditForm()">
                                     <i class="fas fa-times me-2"></i>Batal
                                 </button>
@@ -1018,7 +1115,7 @@
 @php
     $hasRevisi = $proposal->proposalRevisi->count() > 0;
     $firstRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
-    $firstRevisiUrl = $firstRevisi ? route('pimpinan_pt.revisi.view', $firstRevisi->id_revisi) : null;
+    $firstRevisiUrl = $firstRevisi ? route('pimpinan_pt.revisi.download', $firstRevisi->id_revisi) : null;
     
     // Prepare JSON strings
     $pageDataJson = json_encode([
@@ -1036,7 +1133,7 @@
     const pageData = JSON.parse('{!! addslashes($pageDataJson) !!}');
 
     function toggleEditForm() {
-        const form = document.getElementById('hasilFinalForm');
+        const form = document.getElementById('hasilSemiFinalForm');
         const editBtn = document.querySelector('button[onclick="toggleEditForm()"]');
         
         if (form.style.display === 'none') {
@@ -1044,9 +1141,37 @@
             editBtn.innerHTML = '<i class="fas fa-times me-2"></i>Batal';
         } else {
             form.style.display = 'none';
-            editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Final';
+            editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Semi Final';
         }
     }
+    
+    // Handle dropdown dosen universitas (show/hide berdasarkan status)
+    function toggleDosenUniversitasField() {
+        const statusSelect = document.getElementById('statusSemiFinalSelect');
+        const dosenField = document.getElementById('dosenUniversitasField');
+        const dosenSelect = document.getElementById('dosenUniversitasSelect');
+        
+        if (statusSelect && dosenField && dosenSelect) {
+            if (statusSelect.value === 'lolos_tingkat_universitas') {
+                dosenField.style.display = 'block';
+                dosenSelect.setAttribute('required', 'required');
+            } else {
+                dosenField.style.display = 'none';
+                dosenSelect.removeAttribute('required');
+                dosenSelect.value = '';
+            }
+        }
+    }
+    
+    // Initialize dosen universitas field visibility
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleDosenUniversitasField();
+        
+        const statusSelect = document.getElementById('statusSemiFinalSelect');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', toggleDosenUniversitasField);
+        }
+    });
 
     // Calculate nilai final real-time
     function calculateNilaiFinal() {
@@ -1095,10 +1220,10 @@
             nilaiAkhirDisplay.textContent = nilaiAkhir.toFixed(2);
         }
         
-        // Update input nilai final (readonly)
-        const nilaiFinalInput = document.getElementById('nilaiFinalInput');
-        if (nilaiFinalInput) {
-            nilaiFinalInput.value = nilaiAkhir.toFixed(2);
+        // Update input nilai semi final (readonly)
+        const nilaiSemiFinalInput = document.getElementById('nilaiSemiFinalInput');
+        if (nilaiSemiFinalInput) {
+            nilaiSemiFinalInput.value = nilaiAkhir.toFixed(2);
         }
     }
     
@@ -1332,7 +1457,7 @@
     });
 
     // Form submission
-    document.getElementById('hasilFinalForm').addEventListener('submit', function(e) {
+    document.getElementById('hasilSemiFinalForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const submitBtn = document.querySelector('button[type="submit"]');
@@ -1342,13 +1467,18 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
         submitBtn.disabled = true;
         
-        // Create FormData from form
         const formData = new FormData(this);
         
-        // Validasi client-side sebelum submit
+        // Hapus field dosen universitas jika status tidak lolos
+        const statusFinal = formData.get('status_final');
+        if (statusFinal === 'tidak_lolos_tingkat_universitas') {
+            formData.delete('id_dosen_pendamping_universitas');
+        }
+        
+        // Validasi client-side
         const catatanFinal = formData.get('catatan_final');
         if (catatanFinal && catatanFinal.trim().length > 0 && catatanFinal.trim().length < 50) {
-            showToast('Catatan final minimal 50 karakter. Teks yang Anda berikan di catatan kurang dari 50 karakter.', 'error');
+            showToast('Catatan final minimal 50 karakter jika diisi', 'error');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             return;
@@ -1356,47 +1486,22 @@
         
         // Validasi skor
         const skorInputs = document.querySelectorAll('.skor-final-input');
-        let hasEmptySkor = false;
+        let allSkorFilled = true;
         skorInputs.forEach(input => {
-            if (!input.value || input.value === '') {
-                hasEmptySkor = true;
+            const index = parseInt(input.dataset.index);
+            if (index >= 0 && (!input.value || input.value === '')) {
+                allSkorFilled = false;
             }
         });
         
-        if (hasEmptySkor) {
-            showToast('Semua skor penilaian wajib diisi (0-10)', 'error');
+        if (!allSkorFilled) {
+            showToast('Semua skor harus diisi', 'error');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             return;
         }
         
-        // Collect skor data manually to ensure correct format
-        const skorData = {};
-        document.querySelectorAll('.skor-final-input').forEach(input => {
-            const index = parseInt(input.dataset.index);
-            if (index >= 0 && input.value !== '') {
-                const skorValue = parseFloat(input.value);
-                // Validate skor range (0-10)
-                if (skorValue >= 0 && skorValue <= 10) {
-                    skorData[index] = skorValue;
-                }
-            }
-        });
-        
-        // Remove existing skor entries from formData
-        formData.delete('skor[]');
-        formData.delete('skor');
-        
-        // Append skor as array (Laravel will handle it)
-        Object.keys(skorData).forEach(key => {
-            formData.append(`skor[${key}]`, skorData[key]);
-        });
-        
-        // Pastikan action URL benar
-        const formAction = this.getAttribute('action');
-        console.log('Form action:', formAction);
-        
-        fetch(formAction, {
+        fetch(this.action, {
             method: 'POST',
             body: formData,
             headers: {
@@ -1405,46 +1510,41 @@
             }
         })
         .then(async response => {
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.includes("application/json")) {
-                return response.json();
-            } else {
-                // Jika response bukan JSON, mungkin ada error HTML
-                const text = await response.text();
-                throw new Error('Server mengembalikan response yang tidak valid. Status: ' + response.status);
+            const data = await response.json();
+            
+            if (!response.ok) {
+                // Handle validation errors
+                if (response.status === 422 && data.errors) {
+                    const errorMessages = [];
+                    Object.keys(data.errors).forEach(key => {
+                        errorMessages.push(...data.errors[key]);
+                    });
+                    showToast('Validasi gagal: ' + errorMessages.join(', '), 'error');
+                } else {
+                    showToast('Gagal memperbarui hasil semi final: ' + (data.message || 'Terjadi kesalahan'), 'error');
+                }
+                throw new Error(data.message || 'Validation failed');
             }
+            
+            return data;
         })
         .then(data => {
             if (data.success) {
-                showToast('Hasil final berhasil diperbarui!', 'success');
+                showToast('Hasil semi final berhasil diperbarui!', 'success');
                 // Optionally reload the page or update the UI
                 setTimeout(() => {
                     location.reload();
                 }, 1500);
             } else {
-                // Tampilkan error dengan detail jika ada
-                let errorMessage = data.message || 'Terjadi kesalahan';
-                
-                // Jika ada errors object, tambahkan detail
-                if (data.errors) {
-                    const errorDetails = Object.values(data.errors).flat().join(', ');
-                    errorMessage += '. Detail: ' + errorDetails;
-                }
-                
-                showToast('Gagal memperbarui hasil final: ' + errorMessage, 'error');
+                showToast('Gagal memperbarui hasil semi final: ' + (data.message || 'Terjadi kesalahan'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            let errorMessage = 'Terjadi kesalahan saat menyimpan hasil final';
-            
-            if (error.message) {
-                errorMessage += ': ' + error.message;
-            } else {
-                errorMessage += '. Silakan coba lagi atau hubungi administrator.';
+            // Error sudah ditangani di .then() sebelumnya
+            if (!error.message.includes('Validation failed')) {
+                showToast('Terjadi kesalahan saat menyimpan hasil semi final: ' + error.message, 'error');
             }
-            
-            showToast(errorMessage, 'error');
         })
         .finally(() => {
             // Reset button state

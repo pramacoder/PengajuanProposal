@@ -72,7 +72,10 @@ Route::middleware(['auth', 'role:operator,pimpinan_pt'])->group(function () {
     
     // Route untuk Pimpinan PT (menggunakan guard operator dengan role pimpinan_pt)
     Route::prefix('pimpinan-pt')->name('pimpinan_pt.')->group(function () {
+        // Dashboard Pimpinan PT (dengan statistik lengkap seperti operator)
         Route::get('/dashboard', [PimpinanPTController::class, 'dashboard'])->name('dashboard');
+        
+        // Fitur Penilaian Final (khusus Pimpinan PT)
         Route::get('/detail-hasil-final/{id}', [PimpinanPTController::class, 'detailHasilFinal'])->name('detail.hasil.final');
         Route::post('/update-hasil-final', [PimpinanPTController::class, 'updateHasilFinal'])->name('update.hasil.final');
         Route::get('/proposal/{id}/view-pdf', [PimpinanPTController::class, 'viewPdf'])->name('proposal.view.pdf');
@@ -83,5 +86,37 @@ Route::middleware(['auth', 'role:operator,pimpinan_pt'])->group(function () {
         Route::put('/akun/{type}/{id}', [PimpinanPTController::class, 'updateAccount'])->name('accounts.update');
         Route::delete('/akun/{type}/{id}', [PimpinanPTController::class, 'deleteAccount'])->name('accounts.delete');
         Route::post('/akun/mahasiswa/bulk-delete', [PimpinanPTController::class, 'bulkDeleteMahasiswa'])->name('accounts.mahasiswa.bulk-delete');
+
+        // ===================================================
+        // Fitur Operator yang juga tersedia untuk Pimpinan PT
+        // ===================================================
+        
+        // Pilih Reviewer (Read-only - monitoring)
+        Route::get('/pilih-reviewer', [PimpinanPTController::class, 'pilihReviewer'])->name('pilih.reviewer');
+        Route::get('/pilih-reviewer-seleksi', [PimpinanPTController::class, 'pilihReviewerSeleksi'])->name('pilih.reviewer.seleksi');
+        Route::get('/assigned-proposals', [PimpinanPTController::class, 'getAssignedProposals'])->name('assigned.proposals');
+        Route::get('/assigned-proposals-seleksi', [PimpinanPTController::class, 'getAssignedProposalsSeleksi'])->name('assigned.proposals.seleksi');
+        
+        // Ruang Kontrol (Read-only - monitoring)
+        Route::get('/ruang-kontrol', [PimpinanPTController::class, 'ruangKontrol'])->name('ruang.kontrol');
+        Route::get('/active-phase', [PimpinanPTController::class, 'getActivePhase'])->name('active.phase');
+        
+        // Hasil Semi Final (monitoring)
+        Route::get('/hasil-semi-final', [PimpinanPTController::class, 'hasilSemiFinal'])->name('hasil.semi.final');
+        Route::get('/detail-hasil-semi-final/{id}', [PimpinanPTController::class, 'detailHasilSemiFinal'])->name('detail.hasil.semi.final');
+
+        // Detail Proposal
+        Route::get('/proposal/{id}/detail', [PimpinanPTController::class, 'proposalDetail'])->name('proposal.detail');
+        
+        // Form Penilaian (Read-only)
+        Route::get('/form-penilaian', [PimpinanPTController::class, 'formPenilaian'])->name('form.penilaian');
+        
+        // Laporan SIMBELMAWA (Read-only)
+        Route::get('/laporan-simbelmawa', [PimpinanPTController::class, 'laporanSimbelmawa'])->name('laporan.simbelmawa');
+        
+        // Notifikasi Pimpinan PT
+        Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'getNotifications'])->name('notifications.get');
+        Route::post('/notifications/mark-read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+        Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     });
 });
