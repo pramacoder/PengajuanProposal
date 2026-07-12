@@ -14,42 +14,161 @@ use App\Models\HasilSemiFinal;
 use App\Models\Dokumen;
 use App\Models\NilaiSubstantif;
 use App\Models\ProposalRevisi;
+use App\Models\RuangKontrol;
+use App\Models\FormPenilaian;
+use App\Models\SimbelmawaReport;
 use App\Models\User;
 use App\Models\Fakultas;
 use App\Models\Prodi;
 use App\Helpers\ProposalHelper;
 use App\Helpers\StorageHelper;
+use App\Helpers\TahunAjaranHelper;
 
 class PimpinanPTController extends Controller
 {
     /**
-     * Dashboard Pimpinan PT - Menampilkan proposal yang perlu dinilai final
+     * Dashboard Pimpinan PT - Menampilkan statistik lengkap + proposal yang perlu dinilai final
      */
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $pimpinanPT = auth()->user();
         
-        // Pastikan user adalah Pimpinan PT
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             abort(403, 'Akses ditolak. Hanya Pimpinan PT yang dapat mengakses halaman ini.');
         }
 
-        // Ambil proposal yang sudah divalidasi dosen universitas (status: pimpinan_pt)
+        // ============================================================
+        // Data Statistik (sama seperti operator dashboard)
+        // ============================================================
+        $tahunAjaranTerpilih = $request->input('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        
+        $tahunAjaranList = Proposal::whereNotNull('tahun_ajaran')
+            ->whereRaw("tahun_ajaran LIKE '%/%'")
+            ->pluck('tahun_ajaran')
+            ->filter(function($item) {
+                return strpos($item, '/') !== false && count(explode('/', $item)) === 2;
+            })
+            ->unique()
+            ->sortByDesc(function($item) {
+                return (int) explode('/', $item)[0];
+            })
+            ->values();
+
+        if ($tahunAjaranList->isEmpty()) {
+            $tahunAjaranList = collect([TahunAjaranHelper::getTahunAjaranTerbaru()]);
+        }
+
+        // Data PKM-8 Bidang
+        $skims8 = ['RE', 'RSH', 'KC', 'PM', 'PI', 'K', 'KI', 'VGK'];
+        $pkm8Bidang = collect($skims8)->map(function($skim) use ($tahunAjaranTerpilih) {
+            return [
+                'skim' => $skim,
+                'jumlah' => Proposal::where('skim', $skim)->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'sudah_valid' => Proposal::where('skim', $skim)->where('status_validasi', 'valid')->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'belum_valid' => Proposal::where('skim', $skim)->where('status_validasi', 'pending')->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'tolak_valid' => Proposal::where('skim', $skim)->where('status_validasi', 'tidak_valid')->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'sedang_review' => Proposal::where('skim', $skim)->whereIn('status', ['submitted', 'review_administratif', 'review_substantif', 'revisi'])->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'selesai_review' => Proposal::where('skim', $skim)->whereIn('status', ['lolos', 'tidak_lolos'])->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+            ];
+        });
+
+        // Data PKM Insentif
+        $skimsInsentif = ['AI', 'GFT'];
+        $pkmInsentif = collect($skimsInsentif)->map(function($skim) use ($tahunAjaranTerpilih) {
+            return [
+                'skim' => $skim,
+                'jumlah' => Proposal::where('skim', $skim)->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'sudah_valid' => Proposal::where('skim', $skim)->where('status_validasi', 'valid')->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'belum_valid' => Proposal::where('skim', $skim)->where('status_validasi', 'pending')->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'tolak_valid' => Proposal::where('skim', $skim)->where('status_validasi', 'tidak_valid')->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'sedang_review' => Proposal::where('skim', $skim)->whereIn('status', ['submitted', 'review_administratif', 'review_substantif', 'revisi'])->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+                'selesai_review' => Proposal::where('skim', $skim)->whereIn('status', ['lolos', 'tidak_lolos'])->where('tahun_ajaran', $tahunAjaranTerpilih)->count(),
+            ];
+        });
+
+        $totalKeseluruhan = $pkm8Bidang->sum('jumlah');
+        $totalInsentif = $pkmInsentif->sum('jumlah');
+
+        // Data Chart
+        $tahunAjaranChart = Proposal::whereNotNull('tahun_ajaran')
+            ->whereRaw("tahun_ajaran LIKE '%/%'")
+            ->pluck('tahun_ajaran')
+            ->filter(function($item) {
+                return strpos($item, '/') !== false && count(explode('/', $item)) === 2;
+            })
+            ->unique()->sortByDesc(fn($i) => (int) explode('/', $i)[0])->take(3)->values();
+
+        $chartData = [
+            'proposal_per_tahun' => $tahunAjaranChart->map(fn($ta) => ['tahun' => $ta, 'jumlah' => Proposal::where('tahun_ajaran', $ta)->count()])->toArray(),
+            'proposal_per_skim' => Proposal::where('tahun_ajaran', $tahunAjaranTerpilih)->selectRaw('skim, COUNT(*) as jumlah')->groupBy('skim')->orderBy('jumlah', 'desc')->get()->map(fn($i) => ['skim' => $i->skim, 'jumlah' => $i->jumlah]),
+            'proposal_per_fakultas' => Proposal::where('tahun_ajaran', $tahunAjaranTerpilih)->join('users', 'proposals.id_mahasiswa', '=', 'users.id')->where('users.role', 'mahasiswa')->selectRaw("users.metadata->>'fakultas_name' as nama_fakultas, COUNT(*) as jumlah")->groupByRaw("users.metadata->>'fakultas_name'")->orderBy('jumlah', 'desc')->get()->map(fn($i) => ['fakultas' => $i->nama_fakultas, 'jumlah' => $i->jumlah]),
+        ];
+
+        // Top 10 proposal
+        $topProposals = Proposal::with(['mahasiswa', 'hasilFinal'])
+            ->where('tahun_ajaran', $tahunAjaranTerpilih)
+            ->whereHas('hasilFinal')
+            ->join('hasil_finals', 'proposals.id_proposal', '=', 'hasil_finals.id_proposal')
+            ->orderBy('hasil_finals.nilai', 'desc')
+            ->limit(10)
+            ->get()
+            ->map(function($proposal, $index) {
+                return [
+                    'ranking' => $index + 1,
+                    'judul' => $proposal->judul_proposal,
+                    'skim' => $proposal->skim,
+                    'mahasiswa' => $proposal->mahasiswa->name ?? 'N/A',
+                    'nilai' => $proposal->hasilFinal->nilai ?? 0,
+                    'status' => $proposal->hasilFinal->status_final ?? 'N/A',
+                ];
+            });
+
+        // Filtered proposals
+        $filteredProposals = collect([]);
+        $hasFilter = $request->filled('filter_fakultas') || $request->filled('filter_prodi') || $request->filled('filter_skim') || $request->filled('filter_status');
+        if ($hasFilter) {
+            $query = Proposal::with(['mahasiswa', 'hasilFinal'])->where('tahun_ajaran', $tahunAjaranTerpilih);
+            if ($request->filled('filter_fakultas')) {
+                $fak = Fakultas::find($request->filter_fakultas);
+                if ($fak) $query->whereHas('mahasiswa', fn($q) => $q->whereRaw("metadata->>'fakultas_name' = ?", [$fak->nama_fakultas]));
+            }
+            if ($request->filled('filter_prodi')) {
+                $pr = Prodi::find($request->filter_prodi);
+                if ($pr) $query->whereHas('mahasiswa', fn($q) => $q->whereRaw("metadata->>'prodi_name' = ?", [$pr->nama_prodi]));
+            }
+            if ($request->filled('filter_skim')) $query->where('skim', $request->filter_skim);
+            if ($request->filled('filter_status')) {
+                if ($request->filter_status === 'lolos') $query->whereHas('hasilFinal', fn($q) => $q->where('status_final', 'lolos'));
+                elseif ($request->filter_status === 'tidak_lolos') $query->whereHas('hasilFinal', fn($q) => $q->where('status_final', 'tidak_lolos'));
+                elseif ($request->filter_status === 'belum_final') $query->whereDoesntHave('hasilFinal');
+            }
+            if (!$request->has('show_all')) $query->limit(20);
+            $filteredProposals = $query->orderBy('tanggal_pengajuan', 'desc')->get();
+        }
+
+        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
+        $prodis = Prodi::orderBy('nama_prodi')->get();
+        $skims = Proposal::where('tahun_ajaran', $tahunAjaranTerpilih)->distinct()->pluck('skim')->filter()->sort()->values();
+
+        // ============================================================
+        // Data khusus Pimpinan PT - Proposal perlu dinilai final
+        // ============================================================
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'hasilFinal', 'hasilSemiFinal'])
             ->where('status', 'pimpinan_pt')
             ->orderBy('tanggal_pengajuan', 'desc')
             ->get();
 
-        // Kategorikan proposal berdasarkan status hasil final
-        $proposalsBelumDinilai = $proposals->filter(function($proposal) {
-            return !$proposal->hasilFinal;
-        });
-        
-        $proposalsSudahDinilai = $proposals->filter(function($proposal) {
-            return $proposal->hasilFinal;
-        });
+        $proposalsBelumDinilai = $proposals->filter(fn($p) => !$p->hasilFinal);
+        $proposalsSudahDinilai = $proposals->filter(fn($p) => $p->hasilFinal);
 
-        return view('pimpinan_pt.dashboard', compact('proposals', 'proposalsBelumDinilai', 'proposalsSudahDinilai', 'pimpinanPT'));
+        return view('pimpinan_pt.dashboard', compact(
+            'pimpinanPT',
+            'pkm8Bidang', 'pkmInsentif', 'totalKeseluruhan', 'totalInsentif',
+            'tahunAjaranTerpilih', 'tahunAjaranList',
+            'chartData', 'topProposals',
+            'filteredProposals', 'fakultas', 'prodis', 'skims',
+            'proposals', 'proposalsBelumDinilai', 'proposalsSudahDinilai'
+        ));
     }
 
     /**
@@ -59,7 +178,6 @@ class PimpinanPTController extends Controller
     {
         $pimpinanPT = auth()->user();
         
-        // Pastikan user adalah Pimpinan PT
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             abort(403, 'Akses ditolak. Hanya Pimpinan PT yang dapat mengakses halaman ini.');
         }
@@ -71,14 +189,10 @@ class PimpinanPTController extends Controller
             'hasilSemiFinal',
             'nilaiSubstantif.reviewer',
             'proposalRevisi' => function($query) {
-                // Prioritas: revisi_akhir dulu, baru revisi_biasa
-                // Cek apakah kolom jenis_revisi ada di database
                 if (Schema::hasColumn('proposal_revisi', 'jenis_revisi')) {
                     $query->orderByRaw("CASE WHEN jenis_revisi = 'revisi_akhir' THEN 0 ELSE 1 END")
                           ->orderBy('tanggal_submit', 'desc');
                 } else {
-                    // Fallback jika kolom belum ada (migration belum dijalankan)
-                    // Gunakan filter path_file sebagai fallback
                     $query->orderByRaw("CASE WHEN path_file LIKE '%revisi_akhir%' THEN 0 ELSE 1 END")
                           ->orderBy('tanggal_submit', 'desc');
                 }
@@ -92,10 +206,8 @@ class PimpinanPTController extends Controller
             })
             ->findOrFail($id);
 
-        // Ambil kriteria penilaian substantif berdasarkan skim proposal
         $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
         
-        // Ambil nilai substantif dari 2 reviewer
         $nilaiSubstantif1 = null;
         $nilaiSubstantif2 = null;
         
@@ -107,7 +219,6 @@ class PimpinanPTController extends Controller
             $nilaiSubstantif2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
         }
 
-        // Ambil proposal terbaru dari mahasiswa yang sama (selain proposal yang sedang dilihat)
         $latestProposals = Proposal::with(['dokumen', 'hasilFinal'])
             ->where('id_mahasiswa', $proposal->id_mahasiswa)
             ->where('id_proposal', '!=', $proposal->id_proposal)
@@ -135,7 +246,6 @@ class PimpinanPTController extends Controller
 
         $pimpinanPT = auth()->user();
         
-        // Pastikan user adalah Pimpinan PT
         if ($pimpinanPT->role !== 'pimpinan_pt') {
             return response()->json([
                 'success' => false,
@@ -160,7 +270,6 @@ class PimpinanPTController extends Controller
             
             $proposal = Proposal::findOrFail($request->proposal_id);
             
-            // Validasi proposal harus berstatus pimpinan_pt
             if ($proposal->status !== 'pimpinan_pt') {
                 return response()->json([
                     'success' => false,
@@ -168,19 +277,15 @@ class PimpinanPTController extends Controller
                 ], 400);
             }
             
-            // Ambil kriteria untuk validasi jumlah skor
             $criteria = ProposalHelper::getSubstantifCriteria($proposal->skim);
             $actualCriteriaCount = ProposalHelper::countActualCriteria($criteria);
             
-            // Ambil skor per kriteria
             $skorPerKriteria = $request->input('skor', []);
             
-            // Jika skor dikirim sebagai JSON string, decode terlebih dahulu
             if (is_string($skorPerKriteria)) {
                 $skorPerKriteria = json_decode($skorPerKriteria, true) ?? [];
             }
             
-            // Normalize skor: convert string keys to integers and sort
             $normalizedSkor = [];
             foreach ($skorPerKriteria as $key => $value) {
                 $index = (int) $key;
@@ -188,7 +293,6 @@ class PimpinanPTController extends Controller
             }
             ksort($normalizedSkor);
             
-            // Validasi jumlah skor harus sesuai dengan jumlah kriteria yang bisa di-score
             if (count($normalizedSkor) !== $actualCriteriaCount) {
                 return response()->json([
                     'success' => false,
@@ -196,13 +300,11 @@ class PimpinanPTController extends Controller
                 ], 422);
             }
             
-            // Update status proposal berdasarkan status pimnas dan pendanaan
             $statusProposal = 'lolos';
             if ($request->status_pimnas === 'tidak_lolos' || $request->status_pendanaan === 'tidak_lolos') {
                 $statusProposal = 'tidak_lolos';
             }
             
-            // Tentukan status final yang lebih spesifik
             $statusFinal = 'lolos';
             if ($request->status_pimnas === 'lolos' && $request->status_pendanaan === 'lolos') {
                 $statusFinal = 'lolos_pimnas_pendanaan';
@@ -219,7 +321,6 @@ class PimpinanPTController extends Controller
                 'status_final' => $statusFinal
             ]);
             
-            // Handle dana_didapatkan
             $danaDidapatkanBelmawa = 0;
             $danaDidapatkanOperator = 0;
             if ($request->status_pendanaan === 'lolos') {
@@ -236,7 +337,6 @@ class PimpinanPTController extends Controller
                 $danaDidapatkanOperator = max(0, min((float) $danaInputOperator, 15000000));
             }
             
-            // Update atau buat hasil final
             HasilFinal::updateOrCreate(
                 ['id_proposal' => $request->proposal_id],
                 [
@@ -251,7 +351,6 @@ class PimpinanPTController extends Controller
                 ]
             );
             
-            // Kirim notifikasi ke mahasiswa
             try {
                 $notificationService = app(\App\Services\NotificationService::class);
                 $danaYangDidapatkan = 0;
@@ -261,12 +360,8 @@ class PimpinanPTController extends Controller
                         $danaInput = preg_replace('/[^0-9.]/', '', $danaInput);
                     }
                     $danaYangDidapatkan = (float) $danaInput;
-                    if ($danaYangDidapatkan < 0) {
-                        $danaYangDidapatkan = 0;
-                    }
-                    if ($danaYangDidapatkan > 15000000) {
-                        $danaYangDidapatkan = 15000000;
-                    }
+                    if ($danaYangDidapatkan < 0) $danaYangDidapatkan = 0;
+                    if ($danaYangDidapatkan > 15000000) $danaYangDidapatkan = 15000000;
                 }
                 $notificationService->notifyHasilFinalLengkap(
                     $proposal->fresh(),
@@ -282,12 +377,6 @@ class PimpinanPTController extends Controller
             
             DB::commit();
             
-            Log::info('Hasil final updated successfully by Pimpinan PT', [
-                'proposal_id' => $request->proposal_id,
-                'status_pimnas' => $request->status_pimnas,
-                'status_pendanaan' => $request->status_pendanaan
-            ]);
-            
             return response()->json([
                 'success' => true,
                 'message' => 'Hasil final berhasil diperbarui'
@@ -295,29 +384,18 @@ class PimpinanPTController extends Controller
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
-            
-            Log::error('Validation error updating hasil final by Pimpinan PT', [
-                'errors' => $e->errors(),
-                'proposal_id' => $request->proposal_id
-            ]);
-            
             return response()->json([
                 'success' => false,
-                'message' => 'Validasi gagal: ' . implode(', ', array_map(function($errors) {
-                    return implode(', ', $errors);
-                }, $e->errors())),
+                'message' => 'Validasi gagal: ' . implode(', ', array_map(fn($errors) => implode(', ', $errors), $e->errors())),
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            
             Log::error('Error updating hasil final by Pimpinan PT', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'proposal_id' => $request->proposal_id,
-                'request_data' => $request->except(['_token', 'skor'])
             ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menyimpan hasil final: ' . $e->getMessage()
@@ -327,27 +405,21 @@ class PimpinanPTController extends Controller
 
     /**
      * View PDF Proposal untuk Pimpinan PT
-     * Mengambil revisi akhir jika ada, jika tidak ambil dokumen original
      */
     public function viewPdf($id)
     {
         try {
             $pimpinanPT = auth()->user();
             
-            // Pastikan user adalah Pimpinan PT
             if ($pimpinanPT->role !== 'pimpinan_pt') {
                 abort(403, 'Akses ditolak.');
             }
 
             $proposal = Proposal::with(['dokumen', 'proposalRevisi' => function($query) {
-                // Prioritas: revisi_akhir dulu, baru revisi_biasa
-                // Cek apakah kolom jenis_revisi ada di database
                 if (Schema::hasColumn('proposal_revisi', 'jenis_revisi')) {
                     $query->orderByRaw("CASE WHEN jenis_revisi = 'revisi_akhir' THEN 0 ELSE 1 END")
                           ->orderBy('tanggal_submit', 'desc');
                 } else {
-                    // Fallback jika kolom belum ada (migration belum dijalankan)
-                    // Gunakan filter path_file sebagai fallback
                     $query->orderByRaw("CASE WHEN path_file LIKE '%revisi_akhir%' THEN 0 ELSE 1 END")
                       ->orderBy('tanggal_submit', 'desc');
                 }
@@ -360,26 +432,20 @@ class PimpinanPTController extends Controller
                 })
                 ->findOrFail($id);
 
-            // Prioritas: Ambil revisi terakhir (terbaru berdasarkan tanggal_submit) jika ada, jika tidak ambil dokumen original
             $revisiAkhir = $proposal->proposalRevisi->first();
             
             if ($revisiAkhir) {
                 return StorageHelper::response($revisiAkhir->path_file, $revisiAkhir->nama_file);
             } else {
-                // Gunakan dokumen original
                 if (!$proposal->dokumen || !$proposal->dokumen->path_file) {
                     abort(404, 'Dokumen tidak ditemukan.');
                 }
-
                 $pathFile = $proposal->dokumen->path_file;
                 $filename = basename($pathFile);
-
                 return StorageHelper::response($pathFile, $filename);
             }
         } catch (\Exception $e) {
-            Log::error('Error in viewPdf (Pimpinan PT): ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Error in viewPdf (Pimpinan PT): ' . $e->getMessage());
             abort(500, 'Terjadi kesalahan saat memuat PDF: ' . $e->getMessage());
         }
     }
@@ -644,7 +710,255 @@ class PimpinanPTController extends Controller
             return redirect()->route('pimpinan_pt.manage.accounts')->with('error', 'Gagal menghapus akun mahasiswa: ' . $e->getMessage());
         }
     }
+
+    // ================================================================
+    // FITUR OPERATOR YANG TERSEDIA UNTUK PIMPINAN PT (READ-ONLY/VIEW)
+    // ================================================================
+
+    /**
+     * Pilih Reviewer - Read-only view untuk monitoring
+     */
+    public function pilihReviewer(Request $request)
+    {
+        $tahun = $request->get('tahun', date('Y'));
+        $filter = $request->get('filter', 'all');
+        
+        $proposals = \App\Models\Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif',
+            'reviewerAdministratif', 'reviewerSubstantif1', 'reviewerSubstantif2'])
+            ->where('status_validasi', 'valid')
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+            ->when($filter !== 'all', fn($q) => $q->where('skim', $filter))
+            ->get();
+        
+        $reviewers = User::reviewer()->where('is_active', true)->get();
+        $isReadOnly = true;
+        
+        return view('pimpinan_pt.pilih_reviewer', compact('proposals', 'reviewers', 'tahun', 'filter', 'isReadOnly'));
+    }
+
+    /**
+     * Pilih Reviewer Seleksi - Read-only view untuk monitoring
+     */
+    public function pilihReviewerSeleksi(Request $request)
+    {
+        $tahun = $request->get('tahun', date('Y'));
+        $filter = $request->get('filter', 'all');
+
+        $proposals = \App\Models\Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif',
+            'reviewerSubstantifSeleksi1', 'reviewerSubstantifSeleksi2'])
+            ->whereIn('status', ['revisi', 'revisi_submitted', 'review_substantif_seleksi'])
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+            ->when($filter !== 'all', fn($q) => $q->where('skim', $filter))
+            ->get();
+
+        $reviewers = User::reviewer()->where('is_active', true)->get();
+        $isReadOnly = true;
+
+        return view('pimpinan_pt.pilih_reviewer_seleksi', compact('proposals', 'reviewers', 'tahun', 'filter', 'isReadOnly'));
+    }
+
+    /**
+     * Get Assigned Proposals (JSON) untuk monitoring
+     */
+    public function getAssignedProposals(Request $request)
+    {
+        $tahun = $request->get('tahun', date('Y'));
+        $filter = $request->get('filter', 'all');
+        
+        try {
+            $proposals = \App\Models\Proposal::with([
+                'mahasiswa', 'dokumen',
+                'reviewerAdministratif', 'reviewerSubstantif1', 'reviewerSubstantif2'
+            ])
+            ->where('status_validasi', 'valid')
+            ->whereNotNull('id_reviewer_administratif')
+            ->whereNotNull('id_reviewer_substantif_1')
+            ->whereNotNull('id_reviewer_substantif_2')
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+            ->when($filter !== 'all', fn($q) => $q->where('skim', $filter))
+            ->orderBy('updated_at', 'desc')
+            ->get();
+            
+            return response()->json(['success' => true, 'proposals' => $proposals, 'count' => $proposals->count()]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get Assigned Proposals Seleksi (JSON) untuk monitoring
+     */
+    public function getAssignedProposalsSeleksi(Request $request)
+    {
+        $tahun = $request->get('tahun', date('Y'));
+        $filter = $request->get('filter', 'all');
+
+        try {
+            $proposals = \App\Models\Proposal::with([
+                'mahasiswa',
+                'reviewerSubstantifSeleksi1', 'reviewerSubstantifSeleksi2'
+            ])
+                ->whereNotNull('id_reviewer_substantif_seleksi_1')
+                ->whereNotNull('id_reviewer_substantif_seleksi_2')
+                ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+                ->when($filter !== 'all', fn($q) => $q->where('skim', $filter))
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            return response()->json(['success' => true, 'proposals' => $proposals, 'count' => $proposals->count()]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Ruang Kontrol - Read-only view untuk monitoring
+     */
+    public function ruangKontrol(Request $request)
+    {
+        $tahunAjaranTerpilih = $request->get('tahun', TahunAjaranHelper::getTahunAjaranTerbaru());
+        
+        $ruangKontrolAktif = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerpilih)
+            ->where('is_active', true)
+            ->first();
+        
+        if (!$ruangKontrolAktif) {
+            $ruangKontrolAktif = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerpilih)->first();
+        }
+        
+        $histories = RuangKontrol::whereNotNull('tahun_ajaran')
+            ->whereRaw("tahun_ajaran LIKE '%/%'")
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(fn($item) => strpos($item->tahun_ajaran, '/') !== false && count(explode('/', $item->tahun_ajaran)) === 2)
+            ->sortByDesc(fn($item) => (int) explode('/', $item->tahun_ajaran)[0])
+            ->groupBy('tahun_ajaran');
+        
+        $jadwalTahun = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerpilih)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        $isReadOnly = true;
+        
+        return view('pimpinan_pt.ruang_kontrol', compact('ruangKontrolAktif', 'histories', 'jadwalTahun', 'tahunAjaranTerpilih', 'isReadOnly'));
+    }
+
+    /**
+     * Get Active Phase (JSON) untuk monitoring
+     */
+    public function getActivePhase(Request $request)
+    {
+        $tahunAjaran = $request->get('tahun_ajaran', TahunAjaranHelper::getTahunAjaranTerbaru());
+        
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaran)
+            ->where('is_active', true)
+            ->first();
+        
+        if (!$ruangKontrol) {
+            return response()->json(['phase' => null, 'message' => 'Tidak ada fase aktif']);
+        }
+        
+        $activePhase = null;
+        $phaseFields = ['status_pendaftaran', 'status_review', 'status_perbaikan', 'status_penilaian_akhir'];
+        $phaseNames = ['pendaftaran', 'review', 'perbaikan', 'penilaian_akhir'];
+        
+        foreach ($phaseFields as $i => $field) {
+            if ($ruangKontrol->$field === 'terbuka') {
+                $activePhase = $phaseNames[$i];
+                break;
+            }
+        }
+        
+        return response()->json(['phase' => $activePhase, 'ruang_kontrol' => $ruangKontrol]);
+    }
+
+    /**
+     * Hasil Semi Final - View untuk monitoring
+     */
+    public function hasilSemiFinal(Request $request)
+    {
+        $tahun = $request->get('tahun', date('Y'));
+        $filter = $request->get('filter', 'all');
+        $statusRevisi = $request->get('status_revisi', 'all');
+        
+        $proposals = \App\Models\Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif', 'hasilSemiFinal', 'proposalRevisi'])
+            ->whereIn('status', ['revisi', 'revisi_submitted', 'lolos', 'tidak_lolos', 'pimpinan_pt'])
+            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+            ->when($filter !== 'all', fn($q) => $q->where('skim', $filter))
+            ->when($statusRevisi === 'belum', fn($q) => $q->whereDoesntHave('proposalRevisi'))
+            ->when($statusRevisi === 'sudah', fn($q) => $q->whereHas('proposalRevisi'))
+            ->orderBy('tanggal_pengajuan', 'desc')
+            ->get();
+        
+        return view('pimpinan_pt.hasil_semi_final', compact('proposals', 'tahun', 'filter', 'statusRevisi'));
+    }
+
+    /**
+     * Detail Hasil Semi Final untuk Pimpinan PT
+     */
+    public function detailHasilSemiFinal($id)
+    {
+        $proposal = \App\Models\Proposal::with([
+            'mahasiswa', 'dosen', 'dokumen',
+            'nilaiAdministratif.reviewer',
+            'nilaiSubstantif.reviewer',
+            'hasilSemiFinal',
+            'proposalRevisi' => fn($q) => $q->orderBy('tanggal_submit', 'desc')
+        ])->findOrFail($id);
+
+        return view('pimpinan_pt.detail_hasil_semi_final', compact('proposal'));
+    }
+
+    /**
+     * Detail Proposal untuk Pimpinan PT
+     */
+    public function proposalDetail($id)
+    {
+        $proposal = \App\Models\Proposal::with([
+            'mahasiswa', 'dosen', 'dokumen',
+            'nilaiAdministratif.reviewer',
+            'nilaiSubstantif.reviewer',
+            'hasilFinal',
+            'proposalRevisi' => fn($q) => $q->orderBy('tanggal_submit', 'desc')
+        ])->findOrFail($id);
+
+        return view('pimpinan_pt.proposal_detail', compact('proposal'));
+    }
+
+    /**
+     * Form Penilaian - Read-only view untuk Pimpinan PT
+     */
+    public function formPenilaian(Request $request)
+    {
+        $query = \App\Models\FormPenilaian::with('creator')->latest();
+        
+        if ($request->filled('jenis_form')) {
+            $query->where('jenis_form', $request->jenis_form);
+        }
+        if ($request->filled('skim')) {
+            $query->where('skim', $request->skim);
+        }
+        
+        $formPenilaians = $query->paginate(15);
+        $isReadOnly = true;
+        
+        return view('pimpinan_pt.form_penilaian', compact('formPenilaians', 'isReadOnly'));
+    }
+
+    /**
+     * Laporan SIMBELMAWA - Read-only view untuk Pimpinan PT
+     */
+    public function laporanSimbelmawa(Request $request)
+    {
+        $query = \App\Models\SimbelmawaReport::latest();
+        
+        if ($request->filled('tahun_ajaran')) {
+            $query->where('tahun_ajaran', $request->tahun_ajaran);
+        }
+        
+        $reports = $query->paginate(15);
+        $isReadOnly = true;
+        
+        return view('pimpinan_pt.laporan_simbelmawa', compact('reports', 'isReadOnly'));
+    }
 }
-
-
-

@@ -31,9 +31,6 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="operator-tab" data-bs-toggle="tab" data-bs-target="#operator" type="button" role="tab">Operator</button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="pimpinan-pt-tab" data-bs-toggle="tab" data-bs-target="#pimpinan-pt" type="button" role="tab">Pimpinan PT</button>
-                </li>
             </ul>
 
             <div class="tab-content mt-3">
@@ -142,19 +139,19 @@
                             </div>
                             <div class="text-muted">
                                 Total: <strong>@formatId($mahasiswas->count())</strong> mahasiswa
-                            </div>
+                        </div>
                         </div>
 
                     @if(!isset($hasFilter) || !$hasFilter)
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle me-2"></i>
                             <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data mahasiswa.
-                        </div>
+                            </div>
                     @else
-                    <div class="table-responsive">
+                        <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead class="table-dark">
-                                <tr>
+                                    <tr>
                                         <th width="50">
                                             <input type="checkbox" id="selectAll" class="form-check-input">
                                         </th>
@@ -165,77 +162,77 @@
                                     <th>Fakultas</th>
                                     <th>Aktif</th>
                                     <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     @forelse($mahasiswas as $m)
-                                <tr>
+                                    <tr>
                                         <td>
                                             <input type="checkbox" name="ids[]" value="{{ $m->id_mahasiswa }}" class="form-check-input mahasiswa-checkbox">
                                         </td>
-                                    <td>{{ $m->nim }}</td>
-                                    <td>{{ $m->nama_mhs }}</td>
+                                        <td>{{ $m->nim }}</td>
+                                        <td>{{ $m->nama_mhs }}</td>
                                     <td>{{ $m->email_mhs }}</td>
                                     <td>{{ $m->prodi_mhs }}</td>
                                     <td>{{ $m->fakultas_mhs }}</td>
-                                    <td>
+                                        <td>
                                         <span class="badge bg-{{ $m->is_active ? 'success' : 'secondary' }}">{{ $m->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                    </td>
-                                    <td class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
-                                                data-id="{{ $m->id_mahasiswa }}"
-                                                data-nama="{{ $m->nama_mhs }}"
-                                                data-nim="{{ $m->nim }}"
-                                                data-email="{{ $m->email_mhs }}"
-                                                data-no-hp="{{ $m->no_hp_mhs }}"
-                                                data-fakultas="{{ $m->fakultas_mhs }}"
-                                                data-prodi="{{ $m->prodi_mhs }}"
-                                                data-is-active="{{ $m->is_active ? '1' : '0' }}"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editMahasiswaModal">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form method="POST" action="{{ route('pimpinan_pt.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-warning edit-mahasiswa-btn" 
+                                                    data-id="{{ $m->id_mahasiswa }}"
+                                                    data-nama="{{ $m->nama_mhs }}"
+                                                    data-nim="{{ $m->nim }}"
+                                                    data-email="{{ $m->email_mhs }}"
+                                                    data-no-hp="{{ $m->no_hp_mhs }}"
+                                                    data-fakultas="{{ $m->fakultas_mhs }}"
+                                                    data-prodi="{{ $m->prodi_mhs }}"
+                                                    data-is-active="{{ $m->is_active ? '1' : '0' }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editMahasiswaModal">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="POST" action="{{ route('pimpinan_pt.accounts.delete', ['type' => 'mahasiswa', 'id' => $m->id_mahasiswa]) }}" onsubmit="return confirm('Hapus akun ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
                                     @empty
                                     <tr>
                                         <td colspan="8" class="text-center">Tidak ada data mahasiswa</td>
                                     </tr>
                                     @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                                    @endif
                     </form>
-                </div>
-
+                            </div>
+                            
                 <!-- Dosen -->
                 <div class="tab-pane fade" id="dosen" role="tabpanel">
                     <!-- Filter Section -->
                     <div class="card mb-3 border-primary">
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Dosen</h6>
-                        </div>
+                                </div>
                         <div class="card-body">
                             <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterDosenForm">
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label">Nama</label>
                                         <input type="text" name="filter_nama_dosen" id="filterNamaDosen" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_dosen') }}">
-                                    </div>
+                                </div>
                                     <div class="col-12">
                                         <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
                                         <a href="{{ route('pimpinan_pt.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
-                                    </div>
-                                </div>
-                            </form>
+                            </div>
                         </div>
-                    </div>
+                    </form>
+                        </div>
+                </div>
 
                     @if(!isset($hasFilter) || !$hasFilter)
                         <div class="alert alert-info">
@@ -419,7 +416,7 @@
                     @endif
                 </div>
 
-                <!-- Operator -->
+                <!-- Pimpinan PT -->
                 <div class="tab-pane fade" id="operator" role="tabpanel">
                     <!-- Filter Section -->
                     <div class="card mb-3 border-primary">
@@ -508,109 +505,6 @@
                                             @csrf
                                             @method('DELETE')
                                             <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @endif
-                </div>
-
-                <!-- Pimpinan PT -->
-                <div class="tab-pane fade" id="pimpinan-pt" role="tabpanel">
-                    <!-- Filter Section -->
-                    <div class="card mb-3 border-primary">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter Pimpinan PT</h6>
-                        </div>
-                        <div class="card-body">
-                            <form method="GET" action="{{ route('pimpinan_pt.manage.accounts') }}" id="filterPimpinanPTForm">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Nama</label>
-                                        <input type="text" name="filter_nama_pimpinan_pt" id="filterNamaPimpinanPT" class="form-control" placeholder="Cari berdasarkan nama..." value="{{ request('filter_nama_pimpinan_pt') }}">
-                                    </div>
-                                    <div class="col-12">
-                                        <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-1"></i> Terapkan Filter</button>
-                                        <a href="{{ route('pimpinan_pt.manage.accounts') }}" class="btn btn-secondary"><i class="fas fa-times me-1"></i> Reset</a>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    @if(!isset($hasFilter) || !$hasFilter)
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Peringatan:</strong> Silakan gunakan filter di atas untuk menampilkan data pimpinan PT.
-                        </div>
-                    @else
-                    <form class="row g-3 mb-4" method="POST" action="{{ route('pimpinan_pt.accounts.store', 'pimpinan_pt') }}">
-                        @csrf
-                        <div class="col-md-4">
-                            <label class="form-label">Nama</label>
-                            <input type="text" name="nama" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">No HP</label>
-                            <input type="text" name="no_hp" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Password</label>
-                            <input type="password" name="password" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Konfirmasi Password</label>
-                            <input type="password" name="password_confirmation" class="form-control" required>
-                        </div>
-                        <div class="col-12">
-                            <button class="btn btn-primary"><i class="fas fa-plus me-1"></i> Tambah Pimpinan PT</button>
-                        </div>
-                    </form>
-
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Nama</th>
-                                    <th>Email</th>
-                                    <th>No HP</th>
-                                    <th>Aktif</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($pimpinanPTs as $pt)
-                                <tr>
-                                    <td>{{ $pt->nama_pt }}</td>
-                                    <td>{{ $pt->email_pt }}</td>
-                                    <td>{{ $pt->no_hp_pt }}</td>
-                                    <td><span class="badge bg-{{ $pt->is_active ? 'success' : 'secondary' }}">{{ $pt->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
-                                    <td class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-warning edit-pimpinan-pt-btn" 
-                                                data-id="{{ $pt->id_pt }}"
-                                                data-nama="{{ $pt->nama_pt }}"
-                                                data-email="{{ $pt->email_pt }}"
-                                                data-no-hp="{{ $pt->no_hp_pt }}"
-                                                data-is-active="{{ $pt->is_active ? '1' : '0' }}"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#editPimpinanPTModal">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form method="POST" action="{{ route('pimpinan_pt.accounts.delete', ['type' => 'pimpinan_pt', 'id' => $pt->id_pt]) }}" 
-                                              onsubmit="return confirm('Hapus akun ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger" 
-                                                    {{ auth()->id() == $pt->id_pt ? 'disabled title="Tidak dapat menghapus akun sendiri"' : '' }}>
-                                                <i class="fas fa-trash"></i>
-                                            </button>
                                         </form>
                                     </td>
                                 </tr>
@@ -851,50 +745,6 @@
     </div>
 </div>
 
-<!-- Modal Edit Pimpinan PT -->
-<div class="modal fade" id="editPimpinanPTModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="editPimpinanPTForm" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="modal-header">
-                    <h5 class="modal-title">Ubah Pimpinan PT</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">Nama</label>
-                            <input type="text" name="nama" id="edit_nama_pimpinan_pt" class="form-control" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Email</label>
-                            <input type="email" name="email" id="edit_email_pimpinan_pt" class="form-control" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">No HP</label>
-                            <input type="text" name="no_hp" id="edit_no_hp_pimpinan_pt" class="form-control" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Password Baru</label>
-                            <input type="password" name="password" class="form-control">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Konfirmasi Password</label>
-                            <input type="password" name="password_confirmation" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button class="btn btn-primary">Simpan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 @endsection
 
 @section('scripts')
@@ -1036,7 +886,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const prodi = this.getAttribute('data-prodi');
             const isActive = this.getAttribute('data-is-active');
 
-            document.getElementById('editMahasiswaForm').action = `/pimpinan-pt/akun/mahasiswa/${id}`;
+            document.getElementById('editMahasiswaForm').action = `/operator/akun/mahasiswa/${id}`;
             document.getElementById('edit_nama_mhs').value = nama;
             document.getElementById('edit_nim_mhs').value = nim;
             document.getElementById('edit_email_mhs').value = email;
@@ -1057,7 +907,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const noHp = this.getAttribute('data-no-hp');
             const isActive = this.getAttribute('data-is-active');
 
-            document.getElementById('editDosenForm').action = `/pimpinan-pt/akun/dosen/${id}`;
+            document.getElementById('editDosenForm').action = `/operator/akun/dosen/${id}`;
             document.getElementById('edit_nama_dosen').value = nama;
             document.getElementById('edit_nuptk_dosen').value = nuptk;
             document.getElementById('edit_email_dosen').value = email;
@@ -1075,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const noHp = this.getAttribute('data-no-hp');
             const isActive = this.getAttribute('data-is-active');
 
-            document.getElementById('editReviewerForm').action = `/pimpinan-pt/akun/reviewer/${id}`;
+            document.getElementById('editReviewerForm').action = `/operator/akun/reviewer/${id}`;
             document.getElementById('edit_nama_reviewer').value = nama;
             document.getElementById('edit_email_reviewer').value = email;
             document.getElementById('edit_no_hp_reviewer').value = noHp;
@@ -1092,26 +942,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const noHp = this.getAttribute('data-no-hp');
             const isActive = this.getAttribute('data-is-active');
 
-            document.getElementById('editOperatorForm').action = `/pimpinan-pt/akun/operator/${id}`;
+            document.getElementById('editOperatorForm').action = `/operator/akun/operator/${id}`;
             document.getElementById('edit_nama_operator').value = nama;
             document.getElementById('edit_email_operator').value = email;
             document.getElementById('edit_no_hp_operator').value = noHp;
             document.getElementById('edit_is_active_operator').checked = isActive === '1';
-        });
-    });
-
-    // Edit Pimpinan PT Modal
-    document.querySelectorAll('.edit-pimpinan-pt-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            const nama = this.getAttribute('data-nama');
-            const email = this.getAttribute('data-email');
-            const noHp = this.getAttribute('data-no-hp');
-
-            document.getElementById('editPimpinanPTForm').action = `/pimpinan-pt/akun/pimpinan_pt/${id}`;
-            document.getElementById('edit_nama_pimpinan_pt').value = nama;
-            document.getElementById('edit_email_pimpinan_pt').value = email;
-            document.getElementById('edit_no_hp_pimpinan_pt').value = noHp;
         });
     });
 });

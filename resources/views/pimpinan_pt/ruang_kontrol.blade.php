@@ -1,6 +1,6 @@
 @extends('mainlayout.app')
 
-@section('title', 'Ruang Kontrol - Operator')
+@section('title', 'Ruang Kontrol - Pimpinan PT')
 
 @section('content')
     @php
@@ -74,7 +74,7 @@
 
     <div class="container-fluid">
         <x-breadcrumb :items="[
-            ['label' => 'Beranda', 'url' => route('operator.dashboard')],
+            ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
             ['label' => 'Ruang Kontrol', 'active' => true],
         ]" />
 
@@ -86,7 +86,7 @@
                 <label class="form-label fw-bold mb-2">
                     <i class="fas fa-calendar-alt me-2"></i>Pilih Tahun Ajaran
                 </label>
-                <select class="form-select" id="tahunSelector" onchange="window.location.href='?tahun=' + this.value">
+                <select class="form-select" id="tahunSelector" onchange="window.location.href='?tahun=' + this.value" disabled>
                     @php
                         $tahunAjaranTerpilih = $tahunAjaranTerpilih ?? \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
                         $tahunArray = [];
@@ -119,7 +119,7 @@
                 </select>
             </div>
             <div class="col-md-9 d-flex align-items-end justify-content-end gap-2">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBuatJadwal">
+                <button class="btn btn-primary d-none" data-bs-toggle="modal" data-bs-target="#modalBuatJadwal">
                     <i class="fas fa-plus me-1"></i>Buat Jadwal Baru
                 </button>
             </div>
@@ -214,7 +214,7 @@
                 <form id="formUpdateRuangKontrol">
                     @csrf
                     @if(isset($ruangKontrolAktif->id_ruang_kontrol))
-                        <input type="hidden" name="id_ruang_kontrol" value="{{ $ruangKontrolAktif->id_ruang_kontrol }}">
+                        <input type="hidden" name="id_ruang_kontrol" value="{{ $ruangKontrolAktif- disabled>id_ruang_kontrol }}">
                     @endif
 
                     {{-- Top meta row: fase aktif & nama jadwal --}}
@@ -224,7 +224,7 @@
                                 <label class="form-label fw-semibold mb-1"
                                     style="font-size:0.8rem;color:var(--text-600);">FASE AKTIF SAAT INI</label>
                                 <select name="active_phase" id="activePhasePicker" class="form-select form-select-sm"
-                                    style="border-color:var(--border);border-radius:8px;">
+                                    style="border-color:var(--border);border-radius:8px;" disabled>
                                     <option value="" @selected(!$activePhase)>— Tidak ada fase aktif —</option>
                                     @foreach($phaseConfig as $phaseKey => $cfg)
                                         <option value="{{ $phaseKey }}" @selected($activePhase === $phaseKey)>
@@ -237,7 +237,7 @@
                                 <label class="form-label fw-semibold mb-1"
                                     style="font-size:0.8rem;color:var(--text-600);">NAMA JADWAL</label>
                                 <input type="text" name="nama_history" class="form-control form-control-sm"
-                                    value="{{ $ruangKontrolAktif->nama_history ?? '' }}"
+                                    value="{{ $ruangKontrolAktif- disabled>nama_history ?? '' }}"
                                     placeholder="Contoh: Jadwal PKM 2025/2026"
                                     style="border-color:var(--border);border-radius:8px;">
                             </div>
@@ -286,7 +286,7 @@
                                             style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal
                                             Mulai</label>
                                         <input type="date" name="{{ $cfg['start_field'] }}" class="form-control form-control-sm"
-                                            value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))->format('Y-m-d') : '' }}"
+                                            value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))- disabled>format('Y-m-d') : '' }}"
                                             style="border-color:var(--border);border-radius:8px;">
                                     </div>
                                     <div class="col-md-4">
@@ -294,7 +294,7 @@
                                             style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal
                                             Selesai</label>
                                         <input type="date" name="{{ $cfg['end_field'] }}" class="form-control form-control-sm"
-                                            value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))->format('Y-m-d') : '' }}"
+                                            value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))- disabled>format('Y-m-d') : '' }}"
                                             style="border-color:var(--border);border-radius:8px;">
                                     </div>
                                 </div>
@@ -408,7 +408,7 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">Nama Jadwal <span class="text-danger">*</span></label>
                             <input type="text" name="nama_history" class="form-control" required
-                                placeholder="Contoh: Jadwal Utama 2025/2026">
+                                placeholder="Contoh: Jadwal Utama 2025/2026" disabled>
                         </div>
 
                         @foreach($phaseConfig as $phaseKey => $cfg)
@@ -422,12 +422,12 @@
                                         <div class="col-md-6">
                                             <label class="form-label small">Tanggal Mulai <span
                                                     class="text-danger">*</span></label>
-                                            <input type="date" name="{{ $cfg['start_field'] }}" class="form-control" required>
+                                            <input type="date" name="{{ $cfg['start_field'] }}" class="form-control" required disabled>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label small">Tanggal Selesai <span
                                                     class="text-danger">*</span></label>
-                                            <input type="date" name="{{ $cfg['end_field'] }}" class="form-control" required>
+                                            <input type="date" name="{{ $cfg['end_field'] }}" class="form-control" required disabled>
                                         </div>
                                     </div>
                                 </div>
@@ -455,11 +455,11 @@
                 </div>
                 <form id="formEditJadwal">
                     @csrf
-                    <input type="hidden" name="jadwal_id" id="editJadwalId">
+                    <input type="hidden" name="jadwal_id" id="editJadwalId" disabled>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Nama Jadwal <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_history" id="editNamaHistory" class="form-control" required>
+                            <input type="text" name="nama_history" id="editNamaHistory" class="form-control" required disabled>
                         </div>
                         @foreach($phaseConfig as $phaseKey => $cfg)
                             <div class="card mb-3 border-start border-4 border-{{ $cfg['color'] }}">
@@ -471,12 +471,12 @@
                                         <div class="col-md-6">
                                             <label class="form-label small">Tanggal Mulai</label>
                                             <input type="date" name="{{ $cfg['start_field'] }}"
-                                                id="edit_{{ $cfg['start_field'] }}" class="form-control">
+                                                id="edit_{{ $cfg['start_field'] }}" class="form-control" disabled>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label small">Tanggal Selesai</label>
                                             <input type="date" name="{{ $cfg['end_field'] }}" id="edit_{{ $cfg['end_field'] }}"
-                                                class="form-control">
+                                                class="form-control" disabled>
                                         </div>
                                     </div>
                                 </div>

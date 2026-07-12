@@ -45,6 +45,23 @@
         </div>
     @endif
 
+    {{-- Jadwal Pengajuan Proposal --}}
+    @if(isset($ruangKontrol) && $ruangKontrol)
+        <div class="alert alert-info border-start border-4 border-info mb-4 shadow-sm" role="alert" style="background-color: var(--surface-1);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background-color: rgba(8, 145, 178, 0.1);">
+                    <i class="fas fa-calendar-alt text-info fa-lg"></i>
+                </div>
+                <div>
+                    <strong style="color: var(--text-900); font-size: 1.05rem;">Jadwal Pengajuan Proposal (Fase 1)</strong><br>
+                    <span style="color: var(--text-700);">
+                        Pendaftaran dibuka mulai <strong>{{ \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_mulai)->format('d M Y') }}</strong> hingga <strong>{{ \Carbon\Carbon::parse($ruangKontrol->tanggal_pendaftaran_selesai)->format('d M Y') }}</strong>.
+                    </span>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Stat Cards --}}
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-sm-6">

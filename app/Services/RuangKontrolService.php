@@ -45,37 +45,42 @@ class RuangKontrolService
         $now = now();
         $updated = false;
         $phaseConfig = [
-            'pendaftaran' => ['mulai' => 'tanggal_pendaftaran_mulai', 'selesai' => 'tanggal_pendaftaran_selesai', 'status' => 'status_pendaftaran'],
-            'review' => ['mulai' => 'tanggal_review_mulai', 'selesai' => 'tanggal_review_selesai', 'status' => 'status_review'],
-            'perbaikan' => ['mulai' => 'tanggal_perbaikan_mulai', 'selesai' => 'tanggal_perbaikan_selesai', 'status' => 'status_perbaikan'],
+            'pendaftaran'     => ['mulai' => 'tanggal_pendaftaran_mulai',      'selesai' => 'tanggal_pendaftaran_selesai',      'status' => 'status_pendaftaran'],
+            'review'          => ['mulai' => 'tanggal_review_mulai',           'selesai' => 'tanggal_review_selesai',           'status' => 'status_review'],
+            'perbaikan'       => ['mulai' => 'tanggal_perbaikan_mulai',        'selesai' => 'tanggal_perbaikan_selesai',        'status' => 'status_perbaikan'],
             'penilaian_akhir' => ['mulai' => 'tanggal_penilaian_akhir_mulai', 'selesai' => 'tanggal_penilaian_akhir_selesai', 'status' => 'status_penilaian_akhir'],
         ];
 
+        // -------------------------------------------------------
+        // Pass 1: Tutup setiap fase yang sudah melewati tanggal selesai
+        // Gunakan endOfDay() agar fase dianggap aktif hingga akhir hari tersebut
+        // -------------------------------------------------------
         foreach (RuangKontrol::PHASES as $phase) {
-            $cfg = $phaseConfig[$phase];
-            $mulaiRaw = $ruangKontrol->{$cfg['mulai']};
+            $cfg        = $phaseConfig[$phase];
             $selesaiRaw = $ruangKontrol->{$cfg['selesai']};
             $statusAttr = $cfg['status'];
 
-            if (!$mulaiRaw || !$selesaiRaw) {
+            if (!$selesaiRaw) {
                 continue;
             }
 
-            $mulai = Carbon::parse($mulaiRaw);
-            $selesai = Carbon::parse($selesaiRaw);
+            // Tanggal selesai dianggap berakhir pada 23:59:59 hari tersebut
+            $selesai = Carbon::parse($selesaiRaw)->endOfDay();
 
-            // If current date is past this phase's end and phase is still open, close it
             if ($now->gt($selesai) && $ruangKontrol->{$statusAttr} === 'terbuka') {
                 $ruangKontrol->{$statusAttr} = 'tertutup';
                 $updated = true;
             }
         }
 
-        // Determine which phase (if any) should be open: first phase whose date range contains now and no earlier phase is still active
-        $anyEarlierOpen = false;
+        // -------------------------------------------------------
+        // Pass 2: Buka fase yang sedang dalam rentang tanggalnya (jika belum ada yang terbuka)
+        // Hanya satu fase yang bisa terbuka pada satu waktu
+        // -------------------------------------------------------
+        $anyOpen = false;
         foreach (RuangKontrol::PHASES as $phase) {
-            $cfg = $phaseConfig[$phase];
-            $mulaiRaw = $ruangKontrol->{$cfg['mulai']};
+            $cfg        = $phaseConfig[$phase];
+            $mulaiRaw   = $ruangKontrol->{$cfg['mulai']};
             $selesaiRaw = $ruangKontrol->{$cfg['selesai']};
             $statusAttr = $cfg['status'];
 
@@ -83,10 +88,11 @@ class RuangKontrolService
                 continue;
             }
 
-            $mulai = Carbon::parse($mulaiRaw);
-            $selesai = Carbon::parse($selesaiRaw);
+            $mulai   = Carbon::parse($mulaiRaw)->startOfDay();
+            $selesai = Carbon::parse($selesaiRaw)->endOfDay();
 
-            if ($anyEarlierOpen) {
+            if ($anyOpen) {
+                // Sudah ada fase yang terbuka, tutup yang lain
                 if ($ruangKontrol->{$statusAttr} === 'terbuka') {
                     $ruangKontrol->{$statusAttr} = 'tertutup';
                     $updated = true;
@@ -94,15 +100,15 @@ class RuangKontrolService
                 continue;
             }
 
-            if ($now->gte($mulai) && $now->lte($selesai)) {
+            if ($now->between($mulai, $selesai)) {
+                // Fase ini seharusnya terbuka
                 if ($ruangKontrol->{$statusAttr} !== 'terbuka') {
-                    // Close all other phases, open this one
                     foreach (RuangKontrol::PHASES as $p) {
                         $ruangKontrol->{$phaseConfig[$p]['status']} = ($p === $phase) ? 'terbuka' : 'tertutup';
                     }
                     $updated = true;
                 }
-                $anyEarlierOpen = true;
+                $anyOpen = true;
             }
         }
 
@@ -111,9 +117,9 @@ class RuangKontrolService
             Log::info('Auto-activation updated', [
                 'ruang_kontrol_id' => $ruangKontrol->id_ruang_kontrol,
                 'phases' => [
-                    'pendaftaran' => $ruangKontrol->status_pendaftaran,
-                    'review' => $ruangKontrol->status_review,
-                    'perbaikan' => $ruangKontrol->status_perbaikan,
+                    'pendaftaran'     => $ruangKontrol->status_pendaftaran,
+                    'review'          => $ruangKontrol->status_review,
+                    'perbaikan'       => $ruangKontrol->status_perbaikan,
                     'penilaian_akhir' => $ruangKontrol->status_penilaian_akhir,
                 ],
             ]);
@@ -146,6 +152,12 @@ class RuangKontrolService
                     'penilaian_akhir' => 'tertutup',
                 ],
             ];
+        }
+
+        // Jalankan auto-check untuk memastikan status up-to-date
+        if ($ruangKontrol->is_active) {
+            $this->checkAndUpdateAutoActivation($ruangKontrol);
+            $ruangKontrol->refresh();
         }
 
         return [
