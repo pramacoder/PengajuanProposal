@@ -1487,7 +1487,7 @@
         if (!submitBtn || !submitHelpText) return;
         
         const requiredFields = [
-            'judul', 'skim', 'dana_diajukan', 'dosen_pembimbing',
+            'judul', 'skim', 'dana_diajukan_belmawa', 'dana_diajukan_operator', 'dosen_pembimbing',
             'ketua_nama', 'ketua_nim', 'ketua_prodi', 'ketua_fakultas', 
             'ketua_email', 'ketua_no_hp', 'anggota1_nama', 'anggota1_nim',
             'anggota1_prodi', 'anggota1_fakultas', 'anggota1_email', 'anggota1_no_hp',
@@ -1497,6 +1497,7 @@
         
         let isValid = true;
         let missingFields = [];
+        let validationErrors = [];
         
         // Check required fields
         for (let fieldId of requiredFields) {
@@ -1507,11 +1508,16 @@
             }
         }
         
+        if (missingFields.length > 0) {
+            validationErrors.push(`Lengkapi ${missingFields.length} field wajib`);
+        }
+        
         // Check file upload
         const proposalFile = document.getElementById('proposal_file');
         if (!proposalFile || !proposalFile.files[0]) {
             isValid = false;
-            missingFields.push('proposal_file');
+            if (!missingFields.includes('proposal_file')) missingFields.push('proposal_file');
+            if (missingFields.length === 1) validationErrors.push('Upload file proposal (.pdf)');
         }
         
         // Check judul length
@@ -1520,6 +1526,7 @@
             const judul = judulField.value.trim();
             if (judul.length < 10 || judul.length > 200) {
                 isValid = false;
+                validationErrors.push('Judul harus antara 10-200 karakter');
             }
         }
         
@@ -1531,6 +1538,8 @@
                 const nim = nimField.value.trim();
                 if (nim.length < 8) {
                     isValid = false;
+                    validationErrors.push('Format NIM tidak valid (minimal 8 angka)');
+                    break;
                 }
             }
         }
@@ -1544,6 +1553,8 @@
                 const email = emailField.value.trim();
                 if (!emailRegex.test(email)) {
                     isValid = false;
+                    validationErrors.push('Format email tidak valid');
+                    break;
                 }
             }
         }
@@ -1556,6 +1567,8 @@
                 const phone = phoneField.value.trim();
                 if (phone.length < 10) {
                     isValid = false;
+                    validationErrors.push('Nomor HP tidak valid (minimal 10 angka)');
+                    break;
                 }
             }
         }
@@ -1587,6 +1600,7 @@
                 
                 if (!allFieldsFilled) {
                     isValid = false;
+                    validationErrors.push(`Lengkapi semua data untuk ${member.replace('anggota', 'Anggota ')} atau kosongkan semuanya`);
                 }
             }
         }
@@ -1595,15 +1609,22 @@
         const selectedSkim = document.getElementById('skim').value;
         const insentifSkims = ['GFT', 'AI'];
         const isInsentif = insentifSkims.includes(selectedSkim);
-        const danaValue = danaField ? (parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(danaField.value) : danaField.value).toString(), 10) || 0) : 0;
+        
+        const belmawaField = document.getElementById('dana_diajukan_belmawa');
+        const operatorField = document.getElementById('dana_diajukan_operator');
+        
+        const belmawaVal = belmawaField ? (parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(belmawaField.value) : belmawaField.value).toString().replace(/\D/g,''), 10) || 0) : 0;
+        const operatorVal = operatorField ? (parseInt((window.parseAngkaIndonesia ? window.parseAngkaIndonesia(operatorField.value) : operatorField.value).toString().replace(/\D/g,''), 10) || 0) : 0;
         
         if (isInsentif) {
-            if (danaValue !== 0) {
+            if (belmawaVal !== 0 || operatorVal !== 0) {
                 isValid = false;
+                validationErrors.push('Dana untuk skema Insentif harus Rp 0');
             }
         } else {
-            if (!danaValue || danaValue < 1000000 || danaValue > 15000000) {
+            if (belmawaVal > 8000000 || operatorVal > 2000000 || (belmawaVal === 0 && operatorVal === 0)) {
                 isValid = false;
+                validationErrors.push('Total dana tidak valid (maks 8jt Belmawa, maks 2jt Universitas)');
             }
         }
         
@@ -1618,9 +1639,8 @@
             submitBtn.disabled = true;
             submitBtn.classList.remove('btn-primary');
             submitBtn.classList.add('btn-secondary');
-            const missingCount = missingFields.length;
-            submitHelpText.textContent = `Lengkapi ${missingCount} field wajib untuk mengaktifkan tombol submit`;
-            submitHelpText.className = 'mt-2 small text-muted submit-help-text incomplete';
+            submitHelpText.textContent = validationErrors.length > 0 ? validationErrors[0] : 'Form belum lengkap';
+            submitHelpText.className = 'mt-2 small text-danger submit-help-text incomplete';
         }
     }
 

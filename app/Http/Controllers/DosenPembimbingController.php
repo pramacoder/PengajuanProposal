@@ -67,7 +67,7 @@ class DosenPembimbingController extends Controller
     {
         $dosen = auth()->user();
 
-        $tahunAjaranTerbaru = '2024/2025';
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
 
         $mahasiswaIds = Proposal::where('id_dosen', $dosen->id)
             ->where('tahun_ajaran', $tahunAjaranTerbaru)

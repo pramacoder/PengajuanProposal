@@ -16,12 +16,16 @@ class StoreProposalRequest extends FormRequest
 
     protected function prepareForValidation()
     {
-        // Parse the dana_diajukan to float before validation
-        if ($this->has('dana_diajukan')) {
-            $this->merge([
-                'dana_diajukan' => \App\Helpers\ProposalHelper::parseAngka($this->dana_diajukan),
-            ]);
-        }
+        // Parse dana_diajukan_belmawa dan dana_diajukan_operator, lalu totalkan
+        $danaBelmawa = \App\Helpers\ProposalHelper::parseAngka($this->input('dana_diajukan_belmawa', 0));
+        $danaOperator = \App\Helpers\ProposalHelper::parseAngka($this->input('dana_diajukan_operator', 0));
+        $totalDana = $danaBelmawa + $danaOperator;
+
+        $this->merge([
+            'dana_diajukan' => $totalDana,
+            'dana_diajukan_belmawa' => $danaBelmawa,
+            'dana_diajukan_operator' => $danaOperator,
+        ]);
     }
 
     public function rules(): array
