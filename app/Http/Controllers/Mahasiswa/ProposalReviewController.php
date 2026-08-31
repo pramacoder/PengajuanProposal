@@ -33,7 +33,7 @@ class ProposalReviewController extends Controller
                     'success' => true,
                     'data' => [],
                     'proposal_info' => [
-                        'judul' => $proposal->judul_proposal,
+                        'judul' => $proposal->judul,
                         'skim' => $proposal->skim,
                         'status' => $proposal->status
                     ]
@@ -56,7 +56,7 @@ class ProposalReviewController extends Controller
                 'success' => true,
                 'data' => [$processedReview], 
                 'proposal_info' => [
-                    'judul' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'skim' => $proposal->skim,
                     'status' => $proposal->status
                 ]
@@ -124,7 +124,7 @@ class ProposalReviewController extends Controller
                 'success' => true,
                 'data' => $processedReviews,
                 'proposal_info' => [
-                    'judul' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'skim' => $proposal->skim,
                     'status' => $proposal->status
                 ]
@@ -175,7 +175,7 @@ class ProposalReviewController extends Controller
                 'dosen_universitas' => $dosenUniversitas,
                 'hasil_semi_final' => $proposal->hasilSemiFinal,
                 'proposal_info' => [
-                    'judul' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'skim' => $proposal->skim,
                     'status' => $proposal->status,
                     'status_final' => $proposal->status_final

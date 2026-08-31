@@ -4,246 +4,75 @@
 
 @if(isset($statusPendaftaran) && $statusPendaftaran === 'tertutup')
     @section('content')
-    <div class="container mt-5">
+    <div class="max-w-3xl mx-auto mt-8">
         <x-breadcrumb :items="[
             ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
             ['label' => 'Ajukan Proposal', 'active' => true],
         ]" />
 
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card border-danger">
-                    <div class="card-header bg-danger text-white text-center">
-                        <h4 class="mb-0">
-                            <i class="fas fa-lock me-2"></i>
-                            Sistem Pendaftaran Ditutup
-                        </h4>
+        <x-ui.card className="overflow-hidden border border-red-200 mt-6 shadow-md shadow-red-500/10">
+            <div class="bg-gradient-to-r from-red-600 to-rose-700 text-white p-6 text-center">
+                <h4 class="font-bold text-xl m-0 flex items-center justify-center">
+                    <i class="fas fa-lock mr-3 text-red-200"></i>
+                    Sistem Pendaftaran Ditutup
+                </h4>
+            </div>
+            <div class="p-10 text-center bg-white">
+                <div class="mb-8">
+                    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-50 text-red-500 mb-6 border-4 border-red-100">
+                        <i class="fas fa-calendar-times text-4xl"></i>
                     </div>
-                    <div class="card-body text-center">
-                        <div class="mb-4">
-                            <i class="fas fa-calendar-times fa-4x text-danger mb-3"></i>
-                            <h5 class="text-danger">Pendaftaran PKM Sedang Ditutup</h5>
-                            <p class="text-muted">
-                                Saat ini sistem pendaftaran proposal PKM sedang ditutup oleh operator.
-                                Silakan cek kembali nanti atau hubungi operator untuk informasi lebih lanjut.
-                            </p>
-                        </div>
-                        
-                        <div class="d-flex justify-content-center gap-3">
-                            <a href="{{ route('mahasiswa.dashboard') }}" class="btn btn-outline-primary">
-                                <i class="fas fa-home me-2"></i>
-                                Kembali ke Dashboard
-                            </a>
-                            <a href="{{ route('mahasiswa.proposal.index') }}" class="btn btn-primary">
-                                <i class="fas fa-eye me-2"></i>
-                                Lihat Proposal Saya
-                            </a>
-                        </div>
-                    </div>
+                    <h5 class="text-red-600 font-bold text-2xl mb-3">Pendaftaran PKM Sedang Ditutup</h5>
+                    <p class="text-slate-600 max-w-lg mx-auto text-lg leading-relaxed">
+                        Saat ini sistem pendaftaran proposal PKM sedang ditutup oleh operator.
+                        Silakan cek kembali nanti atau hubungi operator untuk informasi lebih lanjut.
+                    </p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a href="{{ route('mahasiswa.dashboard') }}" class="px-6 py-3 bg-white border border-navy-600 text-navy-700 font-bold rounded-lg hover:bg-navy-50 transition-colors shadow-sm inline-flex items-center justify-center">
+                        <i class="fas fa-home mr-2"></i>
+                        Kembali ke Dashboard
+                    </a>
+                    <a href="{{ route('mahasiswa.proposal.index') }}" class="px-6 py-3 bg-navy-600 text-white font-bold rounded-lg hover:bg-navy-700 transition-colors shadow-md inline-flex items-center justify-center">
+                        <i class="fas fa-eye mr-2"></i>
+                        Lihat Proposal Saya
+                    </a>
                 </div>
             </div>
-        </div>
+        </x-ui.card>
     </div>
     @endsection
 @else
 
 @section('styles')
 <style>
-    .form-section {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .form-section:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .section-title {
-        color: var(--primary-color);
-        font-weight: bold;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--primary-color);
-        display: flex;
-        align-items: center;
-    }
-    
-    .form-label {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0.5rem;
-    }
-    
-    .form-control:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.2rem rgba(139, 58, 58, 0.25);
-    }
-    
-    .btn-submit {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        border: none;
-        padding: 1rem 3rem;
-        font-weight: bold;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(139, 58, 58, 0.4);
-    }
-    
-    .member-group {
-        border: 1px solid #dee2e6;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        transition: all 0.3s ease;
-    }
-    
-    .member-group:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .member-title {
-        color: var(--primary-color);
-        font-weight: bold;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-    }
-    
     .file-upload-area {
-        border: 2px dashed #dee2e6;
-        border-radius: 12px;
-        padding: 3rem 2rem;
-        text-align: center;
         transition: all 0.3s ease;
-        background-color: #f8f9fa;
-        cursor: pointer;
     }
-    
-    .file-upload-area:hover {
-        border-color: var(--primary-color);
-        background-color: rgba(139, 58, 58, 0.05);
-    }
-    
     .file-upload-area.dragover {
-        border-color: var(--primary-color);
-        background-color: rgba(139, 58, 58, 0.1);
+        border-color: var(--color-navy-500);
+        background-color: var(--color-navy-50);
         transform: scale(1.02);
     }
-    
-    .file-upload-icon {
-        font-size: 3rem;
-        color: var(--primary-color);
-        margin-bottom: 1rem;
-    }
-    
     .file-info {
-        background-color: #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 1rem;
         display: none;
     }
-    
     .file-info.show {
         display: block;
     }
-    
-    .progress-bar-custom {
-        height: 8px;
-        border-radius: 4px;
-        background-color: #e9ecef;
-        overflow: hidden;
-        margin-top: 0.5rem;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-    
-    .required-field::after {
-        content: " *";
-        color: #dc3545;
-    }
-    
-    .form-floating {
-        margin-bottom: 1rem;
-    }
-    
-    .form-floating > .form-control {
-        padding-top: 1.625rem;
-        padding-bottom: 0.625rem;
-    }
-    
-    .form-floating > label {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        padding: 1rem 0.75rem;
-        pointer-events: none;
-        border: 1px solid transparent;
-        transform-origin: 0 0;
-        transition: opacity .1s ease-in-out,transform .1s ease-in-out;
-    }
-    
-    .form-floating > .form-control:focus ~ label,
-    .form-floating > .form-control:not(:placeholder-shown) ~ label {
-        opacity: .65;
-        transform: scale(.85) translateY(-0.5rem) translateX(0.15rem);
-    }
-
     .error-highlight {
-        border-color: #dc3545 !important;
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
     }
-
     .error-message {
-        color: #dc3545;
-        font-size: 0.875rem;
+        color: #dc2626;
+        font-size: 0.75rem;
         margin-top: 0.25rem;
         display: none;
     }
-
     .error-message.show {
         display: block;
-    }
-
-    .btn-submit:disabled {
-        background: #6c757d;
-        border-color: #6c757d;
-        cursor: not-allowed;
-        opacity: 0.6;
-    }
-
-    .btn-submit:disabled:hover {
-        transform: none;
-        box-shadow: none;
-    }
-
-    .submit-help-text {
-        transition: all 0.3s ease;
-    }
-
-    .submit-help-text.ready {
-        color: #28a745;
-    }
-
-    .submit-help-text.incomplete {
-        color: #dc3545;
     }
 </style>
 @endsection
@@ -251,113 +80,102 @@
 @endif
 
 @section('content')
-<div class="container-fluid">
-                <x-breadcrumb :items="[
-                    ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
-                    ['label' => 'Ajukan Proposal', 'active' => true],
-                ]" />
+<div class="max-w-5xl mx-auto space-y-6">
+    <x-breadcrumb :items="[
+        ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
+        ['label' => 'Ajukan Proposal', 'active' => true],
+    ]" />
 
-                <x-page-header 
-                    title="Ajukan Proposal PKM" 
-                    subtitle="UNIVERSITAS UDAYANA" />
+    <x-page-header 
+        title="Ajukan Proposal PKM" 
+        subtitle="UNIVERSITAS UDAYANA" />
 
     <!-- Error Alert -->
     @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5 class="alert-heading">
+        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md relative mb-4">
+            <h5 class="text-red-800 font-bold flex items-center mb-2">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 Terdapat Kesalahan dalam Form
             </h5>
-            <p class="mb-2">Mohon perbaiki kesalahan berikut sebelum melanjutkan:</p>
-            <ul class="mb-0">
+            <p class="text-red-700 text-sm mb-2">Mohon perbaiki kesalahan berikut sebelum melanjutkan:</p>
+            <ul class="text-red-700 text-sm list-disc pl-5">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     <!-- Special Error Messages for Duplicate NIMs -->
-    @if($errors->has('nim_duplicate'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5 class="alert-heading">
-                <i class="fas fa-user-times me-2"></i>
-                NIM Sudah Terdaftar dalam Proposal Lain
-            </h5>
-            <p class="mb-2">Beberapa anggota tim sudah terdaftar dalam proposal lain:</p>
-            <ul class="mb-0">
+    @if(isset($errors) && $errors->has('nim_duplicate'))
+        <div class="mb-8">
+            <x-ui.alert type="danger" icon="fas fa-users-slash">
+                <div class="font-bold mb-2">Anggota Tim Sudah Terdaftar:</div>
+                <ul class="list-disc pl-5 space-y-1">
                 @foreach($errors->get('nim_duplicate') as $error)
                     <li>{{ $error }}</li>
                 @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </ul>
+            </x-ui.alert>
         </div>
     @endif
 
-    @if($errors->has('team_nim'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5 class="alert-heading">
-                <i class="fas fa-users-slash me-2"></i>
-                NIM Duplikat dalam Tim
-            </h5>
-            <p class="mb-2">Terdapat NIM yang sama dalam satu tim:</p>
-            <ul class="mb-0">
+    @if(isset($errors) && $errors->has('team_nim'))
+        <div class="mb-8">
+            <x-ui.alert type="warning" icon="fas fa-exclamation-triangle">
+                <div class="font-bold mb-2">NIM Ganda Terdeteksi:</div>
+                <ul class="list-disc pl-5 space-y-1">
                 @foreach($errors->get('team_nim') as $error)
                     <li>{{ $error }}</li>
                 @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </ul>
+            </x-ui.alert>
         </div>
     @endif
 
-    @if($errors->has('team_size'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5 class="alert-heading">
-                <i class="fas fa-users me-2"></i>
-                Jumlah Anggota Tim Tidak Sesuai
-            </h5>
-            <p class="mb-2">Jumlah anggota tim tidak memenuhi ketentuan:</p>
-            <ul class="mb-0">
+    @if(isset($errors) && $errors->has('team_size'))
+        <div class="mb-8">
+            <x-ui.alert type="warning" icon="fas fa-users">
+                <div class="font-bold mb-2">Jumlah Anggota Tim:</div>
+                <ul class="list-disc pl-5 space-y-1">
                 @foreach($errors->get('team_size') as $error)
                     <li>{{ $error }}</li>
                 @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </ul>
+            </x-ui.alert>
         </div>
     @endif
 
-    @if($errors->has('optional_members'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <h5 class="alert-heading">
-                <i class="fas fa-user-plus me-2"></i>
-                Data Anggota Opsional Tidak Lengkap
-            </h5>
-            <p class="mb-2">Jika mengisi data anggota opsional, semua field harus diisi:</p>
-            <ul class="mb-0">
+    @if(isset($errors) && $errors->has('optional_members'))
+        <div class="mb-8">
+            <x-ui.alert type="info" icon="fas fa-info-circle">
+                <div class="font-bold mb-2">Anggota Opsional:</div>
+                <ul class="list-disc pl-5 space-y-1">
                 @foreach($errors->get('optional_members') as $error)
                     <li>{{ $error }}</li>
                 @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </ul>
+            </x-ui.alert>
         </div>
     @endif
 
     <!-- Success Message -->
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md relative mb-4">
+            <div class="flex items-center text-green-800">
+                <i class="fas fa-check-circle me-2"></i>
+                {{ session('success') }}
+            </div>
         </div>
     @endif
 
     <!-- Warning Message -->
     @if(session('warning'))
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            {{ session('warning') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-md relative mb-4">
+            <div class="flex items-center text-yellow-800">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                {{ session('warning') }}
+            </div>
         </div>
     @endif
 
@@ -365,24 +183,24 @@
         @csrf
         
         <!-- Informasi Proposal -->
-        <div class="form-section">
-            <h4 class="section-title">
+        <x-ui.card class="mb-6 p-6">
+            <h4 class="text-lg font-bold text-navy-700 mb-6 pb-2 border-b-2 border-navy-700 flex items-center">
                 <i class="fas fa-clipboard-list me-2"></i>Informasi Proposal PKM
             </h4>
             
-            <div class="row">
-                <div class="col-md-8 mb-3">
-                    <label for="judul" class="form-label required-field">Judul Proposal</label>
-                    <input type="text" class="form-control @error('judul') is-invalid @enderror" id="judul" name="judul" placeholder="Masukkan judul proposal PKM" value="{{ old('judul') }}" required>
-                    <div class="form-text">Judul harus jelas, spesifik, dan mencerminkan isi proposal</div>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div class="md:col-span-8">
+                    <label for="judul" class="block text-sm font-medium text-slate-700 mb-1 required-field">Judul Proposal</label>
+                    <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('judul') border-red-500 @enderror" id="judul" name="judul" placeholder="Masukkan judul proposal PKM" value="{{ old('judul') }}" required>
+                    <div class="text-xs text-slate-500 mt-1">Judul harus jelas, spesifik, dan mencerminkan isi proposal</div>
                     <div class="error-message" id="judul_error"></div>
                     @error('judul')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label for="skim" class="form-label required-field">Skim/Jenis PKM</label>
-                    <select class="form-select @error('skim') is-invalid @enderror" id="skim" name="skim" required>
+                <div class="md:col-span-4">
+                    <label for="skim" class="block text-sm font-medium text-slate-700 mb-1 required-field">Skim/Jenis PKM</label>
+                    <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('skim') border-red-500 @enderror" id="skim" name="skim" required>
                         <option value="">Pilih Skim</option>
                         <optgroup label="PKM Pendanaan">
                             <option value="RE" {{ old('skim') == 'RE' ? 'selected' : '' }}>PKM-RE (Riset Eksak)</option>
@@ -401,26 +219,26 @@
                     </select>
                     <div class="error-message" id="skim_error"></div>
                     @error('skim')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="tahun_ajaran" class="form-label">Tahun Ajaran</label>
-                    <input type="text" class="form-control" id="tahun_ajaran" name="tahun_ajaran" value="{{ \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru() }}" readonly>
+                <div class="md:col-span-6">
+                    <label for="tahun_ajaran" class="block text-sm font-medium text-slate-700 mb-1">Tahun Ajaran</label>
+                    <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm focus:outline-none" id="tahun_ajaran" name="tahun_ajaran" value="{{ \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru() }}" readonly>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="tanggal_pengajuan" class="form-label">Tanggal Pengajuan</label>
-                    <input type="date" class="form-control" id="tanggal_pengajuan" name="tanggal_pengajuan" value="{{ date('Y-m-d') }}" readonly>
+                <div class="md:col-span-6">
+                    <label for="tanggal_pengajuan" class="block text-sm font-medium text-slate-700 mb-1">Tanggal Pengajuan</label>
+                    <input type="date" class="flex h-10 w-full rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm focus:outline-none" id="tanggal_pengajuan" name="tanggal_pengajuan" value="{{ date('Y-m-d') }}" readonly>
                 </div>
                 {{-- Dana Belmawa (Kemendiktisaintek) --}}
-                <div class="col-md-6 mb-3">
-                    <label for="dana_diajukan_belmawa" class="form-label required-field">
-                        <i class="fas fa-university me-1 text-primary"></i>Dana dari Belmawa (Kemendiktisaintek)
+                <div class="md:col-span-6">
+                    <label for="dana_diajukan_belmawa" class="block text-sm font-medium text-slate-700 mb-1 required-field">
+                        <i class="fas fa-university me-1 text-navy-500"></i>Dana dari Belmawa (Kemendiktisaintek)
                     </label>
-                    <div class="input-group">
-                        <span class="input-group-text">Rp</span>
+                    <div class="flex w-full">
+                        <span class="flex items-center px-3 rounded-l-md border border-r-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">Rp</span>
                         <input type="text"
-                            class="form-control js-format-id-int @error('dana_diajukan_belmawa') is-invalid @enderror"
+                            class="flex-1 h-10 rounded-r-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent js-format-id-int @error('dana_diajukan_belmawa') border-red-500 @enderror"
                             id="dana_diajukan_belmawa"
                             name="dana_diajukan_belmawa"
                             placeholder="0"
@@ -428,23 +246,23 @@
                             value="{{ old('dana_diajukan_belmawa') }}"
                             data-dana-type="belmawa">
                     </div>
-                    <div class="form-text" id="dana_belmawa_help_text">
+                    <div class="text-xs text-slate-500 mt-1" id="dana_belmawa_help_text">
                         Rp 0 – Rp 8.000.000
                     </div>
                     <div class="error-message" id="dana_diajukan_belmawa_error"></div>
                     @error('dana_diajukan_belmawa')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
                 {{-- Dana Universitas --}}
-                <div class="col-md-6 mb-3">
-                    <label for="dana_diajukan_operator" class="form-label required-field">
-                        <i class="fas fa-building me-1 text-success"></i>Dana dari Universitas
+                <div class="md:col-span-6">
+                    <label for="dana_diajukan_operator" class="block text-sm font-medium text-slate-700 mb-1 required-field">
+                        <i class="fas fa-building me-1 text-green-600"></i>Dana dari Universitas
                     </label>
-                    <div class="input-group">
-                        <span class="input-group-text">Rp</span>
+                    <div class="flex w-full">
+                        <span class="flex items-center px-3 rounded-l-md border border-r-0 border-slate-300 bg-slate-50 text-slate-500 text-sm">Rp</span>
                         <input type="text"
-                            class="form-control js-format-id-int @error('dana_diajukan_operator') is-invalid @enderror"
+                            class="flex-1 h-10 rounded-r-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent js-format-id-int @error('dana_diajukan_operator') border-red-500 @enderror"
                             id="dana_diajukan_operator"
                             name="dana_diajukan_operator"
                             placeholder="0"
@@ -452,17 +270,17 @@
                             value="{{ old('dana_diajukan_operator') }}"
                             data-dana-type="operator">
                     </div>
-                    <div class="form-text" id="dana_operator_help_text">
+                    <div class="text-xs text-slate-500 mt-1" id="dana_operator_help_text">
                         Rp 0 – Rp 2.000.000
                     </div>
                     <div class="error-message" id="dana_diajukan_operator_error"></div>
                     @error('dana_diajukan_operator')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="dosen_pembimbing" class="form-label required-field">Dosen Pendamping</label>
-                    <select class="form-control @error('dosen_pembimbing') is-invalid @enderror" id="dosen_pembimbing" name="dosen_pembimbing" required>
+                <div class="md:col-span-6">
+                    <label for="dosen_pembimbing" class="block text-sm font-medium text-slate-700 mb-1 required-field">Dosen Pendamping</label>
+                    <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('dosen_pembimbing') border-red-500 @enderror" id="dosen_pembimbing" name="dosen_pembimbing" required>
                         <option value="">-- Pilih Dosen Pendamping --</option>
                         @foreach($dosens as $dosen)
                             <option value="{{ $dosen->nama_dosen }}" {{ old('dosen_pembimbing') == $dosen->nama_dosen ? 'selected' : '' }}>{{ $dosen->nama_dosen }}{{ $dosen->gelar_belakang ? ', '.$dosen->gelar_belakang : '' }}</option>
@@ -470,38 +288,38 @@
                     </select>
                     <div class="error-message" id="dosen_pembimbing_error"></div>
                     @error('dosen_pembimbing')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
-        </div>
+        </x-ui.card>
 
         <!-- Identitas Ketua Tim -->
-        <div class="form-section">
-            <h4 class="section-title">
+        <x-ui.card class="mb-6 p-6">
+            <h4 class="text-lg font-bold text-navy-700 mb-6 pb-2 border-b-2 border-navy-700 flex items-center">
                 <i class="fas fa-user-tie me-2"></i>Identitas Ketua Tim
             </h4>
             
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="ketua_nama" class="form-label required-field">Nama Lengkap</label>
-                    <input type="text" class="form-control @error('ketua_nama') is-invalid @enderror" id="ketua_nama" name="ketua_nama" placeholder="Masukkan nama lengkap" value="{{ old('ketua_nama') }}" required>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="ketua_nama" class="block text-sm font-medium text-slate-700 mb-1 required-field">Nama Lengkap</label>
+                    <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('ketua_nama') border-red-500 @enderror" id="ketua_nama" name="ketua_nama" placeholder="Masukkan nama lengkap" value="{{ old('ketua_nama') }}" required>
                     <div class="error-message" id="ketua_nama_error"></div>
                     @error('ketua_nama')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="ketua_nim" class="form-label required-field">NIM</label>
-                    <input type="text" class="form-control @error('ketua_nim') is-invalid @enderror" id="ketua_nim" name="ketua_nim" placeholder="Masukkan NIM" value="{{ old('ketua_nim') }}" required>
+                <div>
+                    <label for="ketua_nim" class="block text-sm font-medium text-slate-700 mb-1 required-field">NIM</label>
+                    <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('ketua_nim') border-red-500 @enderror" id="ketua_nim" name="ketua_nim" placeholder="Masukkan NIM" value="{{ old('ketua_nim') }}" required>
                     <div class="error-message" id="ketua_nim_error"></div>
                     @error('ketua_nim')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="ketua_fakultas" class="form-label required-field">Fakultas</label>
-                    <select class="form-select @error('ketua_fakultas') is-invalid @enderror" id="ketua_fakultas" name="ketua_fakultas" required>
+                <div>
+                    <label for="ketua_fakultas" class="block text-sm font-medium text-slate-700 mb-1 required-field">Fakultas</label>
+                    <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('ketua_fakultas') border-red-500 @enderror" id="ketua_fakultas" name="ketua_fakultas" required>
                         <option value="">-- Pilih Fakultas --</option>
                         @foreach($fakultas as $fak)
                             <option value="{{ $fak->nama_fakultas }}" {{ old('ketua_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
@@ -509,76 +327,78 @@
                     </select>
                     <div class="error-message" id="ketua_fakultas_error"></div>
                     @error('ketua_fakultas')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="ketua_prodi" class="form-label required-field">Program Studi</label>
-                    <select class="form-select @error('ketua_prodi') is-invalid @enderror" id="ketua_prodi" name="ketua_prodi" required>
+                <div>
+                    <label for="ketua_prodi" class="block text-sm font-medium text-slate-700 mb-1 required-field">Program Studi</label>
+                    <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('ketua_prodi') border-red-500 @enderror" id="ketua_prodi" name="ketua_prodi" required>
                         <option value="">-- Pilih Program Studi --</option>
                     </select>
                     <div class="error-message" id="ketua_prodi_error"></div>
                     @error('ketua_prodi')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="ketua_email" class="form-label required-field">Email</label>
-                    <input type="email" class="form-control @error('ketua_email') is-invalid @enderror" id="ketua_email" name="ketua_email" placeholder="Masukkan email" value="{{ old('ketua_email') }}" required>
+                <div>
+                    <label for="ketua_email" class="block text-sm font-medium text-slate-700 mb-1 required-field">Email</label>
+                    <input type="email" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('ketua_email') border-red-500 @enderror" id="ketua_email" name="ketua_email" placeholder="Masukkan email" value="{{ old('ketua_email') }}" required>
                     <div class="error-message" id="ketua_email_error"></div>
                     @error('ketua_email')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="ketua_no_hp" class="form-label required-field">No. HP</label>
-                    <input type="tel" class="form-control @error('ketua_no_hp') is-invalid @enderror" id="ketua_no_hp" name="ketua_no_hp" placeholder="Masukkan nomor HP" value="{{ old('ketua_no_hp') }}" required>
+                <div>
+                    <label for="ketua_no_hp" class="block text-sm font-medium text-slate-700 mb-1 required-field">No. HP</label>
+                    <input type="tel" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('ketua_no_hp') border-red-500 @enderror" id="ketua_no_hp" name="ketua_no_hp" placeholder="Masukkan nomor HP" value="{{ old('ketua_no_hp') }}" required>
                     <div class="error-message" id="ketua_no_hp_error"></div>
                     @error('ketua_no_hp')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
-        </div>
+        </x-ui.card>
 
         <!-- Anggota Tim -->
-        <div class="form-section">
-            <h4 class="section-title">
+        <x-ui.card class="mb-6 p-6">
+            <h4 class="text-lg font-bold text-navy-700 mb-6 pb-2 border-b-2 border-navy-700 flex items-center">
                 <i class="fas fa-users me-2"></i>Anggota Tim
             </h4>
-            <div class="alert alert-info mb-3">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Ketentuan Anggota Tim:</strong>
-                <ul class="mb-0 mt-2">
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-md mb-6">
+                <div class="flex items-center mb-2 text-blue-800 font-bold">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Ketentuan Anggota Tim:
+                </div>
+                <ul class="list-disc pl-5 text-sm text-blue-700 space-y-1">
                     <li><strong>Total Tim:</strong> Minimal 3 orang, maksimal 5 orang</li>
                 </ul>
             </div>
             
             <!-- Anggota 1 -->
-            <div class="member-group">
-                <div class="member-title">
-                    <i class="fas fa-user me-2"></i>Anggota 1 <span class="badge bg-danger ms-2">Wajib</span>
+            <div class="border border-slate-200 rounded-xl p-6 mb-6 bg-slate-50 hover:border-navy-400 hover:shadow-md transition-all duration-300">
+                <div class="text-navy-700 font-bold mb-4 flex items-center">
+                    <i class="fas fa-user me-2"></i>Anggota 1 <span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full ms-2">Wajib</span>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota1_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control @error('anggota1_nama') is-invalid @enderror" id="anggota1_nama" name="anggota1_nama" placeholder="Masukkan nama" value="{{ old('anggota1_nama') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="anggota1_nama" class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota1_nama') border-red-500 @enderror" id="anggota1_nama" name="anggota1_nama" placeholder="Masukkan nama" value="{{ old('anggota1_nama') }}">
                         <div class="error-message" id="anggota1_nama_error"></div>
                         @error('anggota1_nama')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota1_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control @error('anggota1_nim') is-invalid @enderror" id="anggota1_nim" name="anggota1_nim" placeholder="Masukkan NIM" value="{{ old('anggota1_nim') }}">
+                    <div>
+                        <label for="anggota1_nim" class="block text-sm font-medium text-slate-700 mb-1">NIM</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota1_nim') border-red-500 @enderror" id="anggota1_nim" name="anggota1_nim" placeholder="Masukkan NIM" value="{{ old('anggota1_nim') }}">
                         <div class="error-message" id="anggota1_nim_error"></div>
                         @error('anggota1_nim')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota1_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select @error('anggota1_fakultas') is-invalid @enderror" id="anggota1_fakultas" name="anggota1_fakultas">
+                    <div>
+                        <label for="anggota1_fakultas" class="block text-sm font-medium text-slate-700 mb-1">Fakultas</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota1_fakultas') border-red-500 @enderror" id="anggota1_fakultas" name="anggota1_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
                                 <option value="{{ $fak->nama_fakultas }}" {{ old('anggota1_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
@@ -586,63 +406,63 @@
                         </select>
                         <div class="error-message" id="anggota1_fakultas_error"></div>
                         @error('anggota1_fakultas')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota1_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select @error('anggota1_prodi') is-invalid @enderror" id="anggota1_prodi" name="anggota1_prodi">
+                    <div>
+                        <label for="anggota1_prodi" class="block text-sm font-medium text-slate-700 mb-1">Program Studi</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota1_prodi') border-red-500 @enderror" id="anggota1_prodi" name="anggota1_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota1_prodi_error"></div>
                         @error('anggota1_prodi')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota1_email" class="form-label">Email</label>
-                        <input type="email" class="form-control @error('anggota1_email') is-invalid @enderror" id="anggota1_email" name="anggota1_email" placeholder="Masukkan email" value="{{ old('anggota1_email') }}">
+                    <div>
+                        <label for="anggota1_email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota1_email') border-red-500 @enderror" id="anggota1_email" name="anggota1_email" placeholder="Masukkan email" value="{{ old('anggota1_email') }}">
                         <div class="error-message" id="anggota1_email_error"></div>
                         @error('anggota1_email')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota1_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control @error('anggota1_no_hp') is-invalid @enderror" id="anggota1_no_hp" name="anggota1_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota1_no_hp') }}">
+                    <div>
+                        <label for="anggota1_no_hp" class="block text-sm font-medium text-slate-700 mb-1">No. HP</label>
+                        <input type="tel" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota1_no_hp') border-red-500 @enderror" id="anggota1_no_hp" name="anggota1_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota1_no_hp') }}">
                         <div class="error-message" id="anggota1_no_hp_error"></div>
                         @error('anggota1_no_hp')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
             </div>
 
             <!-- Anggota 2 -->
-            <div class="member-group">
-                <div class="member-title">
-                    <i class="fas fa-user me-2"></i>Anggota 2 <span class="badge bg-danger ms-2">Wajib</span>
+            <div class="border border-slate-200 rounded-xl p-6 mb-6 bg-slate-50 hover:border-navy-400 hover:shadow-md transition-all duration-300">
+                <div class="text-navy-700 font-bold mb-4 flex items-center">
+                    <i class="fas fa-user me-2"></i>Anggota 2 <span class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full ms-2">Wajib</span>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota2_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control @error('anggota2_nama') is-invalid @enderror" id="anggota2_nama" name="anggota2_nama" placeholder="Masukkan nama" value="{{ old('anggota2_nama') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="anggota2_nama" class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota2_nama') border-red-500 @enderror" id="anggota2_nama" name="anggota2_nama" placeholder="Masukkan nama" value="{{ old('anggota2_nama') }}">
                         <div class="error-message" id="anggota2_nama_error"></div>
                         @error('anggota2_nama')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota2_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control @error('anggota2_nim') is-invalid @enderror" id="anggota2_nim" name="anggota2_nim" placeholder="Masukkan NIM" value="{{ old('anggota2_nim') }}">
+                    <div>
+                        <label for="anggota2_nim" class="block text-sm font-medium text-slate-700 mb-1">NIM</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota2_nim') border-red-500 @enderror" id="anggota2_nim" name="anggota2_nim" placeholder="Masukkan NIM" value="{{ old('anggota2_nim') }}">
                         <div class="error-message" id="anggota2_nim_error"></div>
                         @error('anggota2_nim')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota2_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select @error('anggota2_fakultas') is-invalid @enderror" id="anggota2_fakultas" name="anggota2_fakultas">
+                    <div>
+                        <label for="anggota2_fakultas" class="block text-sm font-medium text-slate-700 mb-1">Fakultas</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota2_fakultas') border-red-500 @enderror" id="anggota2_fakultas" name="anggota2_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
                                 <option value="{{ $fak->nama_fakultas }}" {{ old('anggota2_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
@@ -650,63 +470,63 @@
                         </select>
                         <div class="error-message" id="anggota2_fakultas_error"></div>
                         @error('anggota2_fakultas')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota2_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select @error('anggota2_prodi') is-invalid @enderror" id="anggota2_prodi" name="anggota2_prodi">
+                    <div>
+                        <label for="anggota2_prodi" class="block text-sm font-medium text-slate-700 mb-1">Program Studi</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota2_prodi') border-red-500 @enderror" id="anggota2_prodi" name="anggota2_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota2_prodi_error"></div>
                         @error('anggota2_prodi')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota2_email" class="form-label">Email</label>
-                        <input type="email" class="form-control @error('anggota2_email') is-invalid @enderror" id="anggota2_email" name="anggota2_email" placeholder="Masukkan email" value="{{ old('anggota2_email') }}">
+                    <div>
+                        <label for="anggota2_email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota2_email') border-red-500 @enderror" id="anggota2_email" name="anggota2_email" placeholder="Masukkan email" value="{{ old('anggota2_email') }}">
                         <div class="error-message" id="anggota2_email_error"></div>
                         @error('anggota2_email')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota2_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control @error('anggota2_no_hp') is-invalid @enderror" id="anggota2_no_hp" name="anggota2_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota2_no_hp') }}">
+                    <div>
+                        <label for="anggota2_no_hp" class="block text-sm font-medium text-slate-700 mb-1">No. HP</label>
+                        <input type="tel" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota2_no_hp') border-red-500 @enderror" id="anggota2_no_hp" name="anggota2_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota2_no_hp') }}">
                         <div class="error-message" id="anggota2_no_hp_error"></div>
                         @error('anggota2_no_hp')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
             </div>
 
             <!-- Anggota 3 -->
-            <div class="member-group">
-                <div class="member-title">
-                    <i class="fas fa-user me-2"></i>Anggota 3 <span class="badge bg-secondary ms-2">Opsional</span>
+            <div class="border border-slate-200 rounded-xl p-6 mb-6 bg-slate-50 hover:border-navy-400 hover:shadow-md transition-all duration-300">
+                <div class="text-navy-700 font-bold mb-4 flex items-center">
+                    <i class="fas fa-user me-2"></i>Anggota 3 <span class="bg-slate-200 text-slate-700 text-xs font-semibold px-2 py-1 rounded-full ms-2">Opsional</span>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota3_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control @error('anggota3_nama') is-invalid @enderror" id="anggota3_nama" name="anggota3_nama" placeholder="Masukkan nama" value="{{ old('anggota3_nama') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="anggota3_nama" class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota3_nama') border-red-500 @enderror" id="anggota3_nama" name="anggota3_nama" placeholder="Masukkan nama" value="{{ old('anggota3_nama') }}">
                         <div class="error-message" id="anggota3_nama_error"></div>
                         @error('anggota3_nama')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota3_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control @error('anggota3_nim') is-invalid @enderror" id="anggota3_nim" name="anggota3_nim" placeholder="Masukkan NIM" value="{{ old('anggota3_nim') }}">
+                    <div>
+                        <label for="anggota3_nim" class="block text-sm font-medium text-slate-700 mb-1">NIM</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota3_nim') border-red-500 @enderror" id="anggota3_nim" name="anggota3_nim" placeholder="Masukkan NIM" value="{{ old('anggota3_nim') }}">
                         <div class="error-message" id="anggota3_nim_error"></div>
                         @error('anggota3_nim')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota3_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select @error('anggota3_fakultas') is-invalid @enderror" id="anggota3_fakultas" name="anggota3_fakultas">
+                    <div>
+                        <label for="anggota3_fakultas" class="block text-sm font-medium text-slate-700 mb-1">Fakultas</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota3_fakultas') border-red-500 @enderror" id="anggota3_fakultas" name="anggota3_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
                                 <option value="{{ $fak->nama_fakultas }}" {{ old('anggota3_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
@@ -714,63 +534,63 @@
                         </select>
                         <div class="error-message" id="anggota3_fakultas_error"></div>
                         @error('anggota3_fakultas')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota3_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select @error('anggota3_prodi') is-invalid @enderror" id="anggota3_prodi" name="anggota3_prodi">
+                    <div>
+                        <label for="anggota3_prodi" class="block text-sm font-medium text-slate-700 mb-1">Program Studi</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota3_prodi') border-red-500 @enderror" id="anggota3_prodi" name="anggota3_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota3_prodi_error"></div>
                         @error('anggota3_prodi')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota3_email" class="form-label">Email</label>
-                        <input type="email" class="form-control @error('anggota3_email') is-invalid @enderror" id="anggota3_email" name="anggota3_email" placeholder="Masukkan email" value="{{ old('anggota3_email') }}">
+                    <div>
+                        <label for="anggota3_email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota3_email') border-red-500 @enderror" id="anggota3_email" name="anggota3_email" placeholder="Masukkan email" value="{{ old('anggota3_email') }}">
                         <div class="error-message" id="anggota3_email_error"></div>
                         @error('anggota3_email')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota3_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control @error('anggota3_no_hp') is-invalid @enderror" id="anggota3_no_hp" name="anggota3_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota3_no_hp') }}">
+                    <div>
+                        <label for="anggota3_no_hp" class="block text-sm font-medium text-slate-700 mb-1">No. HP</label>
+                        <input type="tel" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota3_no_hp') border-red-500 @enderror" id="anggota3_no_hp" name="anggota3_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota3_no_hp') }}">
                         <div class="error-message" id="anggota3_no_hp_error"></div>
                         @error('anggota3_no_hp')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
             </div>
 
             <!-- Anggota 4 -->
-            <div class="member-group">
-                <div class="member-title">
-                    <i class="fas fa-user me-2"></i>Anggota 4 <span class="badge bg-secondary ms-2">Opsional</span>
+            <div class="border border-slate-200 rounded-xl p-6 mb-6 bg-slate-50 hover:border-navy-400 hover:shadow-md transition-all duration-300">
+                <div class="text-navy-700 font-bold mb-4 flex items-center">
+                    <i class="fas fa-user me-2"></i>Anggota 4 <span class="bg-slate-200 text-slate-700 text-xs font-semibold px-2 py-1 rounded-full ms-2">Opsional</span>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota4_nama" class="form-label">Nama Lengkap</label>
-                        <input type="text" class="form-control @error('anggota4_nama') is-invalid @enderror" id="anggota4_nama" name="anggota4_nama" placeholder="Masukkan nama" value="{{ old('anggota4_nama') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="anggota4_nama" class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota4_nama') border-red-500 @enderror" id="anggota4_nama" name="anggota4_nama" placeholder="Masukkan nama" value="{{ old('anggota4_nama') }}">
                         <div class="error-message" id="anggota4_nama_error"></div>
                         @error('anggota4_nama')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota4_nim" class="form-label">NIM</label>
-                        <input type="text" class="form-control @error('anggota4_nim') is-invalid @enderror" id="anggota4_nim" name="anggota4_nim" placeholder="Masukkan NIM" value="{{ old('anggota4_nim') }}">
+                    <div>
+                        <label for="anggota4_nim" class="block text-sm font-medium text-slate-700 mb-1">NIM</label>
+                        <input type="text" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota4_nim') border-red-500 @enderror" id="anggota4_nim" name="anggota4_nim" placeholder="Masukkan NIM" value="{{ old('anggota4_nim') }}">
                         <div class="error-message" id="anggota4_nim_error"></div>
                         @error('anggota4_nim')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota4_fakultas" class="form-label">Fakultas</label>
-                        <select class="form-select @error('anggota4_fakultas') is-invalid @enderror" id="anggota4_fakultas" name="anggota4_fakultas">
+                    <div>
+                        <label for="anggota4_fakultas" class="block text-sm font-medium text-slate-700 mb-1">Fakultas</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota4_fakultas') border-red-500 @enderror" id="anggota4_fakultas" name="anggota4_fakultas">
                             <option value="">-- Pilih Fakultas --</option>
                             @foreach($fakultas as $fak)
                                 <option value="{{ $fak->nama_fakultas }}" {{ old('anggota4_fakultas') == $fak->nama_fakultas ? 'selected' : '' }}>{{ $fak->nama_fakultas }}</option>
@@ -778,105 +598,109 @@
                         </select>
                         <div class="error-message" id="anggota4_fakultas_error"></div>
                         @error('anggota4_fakultas')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota4_prodi" class="form-label">Program Studi</label>
-                        <select class="form-select @error('anggota4_prodi') is-invalid @enderror" id="anggota4_prodi" name="anggota4_prodi">
+                    <div>
+                        <label for="anggota4_prodi" class="block text-sm font-medium text-slate-700 mb-1">Program Studi</label>
+                        <select class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota4_prodi') border-red-500 @enderror" id="anggota4_prodi" name="anggota4_prodi">
                             <option value="">-- Pilih Program Studi --</option>
                         </select>
                         <div class="error-message" id="anggota4_prodi_error"></div>
                         @error('anggota4_prodi')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota4_email" class="form-label">Email</label>
-                        <input type="email" class="form-control @error('anggota4_email') is-invalid @enderror" id="anggota4_email" name="anggota4_email" placeholder="Masukkan email" value="{{ old('anggota4_email') }}">
+                    <div>
+                        <label for="anggota4_email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                        <input type="email" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota4_email') border-red-500 @enderror" id="anggota4_email" name="anggota4_email" placeholder="Masukkan email" value="{{ old('anggota4_email') }}">
                         <div class="error-message" id="anggota4_email_error"></div>
                         @error('anggota4_email')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="anggota4_no_hp" class="form-label">No. HP</label>
-                        <input type="tel" class="form-control @error('anggota4_no_hp') is-invalid @enderror" id="anggota4_no_hp" name="anggota4_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota4_no_hp') }}">
+                    <div>
+                        <label for="anggota4_no_hp" class="block text-sm font-medium text-slate-700 mb-1">No. HP</label>
+                        <input type="tel" class="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy-400 focus:border-transparent @error('anggota4_no_hp') border-red-500 @enderror" id="anggota4_no_hp" name="anggota4_no_hp" placeholder="Masukkan nomor HP" value="{{ old('anggota4_no_hp') }}">
                         <div class="error-message" id="anggota4_no_hp_error"></div>
                         @error('anggota4_no_hp')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="text-xs text-red-500 mt-1">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
             </div>
-        </div>
+        </x-ui.card>
 
         <!-- Upload Dokumen -->
-        <div class="form-section">
-            <h4 class="section-title">
+        <x-ui.card class="mb-6 p-6">
+            <h4 class="text-lg font-bold text-navy-700 mb-6 pb-2 border-b-2 border-navy-700 flex items-center">
                 <i class="fas fa-upload me-2"></i>Upload Dokumen
             </h4>
             
             <!-- Upload Proposal -->
-            <div class="mb-4">
-                <label class="form-label required-field">File Proposal (PDF)</label>
-                <div class="file-upload-area @error('proposal_file') border-danger @enderror" id="proposalUploadArea">
-                    <div class="file-upload-icon">
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-700 mb-2 required-field">File Proposal (PDF)</label>
+                <div class="file-upload-area border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:bg-slate-50 transition-colors @error('proposal_file') border-red-500 bg-red-50 @enderror" id="proposalUploadArea">
+                    <div class="text-4xl text-navy-500 mb-3">
                         <i class="fas fa-file-pdf"></i>
                     </div>
-                    <h5>Upload File Proposal</h5>
-                    <p class="text-muted">Drag & drop file PDF di sini atau klik untuk memilih file</p>
+                    <h5 class="text-lg font-medium text-slate-800 mb-1">Upload File Proposal</h5>
+                    <p class="text-sm text-slate-500 mb-4">Drag & drop file PDF di sini atau klik untuk memilih file</p>
                     <input type="file" id="proposal_file" name="proposal_file" accept=".pdf" style="display: none;" required>
-                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('proposal_file').click()">
+                    <button type="button" class="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-navy-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50" onclick="document.getElementById('proposal_file').click()">
                         <i class="fas fa-folder-open me-2"></i>Pilih File
                     </button>
                 </div>
-                <div class="file-info" id="proposalFileInfo">
-                    <div class="d-flex justify-content-between align-items-center">
+                <div class="file-info mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50" id="proposalFileInfo">
+                    <div class="flex justify-between items-center mb-2">
                         <div>
-                            <strong id="proposalFileName">Nama file</strong>
-                            <br><small id="proposalFileSize">Ukuran file</small>
+                            <strong class="text-sm text-slate-800 block" id="proposalFileName">Nama file</strong>
+                            <small class="text-xs text-slate-500" id="proposalFileSize">Ukuran file</small>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile('proposal')">
+                        <button type="button" class="text-red-500 hover:text-red-700 p-1" onclick="removeFile('proposal')">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
-                    <div class="progress-bar-custom">
-                        <div class="progress-fill" id="proposalProgress"></div>
+                    <div class="w-full bg-slate-200 rounded-full h-1.5 mb-1 overflow-hidden">
+                        <div class="bg-navy-500 h-1.5 rounded-full transition-all duration-300" id="proposalProgress" style="width: 0%"></div>
                     </div>
                 </div>
                 @error('proposal_file')
-                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                    <div class="text-xs text-red-500 mt-2 block">{{ $message }}</div>
                 @enderror
             </div>
 
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Ketentuan Upload:</strong>
-                <ul class="mb-0 mt-2">
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-md mb-4">
+                <div class="flex items-center mb-2 text-blue-800 font-bold">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Ketentuan Upload:
+                </div>
+                <ul class="list-disc pl-5 text-sm text-blue-700 space-y-1">
                     <li>Format file harus PDF.  </li>
                     <li>Ukuran maksimal 5MB per file.</li>
                     <li>File proposal harus lengkap sesuai template.</li>
                 </ul>
             </div>
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <strong>Perhatian Mahasiswa:</strong>
-                <ul class="mb-0 mt-2">
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md">
+                <div class="flex items-center mb-2 text-red-800 font-bold">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Perhatian Mahasiswa:
+                </div>
+                <ul class="list-disc pl-5 text-sm text-red-700 space-y-1">
                     <li>Pastikan anggota tim tidak pernah ikut mengajukan proposal di tahun ini.</li>
                     <li>Jika mahasiswa ingin keluar dari sebuah tim setelah pengajuan, disarankan untuk menghubungi dosen pendamping proposal untuk menolak validasi proposal.</li>
                 </ul>
             </div>
 
-        </div>
+        </x-ui.card>
 
         <!-- Submit Button -->
-        <div class="text-center">
-            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn" disabled>
+        <div class="text-center mt-8 mb-4">
+            <button type="submit" class="inline-flex items-center justify-center rounded-md bg-navy-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" id="submitBtn" disabled>
                 <i class="fas fa-paper-plane me-2"></i>Ajukan Proposal
             </button>
-            <div class="mt-2">
-                <small class="text-muted" id="submitHelpText">
+            <div class="mt-3">
+                <small class="text-sm text-slate-500" id="submitHelpText">
                     <i class="fas fa-info-circle me-1"></i>
                     Lengkapi semua field wajib untuk mengaktifkan tombol submit
                 </small>
@@ -905,7 +729,7 @@
     
     // Prepare error message for JavaScript
     $errorMessage = null;
-    if ($errors->any()) {
+    if (isset($errors) && $errors->any()) {
         if ($errors->has('nim_duplicate')) {
             $errorMessage = 'Beberapa anggota tim sudah terdaftar dalam proposal lain. Silakan ganti anggota tim.';
         } elseif ($errors->has('team_nim')) {
@@ -1423,47 +1247,56 @@
         const confirmed = await new Promise((resolve) => {
             // Create custom modal confirmation
             const modal = document.createElement('div');
-            modal.className = 'modal fade';
+            modal.className = 'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-slate-900/50 p-4 sm:p-0 backdrop-blur-sm transition-opacity';
             modal.innerHTML = `
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content" style="background: #343a40; color: white; border: 1px solid #495057;">
-                        <div class="modal-header" style="border-bottom: 1px solid #495057;">
-                            <h5 class="modal-title" style="color: white;">
-                                <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
-                                Konfirmasi Pengajuan Proposal
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="this.closest('.modal').remove()"></button>
-                        </div>
-                        <div class="modal-body ">
-                            <p class="mb-3">Apakah Anda yakin ingin mengajukan proposal ini?</p>
-                            <div class="alert alert-warning mb-0" style="background: rgba(255, 254, 250, 0.84); border-color: #ffc107;">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Perhatian:</strong> Data yang sudah disubmit tidak dapat diubah.
+                <div class="relative w-full max-w-md transform overflow-hidden rounded-xl bg-white text-left align-middle shadow-xl transition-all">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-lg font-bold leading-6 text-navy-700">Konfirmasi Pengajuan Proposal</h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-slate-500 mb-4">Apakah Anda yakin ingin mengajukan proposal ini?</p>
+                                    <div class="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0"><i class="fas fa-info-circle text-yellow-500 mt-0.5"></i></div>
+                                            <div class="ml-3"><p class="text-sm text-yellow-800"><strong>Perhatian:</strong> Data yang sudah disubmit tidak dapat diubah.</p></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="modal-footer" style="border-top: 1px solid #495057;">
-                            <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('canceled'))">
-                                <i class="fas fa-times me-2"></i>Batal
-                            </button>
-                            <button type="button" class="btn btn-primary" onclick="this.closest('.modal').remove(); this.closest('.modal').dispatchEvent(new Event('confirmed'))">
-                                <i class="fas fa-check me-2"></i>Ya, Ajukan Proposal
-                            </button>
-                        </div>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" class="inline-flex w-full justify-center rounded-md bg-navy-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-navy-700 sm:ml-3 sm:w-auto" onclick="this.closest('.fixed').dispatchEvent(new Event('confirmed'))">
+                            <i class="fas fa-check me-2 mt-0.5"></i>Ya, Ajukan
+                        </button>
+                        <button type="button" class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto" onclick="this.closest('.fixed').dispatchEvent(new Event('canceled'))">
+                            Batal
+                        </button>
                     </div>
                 </div>
             `;
             
             document.body.appendChild(modal);
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
             
-            modal.addEventListener('confirmed', () => resolve(true));
-            modal.addEventListener('canceled', () => resolve(false));
-            
-            // Close on backdrop click
-            modal.addEventListener('hidden.bs.modal', () => {
+            modal.addEventListener('confirmed', () => {
+                modal.remove();
+                resolve(true);
+            });
+            modal.addEventListener('canceled', () => {
                 modal.remove();
                 resolve(false);
+            });
+            
+            // Close on backdrop click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                    resolve(false);
+                }
             });
         });
         
@@ -1473,7 +1306,7 @@
 
         // Show loading
         const submitBtn = document.getElementById('submitBtn');
-        submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Mengajukan...';
+        submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Mengajukan...';
         submitBtn.disabled = true;
 
         showToast('Proposal sedang diajukan...', 'info');
@@ -1631,16 +1464,12 @@
         // Update button state
         if (isValid) {
             submitBtn.disabled = false;
-            submitBtn.classList.remove('btn-secondary');
-            submitBtn.classList.add('btn-primary');
             submitHelpText.textContent = '✓ Form sudah lengkap, Anda dapat mengajukan proposal';
-            submitHelpText.className = 'mt-2 small text-success submit-help-text ready';
+            submitHelpText.className = 'mt-3 text-sm text-green-600 font-medium block';
         } else {
             submitBtn.disabled = true;
-            submitBtn.classList.remove('btn-primary');
-            submitBtn.classList.add('btn-secondary');
             submitHelpText.textContent = validationErrors.length > 0 ? validationErrors[0] : 'Form belum lengkap';
-            submitHelpText.className = 'mt-2 small text-danger submit-help-text incomplete';
+            submitHelpText.className = 'mt-3 text-sm text-red-500 block';
         }
     }
 
@@ -2426,11 +2255,38 @@
         } else {
             // Fallback toast implementation
             const toast = document.createElement('div');
-            toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} position-fixed`;
-            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            
+            let bgColor, iconClass, textColor;
+            if (type === 'error') {
+                bgColor = 'bg-red-100 border-red-500';
+                textColor = 'text-red-800';
+                iconClass = 'fas fa-exclamation-circle text-red-500';
+            } else if (type === 'success') {
+                bgColor = 'bg-emerald-100 border-emerald-500';
+                textColor = 'text-emerald-800';
+                iconClass = 'fas fa-check-circle text-emerald-500';
+            } else if (type === 'warning') {
+                bgColor = 'bg-amber-100 border-amber-500';
+                textColor = 'text-amber-800';
+                iconClass = 'fas fa-exclamation-triangle text-amber-500';
+            } else {
+                bgColor = 'bg-blue-100 border-blue-500';
+                textColor = 'text-blue-800';
+                iconClass = 'fas fa-info-circle text-blue-500';
+            }
+
+            toast.className = `flex items-center p-4 mb-4 text-sm rounded-lg border shadow-lg transition-opacity duration-300 fixed z-[9999] top-5 right-5 min-w-[300px] ${bgColor} ${textColor}`;
+            
             toast.innerHTML = `
-                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-                <strong>${type === 'error' ? 'Error' : type === 'success' ? 'Sukses' : type === 'warning' ? 'Peringatan' : 'Info'}:</strong> ${message}
+                <i class="${iconClass} text-xl mr-3"></i>
+                <div class="font-medium mr-4">
+                    <strong class="block mb-1">${type === 'error' ? 'Error' : type === 'success' ? 'Sukses' : type === 'warning' ? 'Peringatan' : 'Info'}:</strong>
+                    ${message}
+                </div>
+                <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 focus:ring-slate-400 p-1.5 hover:bg-slate-200 inline-flex h-8 w-8 transition-colors text-slate-500" onclick="this.parentElement.remove()" aria-label="Close">
+                    <span class="sr-only">Close</span>
+                    <i class="fas fa-times"></i>
+                </button>
             `;
             
             document.body.appendChild(toast);

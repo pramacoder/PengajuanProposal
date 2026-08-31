@@ -80,7 +80,7 @@
                                     <td class="px-4 py-3" style="color:var(--text-400);">{{ $index + 1 }}</td>
                                     <td class="py-3">
                                         <div class="fw-medium text-truncate" style="max-width:240px;color:var(--text-900);">
-                                            {{ Str::limit($proposal->judul_proposal, 50) }}
+                                            {{ Str::limit($proposal->judul, 50) }}
                                         </div>
                                     </td>
                                     <td class="py-3">

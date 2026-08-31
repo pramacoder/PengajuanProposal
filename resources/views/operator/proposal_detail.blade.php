@@ -52,7 +52,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Judul Proposal</label>
-                                <p class="form-control-plaintext">{{ $proposal->judul_proposal }}</p>
+                                <p class="form-control-plaintext">{{ $proposal->judul }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -452,7 +452,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Judul Proposal</label>
-                            <input type="text" class="form-control" value="{{ $proposal->judul_proposal }}" readonly>
+                            <input type="text" class="form-control" value="{{ $proposal->judul }}" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Mahasiswa</label>

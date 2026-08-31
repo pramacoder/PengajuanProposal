@@ -57,7 +57,10 @@ class ProposalModelTest extends TestCase
 
     public function test_dana_formatted_accessor()
     {
-        $proposal = new Proposal(['dana_diajukan' => 15000000]);
+        $proposal = new Proposal([
+            'dana_diajukan_belmawa' => 10000000,
+            'dana_diajukan_operator' => 5000000
+        ]);
         $this->assertEquals('Rp 15.000.000', $proposal->dana_formatted);
     }
 

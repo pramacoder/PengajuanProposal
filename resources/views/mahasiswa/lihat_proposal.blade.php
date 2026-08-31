@@ -968,7 +968,7 @@
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="max-w-7xl mx-auto space-y-6">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'url' => route('mahasiswa.dashboard')],
         ['label' => 'Lihat Proposal', 'active' => true],
@@ -977,217 +977,183 @@
     <!-- Header -->
     <x-page-header 
         title="Data Proposal PKM" 
-
         description="Selamat datang, {{ $user->nama_mhs }}! Berikut adalah daftar proposal PKM yang telah Anda ajukan." />
-    
-
-
 
     <!-- Proposal Cards -->
-    <div class="row" id="proposalCards">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="proposalCards">
         @if($proposals->count() > 0)
             @foreach($proposals as $proposal)
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="proposal-card">
-                        <div class="proposal-header">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <span class="status-badge status-{{ $proposal->status_final === 'revisi' ? 'revisi' : ($proposal->status_final === 'lolos' ? 'approved' : ($proposal->status_final === 'tidak_lolos' ? 'rejected' : strtolower($proposal->status_validasi))) }}">
-                                    @if($proposal->status_final === 'revisi')
-                                        Perlu Revisi
-                                    @elseif($proposal->status_final === 'lolos')
-                                        Lolos
-                                    @elseif($proposal->status_final === 'tidak_lolos')
-                                        Tidak Lolos
-                                    @elseif($proposal->status === 'revisi_submitted')
-                                        Menunggu Review Revisi
-                                    @elseif($proposal->status_validasi == 'pending')
-                                        Menunggu Validasi
-                                    @elseif($proposal->status_validasi == 'valid')
-                                        @if($proposal->status_final == 'lolos')
-                                            Lolos Final
-                                        @elseif($proposal->status_final == 'tidak_lolos')
-                                            Tidak Lolos Final
-                                        @elseif($proposal->status_final == 'sedang_review')
-                                            Sedang Direview
-                                        @else
-                                            Valid (Menunggu Review)
-                                        @endif
-                                    @elseif($proposal->status_validasi == 'tidak_valid')
-                                        Ditolak
+                <x-ui.card class="flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
+                    <!-- Card Header -->
+                    <div class="bg-gradient-to-br from-navy-700 to-navy-900 text-white p-5 rounded-t-xl relative">
+                        <div class="flex justify-between items-start mb-3">
+                            <x-ui.badge variant="{{ $proposal->status_final === 'revisi' ? 'warning' : ($proposal->status_final === 'lolos' ? 'success' : ($proposal->status_final === 'tidak_lolos' ? 'danger' : 'info')) }}">
+                                @if($proposal->status_final === 'revisi')
+                                    Perlu Revisi
+                                @elseif($proposal->status_final === 'lolos')
+                                    Lolos
+                                @elseif($proposal->status_final === 'tidak_lolos')
+                                    Tidak Lolos
+                                @elseif($proposal->status === 'revisi_submitted')
+                                    Menunggu Review Revisi
+                                @elseif($proposal->status_validasi == 'pending')
+                                    Menunggu Validasi
+                                @elseif($proposal->status_validasi == 'valid')
+                                    @if($proposal->status_final == 'lolos')
+                                        Lolos Final
+                                    @elseif($proposal->status_final == 'tidak_lolos')
+                                        Tidak Lolos Final
+                                    @elseif($proposal->status_final == 'sedang_review')
+                                        Sedang Direview
                                     @else
-                                        {{ ucfirst(str_replace('_', ' ', $proposal->status_validasi)) }}
+                                        Valid (Menunggu Review)
                                     @endif
-                                </span>
-                                
-                            </div>
-                            <div class="proposal-title">
-                            {{ $proposal->judul_proposal }}
-                            </div>
-                            <div class="proposal-meta">
+                                @elseif($proposal->status_validasi == 'tidak_valid')
+                                    Ditolak
+                                @else
+                                    {{ ucfirst(str_replace('_', ' ', $proposal->status_validasi)) }}
+                                @endif
+                            </x-ui.badge>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2 leading-snug line-clamp-2">
+                            {{ $proposal->judul }}
+                        </h3>
+                        <div class="text-sm text-navy-100 flex flex-wrap gap-y-1">
+                            <div class="w-full">
                                 <i class="fas fa-calendar-alt me-1"></i>
                                 Diajukan: {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d F Y') }}
-                                
-                                @php
-                                    $userRole = null;
-                                    if ($proposal->id_mahasiswa == $user->id_mahasiswa) {
-                                        $userRole = 'Pengaju';
-                                    } else {
-                                        $userTeamMember = $proposal->semuaAnggotaTim->where('nim', $user->nim)->first();
-                                        if ($userTeamMember) {
-                                            $userRole = $userTeamMember->is_ketua ? 'Ketua' : 'Anggota';
-                                        }
+                            </div>
+                            @php
+                                $userRole = null;
+                                if ($proposal->id_mahasiswa == $user->id_mahasiswa) {
+                                    $userRole = 'Pengaju';
+                                } else {
+                                    $userTeamMember = $proposal->semuaAnggotaTim->where('nim', $user->nim)->first();
+                                    if ($userTeamMember) {
+                                        $userRole = $userTeamMember->is_ketua ? 'Ketua' : 'Anggota';
                                     }
-                                @endphp
-                                
-                                @if($userRole)
-                                    <br>
-                                    <span class="badge bg-info me-1">
+                                }
+                            @endphp
+                            
+                            @if($userRole)
+                                <div class="w-full mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-white/20 text-white">
                                         <i class="fas fa-user me-1"></i>{{ $userRole }}
                                     </span>
-                                @endif
-                            </div>
+                                </div>
+                            @endif
                         </div>
-                        
-                        <div class="proposal-body">
-                            <div class="info-row">
-                                <span class="info-label">Skim</span>
-                                <span class="info-value">{{ $proposal->skim }}</span>
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="p-5 flex-grow flex flex-col justify-between">
+                        <div class="space-y-3 mb-5">
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Skim</span>
+                                <span class="text-sm text-slate-800">{{ $proposal->skim }}</span>
                             </div>
-                            <div class="info-row">
-                                <span class="info-label">Ketua Tim</span>
-                                <span class="info-value">
-                                    @php
-                                        $ketua = $proposal->ketuaTim;
-                                    @endphp
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Ketua Tim</span>
+                                <span class="text-sm text-slate-800">
+                                    @php $ketua = $proposal->ketuaTim; @endphp
                                     {{ $ketua ? $ketua->nama_mhs : 'N/A' }}
                                 </span>
                             </div>
-                            <div class="info-row">
-                                <span class="info-label">Dosen Pendamping</span>
-                                <span class="info-value">{{ $proposal->dosen_pembimbing ?? 'N/A' }}</span>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Dosen Pendamping</span>
+                                <span class="text-sm text-slate-800 text-right line-clamp-1 max-w-[150px]">{{ $proposal->dosen_pembimbing ?? 'N/A' }}</span>
                             </div>
-                            <div class="info-row">
-                                <span class="info-label">Dana Belmawa</span>
-                                <span class="info-value text-primary">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Dana Belmawa</span>
+                                <span class="text-sm font-medium text-navy-600">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
                             </div>
-                            <div class="info-row">
-                                <span class="info-label">Dana Universitas</span>
-                                <span class="info-value text-success">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Dana Univ</span>
+                                <span class="text-sm font-medium text-green-600">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
                             </div>
-                            <div class="info-row">
-                                <span class="info-label">Jumlah Anggota</span>
-                                <span class="info-value">@formatId($proposal->semuaAnggotaTim->count()) orang</span>
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Jumlah Anggota</span>
+                                <span class="text-sm text-slate-800">@formatId($proposal->semuaAnggotaTim->count()) orang</span>
                             </div>
+                            
                             @if($proposal->proposalRevisi->count() > 0)
-                            <div class="info-row">
-                                <span class="info-label">Status Revisi</span>
-                                <span class="info-value">
+                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                <span class="text-sm font-semibold text-slate-500">Status Revisi</span>
+                                <div class="text-right">
                                     @php
                                         $revisiTerbaru = $proposal->proposalRevisi->sortByDesc('tanggal_submit')->first();
-                                        
-                                        // Status berdasarkan proposal status
                                         switch($proposal->status) {
-                                            case 'revisi':
-                                                $statusText = 'Menunggu Revisi';
-                                                $statusClass = 'warning';
-                                                break;
-                                            case 'revisi_submitted':
-                                                $statusText = 'Menunggu Hasil Final';
-                                                $statusClass = 'info';
-                                                break;
-                                            case 'lolos':
-                                            case 'tidak_lolos':
-                                                $statusText = 'Selesai';
-                                                $statusClass = 'success';
-                                                break;
-                                            default:
-                                                $statusText = 'Belum Direvisi';
-                                                $statusClass = 'secondary';
-                                                break;
+                                            case 'revisi': $sT = 'Menunggu Revisi'; $sC = 'text-amber-600'; break;
+                                            case 'revisi_submitted': $sT = 'Menunggu Hasil Final'; $sC = 'text-blue-600'; break;
+                                            case 'lolos': case 'tidak_lolos': $sT = 'Selesai'; $sC = 'text-green-600'; break;
+                                            default: $sT = 'Belum Direvisi'; $sC = 'text-slate-500'; break;
                                         }
                                     @endphp
-                                    <span class="text-{{ $statusClass }}">{{ $statusText }}</span>
-                                    <br><small class="text-muted">{{ $revisiTerbaru->tanggal_submit ? $revisiTerbaru->tanggal_submit->format('d/m/Y H:i') : 'N/A' }}</small>
-                                </span>
+                                    <span class="text-sm font-medium {{ $sC }}">{{ $sT }}</span><br>
+                                    <span class="text-xs text-slate-400">{{ $revisiTerbaru->tanggal_submit ? $revisiTerbaru->tanggal_submit->format('d/m/Y H:i') : 'N/A' }}</span>
+                                </div>
                             </div>
                             @endif
-                            <div class="info-row">
-                                <span class="info-label">Status Validasi</span>
-                                <span class="info-value">
-                                    @if($proposal->status_final === 'revisi')
-                                        <span class="text-warning">Perlu Revisi</span>
-                                    @elseif($proposal->status_validasi == 'pending')
-                                        <span class="text-warning">Menunggu Validasi</span>
-                                    @elseif($proposal->status_validasi == 'valid')
-                                        @if($proposal->status_final == 'lolos')
-                                            <span class="text-success">Lolos Final</span>
-                                        @elseif($proposal->status_final == 'tidak_lolos')
-                                            <span class="text-danger">Tidak Lolos Final</span>
-                                        @elseif($proposal->status_final == 'sedang_review')
-                                            <span class="text-info">Sedang Direview</span>
-                                        @else
-                                            <span class="text-success">Valid (Menunggu Review)</span>
-                                        @endif
-                                    @elseif($proposal->status_validasi == 'tidak_valid')
-                                        <span class="text-danger">Ditolak</span>
-                                    @else
-                                        <span class="text-secondary">{{ ucfirst(str_replace('_', ' ', $proposal->status_validasi)) }}</span>
-                                    @endif
-                                </span>
-                            </div>
                         </div>
                         
-                        <div class="card-actions">
-                            <a href="{{ route('mahasiswa.proposal.show', $proposal->id_proposal) }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-eye me-1"></i>Lihat Detail
+                        <!-- Actions -->
+                        <div class="flex flex-wrap gap-2 mt-auto pt-4 border-t border-slate-100 bg-slate-50 -mx-5 px-5 -mb-5 pb-5 rounded-b-xl">
+                            <a href="{{ route('mahasiswa.proposal.show', $proposal->id_proposal) }}" class="inline-flex items-center justify-center rounded-md bg-navy-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-navy-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-600 transition-colors flex-1">
+                                <i class="fas fa-eye me-1"></i>Detail
                             </a>
+                            
                             @if($proposal->dokumen)
-                            <a href="{{ route('mahasiswa.proposal.download', [$proposal->id_proposal, 'proposal']) }}" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-download me-1"></i>Download
+                            <a href="{{ route('mahasiswa.proposal.download', [$proposal->id_proposal, 'proposal']) }}" class="inline-flex items-center justify-center rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 transition-colors flex-1">
+                                <i class="fas fa-download me-1"></i>Unduh
                             </a>
                             @endif
-                            <button class="btn btn-outline-info btn-sm" onclick="showReviewModal('administrative', '{{ $proposal->id_proposal }}')">
+                            
+                            <button onclick="showReviewModal('administrative', '{{ $proposal->id_proposal }}')" class="inline-flex items-center justify-center rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm ring-1 ring-inset ring-blue-300 hover:bg-blue-50 transition-colors flex-1">
                                 <i class="fas fa-clipboard-check me-1"></i>Review
                             </button>
+                            
                             @if($proposal->status === 'revisi' && $proposal->status_validasi !== 'pending')
-                            <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
+                            <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="inline-flex items-center justify-center rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-400 transition-colors w-full mt-2">
                                 <i class="fas fa-edit me-1"></i>Revisi
                             </a>
                             @elseif($proposal->status === 'revisi' && $proposal->status_validasi === 'pending')
-                            <button class="btn btn-info btn-sm" disabled>
+                            <button class="inline-flex items-center justify-center rounded-md bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 w-full mt-2 cursor-not-allowed opacity-70" disabled>
                                 <i class="fas fa-clock me-1"></i>Menunggu Validasi Dosen
                             </button>
                             @elseif($proposal->status === 'revisi_akhir')
-                            <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="btn btn-warning btn-sm">
+                            <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="inline-flex items-center justify-center rounded-md bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-400 transition-colors w-full mt-2">
                                 <i class="fas fa-edit me-1"></i>Revisi Akhir
                             </a>
                             @elseif($proposal->status === 'revisi_submitted' || $proposal->status === 'validasi_akhir_dosen_univ')
-                            <span class="btn btn-info btn-sm disabled">
+                            <span class="inline-flex items-center justify-center rounded-md bg-blue-100 px-3 py-1.5 text-xs font-semibold text-blue-700 w-full mt-2">
                                 <i class="fas fa-clock me-1"></i>Menunggu Validasi
                             </span>
                             @endif
                         </div>
                     </div>
-                </div>
+                </x-ui.card>
             @endforeach
         @else
             <!-- Empty State -->
-            <div class="col-12">
-                <div class="empty-state">
-                    <i class="fas fa-file-alt"></i>
-                    <h4>Belum Ada Proposal</h4>
-                    <p>Anda belum mengajukan proposal PKM. Mulai dengan mengajukan proposal baru untuk berpartisipasi dalam program PKM.</p>
+            <div class="col-span-full">
+                <div class="text-center py-16 px-4">
+                    <i class="fas fa-file-alt text-6xl text-slate-200 mb-6 block"></i>
+                    <h4 class="text-xl font-bold text-slate-700 mb-3">Belum Ada Proposal</h4>
+                    <p class="text-slate-500 mb-8 max-w-md mx-auto">Anda belum mengajukan proposal PKM. Mulai dengan mengajukan proposal baru untuk berpartisipasi dalam program PKM.</p>
+                    
                     @if(\App\Helpers\RuangKontrolHelper::isPendaftaranActive())
-                        <div class="empty-state-button-wrapper">
-                            <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-lg">
-                                <i class="fas fa-plus"></i>Ajukan Proposal Pertama
+                        <div class="flex justify-center">
+                            <a href="{{ route('mahasiswa.proposal.create') }}" class="inline-flex items-center justify-center rounded-md bg-navy-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-navy-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-600 transition-colors">
+                                <i class="fas fa-plus me-2"></i>Ajukan Proposal Pertama
                             </a>
                         </div>
                     @else
-                        <div class="alert alert-warning">
-                            <i class="fas fa-lock me-2"></i>
-                            <strong>Sistem Pendaftaran Ditutup</strong><br>
-                            Saat ini sistem pendaftaran proposal PKM sedang ditutup oleh operator.
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md max-w-lg mx-auto text-left">
+                            <div class="flex items-center text-amber-800 font-bold mb-1">
+                                <i class="fas fa-lock me-2"></i>
+                                Sistem Pendaftaran Ditutup
+                            </div>
+                            <p class="text-sm text-amber-700 mb-0">Saat ini sistem pendaftaran proposal PKM sedang ditutup oleh operator.</p>
                         </div>
                     @endif
                 </div>
@@ -1197,27 +1163,27 @@
 </div>
 
 <!-- Action Sidebar -->
-<div class="mahasiswa-action-sidebar" id="actionSidebar">
-    <div class="mahasiswa-sidebar-header">
-        <h4><i class="fas fa-tasks me-2"></i>Menu Aksi</h4>
+<div class="fixed top-0 right-0 h-screen w-80 bg-white shadow-[-4px_0_15px_rgba(0,0,0,0.1)] z-[1001] transition-transform duration-300 transform translate-x-full overflow-y-auto" id="actionSidebar">
+    <div class="bg-gradient-to-br from-navy-700 to-navy-900 text-white p-6 text-center">
+        <h4 class="text-xl font-bold m-0"><i class="fas fa-tasks me-2"></i>Menu Aksi</h4>
     </div>
-    <div class="mahasiswa-sidebar-content">
-        <ul class="mahasiswa-sidebar-menu">
+    <div class="p-6">
+        <ul class="space-y-3">
             <li>
-                <a href="#" onclick="showReviewModal('administrative', '{{ $proposals->first()->id_proposal ?? "" }}')">
-                    <i class="fas fa-clipboard-check"></i>
+                <a href="#" onclick="showReviewModal('administrative', '{{ $proposals->first()->id_proposal ?? "" }}')" class="flex items-center p-4 bg-slate-50 rounded-xl text-slate-700 font-medium hover:bg-slate-100 hover:text-navy-700 hover:-translate-y-0.5 hover:shadow-md border-l-4 border-transparent hover:border-navy-600 transition-all duration-300">
+                    <i class="fas fa-clipboard-check text-navy-600 text-xl w-8"></i>
                     <span>Hasil Review Administratif</span>
                 </a>
             </li>
             <li>
-                <a href="#" onclick="showReviewModal('substantive', '{{ $proposals->first()->id_proposal ?? "" }}')">
-                    <i class="fas fa-search"></i>
+                <a href="#" onclick="showReviewModal('substantive', '{{ $proposals->first()->id_proposal ?? "" }}')" class="flex items-center p-4 bg-slate-50 rounded-xl text-slate-700 font-medium hover:bg-slate-100 hover:text-navy-700 hover:-translate-y-0.5 hover:shadow-md border-l-4 border-transparent hover:border-navy-600 transition-all duration-300">
+                    <i class="fas fa-search text-navy-600 text-xl w-8"></i>
                     <span>Hasil Review Substantif</span>
                 </a>
             </li>
             <li>
-                <a href="#" onclick="showReviewModal('final', '{{ $proposals->first()->id_proposal ?? "" }}')">
-                    <i class="fas fa-trophy"></i>
+                <a href="#" onclick="showReviewModal('final', '{{ $proposals->first()->id_proposal ?? "" }}')" class="flex items-center p-4 bg-slate-50 rounded-xl text-slate-700 font-medium hover:bg-slate-100 hover:text-navy-700 hover:-translate-y-0.5 hover:shadow-md border-l-4 border-transparent hover:border-navy-600 transition-all duration-300">
+                    <i class="fas fa-trophy text-navy-600 text-xl w-8"></i>
                     <span>Hasil Final</span>
                 </a>
             </li>
@@ -1226,22 +1192,22 @@
 </div>
 
 <!-- Modal Overlay -->
-<div class="modal-overlay" id="modalOverlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 id="modalTitle">Hasil Review</h5>
-            <button class="modal-close" onclick="closeModal()">
+<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] hidden items-center justify-center transition-opacity opacity-0" id="modalOverlay">
+    <div class="bg-white rounded-2xl w-[90%] max-w-2xl max-h-[90vh] flex flex-col shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+        <div class="bg-navy-900 px-6 py-4 flex justify-between items-center rounded-t-2xl border-b border-navy-800">
+            <h5 class="text-white text-lg font-bold flex items-center gap-2 m-0" id="modalTitle">Hasil Review</h5>
+            <button class="bg-white/10 hover:bg-white/20 text-white/70 hover:text-white w-8 h-8 rounded-lg flex items-center justify-center transition-colors" onclick="closeModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="modal-body" id="modalBody">
+        <div class="p-6 overflow-y-auto bg-slate-50 flex-grow" id="modalBody">
             <!-- Content will be loaded dynamically -->
         </div>
     </div>
 </div>
 
 <!-- Action Toggle Button -->
-<button class="mahasiswa-action-toggle-btn" id="actionToggleBtn" onclick="toggleActionSidebar()">
+<button class="fixed right-6 bottom-6 w-14 h-14 bg-navy-600 hover:bg-navy-700 text-white rounded-full text-2xl shadow-lg hover:shadow-xl transition-all duration-300 z-[1000] hover:scale-110 flex items-center justify-center focus:outline-none" id="actionToggleBtn" onclick="toggleActionSidebar()">
     <i class="fas fa-bars"></i>
 </button>
 @endsection
@@ -1289,19 +1255,35 @@
         const toggleBtn = document.getElementById('actionToggleBtn');
         
         if (actionSidebar) {
-            actionSidebar.classList.toggle('show');
-            toggleBtn.classList.toggle('shifted');
+            actionSidebar.classList.toggle('translate-x-full');
+            actionSidebar.classList.toggle('translate-x-0');
+            
+            if (actionSidebar.classList.contains('translate-x-0')) {
+                toggleBtn.style.right = '340px';
+            } else {
+                toggleBtn.style.right = '24px'; // 1.5rem for right-6
+            }
         }
     }
 
     function showReviewModal(type, proposalId) {
         const modalOverlay = document.getElementById('modalOverlay');
+        const modalContent = document.getElementById('modalContent');
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
         
         // Show loading
-        modalBody.innerHTML = '<div class="text-center"><div class="spinner"></div><p>Memuat data...</p></div>';
-        modalOverlay.classList.add('show');
+        modalBody.innerHTML = '<div class="text-center py-10"><div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-200 border-t-navy-600 mb-4"></div><p class="text-slate-500 font-medium">Memuat data...</p></div>';
+        
+        modalOverlay.classList.remove('hidden');
+        modalOverlay.classList.add('flex');
+        
+        // Trigger reflow for transition
+        void modalOverlay.offsetWidth;
+        
+        modalOverlay.classList.remove('opacity-0');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
         
         // Set modal title based on type
         switch(type) {
@@ -1322,7 +1304,16 @@
 
     function closeModal() {
         const modalOverlay = document.getElementById('modalOverlay');
-        modalOverlay.classList.remove('show');
+        const modalContent = document.getElementById('modalContent');
+        
+        modalOverlay.classList.add('opacity-0');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modalOverlay.classList.remove('flex');
+            modalOverlay.classList.add('hidden');
+        }, 300);
     }
 
     function loadAdministrativeReview(proposalId) {
@@ -1338,10 +1329,10 @@
                     document.getElementById('modalBody').innerHTML = generateAdministrativeReviewHTML(data.data, data.proposal_info);
                 } else {
                     document.getElementById('modalBody').innerHTML = `
-                        <div class="text-center">
-                            <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">Belum ada review administratif</h6>
-                            <p class="text-muted">Review administratif akan muncul di sini setelah proposal direview oleh reviewer.</p>
+                        <div class="text-center py-12">
+                            <i class="fas fa-clipboard-list text-6xl text-slate-300 mb-4 block"></i>
+                            <h6 class="text-lg font-bold text-slate-700 mb-2">Belum ada review administratif</h6>
+                            <p class="text-slate-500">Review administratif akan muncul di sini setelah proposal direview oleh reviewer.</p>
                         </div>
                     `;
                 }
@@ -1349,9 +1340,11 @@
             .catch(error => {
                 console.error('Error:', error);
                 document.getElementById('modalBody').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Error:</strong> Terjadi kesalahan saat memuat data review administratif.
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                        <div class="flex items-center text-red-700 font-bold mb-1">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Error
+                        </div>
+                        <p class="text-sm text-red-600 mb-0">Terjadi kesalahan saat memuat data review administratif.</p>
                     </div>
                 `;
             });
@@ -1380,10 +1373,10 @@
                 } else {
                     console.log('No substantive reviews found or empty data');
                     document.getElementById('modalBody').innerHTML = `
-                        <div class="text-center">
-                            <i class="fas fa-user-check fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">Belum ada review substantif</h6>
-                            <p class="text-muted">Review substantif akan muncul di sini setelah proposal lolos review administratif.</p>
+                        <div class="text-center py-12">
+                            <i class="fas fa-user-check text-6xl text-slate-300 mb-4 block"></i>
+                            <h6 class="text-lg font-bold text-slate-700 mb-2">Belum ada review substantif</h6>
+                            <p class="text-slate-500">Review substantif akan muncul di sini setelah proposal lolos review administratif.</p>
                         </div>
                     `;
                 }
@@ -1391,10 +1384,11 @@
             .catch(error => {
                 console.error('Error loading substantive review:', error);
                 document.getElementById('modalBody').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Error:</strong> Terjadi kesalahan saat memuat data review substantif.
-                        <br><small>Error: ${error.message}</small>
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                        <div class="flex items-center text-red-700 font-bold mb-1">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Error
+                        </div>
+                        <p class="text-sm text-red-600 mb-0">Terjadi kesalahan saat memuat data review substantif.<br><small>${error.message}</small></p>
                     </div>
                 `;
             });
@@ -1439,44 +1433,41 @@
 
     function generateAdministrativeReviewHTML(reviews, proposalInfo) {
         let html = `
-            <div class="review-section">
-                <div class="proposal-info mb-3">
-                    <h6 class="text-primary"><i class="fas fa-file-alt me-2"></i>Informasi Proposal</h6>
-                    <p><strong>Judul:</strong> ${proposalInfo.judul}</p>
-                    <p><strong>Skim:</strong> ${proposalInfo.skim}</p>
-                    <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
+            <div class="space-y-6">
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h6 class="text-navy-700 font-bold mb-4 flex items-center gap-2 pb-2 border-b border-slate-100"><i class="fas fa-file-alt text-navy-500"></i>Informasi Proposal</h6>
+                    <div class="space-y-3">
+                        <div><span class="text-sm font-semibold text-slate-500 block mb-1">Judul:</span><span class="text-slate-800 font-medium">${proposalInfo.judul}</span></div>
+                        <div><span class="text-sm font-semibold text-slate-500 block mb-1">Skim:</span><span class="text-slate-800">${proposalInfo.skim}</span></div>
+                        <div><span class="text-sm font-semibold text-slate-500 inline-block mr-2">Status:</span><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${proposalInfo.status}</span></div>
+                    </div>
                 </div>
         `;
         
-        // Karena sekarang hanya ada 1 review administratif terbaru
         if (reviews.length > 0) {
             const review = reviews[0];
             html += `
-                <div class="card mb-3">
-                    <div class="card-header bg-primary text-white">
-                        <i class="fas fa-clipboard-check me-2"></i>
-                        <strong>Review Administratif</strong>
-                        ${review.reviewer ? ` - ${review.reviewer.nama_reviewer}` : ''}
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-navy-600 text-white px-5 py-3 font-semibold flex items-center gap-2">
+                        <i class="fas fa-clipboard-check"></i>
+                        Review Administratif
+                        ${review.reviewer ? ` <span class="font-normal text-navy-100 text-sm ml-auto">(${review.reviewer.nama_reviewer})</span>` : ''}
                     </div>
-                    <div class="card-body">
+                    <div class="p-5">
             `;
             
             if (review.checklist && review.checklist.length > 0) {
-                html += '<div class="mb-3"><strong>Kesalahan Administratif yang Ditemukan:</strong><ul class="list-unstyled mt-2">';
+                html += '<div class="mb-5"><strong class="text-slate-700 block mb-3">Kesalahan Administratif yang Ditemukan:</strong><ul class="space-y-3">';
                 
-                // Display selected errors
                 review.checklist.forEach((item) => {
                     html += `
-                        <li class="mb-2">
-                            <div class="d-flex align-items-center">
-                                <span class="badge bg-danger me-3">
-                                    <i class="fas fa-times"></i>
-                                </span>
-                                <div>
-                                    <strong>${item}</strong>
-                                    <br>
-                                    <small class="text-muted">Status: Perlu Perbaikan</small>
-                                </div>
+                        <li class="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center mt-0.5">
+                                <i class="fas fa-times text-xs"></i>
+                            </span>
+                            <div>
+                                <strong class="text-slate-800 text-sm">${item}</strong>
+                                <div class="text-xs text-red-600 mt-1 font-medium">Status: Perlu Perbaikan</div>
                             </div>
                         </li>
                     `;
@@ -1484,11 +1475,11 @@
                 html += '</ul></div>';
             } else {
                 html += `
-                    <div class="mb-3">
-                        <strong>Checklist Administratif:</strong>
-                        <div class="text-center text-success mt-2">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Semua kriteria telah memenuhi standar
+                    <div class="mb-5">
+                        <strong class="text-slate-700 block mb-3">Checklist Administratif:</strong>
+                        <div class="flex flex-col items-center justify-center p-6 bg-green-50 rounded-xl border border-green-100 text-green-700">
+                            <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
+                            <span class="font-medium">Semua kriteria telah memenuhi standar</span>
                         </div>
                     </div>
                 `;
@@ -1496,10 +1487,11 @@
             
             if (review.note_administratif) {
                 html += `
-                    <div class="alert alert-info">
-                        <i class="fas fa-edit me-2"></i>
-                        <strong>Catatan:</strong><br>
-                        ${review.note_administratif}
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                        <div class="flex items-center text-blue-800 font-bold mb-2">
+                            <i class="fas fa-edit me-2"></i> Catatan
+                        </div>
+                        <p class="text-sm text-blue-900 mb-0 leading-relaxed">${review.note_administratif}</p>
                     </div>
                 `;
             }
@@ -1507,12 +1499,10 @@
             html += '</div></div>';
         } else {
             html += `
-                <div class="card mb-3">
-                    <div class="card-body text-center text-muted">
-                        <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-                        <h6>Belum ada review administratif</h6>
-                        <p>Review administratif akan muncul di sini setelah proposal direview oleh reviewer.</p>
-                    </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-10 text-center">
+                    <i class="fas fa-clipboard-list text-5xl text-slate-300 mb-4 block"></i>
+                    <h6 class="text-lg font-bold text-slate-700 mb-2">Belum ada review administratif</h6>
+                    <p class="text-slate-500">Review administratif akan muncul di sini setelah proposal direview oleh reviewer.</p>
                 </div>
             `;
         }
@@ -1525,12 +1515,14 @@
         console.log('Generating substantive review HTML with:', { reviews, proposalInfo });
         
         let html = `
-            <div class="review-section">
-                <div class="proposal-info mb-3">
-                    <h6 class="text-primary"><i class="fas fa-file-alt me-2"></i>Informasi Proposal</h6>
-                    <p><strong>Judul:</strong> ${proposalInfo.judul}</p>
-                    <p><strong>Skim:</strong> ${proposalInfo.skim}</p>
-                    <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
+            <div class="space-y-6">
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h6 class="text-navy-700 font-bold mb-4 flex items-center gap-2 pb-2 border-b border-slate-100"><i class="fas fa-file-alt text-navy-500"></i>Informasi Proposal</h6>
+                    <div class="space-y-3">
+                        <div><span class="text-sm font-semibold text-slate-500 block mb-1">Judul:</span><span class="text-slate-800 font-medium">${proposalInfo.judul}</span></div>
+                        <div><span class="text-sm font-semibold text-slate-500 block mb-1">Skim:</span><span class="text-slate-800">${proposalInfo.skim}</span></div>
+                        <div><span class="text-sm font-semibold text-slate-500 inline-block mr-2">Status:</span><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${proposalInfo.status}</span></div>
+                    </div>
                 </div>
         `;
         
@@ -1541,17 +1533,18 @@
                 console.log(`Processing review ${index + 1}:`, review);
                 
                 html += `
-                    <div class="card mb-3">
-                        <div class="card-header bg-info text-white">
-                            <i class="fas fa-user me-2"></i>
-                            <strong>Reviewer Substantif ${index + 1}</strong>
-                            ${review.reviewer ? ` - ${review.reviewer.nama_reviewer}` : ''}
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="bg-cyan-700 text-white px-5 py-3 font-semibold flex items-center gap-2">
+                            <i class="fas fa-user text-cyan-200"></i>
+                            Reviewer Substantif ${index + 1}
+                            ${review.reviewer ? ` <span class="font-normal text-cyan-100 text-sm ml-auto">(${review.reviewer.nama_reviewer})</span>` : ''}
                         </div>
-                        <div class="card-body">
-                            <div class="alert alert-warning">
-                                <i class="fas fa-edit me-2"></i>
-                                <strong>Catatan:</strong><br>
-                                ${review.note_substantif || 'Tidak ada catatan khusus.'}
+                        <div class="p-5">
+                            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+                                <div class="flex items-center text-amber-800 font-bold mb-2">
+                                    <i class="fas fa-edit me-2"></i> Catatan
+                                </div>
+                                <p class="text-sm text-amber-900 mb-0 leading-relaxed whitespace-pre-wrap">${review.note_substantif || 'Tidak ada catatan khusus.'}</p>
                             </div>
                         </div>
                     </div>
@@ -1560,12 +1553,10 @@
         } else {
             console.log('No substantive reviews found');
             html += `
-                <div class="card mb-3">
-                    <div class="card-body text-center text-muted">
-                        <i class="fas fa-user-check fa-3x mb-3"></i>
-                        <h6>Belum ada review substantif</h6>
-                        <p>Review substantif akan muncul di sini setelah proposal lolos review administratif.</p>
-                    </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-10 text-center">
+                    <i class="fas fa-user-check text-5xl text-slate-300 mb-4 block"></i>
+                    <h6 class="text-lg font-bold text-slate-700 mb-2">Belum ada review substantif</h6>
+                    <p class="text-slate-500">Review substantif akan muncul di sini setelah proposal lolos review administratif.</p>
                 </div>
             `;
         }
@@ -1576,9 +1567,10 @@
 
     function generateFinalReviewHTML(finalResult, proposalInfo, dosenUniversitas = null, hasilSemiFinal = null) {
         // Tentukan status berdasarkan hasil final dari Pimpinan PT
-        let statusClass = 'secondary';
+        let statusClass = 'bg-slate-100 text-slate-800 border-slate-200';
         let statusText = 'BELUM DINILAI';
         let statusIcon = 'clock';
+        let statusHeaderBg = 'bg-slate-600';
         
         if (finalResult) {
             // Status PIMNAS
@@ -1586,144 +1578,147 @@
             const statusPendanaan = finalResult.status_pendanaan;
             
             if (statusPimnas === 'lolos' && statusPendanaan === 'lolos') {
-                statusClass = 'success';
+                statusClass = 'bg-green-50 text-green-800 border-green-200';
                 statusText = 'LOLOS PIMNAS & PENDANAAN';
                 statusIcon = 'trophy';
+                statusHeaderBg = 'bg-green-600';
             } else if (statusPimnas === 'lolos' && statusPendanaan === 'tidak_lolos') {
-                statusClass = 'warning';
+                statusClass = 'bg-amber-50 text-amber-800 border-amber-200';
                 statusText = 'LOLOS PIMNAS (TIDAK PENDANAAN)';
                 statusIcon = 'trophy';
+                statusHeaderBg = 'bg-amber-500';
             } else if (statusPimnas === 'tidak_lolos' && statusPendanaan === 'lolos') {
-                statusClass = 'info';
+                statusClass = 'bg-blue-50 text-blue-800 border-blue-200';
                 statusText = 'TIDAK LOLOS PIMNAS (LOLOS PENDANAAN)';
                 statusIcon = 'money-bill-wave';
+                statusHeaderBg = 'bg-blue-600';
             } else {
-                statusClass = 'danger';
+                statusClass = 'bg-red-50 text-red-800 border-red-200';
                 statusText = 'TIDAK LOLOS';
                 statusIcon = 'times-circle';
+                statusHeaderBg = 'bg-red-600';
             }
         }
         
-        return `
-            <div class="review-section">
-                <div class="proposal-info mb-3">
-                    <h6 class="text-primary"><i class="fas fa-file-alt me-2"></i>Informasi Proposal</h6>
-                    <p><strong>Judul:</strong> ${proposalInfo.judul}</p>
-                    <p><strong>Skim:</strong> ${proposalInfo.skim}</p>
-                    <p><strong>Status:</strong> <span class="badge bg-info">${proposalInfo.status}</span></p>
-                </div>
-                
-                ${dosenUniversitas ? `
-                <div class="card mb-3" style="border-left: 4px solid #667eea;">
-                    <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <h6 class="mb-0">
-                            <i class="fas fa-user-tie me-2"></i>
-                            Dosen Pendamping Universitas
-                        </h6>
+        let html = `
+            <div class="space-y-6">
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h6 class="text-navy-700 font-bold mb-4 flex items-center gap-2 pb-2 border-b border-slate-100"><i class="fas fa-file-alt text-navy-500"></i>Informasi Proposal</h6>
+                    <div class="space-y-3">
+                        <div><span class="text-sm font-semibold text-slate-500 block mb-1">Judul:</span><span class="text-slate-800 font-medium">${proposalInfo.judul}</span></div>
+                        <div><span class="text-sm font-semibold text-slate-500 block mb-1">Skim:</span><span class="text-slate-800">${proposalInfo.skim}</span></div>
+                        <div><span class="text-sm font-semibold text-slate-500 inline-block mr-2">Status:</span><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">${proposalInfo.status}</span></div>
                     </div>
-                    <div class="card-body">
-                        <p><strong>Nama:</strong> ${dosenUniversitas.nama_dosen}</p>
-                        ${dosenUniversitas.no_hp_dosen ? `<p><strong>No. HP:</strong> ${dosenUniversitas.no_hp_dosen}</p>` : ''}
-                        ${dosenUniversitas.email_dosen ? `<p><strong>Email:</strong> ${dosenUniversitas.email_dosen}</p>` : ''}
+                </div>
+        `;
+                
+        if (dosenUniversitas) {
+            html += `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden border-l-4 border-l-indigo-500">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-3 font-semibold flex items-center gap-2">
+                        <i class="fas fa-user-tie"></i>
+                        Dosen Pendamping Universitas
+                    </div>
+                    <div class="p-5 space-y-2">
+                        <div><span class="text-sm font-semibold text-slate-500 inline-block w-20">Nama:</span><span class="text-slate-800">${dosenUniversitas.nama_dosen}</span></div>
+                        ${dosenUniversitas.no_hp_dosen ? `<div><span class="text-sm font-semibold text-slate-500 inline-block w-20">No. HP:</span><span class="text-slate-800">${dosenUniversitas.no_hp_dosen}</span></div>` : ''}
+                        ${dosenUniversitas.email_dosen ? `<div><span class="text-sm font-semibold text-slate-500 inline-block w-20">Email:</span><span class="text-slate-800">${dosenUniversitas.email_dosen}</span></div>` : ''}
                     </div>
                 </div>
                 ` : ''}
                 
                 ${hasilSemiFinal ? `
-                <div class="card mb-3">
-                    <div class="card-header bg-info text-white">
-                        <h6 class="mb-0">
-                            <i class="fas fa-clipboard-check me-2"></i>
-                            Hasil Semi Final
-                        </h6>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-cyan-600 text-white px-5 py-3 font-semibold flex items-center gap-2">
+                        <i class="fas fa-clipboard-check"></i>
+                        Hasil Semi Final
                     </div>
-                    <div class="card-body">
-                        <p><strong>Status:</strong> 
-                            <span class="badge bg-${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'success' : 'danger'}">
+                    <div class="p-5 space-y-3">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-500 mr-2">Status:</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                                 ${hasilSemiFinal.status_final === 'lolos_tingkat_universitas' ? 'Lolos Tingkat Universitas' : 'Tidak Lolos Tingkat Universitas'}
                             </span>
-                        </p>
-                        <p><strong>Nilai:</strong> ${hasilSemiFinal.nilai ? parseFloat(hasilSemiFinal.nilai).toFixed(2) : 'N/A'}</p>
-                        ${hasilSemiFinal.catatan_final ? `<p><strong>Catatan:</strong> ${hasilSemiFinal.catatan_final}</p>` : ''}
+                        </div>
+                        <div><span class="text-sm font-semibold text-slate-500 mr-2">Nilai:</span><span class="font-bold text-slate-800">${hasilSemiFinal.nilai ? parseFloat(hasilSemiFinal.nilai).toFixed(2) : 'N/A'}</span></div>
+                        ${hasilSemiFinal.catatan_final ? `
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2">
+                            <span class="text-sm font-semibold text-slate-500 block mb-1">Catatan:</span>
+                            <p class="text-sm text-slate-700 whitespace-pre-wrap">${hasilSemiFinal.catatan_final}</p>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
                 ` : ''}
                 
-                <div class="card">
-                    <div class="card-header bg-${statusClass} text-white">
-                        <i class="fas fa-${statusIcon} me-2"></i>
-                        <strong>Hasil Final (Pimpinan PT)</strong>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="${statusHeaderBg} text-white px-5 py-3 font-semibold flex items-center gap-2">
+                        <i class="fas fa-${statusIcon}"></i>
+                        Hasil Final (Pimpinan PT)
                     </div>
-                    <div class="card-body">
+                    <div class="p-5">
                         ${finalResult ? `
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="alert alert-${finalResult.status_pimnas === 'lolos' ? 'success' : 'danger'}">
-                                    <h5 class="alert-heading">
-                                        <i class="fas fa-${finalResult.status_pimnas === 'lolos' ? 'trophy' : 'times-circle'} me-2"></i>
-                                        Status PIMNAS: ${finalResult.status_pimnas === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}
-                                    </h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                            <div class="${finalResult.status_pimnas === 'lolos' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'} border rounded-lg p-4 flex items-center gap-3">
+                                <i class="fas fa-${finalResult.status_pimnas === 'lolos' ? 'trophy text-green-600' : 'times-circle text-red-600'} text-2xl"></i>
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wider opacity-80">Status PIMNAS</div>
+                                    <div class="font-bold text-lg">${finalResult.status_pimnas === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}</div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="alert alert-${finalResult.status_pendanaan === 'lolos' ? 'success' : 'danger'}">
-                                    <h5 class="alert-heading">
-                                        <i class="fas fa-${finalResult.status_pendanaan === 'lolos' ? 'money-bill-wave' : 'times-circle'} me-2"></i>
-                                        Status Pendanaan: ${finalResult.status_pendanaan === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}
-                                    </h5>
+                            
+                            <div class="${finalResult.status_pendanaan === 'lolos' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'} border rounded-lg p-4 flex items-center gap-3">
+                                <i class="fas fa-${finalResult.status_pendanaan === 'lolos' ? 'money-bill-wave text-green-600' : 'times-circle text-red-600'} text-2xl"></i>
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wider opacity-80">Status Pendanaan</div>
+                                    <div class="font-bold text-lg">${finalResult.status_pendanaan === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS'}</div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="alert alert-primary">
-                                    <h5 class="alert-heading">
-                                        <i class="fas fa-star me-2"></i>
-                                        Nilai: ${finalResult.nilai ? parseFloat(finalResult.nilai).toFixed(2) : 'N/A'}
-                                    </h5>
+                            
+                            <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 flex items-center gap-3">
+                                <i class="fas fa-star text-blue-600 text-2xl"></i>
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wider opacity-80">Nilai</div>
+                                    <div class="font-bold text-lg">${finalResult.nilai ? parseFloat(finalResult.nilai).toFixed(2) : 'N/A'}</div>
                                 </div>
                             </div>
-                            ${finalResult.dana_didapatkan_belmawa > 0 || finalResult.dana_didapatkan_operator > 0 ? `
-                            <div class="col-md-6">
-                                <div class="alert alert-success">
-                                    <h5 class="alert-heading fs-6 mb-1">
-                                        <i class="fas fa-money-bill-wave me-2"></i>
-                                        Dana (Belmawa)
-                                    </h5>
-                                    <div>Rp ${formatRupiah(finalResult.dana_didapatkan_belmawa || 0)}</div>
-                                    <h5 class="alert-heading fs-6 mb-1 mt-2">
-                                        <i class="fas fa-money-bill-wave me-2"></i>
-                                        Dana (Universitas)
-                                    </h5>
-                                    <div>Rp ${formatRupiah(finalResult.dana_didapatkan_operator || 0)}</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                            <div class="col-md-4">
-                                <div class="alert alert-secondary">
-                                    <h5 class="alert-heading">
-                                        <i class="fas fa-calendar me-2"></i>
-                                        Tanggal: ${new Date(finalResult.created_at).toLocaleDateString('id-ID', { 
-                                            year: 'numeric', 
-                                            month: 'long', 
-                                            day: 'numeric' 
-                                        })}
-                                    </h5>
+                            
+                            <div class="bg-slate-50 border border-slate-200 text-slate-800 rounded-lg p-4 flex items-center gap-3">
+                                <i class="fas fa-calendar-alt text-slate-500 text-2xl"></i>
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wider opacity-80">Tanggal Penilaian</div>
+                                    <div class="font-bold">${new Date(finalResult.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
                                 </div>
                             </div>
                         </div>
                         
+                        ${finalResult.dana_didapatkan_belmawa > 0 || finalResult.dana_didapatkan_operator > 0 ? `
+                        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-5">
+                            <h6 class="font-bold text-emerald-800 mb-3 flex items-center gap-2"><i class="fas fa-money-bill-wave"></i> Rincian Dana Didapatkan</h6>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-white p-3 rounded-md border border-emerald-100 shadow-sm">
+                                    <div class="text-xs font-semibold text-slate-500 mb-1">Dana Belmawa</div>
+                                    <div class="text-lg font-bold text-emerald-700">Rp ${formatRupiah(finalResult.dana_didapatkan_belmawa || 0)}</div>
+                                </div>
+                                <div class="bg-white p-3 rounded-md border border-emerald-100 shadow-sm">
+                                    <div class="text-xs font-semibold text-slate-500 mb-1">Dana Universitas</div>
+                                    <div class="text-lg font-bold text-emerald-700">Rp ${formatRupiah(finalResult.dana_didapatkan_operator || 0)}</div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
                         ${finalResult.catatan_final ? `
-                        <div class="mb-3">
-                            <h6><i class="fas fa-comment me-2"></i>Catatan Final:</h6>
-                            <p class="mb-0">
-                                ${finalResult.catatan_final}
-                            </p>
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+                            <h6 class="font-bold text-amber-800 mb-2 flex items-center gap-2"><i class="fas fa-comment"></i> Catatan Final:</h6>
+                            <p class="text-sm text-amber-900 mb-0 leading-relaxed whitespace-pre-wrap">${finalResult.catatan_final}</p>
                         </div>
                         ` : ''}
                         ` : `
-                        <div class="text-center py-4">
-                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                            <h6 class="text-muted">Belum ada hasil final</h6>
-                            <p class="text-muted">Hasil final akan muncul di sini setelah Pimpinan PT melakukan penilaian.</p>
+                        <div class="text-center py-10">
+                            <i class="fas fa-clock text-6xl text-slate-300 mb-4 block"></i>
+                            <h6 class="text-lg font-bold text-slate-700 mb-2">Belum ada hasil final</h6>
+                            <p class="text-slate-500">Hasil final akan muncul di sini setelah Pimpinan PT melakukan penilaian.</p>
                         </div>
                         `}
                     </div>

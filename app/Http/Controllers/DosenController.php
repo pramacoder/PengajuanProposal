@@ -210,7 +210,7 @@ class DosenController extends Controller
             'proposals' => $proposals->map(function($proposal) {
                 return [
                     'id_proposal' => $proposal->id_proposal,
-                    'judul_proposal' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'status' => $proposal->status,
                     'status_validasi' => $proposal->status_validasi,
                     'id_dosen' => $proposal->id_dosen,
@@ -231,7 +231,7 @@ class DosenController extends Controller
                 'all_proposals' => $allProposals->map(function($proposal) {
                     return [
                         'id_proposal' => $proposal->id_proposal,
-                        'judul_proposal' => $proposal->judul_proposal,
+                        'judul' => $proposal->judul,
                         'status' => $proposal->status,
                         'status_validasi' => $proposal->status_validasi,
                         'id_dosen' => $proposal->id_dosen,
@@ -314,7 +314,7 @@ class DosenController extends Controller
             'proposals' => $proposals->map(function($proposal) {
                 return [
                     'id_proposal' => $proposal->id_proposal,
-                    'judul_proposal' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'status' => $proposal->status,
                     'status_validasi' => $proposal->status_validasi,
                     'id_dosen' => $proposal->id_dosen,
@@ -689,7 +689,7 @@ class DosenController extends Controller
             return response()->json([
                 'success' => true,
                 'proposal_info' => [
-                    'judul' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'skim' => $proposal->skim,
                     'mahasiswa' => $proposal->mahasiswa->nama_mahasiswa,
                     'status' => $proposal->status,

@@ -29,7 +29,7 @@
                         <table class="table table-borderless">
                             <tr>
                                 <td width="30%"><strong>Judul:</strong></td>
-                                <td>{{ $proposal->judul_proposal }}</td>
+                                <td>{{ $proposal->judul }}</td>
                             </tr>
                             <tr>
                                 <td><strong>Skim:</strong></td>

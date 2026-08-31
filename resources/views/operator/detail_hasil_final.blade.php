@@ -174,7 +174,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-8">
-                            <h4 class="text-primary">{{ $proposal->judul_proposal }}</h4>
+                            <h4 class="text-primary">{{ $proposal->judul }}</h4>
                             <div class="row mt-3">
                                 <div class="col-md-6">
                                     <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
@@ -242,7 +242,7 @@
                                 <div class="list-group-item px-0 py-2 border-bottom">
                                     <h6 class="mb-1" style="font-size: 0.9rem;">
                                         <a href="{{ route('operator.detail.hasil.final', $latest->id_proposal) }}" class="text-decoration-none">
-                                            {{ Str::limit($latest->judul_proposal, 50) }}
+                                            {{ Str::limit($latest->judul, 50) }}
                                         </a>
                                     </h6>
                                     <div class="d-flex justify-content-between align-items-center mt-2">

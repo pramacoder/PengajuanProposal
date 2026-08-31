@@ -42,7 +42,7 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>
-                                            <strong>{{ Str::limit($proposal->judul_proposal, 50) }}</strong>
+                                            <strong>{{ Str::limit($proposal->judul, 50) }}</strong>
                                         </td>
                                         <td>
                                             <span class="badge bg-primary">{{ $proposal->skim }}</span>

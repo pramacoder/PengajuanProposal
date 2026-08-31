@@ -127,8 +127,8 @@
                                 <tr style="border-bottom: 1px solid var(--border);">
                                     <td class="px-4 py-3" style="color:var(--text-400);">{{ $index + 1 }}</td>
                                     <td class="py-3">
-                                        <div class="fw-semibold text-truncate" style="max-width:220px;color:var(--text-900);" title="{{ $proposal->judul_proposal }}">
-                                            {{ $proposal->judul_proposal }}
+                                        <div class="fw-semibold text-truncate" style="max-width:220px;color:var(--text-900);" title="{{ $proposal->judul }}">
+                                            {{ $proposal->judul }}
                                         </div>
                                     </td>
                                     <td class="py-3">

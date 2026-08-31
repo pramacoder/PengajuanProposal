@@ -312,7 +312,7 @@ class DosenPendampingController extends Controller
             ] : null,
             'substantif' => $substantif,
             'proposal_info' => [
-                'judul' => $proposal->judul_proposal,
+                'judul' => $proposal->judul,
                 'skim' => $proposal->skim,
                 'mahasiswa' => $proposal->mahasiswa->name,
                 'status' => $proposal->status

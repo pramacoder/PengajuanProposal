@@ -45,11 +45,8 @@ class MahasiswaRegistrationController extends Controller
                         ->with('error', 'NIM tidak ditemukan dalam database. Silakan hubungi administrator.');
                 }
 
-                $defaultPassword = 'password123';
-
-                if (!$mahasiswa->password) {
-                    $mahasiswa->update(['password' => Hash::make($defaultPassword)]);
-                }
+                $defaultPassword = Str::random(12);
+                $mahasiswa->update(['password' => Hash::make($defaultPassword)]);
 
                 $this->emailService->sendRegistrationEmail(
                     $request->email_mahasiswa,
@@ -87,11 +84,8 @@ class MahasiswaRegistrationController extends Controller
                         ->with('error', 'NUPTK/NIDN dosen tidak ditemukan dalam database. Silakan hubungi administrator.');
                 }
 
-                $defaultPassword = 'password123';
-
-                if (!$dosen->password) {
-                    $dosen->update(['password' => Hash::make($defaultPassword)]);
-                }
+                $defaultPassword = Str::random(12);
+                $dosen->update(['password' => Hash::make($defaultPassword)]);
 
                 $this->emailService->sendRegistrationEmail(
                     $request->email_dosen,

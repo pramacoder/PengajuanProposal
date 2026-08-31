@@ -3,128 +3,7 @@
 @section('title', 'Revisi Akhir Proposal PKM')
 
 @section('styles')
-<style>
-    .revisi-section {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .revisi-section:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .section-title {
-        color: var(--primary-color);
-        font-weight: bold;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--primary-color);
-        display: flex;
-        align-items: center;
-    }
-    
-    .dosen-info-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    
-    .dosen-info-card h5 {
-        color: white;
-        margin-bottom: 1rem;
-    }
-    
-    .dosen-info-card .info-item {
-        margin-bottom: 0.75rem;
-    }
-    
-    .dosen-info-card .info-item i {
-        width: 30px;
-        margin-right: 10px;
-    }
-    
-    .file-upload-area {
-        border: 2px dashed #dee2e6;
-        border-radius: 12px;
-        padding: 3rem 2rem;
-        text-align: center;
-        transition: all 0.3s ease;
-        background-color: #f8f9fa;
-        cursor: pointer;
-    }
-    
-    .file-upload-area:hover {
-        border-color: var(--primary-color);
-        background-color: rgba(139, 58, 58, 0.05);
-    }
-    
-    .file-upload-area.dragover {
-        border-color: var(--primary-color);
-        background-color: rgba(139, 58, 58, 0.1);
-        transform: scale(1.02);
-    }
-    
-    .file-upload-icon {
-        font-size: 3rem;
-        color: var(--primary-color);
-        margin-bottom: 1rem;
-    }
-    
-    .file-info {
-        background-color: #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 1rem;
-        display: none;
-    }
-    
-    .file-info.show {
-        display: block;
-    }
-    
-    .progress-bar-custom {
-        height: 8px;
-        border-radius: 4px;
-        background-color: #e9ecef;
-        overflow: hidden;
-        margin-top: 0.5rem;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-    
-    .revisi-item {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .revisi-item:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .file-icon {
-        font-size: 2rem;
-        color: #dc3545;
-        margin-right: 1rem;
-    }
-</style>
+
 @endsection
 
 @section('content')
@@ -137,62 +16,67 @@
     <div class="row">
         <div class="col-12">
             <!-- Header -->
-            <div class="mb-4">
-                <h2 class="mb-2">
-                    <i class="fas fa-edit me-2"></i>
-                    Revisi Akhir Proposal PKM
-                </h2>
-                <p class="text-muted">
-                    Upload file revisi akhir proposal untuk divalidasi oleh dosen pendamping universitas
-                </p>
-            </div>
+            <x-page-header 
+                title="Revisi Akhir Proposal PKM" 
+                subtitle="Upload file revisi akhir proposal untuk divalidasi oleh dosen pendamping universitas"
+            />
 
             <!-- Informasi Dosen Pendamping Universitas -->
             @if($proposal->dosenPendampingUniversitas)
-            <div class="dosen-info-card">
-                <h5>
-                    <i class="fas fa-user-tie me-2"></i>
+            <div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl p-8 mb-8 shadow-lg shadow-indigo-500/20">
+                <h5 class="text-white font-bold text-xl mb-6 flex items-center">
+                    <i class="fas fa-user-tie mr-3 text-indigo-200"></i>
                     Dosen Pendamping Universitas
                 </h5>
-                <div class="info-item">
-                    <i class="fas fa-user"></i>
-                    <strong>Nama:</strong> {{ $proposal->dosenPendampingUniversitas->nama_dosen }}
-                    @if($proposal->dosenPendampingUniversitas->gelar_depan)
-                        , {{ $proposal->dosenPendampingUniversitas->gelar_depan }}
+                <div class="flex flex-col gap-3 text-indigo-50">
+                    <div class="flex items-center">
+                        <div class="w-8 shrink-0"><i class="fas fa-user text-indigo-300 text-lg"></i></div>
+                        <div>
+                            <strong class="text-white mr-1">Nama:</strong> {{ $proposal->dosenPendampingUniversitas->nama_dosen }}
+                            @if($proposal->dosenPendampingUniversitas->gelar_depan)
+                                , {{ $proposal->dosenPendampingUniversitas->gelar_depan }}
+                            @endif
+                            @if($proposal->dosenPendampingUniversitas->gelar_belakang)
+                                , {{ $proposal->dosenPendampingUniversitas->gelar_belakang }}
+                            @endif
+                        </div>
+                    </div>
+                    @if($proposal->dosenPendampingUniversitas->no_hp_dosen)
+                    <div class="flex items-center">
+                        <div class="w-8 shrink-0"><i class="fas fa-phone text-indigo-300 text-lg"></i></div>
+                        <div>
+                            <strong class="text-white mr-1">No. HP:</strong> 
+                            <a href="tel:{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}" class="text-white hover:text-indigo-200 hover:underline transition-colors font-medium">
+                                {{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}
+                            </a>
+                        </div>
+                    </div>
                     @endif
-                    @if($proposal->dosenPendampingUniversitas->gelar_belakang)
-                        , {{ $proposal->dosenPendampingUniversitas->gelar_belakang }}
+                    @if($proposal->dosenPendampingUniversitas->email_dosen)
+                    <div class="flex items-center">
+                        <div class="w-8 shrink-0"><i class="fas fa-envelope text-indigo-300 text-lg"></i></div>
+                        <div>
+                            <strong class="text-white mr-1">Email:</strong> 
+                            <a href="mailto:{{ $proposal->dosenPendampingUniversitas->email_dosen }}" class="text-white hover:text-indigo-200 hover:underline transition-colors font-medium">
+                                {{ $proposal->dosenPendampingUniversitas->email_dosen }}
+                            </a>
+                        </div>
+                    </div>
                     @endif
                 </div>
-                @if($proposal->dosenPendampingUniversitas->no_hp_dosen)
-                <div class="info-item">
-                    <i class="fas fa-phone"></i>
-                    <strong>No. HP:</strong> 
-                    <a href="tel:{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}" class="text-white" style="text-decoration: underline;">
-                        {{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}
-                    </a>
-                </div>
-                @endif
-                @if($proposal->dosenPendampingUniversitas->email_dosen)
-                <div class="info-item">
-                    <i class="fas fa-envelope"></i>
-                    <strong>Email:</strong> 
-                    <a href="mailto:{{ $proposal->dosenPendampingUniversitas->email_dosen }}" class="text-white" style="text-decoration: underline;">
-                        {{ $proposal->dosenPendampingUniversitas->email_dosen }}
-                    </a>
-                </div>
-                @endif
-                <div class="mt-3">
-                    <small class="text-white-50">
-                        <i class="fas fa-info-circle me-1"></i>
+                <div class="mt-6 pt-4 border-t border-indigo-400/30">
+                    <small class="text-indigo-100 flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>
                         Anda dapat menghubungi dosen pendamping universitas untuk konsultasi sebelum mengupload revisi akhir.
                     </small>
                 </div>
             </div>
             @else
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Peringatan:</strong> Dosen pendamping universitas belum ditetapkan. Silakan hubungi operator.
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg mb-8 shadow-sm">
+                <div class="flex items-center text-amber-800">
+                    <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>
+                    <p class="mb-0"><strong>Peringatan:</strong> Dosen pendamping universitas belum ditetapkan. Silakan hubungi operator.</p>
+                </div>
             </div>
             @endif
 
@@ -204,7 +88,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Judul Proposal:</strong></p>
-                        <p class="text-primary">{{ $proposal->judul_proposal }}</p>
+                        <p class="text-primary">{{ $proposal->judul }}</p>
                     </div>
                     <div class="col-md-6">
                         <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
@@ -223,91 +107,105 @@
                 @endif
             </div>
 
-            <!-- Upload File Revisi Akhir -->
-            <div class="revisi-section">
-                <h4 class="section-title">
-                    <i class="fas fa-upload me-2"></i>Upload File Revisi Akhir
-                </h4>
+            <!-- Upload File Revisi Akhir & Informasi Proposal & Upload Form -->
+            <x-ui.card className="mb-8 overflow-hidden">
+                <div class="bg-gradient-to-br from-navy-600 to-navy-800 text-white p-6">
+                    <h4 class="font-bold text-xl m-0 flex items-center">
+                        <i class="fas fa-upload mr-3 text-navy-200"></i>Upload File Revisi Akhir
+                    </h4>
+                </div>
                 
-                <form id="revisiAkhirForm" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    
-                    <div class="file-upload-area" id="revisiAkhirUploadArea">
-                        <div class="file-upload-icon">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <h5>Upload File Revisi Akhir Proposal</h5>
-                        <p class="text-muted">Drag & drop file PDF di sini atau klik untuk memilih file</p>
-                        <input type="file" id="revisi_file" name="revisi_file" accept=".pdf" style="display: none;" required>
-                        <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('revisi_file').click()">
-                            <i class="fas fa-folder-open me-2"></i>Pilih File
-                        </button>
-                    </div>
-                    
-                    <div class="file-info" id="revisiAkhirFileInfo">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong id="revisiAkhirFileName">Nama file</strong>
-                                <br><small id="revisiAkhirFileSize">Ukuran file</small>
+                <div class="p-6 bg-white">
+                    <form action="{{ route('mahasiswa.proposal.revisi.akhir.submit', $proposal->id_proposal) }}" method="POST" enctype="multipart/form-data" id="revisiAkhirForm">
+                        @csrf
+                        
+                        <div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center transition-all bg-slate-50 hover:border-navy-500 hover:bg-navy-50/50 cursor-pointer group" id="revisiAkhirUploadArea">
+                            <div class="text-5xl text-navy-500 mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-file-pdf"></i>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
-                                <i class="fas fa-times"></i>
+                            <h5 class="text-slate-800 font-bold mb-2">Upload File Revisi Akhir Proposal</h5>
+                            <p class="text-slate-500 mb-6">Drag & drop file PDF di sini atau klik untuk memilih file</p>
+                            <input type="file" id="revisi_file" name="revisi_file" accept=".pdf" style="display: none;" required>
+                            <button type="button" class="px-5 py-2.5 bg-white border border-navy-600 text-navy-700 rounded-lg font-medium hover:bg-navy-600 hover:text-white transition-colors shadow-sm inline-flex items-center" onclick="document.getElementById('revisi_file').click()">
+                                <i class="fas fa-folder-open me-2"></i>Pilih File
                             </button>
                         </div>
-                        <div class="progress-bar-custom">
-                            <div class="progress-fill" id="revisiAkhirProgress"></div>
+                        
+                        <div class="bg-slate-100 rounded-lg p-4 mt-4 hidden" id="revisiAkhirFileInfo">
+                            <div class="flex justify-between items-center mb-2">
+                                <div>
+                                    <strong id="revisiAkhirFileName" class="text-slate-800">Nama file</strong>
+                                    <br><small id="revisiAkhirFileSize" class="text-slate-500">Ukuran file</small>
+                                </div>
+                                <button type="button" class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors" onclick="removeFileAkhir()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-navy-500 to-navy-700 w-0 transition-all duration-300" id="revisiAkhirProgress"></div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="alert alert-warning mt-3">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Ketentuan Upload:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>Format file harus PDF</li>
-                            <li>Ukuran maksimal 5MB</li>
-                            <li>File harus berisi proposal yang sudah direvisi sesuai catatan hasil semi final</li>
-                            <li>File revisi akhir akan divalidasi oleh dosen pendamping universitas</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                            <i class="fas fa-upload me-2"></i>Upload File Revisi Akhir
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg mt-6">
+                            <div class="flex items-start text-amber-800">
+                                <i class="fas fa-exclamation-triangle mt-1 mr-3"></i>
+                                <div>
+                                    <strong class="block mb-2 font-bold">Ketentuan Upload:</strong>
+                                    <ul class="list-disc pl-5 mb-0 text-amber-700">
+                                        <li>Format file harus PDF</li>
+                                        <li>Ukuran maksimal 5MB</li>
+                                        <li>File harus berisi proposal yang sudah direvisi sesuai catatan hasil semi final</li>
+                                        <li>File revisi akhir akan divalidasi oleh dosen pendamping universitas</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-8">
+                            <button type="submit" class="px-8 py-3 bg-navy-600 text-white rounded-lg font-bold text-lg hover:bg-navy-700 transition-colors shadow-md inline-flex items-center" id="submitBtn">
+                                <i class="fas fa-upload me-2"></i>Upload File Revisi Akhir
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </x-ui.card>
 
             <!-- Daftar File Revisi Akhir -->
             @if($revisiAkhir->count() > 0)
-            <div class="revisi-section">
-                <h4 class="section-title">
-                    <i class="fas fa-history me-2"></i>Daftar File Revisi Akhir yang Sudah Diupload
-                </h4>
+            <x-ui.card className="mb-8 overflow-hidden">
+                <div class="bg-gradient-to-br from-navy-600 to-navy-800 text-white p-6">
+                    <h4 class="font-bold text-xl m-0 flex items-center">
+                        <i class="fas fa-history mr-3 text-navy-200"></i>Daftar File Revisi Akhir yang Sudah Diupload
+                    </h4>
+                </div>
                 
-                @foreach($revisiAkhir as $revisi)
-                <div class="revisi-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center">
-                            <i class="file-icon fas fa-file-pdf"></i>
+                <div class="p-6 bg-white">
+                    <div class="flex flex-col gap-4">
+                        @foreach($revisiAkhir as $revisi)
+                        <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 flex flex-col md:flex-row justify-between items-start md:items-center hover:border-navy-500 hover:shadow-md transition-all group">
+                            <div class="flex items-center mb-4 md:mb-0">
+                                <div class="text-4xl text-red-500 mr-4 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-slate-800 mb-1 line-clamp-1" title="{{ $revisi->nama_file }}">{{ $revisi->nama_file }}</h6>
+                                    <small class="text-slate-500 font-medium">
+                                        Diupload: {{ \Carbon\Carbon::parse($revisi->tanggal_submit)->format('d M Y H:i') }}
+                                    </small>
+                                </div>
+                            </div>
                             <div>
-                                <h6 class="mb-1">{{ $revisi->nama_file }}</h6>
-                                <small class="text-muted">
-                                    Diupload: {{ \Carbon\Carbon::parse($revisi->tanggal_submit)->format('d M Y H:i') }}
-                                </small>
+                                <a href="{{ route('mahasiswa.revisi.download', $revisi->id_revisi) }}" 
+                                   class="px-4 py-2 bg-white text-navy-700 border border-navy-200 hover:bg-navy-50 hover:border-navy-300 rounded-lg text-sm font-bold transition-colors flex items-center shadow-sm" 
+                                   target="_blank">
+                                    <i class="fas fa-download mr-2"></i>Download
+                                </a>
                             </div>
                         </div>
-                        <div>
-                            <a href="{{ route('mahasiswa.revisi.download', $revisi->id_revisi) }}" 
-                               class="btn btn-sm btn-outline-primary" 
-                               target="_blank">
-                                <i class="fas fa-download me-1"></i>Download
-                            </a>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
-                @endforeach
-            </div>
+            </x-ui.card>
             @endif
         </div>
     </div>
@@ -385,20 +283,20 @@
             // Display file info
             fileName.textContent = file.name;
             fileSize.textContent = formatFileSize(file.size);
-            info.classList.add('show');
+            info.classList.remove('hidden');
 
             // Simulate upload progress
             simulateUpload(progress);
         }
     }
 
-    function removeFile() {
+    function removeFileAkhir() {
         const input = document.getElementById('revisi_file');
         const info = document.getElementById('revisiAkhirFileInfo');
         const progress = document.getElementById('revisiAkhirProgress');
         
         input.value = '';
-        info.classList.remove('show');
+        info.classList.add('hidden');
         progress.style.width = '0%';
     }
 
@@ -465,11 +363,31 @@
 
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+        
+        let bgColor, iconClass, textColor;
+        if (type === 'error') {
+            bgColor = 'bg-red-100 border-red-500';
+            textColor = 'text-red-800';
+            iconClass = 'fas fa-exclamation-circle text-red-500';
+        } else if (type === 'success') {
+            bgColor = 'bg-green-100 border-green-500';
+            textColor = 'text-green-800';
+            iconClass = 'fas fa-check-circle text-green-500';
+        } else {
+            bgColor = 'bg-blue-100 border-blue-500';
+            textColor = 'text-blue-800';
+            iconClass = 'fas fa-info-circle text-blue-500';
+        }
+
+        toast.className = `flex items-center p-4 mb-4 text-sm rounded-lg border shadow-lg transition-opacity duration-300 ${bgColor} ${textColor}`;
         toast.style.minWidth = '300px';
         toast.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <i class="${iconClass} text-xl mr-3"></i>
+            <span class="font-medium">${message}</span>
+            <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 focus:ring-gray-400 p-1.5 hover:bg-gray-200 inline-flex h-8 w-8 transition-colors ${textColor}" onclick="this.parentElement.remove()" aria-label="Close">
+                <span class="sr-only">Close</span>
+                <i class="fas fa-times"></i>
+            </button>
         `;
         
         document.getElementById('toastContainer').appendChild(toast);

@@ -81,7 +81,7 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>
-                                        <strong>{{ $proposal->judul_proposal }}</strong>
+                                        <strong>{{ $proposal->judul }}</strong>
                                         <br>
                                     </td>
                                     <td>

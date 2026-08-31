@@ -85,8 +85,8 @@ class ReviewerAssignmentController extends Controller
             $request->validate([
                 'proposal_id' => 'required|exists:proposals,id_proposal',
                 'reviewer_administratif' => 'required|exists:users,id',
-                'reviewer_substantif_1' => 'required|exists:users,id',
-                'reviewer_substantif_2' => 'required|exists:users,id|different:reviewer_substantif_1'
+                'reviewer_substantif_1' => 'required|exists:users,id|different:reviewer_administratif',
+                'reviewer_substantif_2' => 'required|exists:users,id|different:reviewer_substantif_1|different:reviewer_administratif'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

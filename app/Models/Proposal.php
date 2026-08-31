@@ -12,10 +12,10 @@ class Proposal extends Model
     protected $primaryKey = 'id_proposal';
 
     protected $fillable = [
-        'judul_proposal', 'judul', 'tanggal_pengajuan', 'skim', 'status_validasi',
+        'judul', 'tanggal_pengajuan', 'skim', 'status_validasi',
         'status_validasi_2', 'status_final', 'status', 'catatan',
         'id_mahasiswa', 'id_dosen', 'id_dosen_pendamping_universitas', 'team_id',
-        'dosen_pembimbing', 'dana_diajukan', 'dana_diajukan_operator', 'dana_diajukan_belmawa',
+        'dosen_pembimbing', 'dana_diajukan_operator', 'dana_diajukan_belmawa',
         'tahun_ajaran', 'tanggal_validasi',
         'id_reviewer_administratif', 'id_reviewer_substantif_1', 'id_reviewer_substantif_2',
         'id_reviewer_substantif_seleksi_1', 'id_reviewer_substantif_seleksi_2',
@@ -179,7 +179,8 @@ class Proposal extends Model
 
     public function getDanaFormattedAttribute()
     {
-        return 'Rp ' . number_format($this->dana_diajukan ?? 0, 0, ',', '.');
+        $totalDana = ($this->dana_diajukan_belmawa ?? 0) + ($this->dana_diajukan_operator ?? 0);
+        return 'Rp ' . number_format($totalDana, 0, ',', '.');
     }
 
     public function getTeamSizeAttribute()

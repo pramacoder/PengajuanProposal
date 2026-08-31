@@ -79,7 +79,7 @@
                                 <table class="table table-borderless mb-0">
                                     <tr>
                                         <td width="30%"><strong>Judul:</strong></td>
-                                        <td><div class="text-wrap" style="max-width: 100%; word-wrap: break-word;">{{ $proposal->judul_proposal }}</div></td>
+                                        <td><div class="text-wrap" style="max-width: 100%; word-wrap: break-word;">{{ $proposal->judul }}</div></td>
                                     </tr>
                                     <tr>
                                         <td><strong>Skim:</strong></td>

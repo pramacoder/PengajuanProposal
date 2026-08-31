@@ -1,32 +1,49 @@
 <!-- Sidebar Overlay for Mobile -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="fixed inset-0 bg-navy-950/50 backdrop-blur-sm z-40 hidden md:hidden transition-opacity" id="sidebarOverlay"></div>
 
 <!-- Sidebar -->
-<div class="sidebar" id="sidebar">
+<div class="fixed md:static inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-slate-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full" id="sidebar">
     
-    <ul class="sidebar-menu">
-        <li>
-            <a href="#" class="menu-toggle" data-target="pkm" id="pkmMenu">
-                <i class="fas fa-lightbulb me-2"></i>PKM
-                <i class="fas fa-chevron-down float-end mt-1"></i>
-            </a>
-            <ul class="submenu" id="pkm">
-                @if(auth()->check() && auth()->user()->role === 'mahasiswa')
-                    <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.dashboard') }}" class="@if(request()->routeIs('mahasiswa.dashboard')) active @endif">
-                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                    </a></li>
-                    <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.proposal.create') }}" class="@if(request()->routeIs('mahasiswa.proposal.create')) active @endif">
-                        <i class="fas fa-plus me-2"></i>Ajukan Proposal
-                    </a></li>
-                    <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.proposal.index') }}" class="@if(request()->routeIs('mahasiswa.proposal.index')) active @endif">
-                        <i class="fas fa-eye me-2"></i>Lihat Proposal
-                    </a></li>
-                    <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.revisi.index') }}" class="@if(request()->routeIs('mahasiswa.revisi.*')) active @endif">
-                        <i class="fas fa-edit me-2"></i>Revisi Proposal
-                    </a></li>
-                    <li class="menu-mahasiswa"><a href="{{ route('mahasiswa.proposal.index') }}" class="@if(request()->routeIs('mahasiswa.proposal.revisi.akhir*')) active @endif">
-                        <i class="fas fa-file-edit me-2"></i>Revisi Akhir
-                    </a></li>
+    <div class="p-4 border-b border-slate-100 bg-navy-50 md:hidden flex items-center justify-between">
+        <div class="flex items-center gap-2 text-navy-900 font-bold text-lg">
+            <i class="fas fa-graduation-cap text-navy-600"></i> SISKA
+        </div>
+        <button class="text-slate-500 hover:text-navy-700" id="closeSidebarMobile">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto py-4">
+        <ul class="space-y-1 px-3">
+            <li>
+                <div class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Menu Utama</div>
+                <ul class="space-y-1" id="pkm">
+                    @if(auth()->check() && auth()->user()->role === 'mahasiswa')
+                    <li>
+                        <a href="{{ route('mahasiswa.dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors @if(request()->routeIs('mahasiswa.dashboard')) bg-navy-50 text-navy-700 @else text-slate-600 hover:bg-slate-50 hover:text-navy-600 @endif">
+                            <i class="fas fa-tachometer-alt w-5 text-center @if(request()->routeIs('mahasiswa.dashboard')) text-navy-600 @else text-slate-400 @endif"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('mahasiswa.proposal.create') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors @if(request()->routeIs('mahasiswa.proposal.create')) bg-navy-50 text-navy-700 @else text-slate-600 hover:bg-slate-50 hover:text-navy-600 @endif">
+                            <i class="fas fa-plus w-5 text-center @if(request()->routeIs('mahasiswa.proposal.create')) text-navy-600 @else text-slate-400 @endif"></i> Ajukan Proposal
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('mahasiswa.proposal.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors @if(request()->routeIs('mahasiswa.proposal.index')) bg-navy-50 text-navy-700 @else text-slate-600 hover:bg-slate-50 hover:text-navy-600 @endif">
+                            <i class="fas fa-eye w-5 text-center @if(request()->routeIs('mahasiswa.proposal.index')) text-navy-600 @else text-slate-400 @endif"></i> Lihat Proposal
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('mahasiswa.revisi.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors @if(request()->routeIs('mahasiswa.revisi.*')) bg-navy-50 text-navy-700 @else text-slate-600 hover:bg-slate-50 hover:text-navy-600 @endif">
+                            <i class="fas fa-edit w-5 text-center @if(request()->routeIs('mahasiswa.revisi.*')) text-navy-600 @else text-slate-400 @endif"></i> Revisi Proposal
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('mahasiswa.proposal.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors @if(request()->routeIs('mahasiswa.proposal.revisi.akhir*')) bg-navy-50 text-navy-700 @else text-slate-600 hover:bg-slate-50 hover:text-navy-600 @endif">
+                            <i class="fas fa-file-edit w-5 text-center @if(request()->routeIs('mahasiswa.proposal.revisi.akhir*')) text-navy-600 @else text-slate-400 @endif"></i> Revisi Akhir
+                        </a>
+                    </li>
                 @endif
                 
                 @if(auth()->check() && auth()->user()->role === 'dosen')
@@ -177,8 +194,8 @@
                         </a></li>
                     @endif
                 @endif
-            </ul>
-        </li>
-        
-    </ul>
+                </ul>
+            </li>
+        </ul>
+    </div>
 </div>

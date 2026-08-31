@@ -192,7 +192,7 @@
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td>
-                                        <strong class="title-clamp">{{ $proposal->judul_proposal }}</strong>
+                                        <strong class="title-clamp">{{ $proposal->judul }}</strong>
                                         <br>
                                         <small class="text-muted"></small>
                                     </td>

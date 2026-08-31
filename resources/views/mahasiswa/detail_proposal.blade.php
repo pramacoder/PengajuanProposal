@@ -7,451 +7,7 @@
 @endphp
 
 @section('styles')
-<style>
-    .proposal-detail-card {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        margin-bottom: 2rem;
-        overflow: hidden;
-    }
-    
-    .proposal-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        color: white;
-        padding: 2rem;
-    }
-    
-    .proposal-title {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
-        line-height: 1.4;
-    }
-    
-    .proposal-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 2rem;
-        margin-bottom: 1rem;
-    }
-    
-    .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    .meta-item i {
-        font-size: 1.1rem;
-        opacity: 0.8;
-    }
-    
-    .status-badge {
-        font-size: 0.9rem;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .status-pending {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-        color: #856404;
-        border: 1px solid #ffeaa7;
-    }
-    
-    .status-valid {
-        background: linear-gradient(135deg, #d1ecf1 0%, #b8daff 100%);
-        color: #0c5460;
-        border: 1px solid #b8daff;
-    }
-    
-    .status-approved {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-    
-    .status-rejected {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-    
-    .proposal-body {
-        padding: 2rem;
-    }
-    
-    .info-section {
-        margin-bottom: 2rem;
-    }
-    
-    .info-section h5 {
-        color: var(--primary-color);
-        margin-bottom: 1rem;
-        font-weight: 600;
-        border-bottom: 2px solid #f0f0f0;
-        padding-bottom: 0.5rem;
-    }
-    
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1rem;
-    }
-    
-    .info-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border-left: 4px solid var(--primary-color);
-    }
-    
-    .info-label {
-        font-weight: 600;
-        color: #555;
-    }
-    
-    .info-value {
-        color: #333;
-        text-align: right;
-    }
-    
-    .team-section {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-    }
-    
-    .team-member {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem;
-        background: white;
-        border-radius: 8px;
-        margin-bottom: 0.5rem;
-        border-left: 4px solid var(--primary-color);
-    }
-    
-    .team-member.ketua {
-        border-left-color: #28a745;
-        background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
-    }
-    
-    .member-info {
-        flex: 1;
-    }
-    
-    .member-name {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 0.25rem;
-    }
-    
-    .member-details {
-        font-size: 0.9rem;
-        color: #666;
-    }
-    
-    .member-role {
-        background: var(--primary-color);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    
-    .member-role.ketua {
-        background: #28a745;
-    }
-    
-    .pdf-viewer-container {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        overflow: hidden;
-    }
-    
-    .pdf-header {
-        background: #f8f9fa;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #e9ecef;
-        display: flex;
-        justify-content: between;
-        align-items: center;
-    }
-    
-    .pdf-title {
-        font-weight: 600;
-        color: #333;
-        margin: 0;
-        margin-right: 2rem;
-    }
-    
-    .pdf-controls {
-        display: flex;
-        gap: 0.5rem;
-    }
-    
-    .pdf-viewer {
-        width: 100%;
-        height: 700px;
-        border: none;
-    }
-    
-    .pdf-iframe {
-        width: 100%;
-        height: 700px;
-        border: none;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        background: white;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 1;
-    }
-    
-    .pdf-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 400px;
-        background: #f8f9fa;
-    }
-    
-    .spinner {
-        width: 40px;
-        height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid var(--primary-color);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        transition: opacity 0.3s ease;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
 
-    .pdf-iframe {
-        transition: opacity 0.3s ease;
-    }
-
-    .pdf-loading {
-        position: relative;
-        min-height: 700px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .pdf-loading .spinner {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-    }
-    
-    .action-buttons {
-        padding: 1.5rem;
-        background: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .btn-action {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-action:hover {
-        transform: translateY(-2px);
-    }
-    
-    .empty-state {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: #6c757d;
-    }
-    
-    .empty-state i {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        color: #dee2e6;
-    }
-    
-    .empty-state h4 {
-        margin-bottom: 1rem;
-        color: #495057;
-    }
-    
-    .empty-state p {
-        margin-bottom: 2rem;
-        font-size: 1.1rem;
-    }
-
-    /* Fullscreen styles */
-    .pdf-viewer-container:fullscreen {
-        background: white;
-        padding: 20px;
-    }
-    
-    .pdf-viewer-container:fullscreen .pdf-iframe {
-        height: calc(100vh - 100px);
-    }
-    
-    .pdf-viewer-container:-webkit-full-screen {
-        background: white;
-        padding: 20px;
-    }
-    
-    .pdf-viewer-container:-webkit-full-screen .pdf-iframe {
-        height: calc(100vh - 100px);
-    }
-    
-    .pdf-viewer-container:-ms-fullscreen {
-        background: white;
-        padding: 20px;
-    }
-    
-    .pdf-viewer-container:-ms-fullscreen .pdf-iframe {
-        height: calc(100vh - 100px);
-    }
-
-    /* PDF Controls Bar */
-    .pdf-controls-bar {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .pdf-controls-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .pdf-controls-right {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .page-info {
-        font-weight: 500;
-        color: #495057;
-        background: white;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        border: 1px solid #dee2e6;
-    }
-
-    .pdf-canvas-container {
-        padding: 1rem;
-        background: white;
-    }
-
-    /* Header Styles */
-    .page-header {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .header-logo {
-        width: 80px;
-        height: 80px;
-        object-fit: contain;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-    }
-
-    .header-title {
-        color: var(--primary-color);
-        font-weight: 700;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
-    /* Revision Tabs Styles */
-    .revision-tabs {
-        background: white;
-    }
-
-    .revision-tabs .nav-tabs {
-        border-bottom: 2px solid #e9ecef;
-        margin-bottom: 0;
-    }
-
-    .revision-tabs .nav-tabs .nav-link {
-        border: none;
-        border-radius: 0;
-        color: #6c757d;
-        font-weight: 500;
-        padding: 1rem 1.5rem;
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s ease;
-    }
-
-    .revision-tabs .nav-tabs .nav-link:hover {
-        border-color: transparent;
-        border-bottom-color: #007bff;
-        color: #007bff;
-        background-color: #f8f9fa;
-    }
-
-    .revision-tabs .nav-tabs .nav-link.active {
-        color: #007bff;
-        background-color: white;
-        border-color: transparent;
-        border-bottom-color: #007bff;
-        font-weight: 600;
-    }
-
-    .revision-tabs .nav-tabs .nav-link i {
-        margin-right: 0.5rem;
-    }
-
-    .revision-info {
-        background: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-        font-size: 0.9rem;
-    }
-
-    .revision-info strong {
-        color: #495057;
-    }
-
-    .tab-content {
-        background: white;
-    }
-
-    .tab-pane {
-        min-height: 400px;
-    }
-</style>
 @endsection
 
 @section('content')
@@ -470,43 +26,31 @@
     />
 
     <!-- Proposal Detail Card -->
-    <div class="proposal-detail-card">
-        <div class="proposal-header">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <span class="status-badge status-{{ strtolower($proposal->status_validasi) }}">
-                    @if($proposal->status_validasi == 'pending')
-                        Menunggu Validasi
-                    @elseif($proposal->status_validasi == 'valid')
-                        @if($proposal->status_final == 'approved')
-                            Disetujui
-                        @else
-                            Sedang Direview
-                        @endif
-                    @else
-                        {{ ucfirst($proposal->status_validasi) }}
-                    @endif
-                </span>
+    <x-ui.card className="mb-8 overflow-hidden">
+        <div class="bg-gradient-to-br from-navy-600 to-navy-800 text-white p-8">
+            <div class="flex justify-between items-start mb-4">
+                <x-status-badge :status="$proposal->status_validasi" />
             </div>
             
-            <div class="proposal-title">
+            <h2 class="text-2xl font-bold mb-6 leading-relaxed">
                 {{ $proposal->judul }}
-            </div>
+            </h2>
             
-            <div class="proposal-meta">
-                <div class="meta-item">
-                    <i class="fas fa-calendar-alt"></i>
+            <div class="flex flex-wrap gap-6 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-calendar-alt opacity-80"></i>
                     <span>Diajukan: {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d F Y') }}</span>
                 </div>
-                <div class="meta-item">
-                    <i class="fas fa-tag"></i>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-tag opacity-80"></i>
                     <span>Skim: {{ $proposal->skim }}</span>
                 </div>
-                <div class="meta-item">
-                    <i class="fas fa-university"></i>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-university opacity-80"></i>
                     <span>Dana Belmawa: @rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
                 </div>
-                <div class="meta-item">
-                    <i class="fas fa-building"></i>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-building opacity-80"></i>
                     <span>Dana Univ: @rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
                 </div>
                 
@@ -523,80 +67,74 @@
                 @endphp
                 
                 @if($userRole)
-                    <div class="meta-item">
-                        <i class="fas fa-user"></i>
-                        <span>Role: <span class="badge bg-info">{{ $userRole }}</span></span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-user opacity-80"></i>
+                        <span>Role: <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">{{ $userRole }}</span></span>
                     </div>
                 @endif
             </div>
         </div>
         
-        <div class="proposal-body">
+        <div class="p-8">
             <!-- Informasi Proposal -->
-            <div class="info-section">
-                <h5><i class="fas fa-info-circle me-2"></i>Informasi Proposal</h5>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Judul Proposal</span>
-                        <span class="info-value">{{ $proposal->judul }}</span>
+            <div class="mb-10">
+                <h5 class="text-navy-700 font-semibold mb-6 pb-3 border-b-2 border-slate-100 flex items-center">
+                    <i class="fas fa-info-circle me-3 text-navy-500"></i>Informasi Proposal
+                </h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Judul Proposal</span>
+                        <span class="text-slate-900 font-medium text-right ml-4">{{ $proposal->judul }}</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Skim PKM</span>
-                        <span class="info-value">{{ $proposal->skim }}</span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Skim PKM</span>
+                        <span class="text-slate-900 font-medium text-right">{{ $proposal->skim }}</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Tahun Ajaran</span>
-                        <span class="info-value">{{ $proposal->tahun_ajaran ?? 'N/A' }}</span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Tahun Ajaran</span>
+                        <span class="text-slate-900 font-medium text-right">{{ $proposal->tahun_ajaran ?? 'N/A' }}</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Dana dari Belmawa <small class="text-muted">(Kemendiktisaintek)</small></span>
-                        <span class="info-value text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600 flex flex-col">Dana dari Belmawa <small class="text-slate-400 text-xs font-normal">(Kemendiktisaintek)</small></span>
+                        <span class="text-navy-600 font-bold text-right">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Dana dari Universitas</span>
-                        <span class="info-value text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Dana dari Universitas</span>
+                        <span class="text-green-600 font-bold text-right">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Status Validasi</span>
-                        <span class="info-value">
-                            <span class="status-badge status-{{ strtolower($proposal->status_validasi) }}">
-                                @if($proposal->status_validasi == 'pending')
-                                    Pending
-                                @elseif($proposal->status_validasi == 'valid')
-                                    Valid
-                                @else
-                                    {{ ucfirst($proposal->status_validasi) }}
-                                @endif
-                            </span>
-                        </span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Status Validasi</span>
+                        <div class="text-right">
+                            <x-status-badge :status="$proposal->status_validasi" />
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Status Final</span>
-                        <span class="info-value">
-                            <span class="status-badge status-{{ strtolower($proposal->status_final ?? 'pending') }}">
-                                {{ ucfirst($proposal->status_final ?? 'Pending') }}
-                            </span>
-                        </span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Status Final</span>
+                        <div class="text-right">
+                            <x-status-badge :status="$proposal->status_final ?? 'pending'" />
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Informasi Dosen Pendamping -->
-            <div class="info-section">
-                <h5><i class="fas fa-user-tie me-2"></i>Dosen Pendamping</h5>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Nama Dosen</span>
-                        <span class="info-value">{{ $proposal->dosen_pembimbing ?? 'N/A' }}</span>
+            <div class="mb-10">
+                <h5 class="text-navy-700 font-semibold mb-6 pb-3 border-b-2 border-slate-100 flex items-center">
+                    <i class="fas fa-user-tie me-3 text-navy-500"></i>Dosen Pendamping
+                </h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Nama Dosen</span>
+                        <span class="text-slate-900 font-medium text-right">{{ $proposal->dosen_pembimbing ?? 'N/A' }}</span>
                     </div>
                     @if($proposal->dosen)
-                    <div class="info-item">
-                        <span class="info-label">Email</span>
-                        <span class="info-value">{{ $proposal->dosen->email_dosen ?? 'N/A' }}</span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">Email</span>
+                        <span class="text-slate-900 font-medium text-right">{{ $proposal->dosen->email_dosen ?? 'N/A' }}</span>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">No. HP</span>
-                        <span class="info-value">{{ $proposal->dosen->no_hp_dosen ?? 'N/A' }}</span>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                        <span class="font-semibold text-slate-600">No. HP</span>
+                        <span class="text-slate-900 font-medium text-right">{{ $proposal->dosen->no_hp_dosen ?? 'N/A' }}</span>
                     </div>
                     @endif
                 </div>
@@ -604,14 +142,14 @@
 
             <!-- Informasi Dosen Pendamping Universitas -->
             @if($proposal->dosenPendampingUniversitas)
-            <div class="info-section" style="border-left: 4px solid #8B0000; background: linear-gradient(135deg, rgba(139, 0, 0, 0.05) 0%, rgba(255, 255, 255, 0.1) 100%); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                <h5 style="color: #8B0000; font-weight: 600; margin-bottom: 1.5rem; display: flex; align-items: center;">
-                    <i class="fas fa-user-graduate me-2" style="font-size: 1.3rem;"></i>Dosen Pendamping Universitas
+            <div class="mb-10 bg-rose-50/50 border-l-4 border-rose-700 p-6 rounded-lg">
+                <h5 class="text-rose-800 font-semibold mb-6 flex items-center text-lg">
+                    <i class="fas fa-user-graduate me-3 text-xl"></i>Dosen Pendamping Universitas
                 </h5>
-                <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1rem;">
-                    <div class="info-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <span class="info-label" style="color: #6c757d; font-size: 0.875rem; font-weight: 500;">Nama Dosen</span>
-                        <span class="info-value" style="color: #8B0000; font-weight: 600; font-size: 1rem;">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="flex flex-col gap-2">
+                        <span class="text-slate-500 text-sm font-medium">Nama Dosen</span>
+                        <span class="text-rose-900 font-semibold text-base">
                             {{ $proposal->dosenPendampingUniversitas->nama_dosen }}
                             @if($proposal->dosenPendampingUniversitas->gelar_depan)
                                 , {{ $proposal->dosenPendampingUniversitas->gelar_depan }}
@@ -622,29 +160,29 @@
                         </span>
                     </div>
                     @if($proposal->dosenPendampingUniversitas->email_dosen)
-                    <div class="info-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <span class="info-label" style="color: #6c757d; font-size: 0.875rem; font-weight: 500;">Email</span>
-                        <span class="info-value">
-                            <a href="mailto:{{ $proposal->dosenPendampingUniversitas->email_dosen }}" style="color: #8B0000; text-decoration: none; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#a00000'" onmouseout="this.style.color='#8B0000'">
-                                <i class="fas fa-envelope me-1"></i>{{ $proposal->dosenPendampingUniversitas->email_dosen }}
+                    <div class="flex flex-col gap-2">
+                        <span class="text-slate-500 text-sm font-medium">Email</span>
+                        <span>
+                            <a href="mailto:{{ $proposal->dosenPendampingUniversitas->email_dosen }}" class="text-rose-800 font-medium hover:text-rose-600 transition-colors">
+                                <i class="fas fa-envelope me-2"></i>{{ $proposal->dosenPendampingUniversitas->email_dosen }}
                             </a>
                         </span>
                     </div>
                     @endif
                     @if($proposal->dosenPendampingUniversitas->no_hp_dosen)
-                    <div class="info-item" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <span class="info-label" style="color: #6c757d; font-size: 0.875rem; font-weight: 500;">No. HP</span>
-                        <span class="info-value">
-                            <a href="tel:{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}" style="color: #8B0000; text-decoration: none; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#a00000'" onmouseout="this.style.color='#8B0000'">
-                                <i class="fas fa-phone me-1"></i>{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}
+                    <div class="flex flex-col gap-2">
+                        <span class="text-slate-500 text-sm font-medium">No. HP</span>
+                        <span>
+                            <a href="tel:{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}" class="text-rose-800 font-medium hover:text-rose-600 transition-colors">
+                                <i class="fas fa-phone me-2"></i>{{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}
                             </a>
                         </span>
                     </div>
                     @endif
                 </div>
-                <div class="alert mt-3 mb-0" style="background: rgba(139, 0, 0, 0.08); border-left: 3px solid #8B0000; border-radius: 6px; padding: 1rem;">
-                    <small style="color: #495057; display: flex; align-items: center;">
-                        <i class="fas fa-info-circle me-2" style="color: #8B0000;"></i>
+                <div class="bg-rose-100/50 border-l-4 border-rose-800 rounded-md p-4">
+                    <small class="text-slate-700 flex items-center">
+                        <i class="fas fa-info-circle me-3 text-rose-800 text-lg"></i>
                         Anda dapat menghubungi dosen pendamping universitas untuk konsultasi sebelum mengupload revisi akhir.
                     </small>
                 </div>
@@ -689,14 +227,14 @@
                 
                 <!-- Review Administratif -->
                 @if($adminReview)
-                <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #8b3a3a; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
-                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #8B0000 0%, #a00000 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                <div class="bg-white border-2 border-slate-200 border-l-4 border-l-rose-700 rounded-xl p-6 mb-6">
+                    <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-rose-700 to-rose-900 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                             <i class="fas fa-clipboard-check"></i>
                         </div>
                         <div>
-                            <h5 style="color: #8B0000; font-weight: 600; margin: 0; font-size: 1.1rem;">Review Administratif</h5>
-                            <small style="color: #6c757d; font-size: 0.875rem;">
+                            <h5 class="text-rose-800 font-bold m-0 text-lg">Review Administratif</h5>
+                            <small class="text-slate-500 text-sm">
                                 <i class="fas fa-clock me-1"></i>
                                 {{ \Carbon\Carbon::parse($adminReview->updated_at)->format('d M Y H:i') }}
                             </small>
@@ -704,19 +242,19 @@
                     </div>
                     
                     @if(!empty($checklistChecked) && is_array($checklistChecked))
-                    <div style="background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;">
-                        <h6 style="color: #8B0000; font-weight: 600; margin-bottom: 1rem; font-size: 1rem;">
+                    <div class="bg-rose-50 border border-rose-200 rounded-lg p-5 mb-4">
+                        <h6 class="text-rose-800 font-semibold mb-4 text-base">
                             <i class="fas fa-exclamation-triangle me-2"></i>Kesalahan Administratif yang Ditemukan:
                         </h6>
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="flex flex-col gap-3">
                             @foreach($checklistChecked as $checkedItem)
                                 @php
                                     $itemText = is_string($checkedItem) ? $checkedItem : (isset($checkedItem['text']) ? $checkedItem['text'] : '');
                                 @endphp
                                 @if(!empty($itemText))
-                                    <div style="display: flex; align-items: flex-start; padding: 0.75rem; background: white; border-radius: 6px; border-left: 3px solid #dc3545;">
-                                        <i class="fas fa-times-circle text-danger me-2" style="margin-top: 0.2rem; flex-shrink: 0;"></i>
-                                        <span style="color: #333; line-height: 1.5;">{{ $itemText }}</span>
+                                    <div class="flex items-start p-3 bg-white rounded-md border-l-4 border-rose-600 shadow-sm">
+                                        <i class="fas fa-times-circle text-rose-600 me-3 mt-1 shrink-0"></i>
+                                        <span class="text-slate-700 leading-relaxed">{{ $itemText }}</span>
                                     </div>
                                 @endif
                             @endforeach
@@ -725,11 +263,11 @@
                     @endif
                     
                     @if($adminReview->note_administratif)
-                    <div style="background: #f8f9fa; border-left: 4px solid #8B0000; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
-                        <h6 style="color: #8B0000; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                    <div class="bg-slate-50 border-l-4 border-rose-700 rounded-md p-4 mt-4">
+                        <h6 class="text-rose-800 font-semibold mb-3 text-sm">
                             <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
                         </h6>
-                        <div style="color: #495057; line-height: 1.6;">
+                        <div class="text-slate-600 leading-relaxed">
                             <p class="mb-0">{{ $adminReview->note_administratif }}</p>
                         </div>
                     </div>
@@ -739,14 +277,14 @@
                 
                 <!-- Hasil Semi Final -->
                 @if($hasilSemiFinal)
-                <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #28a745; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
-                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                <div class="bg-white border-2 border-slate-200 border-l-4 border-l-green-600 rounded-xl p-6 mb-6">
+                    <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                             <i class="fas fa-trophy"></i>
                         </div>
                         <div>
-                            <h5 style="color: #28a745; font-weight: 600; margin: 0; font-size: 1.1rem;">Hasil Semi Final - Tingkat Universitas</h5>
-                            <small style="color: #6c757d; font-size: 0.875rem;">
+                            <h5 class="text-green-700 font-bold m-0 text-lg">Hasil Semi Final - Tingkat Universitas</h5>
+                            <small class="text-slate-500 text-sm">
                                 <i class="fas fa-calendar me-1"></i>
                                 {{ \Carbon\Carbon::parse($hasilSemiFinal->updated_at)->format('d M Y H:i') }}
                             </small>
@@ -754,23 +292,23 @@
                     </div>
                     
                     @if($hasilSemiFinal->status_final == 'lolos_tingkat_universitas')
-                        <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border: 2px solid #28a745; border-radius: 8px; padding: 1rem 1.5rem; color: #155724; font-size: 1.1rem; text-align: center; margin-bottom: 1rem;">
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-500 rounded-lg p-4 text-green-800 text-lg text-center mb-4 shadow-sm">
                             <i class="fas fa-check-circle me-2"></i>
                             <strong>Lolos Tingkat Universitas</strong>
                         </div>
                     @else
-                        <div style="background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%); border: 2px solid #dc3545; border-radius: 8px; padding: 1rem 1.5rem; color: #721c24; font-size: 1.1rem; text-align: center; margin-bottom: 1rem;">
+                        <div class="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-500 rounded-lg p-4 text-red-800 text-lg text-center mb-4 shadow-sm">
                             <i class="fas fa-times-circle me-2"></i>
                             <strong>Tidak Lolos Tingkat Universitas</strong>
                         </div>
                     @endif
                     
                     @if($hasilSemiFinal->catatan_final)
-                    <div style="background: #f8f9fa; border-left: 4px solid #28a745; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
-                        <h6 style="color: #28a745; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                    <div class="bg-slate-50 border-l-4 border-green-600 rounded-md p-4 mt-4">
+                        <h6 class="text-green-700 font-semibold mb-3 text-sm">
                             <i class="fas fa-sticky-note me-2"></i>Catatan:
                         </h6>
-                        <div style="color: #495057; line-height: 1.6;">
+                        <div class="text-slate-600 leading-relaxed">
                             <p class="mb-0">{{ $hasilSemiFinal->catatan_final }}</p>
                         </div>
                     </div>
@@ -779,31 +317,31 @@
                     {{-- Card Info Dosen Universitas (muncul jika lolos) --}}
                     @if($hasilSemiFinal->status_final == 'lolos_tingkat_universitas' && $proposal->dosenPendampingUniversitas)
                     @php $dosenUniv = $proposal->dosenPendampingUniversitas; @endphp
-                    <div style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); border: 2px solid #4caf50; border-radius: 10px; padding: 1.25rem; margin-top: 1rem;">
-                        <h6 style="color: #2e7d32; font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem;">
-                            <i class="fas fa-user-tie me-2"></i>Dosen Pendamping Universitas Anda
+                    <div class="bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-500 rounded-xl p-5 mt-4">
+                        <h6 class="text-green-800 font-bold mb-4 text-sm flex items-center">
+                            <i class="fas fa-user-tie me-2 text-lg"></i>Dosen Pendamping Universitas Anda
                         </h6>
-                        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                        <div class="flex flex-wrap gap-6">
                             <div>
-                                <div style="font-size: 0.78rem; color: #6c757d; margin-bottom: 2px;">Nama</div>
-                                <div style="font-weight: 600; color: #212529;">
+                                <div class="text-xs text-slate-500 mb-0.5">Nama</div>
+                                <div class="font-semibold text-slate-900">
                                     {{ $dosenUniv->gelar_depan ? $dosenUniv->gelar_depan . ' ' : '' }}{{ $dosenUniv->name }}{{ $dosenUniv->gelar_belakang ? ', ' . $dosenUniv->gelar_belakang : '' }}
                                 </div>
                             </div>
                             @if($dosenUniv->email)
                             <div>
-                                <div style="font-size: 0.78rem; color: #6c757d; margin-bottom: 2px;">Email</div>
-                                <div><a href="mailto:{{ $dosenUniv->email }}" style="color: #1565c0; font-weight: 500;">{{ $dosenUniv->email }}</a></div>
+                                <div class="text-xs text-slate-500 mb-0.5">Email</div>
+                                <div><a href="mailto:{{ $dosenUniv->email }}" class="text-blue-600 font-medium hover:text-blue-800 transition-colors">{{ $dosenUniv->email }}</a></div>
                             </div>
                             @endif
                             @if($dosenUniv->phone)
                             <div>
-                                <div style="font-size: 0.78rem; color: #6c757d; margin-bottom: 2px;">No. HP / WhatsApp</div>
-                                <div style="font-weight: 500;">{{ $dosenUniv->phone }}</div>
+                                <div class="text-xs text-slate-500 mb-0.5">No. HP / WhatsApp</div>
+                                <div class="font-medium text-slate-900">{{ $dosenUniv->phone }}</div>
                             </div>
                             @endif
                         </div>
-                        <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.7); border-radius: 6px; font-size: 0.875rem; color: #2e7d32;">
+                        <div class="mt-4 p-3 bg-white/70 rounded-md text-sm text-green-800 font-medium border border-green-200">
                             <i class="fas fa-info-circle me-1"></i>
                             Hubungi Dosen Pendamping Universitas, lalu upload <strong>revisi akhir</strong> proposal Anda melalui menu <strong>Revisi Akhir</strong>.
                         </div>
@@ -814,27 +352,27 @@
                 
                 <!-- Hasil Final -->
                 @if($hasilFinal)
-                <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #9c27b0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(156, 39, 176, 0.15);">
-                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
-                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                <div class="bg-white border-2 border-slate-200 border-l-4 border-l-purple-600 rounded-xl p-6 mb-6 shadow-md shadow-purple-900/5">
+                    <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                             <i class="fas fa-medal"></i>
                         </div>
                         <div>
-                            <h5 style="color: #9c27b0; font-weight: 600; margin: 0; font-size: 1.1rem;">Hasil Final - Keputusan Pimpinan PT</h5>
-                            <small style="color: #6c757d; font-size: 0.875rem;">
+                            <h5 class="text-purple-700 font-bold m-0 text-lg">Hasil Final - Keputusan Pimpinan PT</h5>
+                            <small class="text-slate-500 text-sm">
                                 <i class="fas fa-calendar me-1"></i>
                                 {{ \Carbon\Carbon::parse($hasilFinal->updated_at)->format('d M Y H:i') }}
                             </small>
                         </div>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <!-- Status PIMNAS -->
-                        <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; border-left: 4px solid {{ $hasilFinal->status_pimnas == 'lolos' ? '#28a745' : '#dc3545' }};">
-                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
-                                <i class="fas fa-flag me-1"></i>Status PIMNAS
+                        <div class="bg-slate-50 rounded-lg p-4 border-l-4 {{ $hasilFinal->status_pimnas == 'lolos' ? 'border-green-500' : 'border-red-500' }}">
+                            <div class="text-sm text-slate-500 mb-2 font-medium">
+                                <i class="fas fa-flag me-2"></i>Status PIMNAS
                             </div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: {{ $hasilFinal->status_pimnas == 'lolos' ? '#28a745' : '#dc3545' }};">
+                            <div class="text-lg font-bold {{ $hasilFinal->status_pimnas == 'lolos' ? 'text-green-600' : 'text-red-600' }}">
                                 @if($hasilFinal->status_pimnas == 'lolos')
                                     <i class="fas fa-check-circle me-1"></i>Lolos
                                 @else
@@ -844,11 +382,11 @@
                         </div>
                         
                         <!-- Status Pendanaan -->
-                        <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; border-left: 4px solid {{ $hasilFinal->status_pendanaan == 'lolos' ? '#28a745' : '#dc3545' }};">
-                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
-                                <i class="fas fa-money-bill-wave me-1"></i>Status Pendanaan
+                        <div class="bg-slate-50 rounded-lg p-4 border-l-4 {{ $hasilFinal->status_pendanaan == 'lolos' ? 'border-green-500' : 'border-red-500' }}">
+                            <div class="text-sm text-slate-500 mb-2 font-medium">
+                                <i class="fas fa-money-bill-wave me-2"></i>Status Pendanaan
                             </div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: {{ $hasilFinal->status_pendanaan == 'lolos' ? '#28a745' : '#dc3545' }};">
+                            <div class="text-lg font-bold {{ $hasilFinal->status_pendanaan == 'lolos' ? 'text-green-600' : 'text-red-600' }}">
                                 @if($hasilFinal->status_pendanaan == 'lolos')
                                     <i class="fas fa-check-circle me-1"></i>Lolos
                                 @else
@@ -859,11 +397,11 @@
                         
                         <!-- Nilai -->
                         @if($hasilFinal->nilai)
-                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; padding: 1rem; border-left: 4px solid #2196f3;">
-                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
-                                <i class="fas fa-star me-1"></i>Nilai Akhir
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border-l-4 border-blue-500">
+                            <div class="text-sm text-slate-500 mb-2 font-medium">
+                                <i class="fas fa-star me-2"></i>Nilai Akhir
                             </div>
-                            <div style="font-size: 1.3rem; font-weight: 700; color: #1976d2;">
+                            <div class="text-xl font-bold text-blue-700">
                                 @formatId($hasilFinal->nilai, 2)
                             </div>
                         </div>
@@ -871,29 +409,35 @@
                         
                         <!-- Dana yang Didapatkan -->
                         @if($hasilFinal->status_pendanaan == 'lolos' && ($hasilFinal->dana_didapatkan_belmawa || $hasilFinal->dana_didapatkan_operator))
-                        <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; padding: 1rem; border-left: 4px solid #4caf50;">
-                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; font-weight: 500;">
-                                <i class="fas fa-coins me-1"></i>Dana Didapatkan (Belmawa)
-                            </div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #2e7d32;">
-                                @rupiahId($hasilFinal->dana_didapatkan_belmawa ?? 0)
-                            </div>
-                            <div style="font-size: 0.875rem; color: #6c757d; margin-bottom: 0.5rem; margin-top: 0.5rem; font-weight: 500;">
-                                <i class="fas fa-coins me-1"></i>Dana Didapatkan (Universitas)
-                            </div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #2e7d32;">
-                                @rupiahId($hasilFinal->dana_didapatkan_operator ?? 0)
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border-l-4 border-green-500 col-span-1 lg:col-span-2">
+                            <div class="flex flex-col gap-3">
+                                <div>
+                                    <div class="text-sm text-slate-500 mb-1 font-medium">
+                                        <i class="fas fa-coins me-2"></i>Dana Didapatkan (Belmawa)
+                                    </div>
+                                    <div class="text-lg font-bold text-green-700">
+                                        @rupiahId($hasilFinal->dana_didapatkan_belmawa ?? 0)
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-slate-500 mb-1 font-medium">
+                                        <i class="fas fa-coins me-2"></i>Dana Didapatkan (Universitas)
+                                    </div>
+                                    <div class="text-lg font-bold text-green-700">
+                                        @rupiahId($hasilFinal->dana_didapatkan_operator ?? 0)
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         @endif
                     </div>
                     
                     @if($hasilFinal->catatan_final)
-                    <div style="background: #f8f9fa; border-left: 4px solid #9c27b0; border-radius: 6px; padding: 1rem; margin-top: 1rem;">
-                        <h6 style="color: #9c27b0; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                    <div class="bg-slate-50 border-l-4 border-purple-600 rounded-md p-4 mt-4">
+                        <h6 class="text-purple-700 font-semibold mb-3 text-sm">
                             <i class="fas fa-sticky-note me-2"></i>Catatan Pimpinan PT:
                         </h6>
-                        <div style="color: #495057; line-height: 1.6;">
+                        <div class="text-slate-600 leading-relaxed">
                             <p class="mb-0">{{ $hasilFinal->catatan_final }}</p>
                         </div>
                     </div>
@@ -904,25 +448,25 @@
                 <!-- Review Substantif (Catatan Saja) -->
                 @if($substantifReviews->count() > 0)
                     @foreach($substantifReviews as $index => $review)
-                    <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #6c757d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
-                            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                    <div class="bg-white border-2 border-slate-200 border-l-4 border-l-slate-500 rounded-xl p-6 mb-6">
+                        <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                                 <i class="fas fa-user-graduate"></i>
                             </div>
                             <div>
-                                <h5 style="color: #6c757d; font-weight: 600; margin: 0; font-size: 1.1rem;">Review Substantif - Reviewer {{ $index + 1 }}</h5>
-                                <small style="color: #6c757d; font-size: 0.875rem;">
+                                <h5 class="text-slate-600 font-bold m-0 text-lg">Review Substantif - Reviewer {{ $index + 1 }}</h5>
+                                <small class="text-slate-500 text-sm">
                                     <i class="fas fa-clock me-1"></i>
                                     {{ \Carbon\Carbon::parse($review->updated_at)->format('d M Y H:i') }}
                                 </small>
                             </div>
                         </div>
                         
-                        <div style="background: #f8f9fa; border-left: 4px solid #6c757d; border-radius: 6px; padding: 1rem;">
-                            <h6 style="color: #6c757d; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                        <div class="bg-slate-50 border-l-4 border-slate-500 rounded-md p-4">
+                            <h6 class="text-slate-600 font-semibold mb-3 text-sm">
                                 <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
                             </h6>
-                            <div style="color: #495057; line-height: 1.6;">
+                            <div class="text-slate-600 leading-relaxed">
                                 <p class="mb-0">{{ $review->note_substantif }}</p>
                             </div>
                         </div>
@@ -933,18 +477,20 @@
             @endif
 
             <!-- Informasi Tim -->
-            <div class="info-section">
-                <h5><i class="fas fa-users me-2"></i>Anggota Tim (@formatId($proposal->semuaAnggotaTim->count()) orang)</h5>
-                <div class="team-section">
+            <div class="mb-10">
+                <h5 class="text-navy-700 font-semibold mb-6 pb-3 border-b-2 border-slate-100 flex items-center">
+                    <i class="fas fa-users me-3 text-navy-500"></i>Anggota Tim (@formatId($proposal->semuaAnggotaTim->count()) orang)
+                </h5>
+                <div class="bg-slate-50 rounded-lg p-6">
                     @foreach($proposal->semuaAnggotaTim as $member)
-                    <div class="team-member {{ $member->is_ketua ? 'ketua' : '' }}">
-                        <div class="member-info">
-                            <div class="member-name">{{ $member->nama_mhs }}</div>
-                            <div class="member-details">
-                                NIM: {{ $member->nim }} | {{ $member->prodi_mhs }} | {{ $member->fakultas_mhs }}
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-white rounded-lg mb-3 border-l-4 {{ $member->is_ketua ? 'border-green-500 bg-green-50/30' : 'border-navy-500' }} shadow-sm">
+                        <div class="mb-2 sm:mb-0">
+                            <div class="font-bold text-slate-800 text-lg mb-1">{{ $member->nama_mhs }}</div>
+                            <div class="text-sm text-slate-500">
+                                <span class="font-medium text-slate-700">NIM:</span> {{ $member->nim }} &bull; {{ $member->prodi_mhs }} &bull; {{ $member->fakultas_mhs }}
                             </div>
                         </div>
-                        <span class="member-role {{ $member->is_ketua ? 'ketua' : '' }}">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider {{ $member->is_ketua ? 'bg-green-100 text-green-700' : 'bg-navy-100 text-navy-700' }}">
                             {{ $member->is_ketua ? 'Ketua' : 'Anggota' }}
                         </span>
                     </div>
@@ -954,17 +500,17 @@
 
             <!-- Catatan dan File Koreksi jika Proposal Ditolak -->
             @if($proposal->status_validasi === 'tidak_valid' && $proposal->catatan)
-            <div class="info-section">
-                <div class="alert alert-danger">
-                    <h5 class="alert-heading">
-                        <i class="fas fa-times-circle me-2"></i>Proposal Ditolak oleh Dosen Pendamping
+            <div class="mb-10">
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                    <h5 class="text-red-700 font-bold mb-4 flex items-center text-lg">
+                        <i class="fas fa-times-circle me-3"></i>Proposal Ditolak oleh Dosen Pendamping
                     </h5>
-                    <hr>
-                    <p class="mb-2"><strong>Alasan Penolakan:</strong></p>
-                    <p class="mb-3">{{ $proposal->catatan }}</p>
+                    <hr class="border-red-200 mb-4">
+                    <p class="mb-2 text-red-900 font-semibold">Alasan Penolakan:</p>
+                    <p class="mb-4 text-red-800">{{ $proposal->catatan }}</p>
                     @if($proposal->tanggal_validasi)
-                        <small class="text-muted">
-                            <i class="fas fa-calendar me-1"></i>
+                        <small class="text-red-600 font-medium">
+                            <i class="fas fa-calendar me-2"></i>
                             Tanggal: {{ \Carbon\Carbon::parse($proposal->tanggal_validasi)->format('d F Y H:i') }}
                         </small>
                     @endif
@@ -972,28 +518,32 @@
             </div>
             @elseif($proposal->catatan)
             <!-- Catatan (jika ada tapi bukan penolakan) -->
-            <div class="info-section">
-                <h5><i class="fas fa-sticky-note me-2"></i>Catatan</h5>
-                <div class="info-item">
-                    <span class="info-label">Catatan</span>
-                    <span class="info-value">{{ $proposal->catatan }}</span>
+            <div class="mb-10">
+                <h5 class="text-navy-700 font-semibold mb-6 pb-3 border-b-2 border-slate-100 flex items-center">
+                    <i class="fas fa-sticky-note me-3 text-navy-500"></i>Catatan
+                </h5>
+                <div class="flex justify-between items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                    <span class="font-semibold text-slate-600">Catatan</span>
+                    <span class="text-slate-900 font-medium text-right ml-4">{{ $proposal->catatan }}</span>
                 </div>
             </div>
             @endif
 
             <!-- Review PDF Dosen (untuk validasi) -->
             @if($proposal->status_validasi === 'valid' && $proposal->path_review_dosen)
-            <div class="info-section">
-                <h5><i class="fas fa-file-pdf me-2"></i>Review PDF dari Dosen</h5>
-                <div class="info-item">
-                    <span class="info-label">File Review</span>
-                    <span class="info-value">
-                        <a href="{{ route('file.serve', ['path' => $proposal->path_review_dosen]) }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-download me-1"></i>
+            <div class="mb-10">
+                <h5 class="text-navy-700 font-semibold mb-6 pb-3 border-b-2 border-slate-100 flex items-center">
+                    <i class="fas fa-file-pdf me-3 text-navy-500"></i>Review PDF dari Dosen
+                </h5>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 rounded-lg border-l-4 border-navy-500">
+                    <span class="font-semibold text-slate-600 mb-3 sm:mb-0">File Review</span>
+                    <span class="text-right flex flex-col items-end">
+                        <a href="{{ route('file.serve', ['path' => $proposal->path_review_dosen]) }}" target="_blank" class="px-4 py-2 bg-white border border-navy-500 text-navy-600 rounded-lg font-medium hover:bg-navy-50 hover:text-navy-700 transition-colors shadow-sm inline-flex items-center">
+                            <i class="fas fa-download me-2"></i>
                             {{ $proposal->nama_file_review_dosen ?? 'Download Review PDF' }}
                         </a>
                         @if($proposal->tanggal_review_dosen)
-                            <br><small class="text-muted mt-2 d-block">
+                            <small class="text-slate-500 mt-2 block font-medium">
                                 <i class="fas fa-calendar me-1"></i>
                                 Diupload pada: {{ \Carbon\Carbon::parse($proposal->tanggal_review_dosen)->format('d F Y H:i') }}
                             </small>
@@ -1003,69 +553,70 @@
             </div>
             @endif
         </div>
-    </div>
+    </x-ui.card>
 
     <!-- PDF Viewer -->
-    <div class="pdf-viewer-container">
-        <div class="pdf-header">
-            <h5 class="pdf-title">
-                <i class="fas fa-file-pdf me-2"></i>
+    <x-ui.card className="mb-8 overflow-hidden pdf-viewer-container" id="proposalPdfContainer">
+        <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
+            <h5 class="font-semibold text-slate-800 m-0 flex items-center text-lg">
+                <i class="fas fa-file-pdf me-3 text-red-500 text-xl"></i>
                 Dokumen Proposal
             </h5>
-            <div class="pdf-controls">
+            <div class="flex gap-2">
                 @if($proposal->dokumen && $proposal->dokumen->path_file)
-                <button id="fullscreenBtn" class="btn btn-outline-secondary btn-sm me-2">
-                    <i class="fas fa-expand me-1"></i>Fullscreen
+                <button id="fullscreenBtn" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 transition-colors text-sm font-medium inline-flex items-center">
+                    <i class="fas fa-expand me-2"></i>Fullscreen
                 </button>
-                <a href="{{ route('mahasiswa.proposal.download', [$proposal->id_proposal, 'proposal']) }}" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-download me-1"></i>Download
+                <a href="{{ route('mahasiswa.proposal.download', [$proposal->id_proposal, 'proposal']) }}" class="px-3 py-1.5 bg-navy-600 text-white rounded hover:bg-navy-700 transition-colors shadow-sm text-sm font-medium inline-flex items-center">
+                    <i class="fas fa-download me-2"></i>Download
                 </a>
                 @endif
             </div>
         </div>
         @if($proposal->dokumen && $proposal->dokumen->path_file)
-        <div id="pdfViewer" class="pdf-loading">
-            <div class="spinner"></div>
+        <div id="pdfViewer" class="relative min-h-[700px] bg-slate-100 flex items-center justify-center">
+            <div class="w-10 h-10 border-4 border-slate-200 border-t-navy-600 rounded-full animate-spin absolute z-10"></div>
             <!-- PDF iframe will be inserted here -->
         </div>
         @else
-        <div class="empty-state">
-            <i class="fas fa-file-pdf"></i>
-            <h4>Tidak Ada Dokumen</h4>
-            <p>Dokumen proposal belum diunggah atau tidak tersedia.</p>
+        <div class="text-center py-16 px-8 text-slate-500">
+            <i class="fas fa-file-pdf text-6xl text-slate-300 mb-6 block"></i>
+            <h4 class="text-xl font-semibold text-slate-700 mb-3">Tidak Ada Dokumen</h4>
+            <p class="text-slate-500 text-lg">Dokumen proposal belum diunggah atau tidak tersedia.</p>
         </div>
         @endif
-    </div>
+    </x-ui.card>
 
     <!-- Revision Documents -->
     @if($proposal->proposalRevisi->count() > 0)
-    <div class="pdf-viewer-container mt-20">
-        <div class="pdf-header">
-            <h5 class="pdf-title">
-                <i class="fas fa-edit me-2"></i>
+    <x-ui.card className="mb-8 overflow-hidden pdf-viewer-container" id="revisiPdfContainer">
+        <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-4">
+            <h5 class="font-semibold text-slate-800 m-0 flex items-center text-lg">
+                <i class="fas fa-edit me-3 text-orange-500 text-xl"></i>
                 Dokumen Revisi (@formatId($proposal->proposalRevisi->count()) file)
             </h5>
-            <div class="pdf-controls">
-                <button id="revisiFullscreenBtn" class="btn btn-outline-secondary btn-sm me-2">
-                    <i class="fas fa-expand me-1"></i>Fullscreen
+            <div class="flex gap-2">
+                <button id="revisiFullscreenBtn" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-600 rounded hover:bg-slate-50 transition-colors text-sm font-medium inline-flex items-center">
+                    <i class="fas fa-expand me-2"></i>Fullscreen
                 </button>
             </div>
         </div>
         
         <!-- Revision Tabs -->
-        <div class="revision-tabs">
-            <ul class="nav nav-tabs" id="revisionTabs" role="tablist">
+        <div class="bg-white">
+            <ul class="flex border-b border-slate-200 overflow-x-auto" id="revisionTabs" role="tablist">
                 @foreach($proposal->proposalRevisi as $index => $revisi)
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link {{ $index === 0 ? 'active' : '' }}" 
+                <li class="mr-1" role="presentation">
+                    <button class="inline-flex flex-col items-center justify-center py-4 px-6 border-b-2 font-medium text-sm transition-colors {{ $index === 0 ? 'border-navy-600 text-navy-600 bg-navy-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 hover:bg-slate-50' }}" 
                             id="revisi-tab-{{ $revisi->id_revisi }}" 
                             data-bs-toggle="tab" 
                             data-bs-target="#revisi-{{ $revisi->id_revisi }}" 
                             type="button" 
                             role="tab">
-                        <i class="fas fa-file-pdf me-1"></i>
-                        Revisi {{ $index + 1 }}
-                        <small class="d-block text-muted">{{ $revisi->tanggal_submit->format('d/m/Y H:i') }}</small>
+                        <span class="flex items-center mb-1">
+                            <i class="fas fa-file-pdf me-2"></i> Revisi {{ $index + 1 }}
+                        </span>
+                        <small class="text-xs font-normal opacity-80">{{ $revisi->tanggal_submit->format('d/m/Y H:i') }}</small>
                     </button>
                 </li>
                 @endforeach
@@ -1076,71 +627,71 @@
                 <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" 
                      id="revisi-{{ $revisi->id_revisi }}" 
                      role="tabpanel">
-                    <div class="revision-info p-3 bg-light border-bottom">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Nama File:</strong> {{ $revisi->nama_file }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Tanggal Submit:</strong> {{ $revisi->tanggal_submit->format('d/m/Y H:i') }}
-                            </div>
-                            <div class="col-md-3 text-end">
-                                <a href="{{ route('file.serve', ['path' => $revisi->path_file]) }}" 
-                                   class="btn btn-outline-primary btn-sm" 
-                                   download="{{ $revisi->nama_file }}">
-                                    <i class="fas fa-download me-1"></i>Download
-                                </a>
-                            </div>
+                    <div class="bg-slate-50 p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex-1">
+                            <div class="text-sm text-slate-500 mb-1">Nama File:</div>
+                            <div class="font-medium text-slate-800 break-all">{{ $revisi->nama_file }}</div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm text-slate-500 mb-1">Tanggal Submit:</div>
+                            <div class="font-medium text-slate-800">{{ $revisi->tanggal_submit->format('d/m/Y H:i') }}</div>
+                        </div>
+                        <div>
+                            <a href="{{ route('file.serve', ['path' => $revisi->path_file]) }}" 
+                               class="px-4 py-2 bg-white border border-navy-500 text-navy-600 rounded-lg font-medium hover:bg-navy-50 hover:text-navy-700 transition-colors shadow-sm inline-flex items-center whitespace-nowrap" 
+                               download="{{ $revisi->nama_file }}">
+                                <i class="fas fa-download me-2"></i>Download
+                            </a>
                         </div>
                     </div>
-                    <div id="revisiPdfViewer-{{ $revisi->id_revisi }}" class="pdf-loading">
-                        <div class="spinner"></div>
+                    <div id="revisiPdfViewer-{{ $revisi->id_revisi }}" class="relative min-h-[500px] bg-slate-100 flex items-center justify-center pdf-loading">
+                        <div class="w-10 h-10 border-4 border-slate-200 border-t-navy-600 rounded-full animate-spin absolute z-10 spinner"></div>
                         <!-- PDF iframe will be inserted here -->
                     </div>
                 </div>
                 @endforeach
             </div>
         </div>
-    </div>
+    </x-ui.card>
     @endif
 
     <!-- Action Buttons -->
-    <div class="action-buttons">
-        <a href="{{ route('mahasiswa.proposal.index') }}" class="btn btn-outline-secondary btn-action">
+    <div class="flex flex-wrap gap-4 mt-8 mb-12 p-6 bg-slate-50 rounded-xl border border-slate-200">
+        <a href="{{ route('mahasiswa.proposal.index') }}" class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center shadow-sm">
             <i class="fas fa-arrow-left me-2"></i>Kembali ke Daftar
         </a>
         
         @if($proposal->status_validasi === 'tidak_valid')
-        <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-action">
+        <a href="{{ route('mahasiswa.proposal.create') }}" class="px-5 py-2.5 bg-navy-600 text-white rounded-lg font-medium hover:bg-navy-700 transition-colors inline-flex items-center shadow-sm">
             <i class="fas fa-redo me-2"></i>Ajukan Ulang Proposal
         </a>
         @elseif($proposal->status === 'revisi' && $proposal->status_validasi !== 'pending')
-        <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
+        <a href="{{ route('mahasiswa.proposal.revisi', $proposal->id_proposal) }}" class="px-5 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors inline-flex items-center shadow-sm">
             <i class="fas fa-edit me-2"></i>Revisi Proposal
         </a>
         @elseif($proposal->status === 'revisi' && $proposal->status_validasi === 'pending')
-        <span class="btn btn-info btn-action disabled">
+        <span class="px-5 py-2.5 bg-blue-100 text-blue-800 rounded-lg font-medium inline-flex items-center border border-blue-200 cursor-not-allowed">
             <i class="fas fa-clock me-2"></i>Menunggu Validasi Dosen Pendamping
         </span>
         @elseif($proposal->status === 'revisi_akhir')
-        <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
+        <a href="{{ route('mahasiswa.proposal.revisi.akhir', $proposal->id_proposal) }}" class="px-5 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors inline-flex items-center shadow-sm">
             <i class="fas fa-edit me-2"></i>Revisi Akhir Proposal
         </a>
         @elseif($proposal->status === 'revisi_submitted' || $proposal->status === 'validasi_akhir_dosen_univ')
-        <span class="btn btn-info btn-action disabled">
+        <span class="px-5 py-2.5 bg-blue-100 text-blue-800 rounded-lg font-medium inline-flex items-center border border-blue-200 cursor-not-allowed">
             <i class="fas fa-clock me-2"></i>Menunggu Validasi
         </span>
         @elseif(in_array($proposal->status, ['draft', 'pending']))
-        <a href="{{ route('mahasiswa.proposal.edit', $proposal->id_proposal) }}" class="btn btn-warning btn-action">
+        <a href="{{ route('mahasiswa.proposal.edit', $proposal->id_proposal) }}" class="px-5 py-2.5 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors inline-flex items-center shadow-sm">
             <i class="fas fa-edit me-2"></i>Edit Proposal
         </a>
         @endif
         
         @if($proposal->status == 'draft')
-        <form action="{{ route('mahasiswa.proposal.destroy', $proposal->id_proposal) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus proposal ini?')">
+        <form action="{{ route('mahasiswa.proposal.destroy', $proposal->id_proposal) }}" method="POST" class="inline-block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus proposal ini?')">
             @csrf
             @method('DELETE')
-            <button type="submit" class="btn btn-danger btn-action">
+            <button type="submit" class="px-5 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors inline-flex items-center shadow-sm">
                 <i class="fas fa-trash me-2"></i>Hapus Proposal
             </button>
         </form>

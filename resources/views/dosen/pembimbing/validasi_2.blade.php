@@ -42,7 +42,7 @@
                 <div class="card h-100 border-warning">
                     <div class="card-header bg-warning bg-opacity-10">
                         <h6 class="card-title mb-0 fw-bold text-warning">
-                            <i class="fas fa-file-alt me-2"></i>{{ Str::limit($proposal->judul_proposal, 55) }}
+                            <i class="fas fa-file-alt me-2"></i>{{ Str::limit($proposal->judul, 55) }}
                         </h6>
                     </div>
                     <div class="card-body">

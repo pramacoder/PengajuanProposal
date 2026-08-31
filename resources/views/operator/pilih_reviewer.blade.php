@@ -76,7 +76,7 @@
                         <tr data-proposal-id="{{ $proposal->id_proposal }}">
                             <td>{{ $index + 1 }}</td>
                             <td>
-                                <strong>{{ $proposal->judul_proposal ?? 'Judul proposal..' }}</strong>
+                                <strong>{{ $proposal->judul ?? 'Judul proposal..' }}</strong>
                             </td>
                             <td>
                                 <span class="badge bg-primary">{{ $proposal->skim ?? 'N/A' }}</span>

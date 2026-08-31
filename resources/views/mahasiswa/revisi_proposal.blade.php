@@ -3,340 +3,7 @@
 @section('title', 'Revisi Proposal PKM')
 
 @section('styles')
-<style>
-    .revisi-section {
-        background: white;
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .revisi-section:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    
-    .section-title {
-        color: var(--primary-color);
-        font-weight: bold;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--primary-color);
-        display: flex;
-        align-items: center;
-    }
-    
-    .file-upload-area {
-        border: 2px dashed #dee2e6;
-        border-radius: 12px;
-        padding: 3rem 2rem;
-        text-align: center;
-        transition: all 0.3s ease;
-        background-color: #f8f9fa;
-        cursor: pointer;
-    }
-    
-    .file-upload-area:hover {
-        border-color: var(--primary-color);
-        background-color: rgba(139, 58, 58, 0.05);
-    }
-    
-    .file-upload-area.dragover {
-        border-color: var(--primary-color);
-        background-color: rgba(139, 58, 58, 0.1);
-        transform: scale(1.02);
-    }
-    
-    .file-upload-icon {
-        font-size: 3rem;
-        color: var(--primary-color);
-        margin-bottom: 1rem;
-    }
-    
-    .file-info {
-        background-color: #e9ecef;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 1rem;
-        display: none;
-    }
-    
-    .file-info.show {
-        display: block;
-    }
-    
-    .progress-bar-custom {
-        height: 8px;
-        border-radius: 4px;
-        background-color: #e9ecef;
-        overflow: hidden;
-        margin-top: 0.5rem;
-    }
-    
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        width: 0%;
-        transition: width 0.3s ease;
-    }
-    
-    .revisi-item {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .revisi-item:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .file-icon {
-        font-size: 2rem;
-        color: var(--primary-color);
-    }
-    
-    .btn-action {
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-download {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        border: none;
-        color: white;
-    }
-    
-    .btn-download:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-        color: white;
-    }
-    
-    .btn-delete {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        border: none;
-        color: white;
-    }
-    
-    .btn-delete:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-        color: white;
-    }
-    
-    .status-badge {
-        font-size: 0.875rem;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-    }
-    
-    .alert-info {
-        border-left: 4px solid var(--primary-color);
-        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    }
-    
-    /* Review Section Styles */
-    .review-section {
-        background: white;
-    }
-    
-    .review-card {
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        transition: all 0.3s ease;
-    }
-    
-    .review-card:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(139, 58, 58, 0.15);
-    }
-    
-    .administratif-review {
-        border-left: 5px solid #8b3a3a;
-    }
-    
-    .semi-final-review {
-        border-left: 5px solid #28a745;
-    }
-    
-    .substantif-review {
-        border-left: 5px solid #6c757d;
-    }
-    
-    .review-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f0f0f0;
-    }
-    
-    .review-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        margin-right: 1rem;
-        flex-shrink: 0;
-    }
-    
-    .semi-final-review .review-icon {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    }
-    
-    .substantif-review .review-icon {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-    }
-    
-    .review-title h5 {
-        color: var(--primary-color);
-        font-weight: 600;
-        margin: 0;
-        font-size: 1.1rem;
-    }
-    
-    .semi-final-review .review-title h5 {
-        color: #28a745;
-    }
-    
-    .substantif-review .review-title h5 {
-        color: #6c757d;
-    }
-    
-    .review-date {
-        color: #6c757d;
-        font-size: 0.875rem;
-    }
-    
-    /* Checklist Errors */
-    .checklist-errors {
-        background: #fff5f5;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-    }
-    
-    .checklist-title {
-        color: var(--primary-color);
-        font-weight: 600;
-        margin-bottom: 1rem;
-        font-size: 1rem;
-    }
-    
-    .checklist-items {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-    
-    .checklist-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 0.75rem;
-        background: white;
-        border-radius: 6px;
-        border-left: 3px solid #dc3545;
-        transition: all 0.2s ease;
-    }
-    
-    .checklist-item:hover {
-        background: #fff5f5;
-        transform: translateX(5px);
-    }
-    
-    .checklist-item i {
-        margin-top: 0.2rem;
-        flex-shrink: 0;
-    }
-    
-    .checklist-item span {
-        color: #333;
-        line-height: 1.5;
-    }
-    
-    /* Review Note */
-    .review-note {
-        background: #f8f9fa;
-        border-left: 4px solid var(--primary-color);
-        border-radius: 6px;
-        padding: 1rem;
-        margin-top: 1rem;
-    }
-    
-    .note-title {
-        color: var(--primary-color);
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        font-size: 0.95rem;
-    }
-    
-    .note-content {
-        color: #495057;
-        line-height: 1.6;
-    }
-    
-    /* Status Badge */
-    .status-badge-lolos {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        border: 2px solid #28a745;
-        border-radius: 8px;
-        padding: 1rem 1.5rem;
-        color: #155724;
-        font-size: 1.1rem;
-        text-align: center;
-    }
-    
-    .status-badge-tidak-lolos {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        border: 2px solid #dc3545;
-        border-radius: 8px;
-        padding: 1rem 1.5rem;
-        color: #721c24;
-        font-size: 1.1rem;
-        text-align: center;
-    }
-    
-    /* Dosen Info */
-    .dosen-info {
-        background: #e7f3ff;
-        border: 1px solid #b3d9ff;
-        border-radius: 8px;
-        padding: 1.25rem;
-        margin-top: 1rem;
-    }
-    
-    .info-title {
-        color: var(--primary-color);
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        font-size: 0.95rem;
-    }
-    
-    .info-content {
-        color: #495057;
-    }
-    
-    .info-content p {
-        margin-bottom: 0.5rem;
-    }
-</style>
+
 @endsection
 
 @section('content')
@@ -350,75 +17,89 @@
         title="Revisi Proposal PKM" 
     />
     <!-- Status Perbaikan -->
-    <div class="alert alert-info">
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-3 fa-2x"></i>
-            <div>
-                <h5 class="mb-1">Status Perbaikan: 
-                    <x-status-badge class="status-badge" :status="$ruangKontrol ? $ruangKontrol->status_perbaikan : 'tertutup'" />
-                </h5>
-                @if(!$ruangKontrol)
-                    <p class="mb-0 text-warning">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        <strong>Ruang kontrol tidak ditemukan untuk tahun ajaran ini.</strong>
-                    </p>
-                @endif
-                @if($ruangKontrol && $ruangKontrol->tanggal_perbaikan_mulai && $ruangKontrol->tanggal_perbaikan_selesai)
-                    <p class="mb-0">
-                        Periode: {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_mulai)->format('d M Y') }} - 
-                        {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai)->format('d M Y') }}
-                    </p>
-                    @php
-                        $deadline = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai);
-                        $daysLeft = (int) now()->diffInDays($deadline, false);
-                    @endphp
-                    @if($daysLeft > 0)
-                        <p class="mb-0 text-warning">
-                            <i class="fas fa-clock me-1"></i>
-                            <strong>Sisa waktu: {{ $daysLeft }} hari</strong>
-                        </p>
-                    @elseif($daysLeft == 0)
-                        <p class="mb-0 text-danger">
-                            <i class="fas fa-exclamation-triangle me-1"></i>
-                            <strong>Hari terakhir!</strong>
-                        </p>
-                    @else
-                        <p class="mb-0 text-danger">
-                            <i class="fas fa-times-circle me-1"></i>
-                            <strong>Batas waktu telah terlampaui {{ abs($daysLeft) }} hari</strong>
+    <div class="mb-10">
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg shadow-sm">
+            <div class="flex items-start">
+                <div class="text-blue-500 mt-1 mr-4">
+                    <i class="fas fa-info-circle fa-2xl"></i>
+                </div>
+                <div>
+                    <h5 class="text-blue-800 font-bold mb-2 flex items-center gap-2">Status Perbaikan: 
+                        <x-status-badge class="text-sm px-3 py-1" :status="$ruangKontrol ? $ruangKontrol->status_perbaikan : 'tertutup'" />
+                    </h5>
+                    @if(!$ruangKontrol)
+                        <p class="mb-0 text-amber-600 font-medium flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Ruang kontrol tidak ditemukan untuk tahun ajaran ini.
                         </p>
                     @endif
-                @endif
+                    @if($ruangKontrol && $ruangKontrol->tanggal_perbaikan_mulai && $ruangKontrol->tanggal_perbaikan_selesai)
+                        <p class="mb-2 text-blue-700">
+                            <span class="font-semibold">Periode:</span> {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_mulai)->format('d M Y') }} - 
+                            {{ \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai)->format('d M Y') }}
+                        </p>
+                        @php
+                            $deadline = \Carbon\Carbon::parse($ruangKontrol->tanggal_perbaikan_selesai);
+                            $daysLeft = (int) now()->diffInDays($deadline, false);
+                        @endphp
+                        @if($daysLeft > 0)
+                            <p class="mb-0 text-amber-600 font-bold flex items-center bg-amber-50 inline-block px-3 py-1 rounded-md">
+                                <i class="fas fa-clock mr-2"></i>
+                                Sisa waktu: {{ $daysLeft }} hari
+                            </p>
+                        @elseif($daysLeft == 0)
+                            <p class="mb-0 text-red-600 font-bold flex items-center bg-red-50 inline-block px-3 py-1 rounded-md">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Hari terakhir!
+                            </p>
+                        @else
+                            <p class="mb-0 text-red-600 font-bold flex items-center bg-red-50 inline-block px-3 py-1 rounded-md">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                Batas waktu telah terlampaui {{ abs($daysLeft) }} hari
+                            </p>
+                        @endif
+                    @endif
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Informasi Proposal -->
-    <div class="revisi-section">
-        <h4 class="section-title">
-            <i class="fas fa-clipboard-list me-2"></i>Informasi Proposal
-        </h4>
+    <x-ui.card className="mb-8 overflow-hidden">
+        <div class="bg-gradient-to-br from-navy-600 to-navy-800 text-white p-6">
+            <h4 class="font-bold text-xl m-0 flex items-center">
+                <i class="fas fa-clipboard-list mr-3 text-navy-200"></i>Informasi Proposal
+            </h4>
+        </div>
         
-        <div class="row">
-            <div class="col-md-8">
-                <h5 class="text-primary">{{ $proposal->judul_proposal }}</h5>
-                <p class="text-muted mb-2">
-                    <strong>Skim:</strong> {{ $proposal->skim }} | 
-                    <strong>Dana:</strong> @rupiahId($proposal->dana_diajukan)
-                </p>
-                <p class="text-muted mb-0">
-                    <strong>Status:</strong> 
-                    <x-status-badge :status="$proposal->status" :label="$proposal->status_label" />
-                </p>
-            </div>
-            <div class="col-md-4 text-end">
-                <small class="text-muted">
-                    <i class="fas fa-calendar me-1"></i>
-                    Diajukan: {{ \Carbon\Carbon::parse($proposal->created_at)->format('d M Y H:i') }}
-                </small>
+        <div class="p-6 bg-white">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h5 class="text-navy-700 font-bold text-xl mb-3">{{ $proposal->judul }}</h5>
+                    <div class="flex flex-wrap gap-4 text-slate-600 mb-3">
+                        <span class="flex items-center">
+                            <i class="fas fa-layer-group text-slate-400 mr-2"></i>
+                            <strong class="mr-1">Skim:</strong> {{ $proposal->skim }}
+                        </span>
+                        <span class="flex items-center">
+                            <i class="fas fa-money-bill-wave text-green-500 mr-2"></i>
+                            <strong class="mr-1">Dana:</strong> @rupiahId($proposal->dana_diajukan)
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <strong class="text-slate-600 mr-3">Status:</strong> 
+                        <x-status-badge :status="$proposal->status" :label="$proposal->status_label" />
+                    </div>
+                </div>
+                <div class="text-right whitespace-nowrap bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <small class="text-slate-500 font-medium">
+                        <i class="fas fa-calendar mr-2"></i>
+                        Diajukan: {{ \Carbon\Carbon::parse($proposal->created_at)->format('d M Y H:i') }}
+                    </small>
+                </div>
             </div>
         </div>
-    </div>
+    </x-ui.card>
 
     <!-- Catatan Review -->
     <div class="revisi-section review-section">
@@ -435,14 +116,14 @@
         
         <!-- Review Administratif -->
         @if($adminReview)
-        <div class="review-card administratif-review">
-            <div class="review-header">
-                <div class="review-icon">
+        <div class="bg-white border-2 border-slate-200 border-l-4 border-l-rose-700 rounded-xl p-6 mb-6">
+            <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-rose-600 to-rose-800 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
-                <div class="review-title">
-                    <h5>Review Administratif</h5>
-                    <small class="review-date">
+                <div>
+                    <h5 class="text-rose-800 font-bold m-0 text-lg">Review Administratif</h5>
+                    <small class="text-slate-500 text-sm">
                     <i class="fas fa-clock me-1"></i>
                     {{ \Carbon\Carbon::parse($adminReview->updated_at)->format('d M Y H:i') }}
                 </small>
@@ -451,11 +132,11 @@
             
             <!-- Kesalahan Administratif yang Dicentang -->
             @if(!empty($checklistChecked) && is_array($checklistChecked))
-            <div class="checklist-errors">
-                <h6 class="checklist-title">
+            <div class="bg-rose-50 border border-rose-200 rounded-lg p-5 mb-4">
+                <h6 class="text-rose-700 font-bold mb-4 text-base">
                     <i class="fas fa-exclamation-triangle me-2"></i>Kesalahan Administratif yang Ditemukan:
                 </h6>
-                <div class="checklist-items">
+                <div class="flex flex-col gap-3">
                     @php
                         // Flatten checklist config untuk mapping
                         $checklistMap = [];
@@ -502,14 +183,14 @@
                                 $itemText = is_string($checkedItem) ? $checkedItem : (isset($checkedItem['text']) ? $checkedItem['text'] : '');
                             @endphp
                             @if(!empty($itemText))
-                                <div class="checklist-item">
-                                    <i class="fas fa-times-circle text-danger me-2"></i>
-                                    <span>{{ $itemText }}</span>
+                                <div class="flex items-start p-3 bg-white rounded-md border-l-4 border-red-500 shadow-sm transition-transform hover:translate-x-1">
+                                    <i class="fas fa-times-circle text-red-500 me-3 mt-1 shrink-0"></i>
+                                    <span class="text-slate-700 leading-relaxed">{{ $itemText }}</span>
                                 </div>
                             @endif
                         @endforeach
                     @else
-                        <div class="text-muted text-center py-2">
+                        <div class="text-slate-500 text-center py-2">
                             <i class="fas fa-info-circle me-2"></i>
                             Tidak ada kesalahan administratif yang dicentang
                         </div>
@@ -520,11 +201,11 @@
             
             <!-- Catatan Review Administratif -->
             @if($adminReview->note_administratif)
-            <div class="review-note">
-                <h6 class="note-title">
+            <div class="bg-slate-50 border-l-4 border-rose-700 rounded-md p-4 mt-4">
+                <h6 class="text-rose-800 font-semibold mb-3 text-sm">
                     <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
                 </h6>
-                <div class="note-content">
+                <div class="text-slate-600 leading-relaxed">
                     <p class="mb-0">{{ $adminReview->note_administratif }}</p>
                 </div>
             </div>
@@ -534,51 +215,51 @@
         
         <!-- Hasil Semi Final (Status Tingkat Universitas) -->
         @if($hasilSemiFinal)
-        <div class="review-card semi-final-review">
-            <div class="review-header">
-                <div class="review-icon">
+        <div class="bg-white border-2 border-slate-200 border-l-4 border-l-green-600 rounded-xl p-6 mb-6">
+            <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                     <i class="fas fa-trophy"></i>
                 </div>
-                <div class="review-title">
-                    <h5>Hasil Semi Final - Tingkat Universitas</h5>
-                    <small class="review-date">
+                <div>
+                    <h5 class="text-green-700 font-bold m-0 text-lg">Hasil Semi Final - Tingkat Universitas</h5>
+                    <small class="text-slate-500 text-sm">
                         <i class="fas fa-calendar me-1"></i>
                         {{ \Carbon\Carbon::parse($hasilSemiFinal->updated_at)->format('d M Y H:i') }}
                     </small>
                 </div>
             </div>
             
-            <div class="semi-final-status">
+            <div class="mt-2">
                 @if($hasilSemiFinal->status_final == 'lolos_tingkat_universitas')
-                    <div class="status-badge-lolos">
+                    <div class="bg-gradient-to-br from-green-100 to-green-200 border-2 border-green-500 rounded-lg p-4 text-green-800 text-lg font-bold text-center">
                         <i class="fas fa-check-circle me-2"></i>
-                        <strong>Lolos Tingkat Universitas</strong>
+                        Lolos Tingkat Universitas
                     </div>
                     @if($proposal->dosenPendampingUniversitas)
-                    <div class="dosen-info mt-3">
-                        <h6 class="info-title">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 mt-4">
+                        <h6 class="text-blue-700 font-bold mb-3 text-sm">
                             <i class="fas fa-user-tie me-2"></i>Dosen Pendamping Universitas:
                         </h6>
-                        <div class="info-content">
-                            <p class="mb-1"><strong>Nama:</strong> {{ $proposal->dosenPendampingUniversitas->nama_dosen }}</p>
-                            <p class="mb-1"><strong>Email:</strong> {{ $proposal->dosenPendampingUniversitas->email_dosen }}</p>
-                            <p class="mb-0"><strong>No. HP:</strong> {{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}</p>
+                        <div class="text-slate-700">
+                            <p class="mb-2"><strong class="font-semibold text-slate-800">Nama:</strong> {{ $proposal->dosenPendampingUniversitas->nama_dosen }}</p>
+                            <p class="mb-2"><strong class="font-semibold text-slate-800">Email:</strong> {{ $proposal->dosenPendampingUniversitas->email_dosen }}</p>
+                            <p class="mb-0"><strong class="font-semibold text-slate-800">No. HP:</strong> {{ $proposal->dosenPendampingUniversitas->no_hp_dosen }}</p>
                         </div>
                     </div>
                     @endif
                 @else
-                    <div class="status-badge-tidak-lolos">
+                    <div class="bg-gradient-to-br from-red-100 to-red-200 border-2 border-red-500 rounded-lg p-4 text-red-800 text-lg font-bold text-center">
                         <i class="fas fa-times-circle me-2"></i>
-                        <strong>Tidak Lolos Tingkat Universitas</strong>
+                        Tidak Lolos Tingkat Universitas
                     </div>
                 @endif
                 
                 @if($hasilSemiFinal->catatan_final)
-                <div class="review-note mt-3">
-                    <h6 class="note-title">
+                <div class="bg-slate-50 border-l-4 border-green-600 rounded-md p-4 mt-4">
+                    <h6 class="text-green-700 font-semibold mb-3 text-sm">
                         <i class="fas fa-sticky-note me-2"></i>Catatan:
                     </h6>
-                    <div class="note-content">
+                    <div class="text-slate-600 leading-relaxed">
                         <p class="mb-0">{{ $hasilSemiFinal->catatan_final }}</p>
                     </div>
                 </div>
@@ -610,25 +291,25 @@
         
         @if($substantifReviews->count() > 0)
             @foreach($substantifReviews as $index => $review)
-                <div class="review-card substantif-review">
-                    <div class="review-header">
-                        <div class="review-icon">
+                <div class="bg-white border-2 border-slate-200 border-l-4 border-l-slate-500 rounded-xl p-6 mb-6">
+                    <div class="flex items-center mb-6 pb-4 border-b-2 border-slate-100">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-slate-500 to-slate-700 flex items-center justify-center text-white text-xl mr-4 shrink-0 shadow-md">
                             <i class="fas fa-user-graduate"></i>
                         </div>
-                        <div class="review-title">
-                            <h5>Review Substantif - Reviewer {{ $index + 1 }}</h5>
-                            <small class="review-date">
+                        <div>
+                            <h5 class="text-slate-600 font-bold m-0 text-lg">Review Substantif - Reviewer {{ $index + 1 }}</h5>
+                            <small class="text-slate-500 text-sm">
                                 <i class="fas fa-clock me-1"></i>
                                 {{ \Carbon\Carbon::parse($review->updated_at)->format('d M Y H:i') }}
                             </small>
                         </div>
                     </div>
                     
-                    <div class="review-note">
-                        <h6 class="note-title">
+                    <div class="bg-slate-50 border-l-4 border-slate-500 rounded-md p-4 mt-4">
+                        <h6 class="text-slate-600 font-semibold mb-3 text-sm">
                             <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
                         </h6>
-                        <div class="note-content">
+                        <div class="text-slate-600 leading-relaxed">
                             <p class="mb-0">{{ $review->note_substantif }}</p>
                         </div>
                     </div>
@@ -637,136 +318,161 @@
         @endif
         
         @if(!$adminReview && !$hasilSemiFinal && $substantifReviews->count() == 0)
-        <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Belum ada catatan review yang tersedia. Silakan tunggu hingga reviewer menyelesaikan review mereka.
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+            <div class="flex items-center text-amber-800">
+                <i class="fas fa-exclamation-triangle mr-3 text-xl"></i>
+                <p class="mb-0 font-medium">Belum ada catatan review yang tersedia. Silakan tunggu hingga reviewer menyelesaikan review mereka.</p>
+            </div>
         </div>
         @endif
     </div>
 
     <!-- Upload File Revisi -->
-    <div class="revisi-section">
-        <h4 class="section-title">
-            <i class="fas fa-upload me-2"></i>Upload File Revisi
-        </h4>
+    <x-ui.card className="mb-8 overflow-hidden">
+        <div class="bg-gradient-to-br from-navy-600 to-navy-800 text-white p-6">
+            <h4 class="font-bold text-xl m-0 flex items-center">
+                <i class="fas fa-upload mr-3 text-navy-200"></i>Upload File Revisi
+            </h4>
+        </div>
         
-        <form action="{{ route('mahasiswa.revisi.store') }}" method="POST" enctype="multipart/form-data" id="revisiForm">
-            @csrf
-            
-            <div class="file-upload-area" id="revisiUploadArea">
-                <div class="file-upload-icon">
-                    <i class="fas fa-file-pdf"></i>
-                </div>
-                <h5>Upload File Revisi Proposal</h5>
-                <p class="text-muted">Drag & drop file PDF di sini atau klik untuk memilih file</p>
-                <input type="file" id="file_revisi" name="file_revisi" accept=".pdf" style="display: none;" required>
-                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file_revisi').click()">
-                    <i class="fas fa-folder-open me-2"></i>Pilih File
-                </button>
-            </div>
-            @error('file_revisi')
-                <div class="invalid-feedback d-block mt-2">
-                    {{ $message }}
-                </div>
-            @enderror
-            
-            <div class="file-info" id="revisiFileInfo">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong id="revisiFileName">Nama file</strong>
-                        <br><small id="revisiFileSize">Ukuran file</small>
+        <div class="p-6 bg-white">
+            <form action="{{ route('mahasiswa.revisi.store') }}" method="POST" enctype="multipart/form-data" id="revisiForm">
+                @csrf
+                
+                <div class="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center transition-all bg-slate-50 hover:border-navy-500 hover:bg-navy-50/50 cursor-pointer group" id="revisiUploadArea">
+                    <div class="text-5xl text-navy-500 mb-4 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-file-pdf"></i>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
-                        <i class="fas fa-times"></i>
+                    <h5 class="text-slate-800 font-bold mb-2">Upload File Revisi Proposal</h5>
+                    <p class="text-slate-500 mb-6">Drag & drop file PDF di sini atau klik untuk memilih file</p>
+                    <input type="file" id="file_revisi" name="file_revisi" accept=".pdf" style="display: none;" required>
+                    <button type="button" class="px-5 py-2.5 bg-white border border-navy-600 text-navy-700 rounded-lg font-medium hover:bg-navy-600 hover:text-white transition-colors shadow-sm inline-flex items-center" onclick="document.getElementById('file_revisi').click()">
+                        <i class="fas fa-folder-open me-2"></i>Pilih File
                     </button>
                 </div>
-                <div class="progress-bar-custom">
-                    <div class="progress-fill" id="revisiProgress"></div>
+                @error('file_revisi')
+                    <div class="text-red-500 text-sm mt-2 font-medium">
+                        {{ $message }}
+                    </div>
+                @enderror
+                
+                <div class="bg-slate-100 rounded-lg p-4 mt-4 hidden" id="revisiFileInfo">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <strong id="revisiFileName" class="text-slate-800">Nama file</strong>
+                            <br><small id="revisiFileSize" class="text-slate-500">Ukuran file</small>
+                        </div>
+                        <button type="button" class="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors" onclick="removeFile()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-navy-500 to-navy-700 w-0 transition-all duration-300" id="revisiProgress"></div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="alert alert-warning mt-3">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Ketentuan Upload:</strong>
-                <ul class="mb-0 mt-2">
-                    <li>Format file harus PDF</li>
-                    <li>Ukuran maksimal 5MB</li>
-                    <li>File harus berisi proposal yang sudah direvisi sesuai catatan reviewer</li>
-                </ul>
-            </div>
-            
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                    <i class="fas fa-upload me-2"></i>Upload File Revisi
-                </button>
-            </div>
-        </form>
-    </div>
+                
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-lg mt-6">
+                    <div class="flex items-start text-amber-800">
+                        <i class="fas fa-exclamation-triangle mt-1 mr-3"></i>
+                        <div>
+                            <strong class="block mb-2 font-bold">Ketentuan Upload:</strong>
+                            <ul class="list-disc pl-5 mb-0 text-amber-700">
+                                <li>Format file harus PDF</li>
+                                <li>Ukuran maksimal 5MB</li>
+                                <li>File harus berisi proposal yang sudah direvisi sesuai catatan reviewer</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-8">
+                    <button type="submit" class="px-8 py-3 bg-navy-600 text-white rounded-lg font-bold text-lg hover:bg-navy-700 transition-colors shadow-md inline-flex items-center" id="submitBtn">
+                        <i class="fas fa-upload me-2"></i>Upload File Revisi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </x-ui.card>
 
     <!-- Daftar File Revisi -->
     @if($revisi->count() > 0)
-    <div class="revisi-section">
-        <h4 class="section-title">
-            <i class="fas fa-history me-2"></i>Riwayat File Revisi
-        </h4>
+    <x-ui.card className="mb-8 overflow-hidden">
+        <div class="bg-gradient-to-br from-navy-600 to-navy-800 text-white p-6">
+            <h4 class="font-bold text-xl m-0 flex items-center">
+                <i class="fas fa-history mr-3 text-navy-200"></i>Riwayat File Revisi
+            </h4>
+        </div>
         
-        <div class="row">
-            @foreach($revisi as $item)
-            <div class="col-md-6 mb-3">
-                <div class="revisi-item">
-                    <div class="d-flex align-items-start">
-                        <div class="file-icon me-3">
+        <div class="p-6 bg-white">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($revisi as $item)
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 hover:border-navy-500 hover:shadow-md transition-all group">
+                    <div class="flex items-start">
+                        <div class="text-3xl text-red-500 mr-4 group-hover:scale-110 transition-transform">
                             <i class="fas fa-file-pdf"></i>
                         </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">{{ $item->nama_file }}</h6>
-                            <p class="text-muted mb-2">
-                                <small>
-                                    <i class="fas fa-calendar me-1"></i>
-                                    {{ \Carbon\Carbon::parse($item->tanggal_submit)->format('d M Y H:i') }}
-                                </small>
+                        <div class="flex-grow">
+                            <h6 class="font-bold text-slate-800 mb-1 line-clamp-1" title="{{ $item->nama_file }}">{{ $item->nama_file }}</h6>
+                            <p class="text-slate-500 mb-3 text-sm font-medium">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ \Carbon\Carbon::parse($item->tanggal_submit)->format('d M Y H:i') }}
                             </p>
-                            <div class="d-flex gap-2">
+                            <div class="flex gap-2">
                                 <a href="{{ route('mahasiswa.revisi.download', $item->id_revisi) }}" 
-                                   class="btn btn-download btn-action">
-                                    <i class="fas fa-download me-1"></i>Download
+                                   class="px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 hover:border-green-300 rounded text-sm font-medium transition-colors flex items-center">
+                                    <i class="fas fa-download mr-1"></i>Download
                                 </a>
-                                <button type="button" class="btn btn-delete btn-action" 
+                                <button type="button" class="px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hover:border-red-300 rounded text-sm font-medium transition-colors flex items-center" 
                                         onclick="deleteRevisi({{ $item->id_revisi }})">
-                                    <i class="fas fa-trash me-1"></i>Hapus
+                                    <i class="fas fa-trash mr-1"></i>Hapus
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
+                @endforeach
             </div>
-            @endforeach
         </div>
-    </div>
+    </x-ui.card>
     @endif
 
     <!-- Tombol Kembali -->
-    <div class="text-center mt-4">
-        <a href="{{ route('mahasiswa.dashboard') }}" class="btn btn-outline-secondary">
+    <div class="text-center mt-8 mb-12">
+        <a href="{{ route('mahasiswa.dashboard') }}" class="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors inline-flex items-center shadow-sm">
             <i class="fas fa-arrow-left me-2"></i>Kembali ke Dashboard
         </a>
     </div>
 </div>
 
 <!-- Modal Konfirmasi Hapus -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Konfirmasi Hapus</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="fixed inset-0 z-50 hidden" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" data-bs-dismiss="modal"></div>
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+        <div class="relative bg-white rounded-xl shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full overflow-hidden">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-bold text-slate-900" id="deleteModalLabel">
+                            Konfirmasi Hapus
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-slate-500">
+                                Apakah Anda yakin ingin menghapus file revisi ini?
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                <p>Apakah Anda yakin ingin menghapus file revisi ini?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Hapus</button>
+            <div class="bg-slate-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-slate-200">
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors" id="confirmDelete">
+                    Hapus
+                </button>
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-navy-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors" data-bs-dismiss="modal">
+                    Batal
+                </button>
             </div>
         </div>
     </div>
@@ -878,9 +584,22 @@
 
     function deleteRevisi(id) {
         deleteId = id;
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
+        const modal = document.getElementById('deleteModal');
+        modal.classList.remove('hidden');
     }
+
+    // Modal dismiss logic
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('deleteModal');
+        const dismissButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+        
+        dismissButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                deleteId = null;
+            });
+        });
+    });
 
     document.getElementById('confirmDelete').addEventListener('click', function() {
         if (deleteId) {

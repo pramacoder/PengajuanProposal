@@ -68,7 +68,7 @@ class ReviewCompletionService
                     $proposal,
                     'revision_opened',
                     'Fase Revisi Proposal Dibuka',
-                    "Proposal '{$proposal->judul_proposal}' telah selesai direview dan siap untuk direvisi. Silakan lakukan revisi sesuai catatan reviewer.",
+                    "Proposal '{$proposal->judul}' telah selesai direview dan siap untuk direvisi. Silakan lakukan revisi sesuai catatan reviewer.",
                     [
                         'action_url' => route('mahasiswa.revisi.index'),
                         'deadline' => $this->getActiveRuangKontrol()?->tanggal_perbaikan_selesai ?? null
@@ -79,7 +79,7 @@ class ReviewCompletionService
                     $proposal,
                     'revision_opened',
                     'Fase Revisi Proposal Dibuka',
-                    "Proposal '{$proposal->judul_proposal}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
+                    "Proposal '{$proposal->judul}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
                     [
                         'action_url' => route('dosen.pembimbing.dashboard'),
                         'deadline' => $this->getActiveRuangKontrol()?->tanggal_perbaikan_selesai ?? null
@@ -107,7 +107,7 @@ class ReviewCompletionService
                 $proposal,
                 'proposal_ready_revision',
                 'Proposal Siap Direvisi',
-                "Proposal '{$proposal->judul_proposal}' telah selesai direview oleh semua reviewer. Silakan lakukan revisi sesuai catatan reviewer yang diberikan.",
+                "Proposal '{$proposal->judul}' telah selesai direview oleh semua reviewer. Silakan lakukan revisi sesuai catatan reviewer yang diberikan.",
                 [
                     'action_url' => route('mahasiswa.revisi.index'),
                     'deadline' => $ruangKontrol->tanggal_perbaikan_selesai ?? null,
@@ -119,7 +119,7 @@ class ReviewCompletionService
                 $proposal,
                 'proposal_ready_revision',
                 'Proposal Siap Direvisi',
-                "Proposal '{$proposal->judul_proposal}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
+                "Proposal '{$proposal->judul}' telah selesai direview dan mahasiswa dapat melakukan revisi.",
                 [
                     'action_url' => route('dosen.pembimbing.dashboard'),
                     'deadline' => $ruangKontrol->tanggal_perbaikan_selesai ?? null,

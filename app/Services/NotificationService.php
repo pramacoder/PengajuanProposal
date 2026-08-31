@@ -37,7 +37,7 @@ class NotificationService
                         'data' => array_merge($data, [
                             'proposal_id' => $proposal->id_proposal,
                             'nim' => $member->identifier,
-                            'judul_proposal' => $proposal->judul_proposal ?? $proposal->judul
+                            'judul' => $proposal->judul
                         ]),
                         'proposal_id' => $proposal->id_proposal,
                     ];
@@ -329,8 +329,8 @@ class NotificationService
         $type = $statusFinal === 'lolos' ? 'success' : 'danger';
         $title = $statusFinal === 'lolos' ? 'Proposal Lolos Final' : 'Proposal Tidak Lolos Final';
         $message = $statusFinal === 'lolos' 
-            ? "Selamat! Proposal '{$proposal->judul_proposal}' telah lolos penilaian final dengan nilai {$nilai}."
-            : "Mohon maaf, proposal '{$proposal->judul_proposal}' tidak lolos penilaian final dengan nilai {$nilai}.";
+            ? "Selamat! Proposal '{$proposal->judul}' telah lolos penilaian final dengan nilai {$nilai}."
+            : "Mohon maaf, proposal '{$proposal->judul}' tidak lolos penilaian final dengan nilai {$nilai}.";
 
         if ($catatanFinal) {
             $message .= " Catatan: {$catatanFinal}";
@@ -418,7 +418,7 @@ class NotificationService
      */
     public function notifyProposalUploaded(Proposal $proposal): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         $skim = $proposal->skim;
         
         $this->notifyMahasiswa(
@@ -438,7 +438,7 @@ class NotificationService
      */
     public function notifyValidasiDosen(Proposal $proposal, string $status, string $catatan = null): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         
         if ($status === 'valid') {
             $this->notifyMahasiswa(
@@ -480,7 +480,7 @@ class NotificationService
      */
     public function notifyReviewerAssigned(Proposal $proposal): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         
         $this->notifyMahasiswa(
             $proposal,
@@ -499,7 +499,7 @@ class NotificationService
      */
     public function notifyReviewAdministratifSelesai(Proposal $proposal, bool $lolos = true, string $catatan = null): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         
         if ($lolos) {
             $this->notifyMahasiswa(
@@ -541,7 +541,7 @@ class NotificationService
      */
     public function notifyReviewSubstantifSelesai(Proposal $proposal, array $nilaiReviewer = []): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         $nilai1 = $nilaiReviewer['reviewer1'] ?? null;
         $nilai2 = $nilaiReviewer['reviewer2'] ?? null;
         
@@ -573,7 +573,7 @@ class NotificationService
      */
     public function notifyHasilSemiFinal(Proposal $proposal, string $status, float $nilai = null, string $catatan = null, float $dana = null): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         
         if ($status === 'lolos_tingkat_universitas') {
             $message = "Selamat! Proposal Anda '{$judul}' telah lolos penilaian semi final tingkat universitas.";
@@ -630,7 +630,7 @@ class NotificationService
      */
     public function notifyValidasiAkhirDosen(Proposal $proposal, string $status, string $catatan = null): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         
         if ($status === 'valid') {
             $this->notifyMahasiswa(
@@ -670,7 +670,7 @@ class NotificationService
      */
     public function notifyHasilFinalLengkap(Proposal $proposal, string $statusPimnas, string $statusPendanaan, float $nilai, float $danaYangDidapatkan = 0, string $catatan = null): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         $isLolosPimnas = $statusPimnas === 'lolos';
         $isLolosPendanaan = $statusPendanaan === 'lolos';
         
@@ -733,7 +733,7 @@ class NotificationService
      */
     public function notifyDeadlineReminder(Proposal $proposal, string $deadlineType, \Carbon\Carbon $deadline): void
     {
-        $judul = $proposal->judul_proposal ?? $proposal->judul;
+        $judul = $proposal->judul;
         $daysLeft = now()->diffInDays($deadline, false);
         
         if ($daysLeft < 0) {

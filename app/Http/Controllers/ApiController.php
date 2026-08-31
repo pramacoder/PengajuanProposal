@@ -93,7 +93,7 @@ class ApiController extends Controller
                 return response()->json([
                     'success' => true,
                     'hasProposal' => true,
-                    'proposalTitle' => $proposal->judul ?? $proposal->judul_proposal,
+                    'proposalTitle' => $proposal->judul ?? $proposal->judul,
                     'proposalStatus' => $proposal->status,
                     'tahunAjaran' => $proposal->tahun_ajaran,
                     'message' => "Mahasiswa sudah terdaftar dalam proposal{$tahunInfo}"
@@ -210,7 +210,7 @@ class ApiController extends Controller
                 'revisi' => $revisi,
                 'proposal' => [
                     'id_proposal' => $proposal->id_proposal,
-                    'judul' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'skim' => $proposal->skim
                 ]
             ]);

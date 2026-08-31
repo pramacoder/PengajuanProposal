@@ -42,7 +42,7 @@
                 </div>
                 <div class="card-body">
                     <table class="table table-borderless mb-0">
-                        <tr><td class="fw-semibold" style="width:40%">Judul</td><td>{{ $proposal->judul_proposal }}</td></tr>
+                        <tr><td class="fw-semibold" style="width:40%">Judul</td><td>{{ $proposal->judul }}</td></tr>
                         <tr><td class="fw-semibold">Skim</td><td><span class="badge bg-secondary">{{ $proposal->skim }}</span></td></tr>
                         <tr><td class="fw-semibold">Mahasiswa</td><td>{{ $proposal->mahasiswa->nama_mhs ?? $proposal->ketua_nama }} ({{ $proposal->ketua_nim }})</td></tr>
                         <tr><td class="fw-semibold">Tanggal Submit</td><td>{{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d M Y') }}</td></tr>

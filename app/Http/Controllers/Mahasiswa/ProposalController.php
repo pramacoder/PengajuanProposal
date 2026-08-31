@@ -136,6 +136,8 @@ class ProposalController extends Controller
             $ruangKontrol = \App\Models\RuangKontrol::where('is_active', true)->first();
             $maxBelmawa = $ruangKontrol ? ($ruangKontrol->dana_max_belmawa ?? 8000000) : 8000000;
             $maxOperator = $ruangKontrol ? ($ruangKontrol->dana_max_operator ?? 2000000) : 2000000;
+            $minBelmawa = $ruangKontrol ? ($ruangKontrol->dana_min_belmawa ?? 0) : 0;
+            $minOperator = $ruangKontrol ? ($ruangKontrol->dana_min_operator ?? 0) : 0;
 
             // Parse dana dari format Indonesia (titik sebagai pemisah)
             $danaBelmawa = ProposalHelper::parseAngka($request->dana_diajukan_belmawa ?? 0);
@@ -146,6 +148,18 @@ class ProposalController extends Controller
                 $danaBelmawa = 0;
                 $danaOperator = 0;
             } else {
+                // Validasi batas minimum (hanya jika dana > 0, agar PKM tanpa salah satu jenis dana tidak terblokir)
+                if ($danaBelmawa > 0 && $minBelmawa > 0 && $danaBelmawa < $minBelmawa) {
+                    return back()
+                        ->withErrors(['dana_diajukan_belmawa' => 'Dana Belmawa minimal Rp ' . number_format($minBelmawa, 0, ',', '.') . '.'])
+                        ->withInput();
+                }
+                if ($danaOperator > 0 && $minOperator > 0 && $danaOperator < $minOperator) {
+                    return back()
+                        ->withErrors(['dana_diajukan_operator' => 'Dana Universitas minimal Rp ' . number_format($minOperator, 0, ',', '.') . '.'])
+                        ->withInput();
+                }
+                // Validasi batas maksimum
                 if ($danaBelmawa > $maxBelmawa) {
                     return back()
                         ->withErrors(['dana_diajukan_belmawa' => 'Dana Belmawa maksimal Rp ' . number_format($maxBelmawa, 0, ',', '.') . '.'])
@@ -289,12 +303,10 @@ class ProposalController extends Controller
             
             // Buat proposal dengan data tim (untuk kompatibilitas dengan sistem lama)
             $proposal = Proposal::create([
-                'judul_proposal' => $request->judul,
                 'judul' => $request->judul,
                 'tanggal_pengajuan' => $tanggalPengajuan,
                 'skim' => $request->skim,
                 'dosen_pembimbing' => $request->dosen_pembimbing,
-                'dana_diajukan'          => $danaBelmawa + $danaOperator, // total (legacy field)
                 'dana_diajukan_belmawa'  => $danaBelmawa,
                 'dana_diajukan_operator' => $danaOperator,
                 'tahun_ajaran' => $tahunAjaran,
@@ -628,11 +640,9 @@ class ProposalController extends Controller
 
             // Update proposal (tanpa data tim)
             $proposal->update([
-                'judul_proposal' => $request->judul,
                 'judul' => $request->judul,
                 'skim' => $request->skim,
                 'dosen_pembimbing' => $request->dosen_pembimbing,
-                'dana_diajukan' => $request->dana_diajukan,
                 'tahun_ajaran' => $request->tahun_ajaran,
                 'id_dosen' => $this->getDosenIdByName($request->dosen_pembimbing),
             ]);

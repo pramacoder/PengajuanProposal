@@ -48,7 +48,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-center">
-                                                <small class="text-muted">{{ Str::limit($proposal->judul_proposal, 30) }}</small>
+                                                <small class="text-muted">{{ Str::limit($proposal->judul, 30) }}</small>
                                             </div>
                                         </div>
                                         <div class="col-md-7">

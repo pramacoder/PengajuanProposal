@@ -35,7 +35,7 @@
                     <div class="row" id="proposalList">
                         @foreach($proposals as $proposal)
                             <div class="col-12 mb-3 proposal-item" 
-                                 data-title="{{ strtolower($proposal->judul_proposal) }}">
+                                 data-title="{{ strtolower($proposal->judul) }}">
                                 <div class="proposal-card">
                                     <div class="row align-items-center">
                                         <div class="col-md-2">
@@ -45,7 +45,7 @@
                                                 </div>
                                             </div>
                                             <div class="text-center">
-                                                <small class="text-muted">{{ Str::limit($proposal->judul_proposal, 30) }}</small>
+                                                <small class="text-muted">{{ Str::limit($proposal->judul, 30) }}</small>
                                             </div>
                                         </div>
                                         <div class="col-md-7">

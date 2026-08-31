@@ -314,7 +314,7 @@
                         </tr>
                         <tr>
                             <td class="py-2 px-2"><strong>Judul:</strong></td>
-                            <td class="py-2 px-2">{{ $proposal->judul_proposal }}</td>
+                            <td class="py-2 px-2">{{ $proposal->judul }}</td>
                         </tr>
                         <tr>
                             <td class="py-2 px-2"><strong>Skim:</strong></td>

@@ -414,7 +414,7 @@
                                             <tr>
                                                 <td>{{ $index + 1 }}</td>
                                                 <td>
-                                                    <strong>{{ Str::limit($proposal->judul ?? $proposal->judul_proposal, 50) }}</strong>
+                                                    <strong>{{ Str::limit($proposal->judul ?? $proposal->judul, 50) }}</strong>
                                                 </td>
                                                 <td>
                                                     <span class="badge" style="background-color: #800000; color: white;">{{ $proposal->skim }}</span>

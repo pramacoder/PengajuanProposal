@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Sistem Proposal PKM')</title>
-    <!-- PDF.js - Hanya muat sekali di sini -->
-    @vite(['resources/css/app.css', 'resources/css/layout.css', 'resources/js/app.js'])
+    <title>@yield('title', 'SISKA - Sistem Pengajuan Proposal')</title>
+    <!-- PDF.js -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { padding-top: var(--navbar-height); }
@@ -40,36 +39,46 @@
     @yield('styles')
     @yield('dosen_styles')
 </head>
-<body>
-    <!-- Navbar -->
-    @include('mainlayout.navbar')
-
-    <!-- Sidebar Overlay & Menu -->
+<body class="bg-navy-50 text-slate-800 antialiased selection:bg-navy-200 selection:text-navy-900 flex h-screen overflow-hidden">
+    
+    <!-- Sidebar (Left) -->
     @include('mainlayout.sidebar')
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <x-flash-messages />
+    <!-- Main Content Wrapper -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f8fafc]">
+        
+        <!-- Navbar (Top) -->
+        @include('mainlayout.navbar')
 
-        @yield('content')
+        <!-- Page Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+            <x-flash-messages />
+            @yield('content')
+        </main>
+        
     </div>
 
 
 
-    <!-- Review Modal -->
     @if(auth()->check() && in_array(auth()->user()->role, ['reviewer', 'operator', 'pimpinan_pt']))
-    <div class="modal fade" id="reviewModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header modal-header-custom">
-                    <h5 class="modal-title" id="reviewModalTitle">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        Hasil Review
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="reviewModalBody">
-                    <!-- Content will be loaded dynamically -->
+    <div id="reviewModal" class="fixed inset-0 z-[60] hidden">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-navy-950/50 backdrop-blur-sm transition-opacity"></div>
+        <!-- Dialog -->
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl border border-slate-200">
+                    <div class="bg-navy-900 px-6 py-4 flex justify-between items-center">
+                        <h5 class="text-lg font-semibold text-white flex items-center gap-2" id="reviewModalTitle">
+                            <i class="fas fa-clipboard-list text-navy-200"></i> Hasil Review
+                        </h5>
+                        <button type="button" class="text-navy-200 hover:text-white transition-colors" onclick="document.getElementById('reviewModal').classList.add('hidden')">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="px-6 py-5" id="reviewModalBody">
+                        <!-- Content will be loaded dynamically -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -77,10 +86,11 @@
     @endif
 
     <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <div id="toastContainer" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- Scripts -->
-    @include('mainlayout.footer-scripts')
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
     @stack('scripts')
     @yield('scripts')
 </body>

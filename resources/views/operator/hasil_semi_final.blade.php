@@ -85,8 +85,8 @@
                         <tr data-proposal-id="{{ $proposal->id_proposal }}">
                             <td>{{ $index + 1 }}</td>
                             <td>
-                                <strong>{{ $proposal->judul_proposal ?? 'Judul proposal..' }}</strong>
-                                <br><small class="text-muted">{{ Str::limit($proposal->judul_proposal, 50) }}</small>
+                                <strong>{{ $proposal->judul ?? 'Judul proposal..' }}</strong>
+                                <br><small class="text-muted">{{ Str::limit($proposal->judul, 50) }}</small>
                             </td>
                             <td>
                                 <span class="badge bg-primary">{{ $proposal->skim ?? 'N/A' }}</span>

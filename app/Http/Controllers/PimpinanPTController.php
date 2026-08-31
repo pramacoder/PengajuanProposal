@@ -115,7 +115,7 @@ class PimpinanPTController extends Controller
             ->map(function($proposal, $index) {
                 return [
                     'ranking' => $index + 1,
-                    'judul' => $proposal->judul_proposal,
+                    'judul' => $proposal->judul,
                     'skim' => $proposal->skim,
                     'mahasiswa' => $proposal->mahasiswa->name ?? 'N/A',
                     'nilai' => $proposal->hasilFinal->nilai ?? 0,
