@@ -82,40 +82,25 @@ class ProposalReviewController extends Controller
 
             $substantiveReviews = NilaiSubstantif::where('id_proposal', $id)
                 ->with('reviewer')
-                ->orderBy('id_reviewer')
+                ->whereNotNull('note_substantif')
+                ->where('note_substantif', '!=', 'Review substantif dimulai')
+                ->where('note_substantif', '!=', '')
+                ->orderBy('jenis_review', 'asc')
                 ->orderBy('updated_at', 'desc')
                 ->get();
 
-            $latestReviews = collect();
-            $reviewerIds = $substantiveReviews->pluck('id_reviewer')->unique();
-            
-            foreach ($reviewerIds as $reviewerId) {
-                $latestReview = $substantiveReviews
-                    ->where('id_reviewer', $reviewerId)
-                    ->sortByDesc('updated_at')
-                    ->first();
-                
-                if ($latestReview) {
-                    $latestReviews->push($latestReview);
-                }
-            }
+            $uniqueReviews = $substantiveReviews->unique(function ($item) {
+                return $item->id_reviewer . '_' . ($item->jenis_review ?? 'pertama');
+            });
 
-            Log::info('Substantive Review Debug', [
-                'proposal_id' => $id,
-                'total_reviews_found' => $substantiveReviews->count(),
-                'unique_reviewers' => $reviewerIds->count(),
-                'latest_reviews_count' => $latestReviews->count(),
-                'reviewer_ids' => $reviewerIds->toArray()
-            ]);
-
-            $processedReviews = $latestReviews->map(function($review, $index) {
+            $processedReviews = $uniqueReviews->values()->map(function($review, $index) {
                 $processedReview = $review->toArray();
-                
-                if ($review->reviewer) {
-                    $processedReview['reviewer'] = [
-                        'nama_reviewer' => 'Reviewer Substantif ' . ($index + 1)
-                    ];
-                }
+                $jenisLabel = ($review->jenis_review === 'seleksi') ? 'Seleksi' : 'Tahap Awal';
+                $processedReview['jenis_label'] = $jenisLabel;
+                $processedReview['catatan'] = $review->note_substantif;
+                $processedReview['reviewer'] = [
+                    'nama_reviewer' => 'Reviewer Substantif (' . $jenisLabel . ') ' . ($index + 1)
+                ];
                 
                 return $processedReview;
             });
@@ -152,7 +137,7 @@ class ProposalReviewController extends Controller
                 ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     $query->where('id_mahasiswa', $user->id)
-                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$user->identifier]);
                 })
                 ->firstOrFail();
 

@@ -440,7 +440,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form id="formReviewAdministratif" method="POST" action="{{ route('reviewer.submit.review.administratif', $proposal->id_proposal) }}">
+                    <form id="formReviewAdministratif" method="POST" action="{{ route('reviewer.submit.review.administratif', $proposal->id_proposal) }}" data-no-loading="true">
                         @csrf
                         
                         <!-- Status Review -->
@@ -456,8 +456,8 @@
 
                         <!-- Kesalahan Administratif -->
                         <div class="mb-3">
-                            <label class="form-label fw-bold d-block">Kesalahan Administratif yang Ditemukan <span class="text-danger">*</span></label>
-                            <label class="form-label fw-bold text-danger d-block small" style="font-size: 0.85rem; margin-top: 0.5rem;">Pastikan anda mencentang hanya kesalahan yang sesuai dengan proposal<span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold d-block">Kesalahan Administratif yang Ditemukan</label>
+                            <small class="text-muted d-block" style="font-size: 0.85rem; margin-top: 0.25rem;">Centang item di bawah hanya jika ditemukan ketidaksesuaian/kesalahan pada proposal. Jika proposal sudah sesuai, biarkan tidak tercentang.</small>
                             @php
                                 // Pastikan checklist tersedia, jika tidak gunakan default
                                 $checklistItems = $checklist ?? [];
@@ -849,17 +849,27 @@
             isValid = false;
         }
         
-        const hasHardcodedChecklist = document.querySelectorAll('input[name="kesalahan_administratif[]"]').length > 0;
-        if (hasHardcodedChecklist && kesalahanCheckboxes.length === 0) {
-            if (document.getElementById('errorKesalahan')) document.getElementById('errorKesalahan').style.display = 'block';
-            isValid = false;
-        }
-        
         if (!isValid) {
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            if (submitBtn) submitBtn.disabled = false;
+            if (submitText) {
+                submitText.innerHTML = 'Simpan Review Administratif';
+            } else if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-save me-1"></i><span id="submitText">Simpan Review Administratif</span>';
+            }
+            form.style.opacity = '';
+            form.style.pointerEvents = '';
+
+            const errorEl = document.getElementById('errorCatatan');
+            if (errorEl) {
+                errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
             if (typeof showToast === 'function') {
-                showToast('Mohon lengkapi semua field yang diperlukan', 'error');
+                showToast('Catatan review harus diisi.', 'error');
             } else {
-                alert('Mohon lengkapi semua field yang diperlukan');
+                alert('Catatan review harus diisi.');
             }
             return;
         }
@@ -869,8 +879,12 @@
         // Disable submit button
         const submitBtn = document.getElementById('submitBtn');
         const submitText = document.getElementById('submitText');
-        submitBtn.disabled = true;
-        submitText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+        if (submitBtn) submitBtn.disabled = true;
+        if (submitText) {
+            submitText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+        } else if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+        }
         
         // Submit form
         const formData = new FormData(this);
@@ -944,13 +958,17 @@
             if (Object.keys(serverErrors).length > 0) {
                 if (serverErrors.kesalahan_administratif) {
                     const kesalahanError = document.getElementById('serverErrorKesalahan');
-                    kesalahanError.textContent = serverErrors.kesalahan_administratif[0];
-                    kesalahanError.style.display = 'block';
+                    if (kesalahanError) {
+                        kesalahanError.textContent = serverErrors.kesalahan_administratif[0];
+                        kesalahanError.style.display = 'block';
+                    }
                 }
                 if (serverErrors.catatan) {
                     const catatanError = document.getElementById('serverErrorCatatan');
-                    catatanError.textContent = serverErrors.catatan[0];
-                    catatanError.style.display = 'block';
+                    if (catatanError) {
+                        catatanError.textContent = serverErrors.catatan[0];
+                        catatanError.style.display = 'block';
+                    }
                 }
                 const genericErrors = Object.values(serverErrors).flat();
                 if (genericErrors.length > 0) {
@@ -960,13 +978,13 @@
                 errorMessage = error.responsePayload.message;
             }
             
-            if (error.message.includes('HTTP error')) {
+            if (error.message && error.message.includes('HTTP error')) {
                 if (!error?.responsePayload?.errors) {
                     errorMessage = 'Server error: ' + error.message;
                 }
-            } else if (error.message.includes('Response is not JSON')) {
+            } else if (error.message && error.message.includes('Response is not JSON')) {
                 errorMessage = 'Server mengembalikan response yang tidak valid. Silakan coba lagi.';
-            } else if (error.message.includes('JSON')) {
+            } else if (error.message && error.message.includes('JSON')) {
                 errorMessage = 'Gagal memproses response dari server. Silakan coba lagi.';
             }
             
@@ -981,8 +999,16 @@
         })
         .finally(() => {
             // Re-enable submit button
-            submitBtn.disabled = false;
-            submitText.innerHTML = 'Simpan Review Administratif';
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            if (submitBtn) submitBtn.disabled = false;
+            if (submitText) {
+                submitText.innerHTML = 'Simpan Review Administratif';
+            } else if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-save me-1"></i><span id="submitText">Simpan Review Administratif</span>';
+            }
+            form.style.opacity = '';
+            form.style.pointerEvents = '';
         });
         });
     });

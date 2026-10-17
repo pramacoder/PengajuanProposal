@@ -45,7 +45,7 @@ class ProposalRevisiController extends Controller
             // Ketua tim berdasarkan nim
             $query->where('ketua_nim', $mahasiswa->identifier)
                   // ATAU anggota tim lain (berbasis team_id)
-                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$mahasiswa->identifier])
                   // ATAU sebagai mahasiswa pengaju
                   ->orWhere('id_mahasiswa', $mahasiswa->id);
         })
@@ -56,7 +56,7 @@ class ProposalRevisiController extends Controller
             // Jika tidak ada proposal dengan status revisi, cek apakah ada proposal yang sedang direview
             $proposalInReview = Proposal::where(function($query) use ($mahasiswa) {
                 $query->where('ketua_nim', $mahasiswa->identifier)
-                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$mahasiswa->identifier])
                       ->orWhere('id_mahasiswa', $mahasiswa->id);
             })
             ->whereIn('status', ['review_administratif', 'review_substantif', 'review_completed'])
@@ -116,7 +116,7 @@ class ProposalRevisiController extends Controller
         // Ambil proposal mahasiswa yang berstatus revisi
         $proposal = Proposal::where(function($query) use ($mahasiswa) {
             $query->where('ketua_nim', $mahasiswa->identifier)
-                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                  ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$mahasiswa->identifier])
                   ->orWhere('id_mahasiswa', $mahasiswa->id);
         })
         ->where('status', 'revisi')
@@ -181,7 +181,7 @@ class ProposalRevisiController extends Controller
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
             ->where(function($query) use ($mahasiswa) {
                 $query->where('ketua_nim', $mahasiswa->identifier)
-                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$mahasiswa->identifier])
                       ->orWhere('id_mahasiswa', $mahasiswa->id);
             })
             ->first();
@@ -229,7 +229,7 @@ class ProposalRevisiController extends Controller
         $proposal = Proposal::where('id_proposal', $revisi->id_proposal)
             ->where(function($query) use ($mahasiswa) {
                 $query->where('ketua_nim', $mahasiswa->identifier)
-                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$mahasiswa->identifier])
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$mahasiswa->identifier])
                       ->orWhere('id_mahasiswa', $mahasiswa->id);
             })
             ->first();
@@ -273,7 +273,7 @@ class ProposalRevisiController extends Controller
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 $query->where('id_mahasiswa', $user->id)
-                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -316,7 +316,7 @@ class ProposalRevisiController extends Controller
                 ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     $query->where('id_mahasiswa', $user->id)
-                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$user->identifier]);
                 })
                 ->firstOrFail();
 
@@ -400,11 +400,11 @@ class ProposalRevisiController extends Controller
             return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
         }
 
-        $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas', 'hasilSemiFinal'])
+        $proposal = Proposal::with(['dokumen', 'dosenPendampingUniversitas', 'hasilSemiFinal', 'nilaiSubstantif'])
             ->where('id_proposal', $id)
             ->where(function($query) use ($user) {
                 $query->where('id_mahasiswa', $user->id)
-                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                      ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$user->identifier]);
             })
             ->firstOrFail();
 
@@ -437,7 +437,7 @@ class ProposalRevisiController extends Controller
                 ->where('id_proposal', $id)
                 ->where(function($query) use ($user) {
                     $query->where('id_mahasiswa', $user->id)
-                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'team_id' = proposals.team_id::text AND users.identifier = ?)", [$user->identifier]);
+                          ->orWhereRaw("EXISTS (SELECT 1 FROM users WHERE users.role = 'mahasiswa' AND users.metadata->>'$.team_id' = proposals.team_id AND users.identifier = ?)", [$user->identifier]);
                 })
                 ->firstOrFail();
 

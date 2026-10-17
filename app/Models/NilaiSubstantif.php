@@ -31,6 +31,14 @@ class NilaiSubstantif extends Model
     ];
 
     /**
+     * Accessor untuk catatan reviewer (alias note_substantif)
+     */
+    public function getCatatanAttribute()
+    {
+        return $this->note_substantif;
+    }
+
+    /**
      * Set attribute untuk skor_per_kriteria
      * Memastikan data di-encode sebagai JSON dengan benar
      */

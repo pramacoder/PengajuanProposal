@@ -221,6 +221,21 @@
                     </div>
                 </div>
                 @endif
+
+                @php
+                    $seleksiReviews = $proposal->nilaiSubstantif ? $proposal->nilaiSubstantif->where('jenis_review', 'seleksi')->filter(fn($r) => !empty($r->note_substantif ?? $r->catatan) && $r->note_substantif !== 'Review substantif dimulai') : collect();
+                @endphp
+                @if($seleksiReviews->count() > 0)
+                <div class="mt-3">
+                    <p><strong>Catatan Reviewer Seleksi:</strong></p>
+                    @foreach($seleksiReviews as $index => $sRev)
+                        <div class="alert alert-warning mb-2">
+                            <strong><i class="fas fa-user-check me-1"></i>Reviewer Seleksi {{ $index + 1 }}:</strong>
+                            <p class="mb-0 mt-1">{{ $sRev->note_substantif ?? $sRev->catatan }}</p>
+                        </div>
+                    @endforeach
+                </div>
+                @endif
             </div>
 
             <!-- Upload File Revisi Akhir -->

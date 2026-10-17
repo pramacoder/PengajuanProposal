@@ -85,7 +85,7 @@ class HasilController extends Controller
                 'catatan_final' => 'nullable|string',
                 'nilai' => 'required|numeric|min:0|max:100',
                 'skor' => 'required|array|min:1',
-                'skor.*' => 'required|numeric|min:0|max:10',
+                'skor.*' => 'required|numeric|in:1,2,3,5,6,7',
                 'dana_disetujui_belmawa' => 'nullable|numeric|min:0',
                 'dana_disetujui_operator' => 'nullable|numeric|min:0'
             ]);
@@ -289,6 +289,7 @@ class HasilController extends Controller
                 'dosen', 
                 'dokumen', 
                 'hasilSemiFinal',
+                'dosenPendampingUniversitas',
                 'nilaiSubstantif.reviewer',
                 'proposalRevisi' => function($query) {
                     $query->orderByRaw("CASE WHEN jenis_revisi = 'revisi_biasa' THEN 0 ELSE 1 END")
@@ -319,6 +320,7 @@ class HasilController extends Controller
     public function updateHasilSemiFinal(Request $request)
     {
         $request->merge([
+            'nilai' => \App\Helpers\ProposalHelper::parseAngka($request->input('nilai')),
             'dana_disetujui_belmawa' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_disetujui_belmawa')),
             'dana_disetujui_operator' => \App\Helpers\ProposalHelper::parseAngka($request->input('dana_disetujui_operator')),
         ]);
@@ -329,7 +331,7 @@ class HasilController extends Controller
             'catatan_final' => 'nullable|string',
             'nilai' => 'required|numeric|min:0|max:100',
             'skor' => 'required|array',
-            'skor.*' => 'required|numeric|min:0|max:10',
+            'skor.*' => 'required|numeric|in:1,2,3,5,6,7',
             'dana_disetujui_belmawa' => 'nullable|numeric|min:0',
             'dana_disetujui_operator' => 'nullable|numeric|min:0'
         ]);
@@ -392,6 +394,7 @@ class HasilController extends Controller
                     'skor_per_kriteria' => $normalizedSkor,
                     'dana_disetujui_belmawa' => $request->input('dana_disetujui_belmawa', null),
                     'dana_disetujui_operator' => $request->input('dana_disetujui_operator', null),
+                    'id_dosen_pendamping_universitas' => $request->status_final === 'lolos_tingkat_universitas' ? $request->id_dosen_pendamping_universitas : null,
                     'id_pt' => auth()->id()
                 ]
             );
@@ -411,8 +414,8 @@ class HasilController extends Controller
             
             DB::commit();
             
-            $cacheKey = "operator_detail_hasil_semi_final_{$request->proposal_id}";
-            Cache::forget($cacheKey);
+            Cache::forget("operator_detail_hasil_semi_final_{$request->proposal_id}");
+            Cache::forget("pimpinan_pt_detail_hasil_semi_final_{$request->proposal_id}");
             
             return response()->json([
                 'success' => true,

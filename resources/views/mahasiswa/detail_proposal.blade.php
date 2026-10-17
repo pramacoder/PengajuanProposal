@@ -659,26 +659,69 @@
                 $hasilSemiFinal = $proposal->hasilSemiFinal;
                 $hasilFinal = $proposal->hasilFinal;
                 
-                // Collect substantive reviews
-                $substantifReviews = collect();
+                // Collect substantive reviews (Tahap Awal)
+                $substantifAwalReviews = collect();
                 if ($proposal->id_reviewer_substantif_1) {
-                    $review1 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
-                    if ($review1 && $review1->note_substantif && 
-                        $review1->note_substantif !== 'Review substantif dimulai' &&
-                        !empty(trim($review1->note_substantif))) {
-                        $substantifReviews->push($review1);
+                    $r1 = $proposal->nilaiSubstantif
+                        ->where('id_reviewer', $proposal->id_reviewer_substantif_1)
+                        ->where('jenis_review', 'pertama')
+                        ->first();
+                    if ($r1 && ($r1->note_substantif ?? $r1->catatan) && 
+                        $r1->note_substantif !== 'Review substantif dimulai' &&
+                        !empty(trim($r1->note_substantif))) {
+                        $substantifAwalReviews->push($r1);
                     }
                 }
                 if ($proposal->id_reviewer_substantif_2) {
-                    $review2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
-                    if ($review2 && $review2->note_substantif && 
-                        $review2->note_substantif !== 'Review substantif dimulai' &&
-                        !empty(trim($review2->note_substantif))) {
-                        $substantifReviews->push($review2);
+                    $r2 = $proposal->nilaiSubstantif
+                        ->where('id_reviewer', $proposal->id_reviewer_substantif_2)
+                        ->where('jenis_review', 'pertama')
+                        ->first();
+                    if ($r2 && ($r2->note_substantif ?? $r2->catatan) && 
+                        $r2->note_substantif !== 'Review substantif dimulai' &&
+                        !empty(trim($r2->note_substantif))) {
+                        $substantifAwalReviews->push($r2);
                     }
                 }
-                
-                $hasAnyReview = $adminReview || $hasilSemiFinal || $hasilFinal || $substantifReviews->count() > 0;
+
+                // Collect substantive reviews (Tahap Seleksi)
+                $substantifSeleksiReviews = collect();
+                if ($proposal->id_reviewer_substantif_seleksi_1) {
+                    $rs1 = $proposal->nilaiSubstantif
+                        ->where('id_reviewer', $proposal->id_reviewer_substantif_seleksi_1)
+                        ->where('jenis_review', 'seleksi')
+                        ->first();
+                    if ($rs1 && ($rs1->note_substantif ?? $rs1->catatan) && 
+                        $rs1->note_substantif !== 'Review substantif dimulai' &&
+                        !empty(trim($rs1->note_substantif))) {
+                        $substantifSeleksiReviews->push($rs1);
+                    }
+                }
+                if ($proposal->id_reviewer_substantif_seleksi_2) {
+                    $rs2 = $proposal->nilaiSubstantif
+                        ->where('id_reviewer', $proposal->id_reviewer_substantif_seleksi_2)
+                        ->where('jenis_review', 'seleksi')
+                        ->first();
+                    if ($rs2 && ($rs2->note_substantif ?? $rs2->catatan) && 
+                        $rs2->note_substantif !== 'Review substantif dimulai' &&
+                        !empty(trim($rs2->note_substantif))) {
+                        $substantifSeleksiReviews->push($rs2);
+                    }
+                }
+
+                // Fallback for other substantive reviews with notes
+                $handledIds = $substantifAwalReviews->pluck('id')->merge($substantifSeleksiReviews->pluck('id'))->toArray();
+                $extraSubstantifReviews = $proposal->nilaiSubstantif
+                    ->whereNotIn('id', $handledIds)
+                    ->filter(function($item) {
+                        $note = $item->note_substantif ?? $item->catatan;
+                        return $note && $note !== 'Review substantif dimulai' && !empty(trim($note));
+                    });
+
+                $hasAnyReview = $adminReview || $hasilSemiFinal || $hasilFinal || 
+                                $substantifAwalReviews->count() > 0 || 
+                                $substantifSeleksiReviews->count() > 0 || 
+                                $extraSubstantifReviews->count() > 0;
             @endphp
             
             @if($hasAnyReview)
@@ -901,9 +944,67 @@
                 </div>
                 @endif
                 
-                <!-- Review Substantif (Catatan Saja) -->
-                @if($substantifReviews->count() > 0)
-                    @foreach($substantifReviews as $index => $review)
+                <!-- Review Substantif Tahap Awal (Catatan Saja) -->
+                @if($substantifAwalReviews->count() > 0)
+                    @foreach($substantifAwalReviews as $index => $review)
+                    <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #6c757d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div>
+                                <h5 style="color: #6c757d; font-weight: 600; margin: 0; font-size: 1.1rem;">Review Substantif Tahap Awal - Reviewer {{ $index + 1 }}</h5>
+                                <small style="color: #6c757d; font-size: 0.875rem;">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ \Carbon\Carbon::parse($review->updated_at)->format('d M Y H:i') }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; border-left: 4px solid #6c757d; border-radius: 6px; padding: 1rem;">
+                            <h6 style="color: #6c757d; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                                <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
+                            </h6>
+                            <div style="color: #495057; line-height: 1.6;">
+                                <p class="mb-0">{{ $review->note_substantif ?? $review->catatan }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                @endif
+
+                <!-- Review Substantif Seleksi (Catatan Saja) -->
+                @if($substantifSeleksiReviews->count() > 0)
+                    @foreach($substantifSeleksiReviews as $index => $review)
+                    <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #17a2b8; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <div>
+                                <h5 style="color: #138496; font-weight: 600; margin: 0; font-size: 1.1rem;">Review Substantif Seleksi - Reviewer {{ $index + 1 }}</h5>
+                                <small style="color: #6c757d; font-size: 0.875rem;">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ \Carbon\Carbon::parse($review->updated_at)->format('d M Y H:i') }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; border-left: 4px solid #17a2b8; border-radius: 6px; padding: 1rem;">
+                            <h6 style="color: #138496; font-weight: 600; margin-bottom: 0.75rem; font-size: 0.95rem;">
+                                <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer Seleksi:
+                            </h6>
+                            <div style="color: #495057; line-height: 1.6;">
+                                <p class="mb-0">{{ $review->note_substantif ?? $review->catatan }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                @endif
+
+                <!-- Review Substantif Tambahan jika ada -->
+                @if(isset($extraSubstantifReviews) && $extraSubstantifReviews->count() > 0)
+                    @foreach($extraSubstantifReviews as $index => $review)
                     <div style="background: white; border: 2px solid #e0e0e0; border-left: 5px solid #6c757d; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
                         <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
                             <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; margin-right: 1rem;">
@@ -923,7 +1024,7 @@
                                 <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
                             </h6>
                             <div style="color: #495057; line-height: 1.6;">
-                                <p class="mb-0">{{ $review->note_substantif }}</p>
+                                <p class="mb-0">{{ $review->note_substantif ?? $review->catatan }}</p>
                             </div>
                         </div>
                     </div>

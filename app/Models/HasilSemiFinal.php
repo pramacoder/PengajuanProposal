@@ -19,6 +19,8 @@ class HasilSemiFinal extends Model
         'nilai',
         'skor_per_kriteria',
         'dana_yang_dapat_diberikan',
+        'dana_disetujui_belmawa',
+        'dana_disetujui_operator',
         'id_dosen_pendamping_universitas',
         'id_proposal',
         'id_pt',
@@ -27,6 +29,8 @@ class HasilSemiFinal extends Model
     protected $casts = [
         'nilai' => 'decimal:2',
         'dana_yang_dapat_diberikan' => 'decimal:2',
+        'dana_disetujui_belmawa' => 'decimal:2',
+        'dana_disetujui_operator' => 'decimal:2',
         'skor_per_kriteria' => 'array',
     ];
 

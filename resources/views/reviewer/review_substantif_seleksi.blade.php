@@ -243,8 +243,7 @@
             </div>
             <div class="alert alert-info mt-3">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Catatan:</strong> Berikan nilai 0-10 per kriteria berdasarkan penilaian Anda terhadap proposal. 
-                Nilai yang lebih tinggi menunjukkan kualitas proposal yang lebih baik. Lengkapi review melalui halaman detail proposal.
+                <strong>Catatan:</strong> Berikan skor 1, 2, 3, 5, 6, atau 7 per kriteria sesuai panduan Belmawa (1 = Buruk, 2 = Sangat Kurang, 3 = Kurang, 5 = Cukup, 6 = Baik, 7 = Sangat Baik). Nilai akhir dihitung secara otomatis dengan skala 100 (Total Nilai / 7). Lengkapi review melalui halaman detail proposal.
             </div>
         </div>
     </div>

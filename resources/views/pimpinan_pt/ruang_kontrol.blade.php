@@ -86,7 +86,7 @@
                 <label class="form-label fw-bold mb-2">
                     <i class="fas fa-calendar-alt me-2"></i>Pilih Tahun Ajaran
                 </label>
-                <select class="form-select" id="tahunSelector" onchange="window.location.href='?tahun=' + this.value" disabled>
+                <select class="form-select" id="tahunSelector" onchange="window.location.href='?tahun=' + this.value">
                     @php
                         $tahunAjaranTerpilih = $tahunAjaranTerpilih ?? \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
                         $tahunArray = [];
@@ -214,7 +214,7 @@
                 <form id="formUpdateRuangKontrol">
                     @csrf
                     @if(isset($ruangKontrolAktif->id_ruang_kontrol))
-                        <input type="hidden" name="id_ruang_kontrol" value="{{ $ruangKontrolAktif- disabled>id_ruang_kontrol }}">
+                        <input type="hidden" name="id_ruang_kontrol" value="{{ $ruangKontrolAktif->id_ruang_kontrol }}">
                     @endif
 
                     {{-- Top meta row: fase aktif & nama jadwal --}}
@@ -237,7 +237,7 @@
                                 <label class="form-label fw-semibold mb-1"
                                     style="font-size:0.8rem;color:var(--text-600);">NAMA JADWAL</label>
                                 <input type="text" name="nama_history" class="form-control form-control-sm"
-                                    value="{{ $ruangKontrolAktif- disabled>nama_history ?? '' }}"
+                                    value="{{ $ruangKontrolAktif->nama_history ?? '' }}"
                                     placeholder="Contoh: Jadwal PKM 2025/2026"
                                     style="border-color:var(--border);border-radius:8px;">
                             </div>
@@ -286,7 +286,7 @@
                                             style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal
                                             Mulai</label>
                                         <input type="date" name="{{ $cfg['start_field'] }}" class="form-control form-control-sm"
-                                            value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))- disabled>format('Y-m-d') : '' }}"
+                                            value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))->format('Y-m-d') : '' }}"
                                             style="border-color:var(--border);border-radius:8px;">
                                     </div>
                                     <div class="col-md-4">
@@ -294,7 +294,7 @@
                                             style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal
                                             Selesai</label>
                                         <input type="date" name="{{ $cfg['end_field'] }}" class="form-control form-control-sm"
-                                            value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))- disabled>format('Y-m-d') : '' }}"
+                                            value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))->format('Y-m-d') : '' }}"
                                             style="border-color:var(--border);border-radius:8px;">
                                     </div>
                                 </div>

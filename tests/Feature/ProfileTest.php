@@ -15,7 +15,7 @@ class ProfileTest extends TestCase
     {
         $mhs = User::factory()->create(['role' => 'mahasiswa']);
         $response = $this->actingAs($mhs)->get('/mahasiswa/profile');
-        // Profile view uses PostgreSQL-specific ::text cast in query which fails on SQLite
+        // Profile view uses PostgreSQL-specific cast in query which fails on SQLite
         // Verify auth/role guard works (not 403/302) — actual rendering requires PostgreSQL
         $this->assertNotEquals(403, $response->getStatusCode());
         $this->assertNotEquals(302, $response->getStatusCode());

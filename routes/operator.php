@@ -74,11 +74,17 @@ Route::middleware(['auth', 'role:operator,pimpinan_pt'])->group(function () {
     Route::prefix('pimpinan-pt')->name('pimpinan_pt.')->group(function () {
         // Dashboard Pimpinan PT (dengan statistik lengkap seperti operator)
         Route::get('/dashboard', [PimpinanPTController::class, 'dashboard'])->name('dashboard');
+        Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile');
+        Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
         
         // Fitur Penilaian Final (khusus Pimpinan PT)
+        Route::get('/penilaian-final', [PimpinanPTController::class, 'hasilFinal'])->name('penilaian.final');
+        Route::get('/hasil-final', [PimpinanPTController::class, 'hasilFinal'])->name('hasil.final');
         Route::get('/detail-hasil-final/{id}', [PimpinanPTController::class, 'detailHasilFinal'])->name('detail.hasil.final');
         Route::post('/update-hasil-final', [PimpinanPTController::class, 'updateHasilFinal'])->name('update.hasil.final');
         Route::get('/proposal/{id}/view-pdf', [PimpinanPTController::class, 'viewPdf'])->name('proposal.view.pdf');
+        Route::get('/revisi/{id}/view', [PimpinanPTController::class, 'viewRevisi'])->name('revisi.view');
+        Route::get('/revisi/{id}/download', [PimpinanPTController::class, 'downloadRevisi'])->name('revisi.download');
         
         // Manajemen Akun Pimpinan PT (dapat mengelola semua jenis user)
         Route::get('/akun', [PimpinanPTController::class, 'manageAccounts'])->name('manage.accounts');
@@ -104,12 +110,14 @@ Route::middleware(['auth', 'role:operator,pimpinan_pt'])->group(function () {
         // Hasil Semi Final (monitoring)
         Route::get('/hasil-semi-final', [PimpinanPTController::class, 'hasilSemiFinal'])->name('hasil.semi.final');
         Route::get('/detail-hasil-semi-final/{id}', [PimpinanPTController::class, 'detailHasilSemiFinal'])->name('detail.hasil.semi.final');
+        Route::post('/update-hasil-semi-final', [\App\Http\Controllers\Operator\HasilController::class, 'updateHasilSemiFinal'])->name('update.hasil.semi.final');
 
         // Detail Proposal
         Route::get('/proposal/{id}/detail', [PimpinanPTController::class, 'proposalDetail'])->name('proposal.detail');
         
         // Form Penilaian (Read-only)
         Route::get('/form-penilaian', [PimpinanPTController::class, 'formPenilaian'])->name('form.penilaian');
+        Route::get('/form-penilaian-index', [PimpinanPTController::class, 'formPenilaian'])->name('form.penilaian.index');
         
         // Laporan SIMBELMAWA (Read-only)
         Route::get('/laporan-simbelmawa', [PimpinanPTController::class, 'laporanSimbelmawa'])->name('laporan.simbelmawa');

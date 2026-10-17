@@ -160,7 +160,7 @@ class ProposalHelper
         foreach ($nims as $nim) {
             $user = \App\Models\User::where('role', 'mahasiswa')
                 ->where('identifier', $nim)
-                ->whereRaw("(metadata->>'team_id') IS NOT NULL")
+                ->whereRaw("(metadata->>'$.team_id') IS NOT NULL")
                 ->first();
 
             if ($user && $user->getTeamId()) {
@@ -278,7 +278,7 @@ class ProposalHelper
     {
         $user = \App\Models\User::where('role', 'mahasiswa')
             ->where('identifier', $nim)
-            ->whereRaw("(metadata->>'team_id') IS NOT NULL")
+            ->whereRaw("(metadata->>'$.team_id') IS NOT NULL")
             ->first();
 
         if (!$user) {
@@ -337,7 +337,7 @@ class ProposalHelper
         }
         
         return \App\Models\User::where('role', 'mahasiswa')
-            ->whereRaw("metadata->>'team_id' = ?", [(string) $proposal->team_id])
+            ->whereRaw("metadata->>'$.team_id' = ?", [(string) $proposal->team_id])
             ->count();
     }
 
@@ -632,8 +632,8 @@ class ProposalHelper
             }
         }
         
-        // Nilai akhir = Total nilai / 10 (konversi dari 0-1000 ke 0-100)
-        $nilaiAkhir = $totalNilai / 10;
+        // Nilai akhir = Total nilai / 7 (konversi dari skala 100-700 ke 0-100 standar Belmawa)
+        $nilaiAkhir = $totalNilai > 0 ? ($totalNilai / 7) : 0;
         
         return [
             'total_nilai' => round($totalNilai, 2),
@@ -677,7 +677,7 @@ class ProposalHelper
         }
 
         $teamMembers = \App\Models\User::where('role', 'mahasiswa')
-            ->whereRaw("metadata->>'team_id' = ?", [(string) $proposal->team_id])
+            ->whereRaw("metadata->>'$.team_id' = ?", [(string) $proposal->team_id])
             ->get();
 
         foreach ($teamMembers as $member) {

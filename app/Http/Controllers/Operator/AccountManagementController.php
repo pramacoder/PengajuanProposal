@@ -30,14 +30,14 @@ class AccountManagementController extends Controller
             if ($request->filled('filter_fakultas')) {
                 $fakultasModel = Fakultas::find($request->filter_fakultas);
                 if ($fakultasModel) {
-                    $mahasiswaQuery->whereRaw("metadata->>'fakultas_name' = ?", [$fakultasModel->nama_fakultas]);
+                    $mahasiswaQuery->whereRaw("metadata->>'$.fakultas_name' = ?", [$fakultasModel->nama_fakultas]);
                 }
             }
             
             if ($request->filled('filter_prodi')) {
                 $prodiModel = Prodi::find($request->filter_prodi);
                 if ($prodiModel) {
-                    $mahasiswaQuery->whereRaw("metadata->>'prodi_name' = ?", [$prodiModel->nama_prodi]);
+                    $mahasiswaQuery->whereRaw("metadata->>'$.prodi_name' = ?", [$prodiModel->nama_prodi]);
                 }
             }
             

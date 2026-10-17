@@ -157,7 +157,7 @@
                         </a></li>
 
                         {{-- Fase 4: Penilaian Final (Khusus Pimpinan PT) --}}
-                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.dashboard') }}" class="@if(request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
+                        <li class="menu-operator"><a href="{{ route('pimpinan_pt.penilaian.final') }}" class="@if(request()->routeIs('pimpinan_pt.penilaian.final') || request()->routeIs('pimpinan_pt.hasil.final') || request()->routeIs('pimpinan_pt.detail.hasil.final')) active @endif">
                             <i class="fas fa-trophy me-2"></i>Penilaian Final
                         </a></li>
 

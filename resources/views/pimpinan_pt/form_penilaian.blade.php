@@ -133,10 +133,7 @@
                                     <i class="fas fa-file-alt" style="font-size:1.4rem;color:var(--text-400);"></i>
                                 </div>
                                 <div class="fw-semibold mb-1" style="color:var(--text-900);">Belum Ada Form</div>
-                                <p style="color:var(--text-600);font-size:0.875rem;">Buat form penilaian pertama untuk digunakan reviewer.</p>
-                                <a href="{{ route('pimpinan_pt.form.penilaian.create') }}" class="btn btn-sm fw-semibold text-white" style="background:var(--primary-700);border-radius:8px;">
-                                    <i class="fas fa-plus me-1"></i>Buat Form
-                                </a>
+                                <p style="color:var(--text-600);font-size:0.875rem;">Belum ada form penilaian yang tersedia.</p>
                             </td>
                         </tr>
                         @endforelse

@@ -4,14 +4,14 @@
 
 Sistem Pengajuan Proposal PKM (Program Kreativitas Mahasiswa) adalah aplikasi web berbasis Laravel 12 yang mengelola seluruh alur kerja proposal PKM dari pengajuan oleh mahasiswa hingga pengumuman hasil final. Sistem ini mendukung multi-role user dengan autentikasi unified, sistem penilaian dinamis berdasarkan skim proposal, dan notifikasi database channel untuk semua pengguna.
 
-**Sistem menggunakan Relational Database Architecture** berbasis Supabase PostgreSQL dengan implementasi form request terpusat untuk validasi data, serta file storage dengan mekanisme *smart fallback* antara Supabase Storage (S3) dan Local Disk.
+**Sistem menggunakan Relational Database Architecture** berbasis MySQL dengan implementasi form request terpusat untuk validasi data, serta file storage menggunakan Local Disk.
 
 **Versi:** 5.0.0  
 **Status:** Production  
 **Framework:** Laravel 12  
 **PHP:** 8.2+  
-**Database:** Supabase PostgreSQL  
-**File Storage:** Supabase Storage (S3-compatible) & Local Disk Fallback
+**Database:** MySQL  
+**File Storage:** Local Disk
 
 ---
 
@@ -40,9 +40,9 @@ Sistem Pengajuan Proposal PKM (Program Kreativitas Mahasiswa) adalah aplikasi we
 
 - **Backend:** Laravel 12, PHP 8.3+
 - **Frontend:** Blade Templates, Vanilla CSS (Crimson & Slate Theme), Vanilla JS
-- **Database:** Supabase PostgreSQL / MySQL (Relational)
+- **Database:** MySQL (Relational)
 - **Authentication:** Unified single-guard (`web`) with role-based middleware
-- **File Storage:** Supabase Storage dengan Fallback otomatis ke Public Local Disk via `StorageHelper`
+- **File Storage:** Public Local Disk via `StorageHelper`
 - **Form Validation:** Laravel FormRequests untuk data integrity
 
 ### Role User
@@ -1158,7 +1158,7 @@ Detail implementasi dapat dilihat di dokumentasi `CLOUD_STORAGE_IMPLEMENTATION.m
 
 - PHP >= 8.2
 - Composer
-- Supabase PostgreSQL (atau PostgreSQL lokal)
+- MySQL 8+
 - Node.js & NPM (untuk asset compilation)
 - Web server (Apache/Nginx)
 
@@ -1189,18 +1189,15 @@ php artisan key:generate
    Edit `.env` file:
 
 ```env
-DB_CONNECTION=pgsql
-DB_HOST=...supabase host...
-DB_PORT=5432
-DB_DATABASE=postgres
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=pengajuan_proposal
 DB_USERNAME=...
 DB_PASSWORD=...
 
-# Supabase Storage
-FILESYSTEM_DISK=supabase
-SUPABASE_URL=...
-SUPABASE_KEY=...
-SUPABASE_STORAGE_BUCKET=proposals
+# Storage (Local)
+FILESYSTEM_DISK=public
 ```
 
 5. **Run Migrations**

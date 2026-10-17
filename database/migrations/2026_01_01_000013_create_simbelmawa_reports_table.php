@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('simbelmawa_reports', function (Blueprint $table) {
             $table->id();
             $table->string('tahun_ajaran');
-            $table->bigInteger('id_ruang_kontrol')->nullable();
+            $table->unsignedBigInteger('id_ruang_kontrol')->nullable();
             $table->integer('jumlah_proposal_tervalidasi_pimpinan_pt')->default(0);
             $table->integer('jumlah_proposal_dapat_pendanaan')->default(0);
             $table->decimal('total_dana_pendanaan', 15, 2)->default(0);

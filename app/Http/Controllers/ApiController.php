@@ -65,7 +65,7 @@ class ApiController extends Controller
             if (!$proposal) {
                 $user = User::where('role', 'mahasiswa')
                     ->where('identifier', $nim)
-                    ->whereRaw("(metadata->>'team_id') IS NOT NULL")
+                    ->whereRaw("(metadata->>'$.team_id') IS NOT NULL")
                     ->first();
 
                 if ($user) {

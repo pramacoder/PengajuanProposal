@@ -135,7 +135,7 @@ class AdministratifController extends Controller
             } else {
                 $request->validate([
                     'catatan' => 'required|string|max:1000',
-                    'kesalahan_administratif' => 'required|array|min:1',
+                    'kesalahan_administratif' => 'nullable|array',
                     'kesalahan_administratif.*' => 'string'
                 ]);
             }
@@ -188,7 +188,8 @@ class AdministratifController extends Controller
                 $adminCompleted = $this->reviewCompletionService->isAdminReviewCompleted($proposal->fresh());
                 if ($adminCompleted) {
                     $notificationService = app(NotificationService::class);
-                    $lolos = !empty($kesalahanAdministratif) && count($kesalahanAdministratif) > 0;
+                    $hasKesalahan = !empty($kesalahanAdministratif) && count($kesalahanAdministratif) > 0;
+                    $lolos = !$hasKesalahan;
                     $notificationService->notifyReviewAdministratifSelesai(
                         $proposal->fresh(),
                         $lolos,

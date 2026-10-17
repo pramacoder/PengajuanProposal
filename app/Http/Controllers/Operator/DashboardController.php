@@ -101,8 +101,8 @@ class DashboardController extends Controller
             if ($fakultas) {
                 $query->where(function($q) use ($fakultas) {
                     $q->whereHas('mahasiswa', function($subQ) use ($fakultas) {
-                        $subQ->whereRaw("metadata->>'fakultas_name' = ?", [$fakultas->nama_fakultas]);
-                    })->orWhereRaw("EXISTS (SELECT 1 FROM users u WHERE (u.metadata->>'team_id') = proposals.team_id AND u.role = 'mahasiswa' AND u.metadata->>'fakultas_name' = ?)", [$fakultas->nama_fakultas]);
+                        $subQ->whereRaw("metadata->>'$.fakultas_name' = ?", [$fakultas->nama_fakultas]);
+                    })->orWhereRaw("EXISTS (SELECT 1 FROM users u WHERE (u.metadata->>'$.team_id') = proposals.team_id AND u.role = 'mahasiswa' AND u.metadata->>'$.fakultas_name' = ?)", [$fakultas->nama_fakultas]);
                 });
             }
         }
@@ -113,8 +113,8 @@ class DashboardController extends Controller
             if ($prodi) {
                 $query->where(function($q) use ($prodi) {
                     $q->whereHas('mahasiswa', function($subQ) use ($prodi) {
-                        $subQ->whereRaw("metadata->>'prodi_name' = ?", [$prodi->nama_prodi]);
-                    })->orWhereRaw("EXISTS (SELECT 1 FROM users u WHERE (u.metadata->>'team_id') = proposals.team_id AND u.role = 'mahasiswa' AND u.metadata->>'prodi_name' = ?)", [$prodi->nama_prodi]);
+                        $subQ->whereRaw("metadata->>'$.prodi_name' = ?", [$prodi->nama_prodi]);
+                    })->orWhereRaw("EXISTS (SELECT 1 FROM users u WHERE (u.metadata->>'$.team_id') = proposals.team_id AND u.role = 'mahasiswa' AND u.metadata->>'$.prodi_name' = ?)", [$prodi->nama_prodi]);
                 });
             }
         }
@@ -235,8 +235,8 @@ class DashboardController extends Controller
         $proposalPerFakultas = Proposal::where('tahun_ajaran', $tahunAjaran)
             ->join('users', 'proposals.id_mahasiswa', '=', 'users.id')
             ->where('users.role', 'mahasiswa')
-            ->selectRaw("users.metadata->>'fakultas_name' as nama_fakultas, COUNT(*) as jumlah")
-            ->groupByRaw("users.metadata->>'fakultas_name'")
+            ->selectRaw("users.metadata->>'$.fakultas_name' as nama_fakultas, COUNT(*) as jumlah")
+            ->groupByRaw("users.metadata->>'$.fakultas_name'")
             ->orderBy('jumlah', 'desc')
             ->get()
             ->map(function($item) {

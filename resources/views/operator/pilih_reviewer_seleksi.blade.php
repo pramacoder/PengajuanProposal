@@ -402,37 +402,40 @@ function submitReviewerAssignment(proposalId) {
         },
         body: JSON.stringify(data)
     });
-    Promise.all([
-        post({ proposal_id: proposalId, reviewer_id: id1, review_type: 'substantif_seleksi_1' }),
-        post({ proposal_id: proposalId, reviewer_id: id2, review_type: 'substantif_seleksi_2' })
-    ])
-    .then(([r1, r2]) => Promise.all([r1.json(), r2.json()]))
-    .then(([d1, d2]) => {
-        if (d1.success && d2.success) {
-            showToast('Reviewer seleksi berhasil ditugaskan!', 'success');
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '0';
-            row.style.transform = 'translateX(-100%)';
-            setTimeout(() => {
-                row.remove();
-                const tbody = document.querySelector('#proposalsTable tbody');
-                if (tbody.children.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
-                                    <p>Semua proposal telah ditugaskan reviewer seleksi</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }
-                loadAssignedProposals();
-            }, 300);
-        } else {
-            showToast(d1.message || d2.message || 'Gagal menugaskan reviewer seleksi', 'error');
+    post({ proposal_id: proposalId, reviewer_id: id1, review_type: 'substantif_seleksi_1' })
+    .then(r1 => r1.json())
+    .then(d1 => {
+        if (!d1.success) {
+            throw new Error(d1.message || 'Gagal menugaskan reviewer seleksi 1');
         }
+        return post({ proposal_id: proposalId, reviewer_id: id2, review_type: 'substantif_seleksi_2' })
+            .then(r2 => r2.json())
+            .then(d2 => {
+                if (!d2.success) {
+                    throw new Error(d2.message || 'Gagal menugaskan reviewer seleksi 2');
+                }
+                showToast('Reviewer seleksi berhasil ditugaskan!', 'success');
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(-100%)';
+                setTimeout(() => {
+                    row.remove();
+                    const tbody = document.querySelector('#proposalsTable tbody');
+                    if (tbody.children.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                                        <p>Semua proposal telah ditugaskan reviewer seleksi</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    loadAssignedProposals();
+                }, 300);
+            });
     })
     .catch(err => {
         console.error(err);

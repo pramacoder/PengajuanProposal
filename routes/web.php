@@ -62,7 +62,7 @@ Route::get('/api/ruang-kontrol/status', [ApiController::class, 'getRuangKontrolS
 Route::get('/api/proposal/{id}/revisi', [ApiController::class, 'getProposalRevisi'])->name('api.proposal.revisi');
 
 
-// Authenticated file serve route (serves files from Supabase Storage or local fallback)
+// Authenticated file serve route (serves files from local storage)
 Route::get('/file/serve', function (\Illuminate\Http\Request $request) {
     $path = $request->query('path');
     if (!$path) abort(404);

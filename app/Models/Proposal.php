@@ -106,8 +106,8 @@ class Proposal extends Model
     {
         if (!$this->team_id) return collect();
         return User::where('role', 'mahasiswa')
-            ->whereRaw("metadata->>'team_id' = ?", [(string) $this->team_id])
-            ->whereRaw("metadata->>'is_ketua' != 'true'")
+            ->whereRaw("metadata->>'$.team_id' = ?", [(string) $this->team_id])
+            ->whereRaw("metadata->>'$.is_ketua' != 'true'")
             ->get();
     }
 
@@ -115,8 +115,8 @@ class Proposal extends Model
     {
         if (!$this->team_id) return null;
         return User::where('role', 'mahasiswa')
-            ->whereRaw("metadata->>'team_id' = ?", [(string) $this->team_id])
-            ->whereRaw("metadata->>'is_ketua' = 'true'")
+            ->whereRaw("metadata->>'$.team_id' = ?", [(string) $this->team_id])
+            ->whereRaw("metadata->>'$.is_ketua' = 'true'")
             ->first();
     }
 
@@ -124,7 +124,7 @@ class Proposal extends Model
     {
         if (!$this->team_id) return collect();
         return User::where('role', 'mahasiswa')
-            ->whereRaw("metadata->>'team_id' = ?", [(string) $this->team_id])
+            ->whereRaw("metadata->>'$.team_id' = ?", [(string) $this->team_id])
             ->get();
     }
 

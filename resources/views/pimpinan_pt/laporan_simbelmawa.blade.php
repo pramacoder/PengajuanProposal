@@ -33,10 +33,10 @@
         <div class="card-body">
             <form method="GET" action="{{ route('pimpinan_pt.laporan.simbelmawa') }}" class="row g-3">
                 <div class="col-md-4">
-                    <select name="tahun_pelaksanaan" class="form-select">
+                    <select name="tahun_ajaran" class="form-select">
                         <option value="">-- Semua Tahun --</option>
-                        @foreach($tahuns as $t)
-                            <option value="{{ $t }}" {{ request('tahun_pelaksanaan') == $t ? 'selected' : '' }}>
+                        @foreach($tahuns ?? [] as $t)
+                            <option value="{{ $t }}" {{ (request('tahun_ajaran') == $t || request('tahun_pelaksanaan') == $t) ? 'selected' : '' }}>
                                 {{ $t }}
                             </option>
                         @endforeach

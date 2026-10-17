@@ -17,20 +17,110 @@
     <!-- Filter and Search Section -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <span class="badge bg-secondary">Mode Read-Only</span>
+            <select class="form-select" id="yearSelector">
+                @php $currentYear = date('Y'); @endphp
+                @for($i = $currentYear; $i >= 2023; $i--)
+                    <option value="{{ $i }}" {{ $tahun == $i ? 'selected' : '' }}>{{ $i }}</option>
+                @endfor
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="filterSelector">
+                <option value="all" {{ $filter == 'all' ? 'selected' : '' }}>Filter by</option>
+                <option value="RE" {{ $filter == 'RE' ? 'selected' : '' }}>RE - Riset Eksakta</option>
+                <option value="RSH" {{ $filter == 'RSH' ? 'selected' : '' }}>RSH - Riset Sosial Humaniora</option>
+                <option value="KC" {{ $filter == 'KC' ? 'selected' : '' }}>KC - Kewirausahaan</option>
+                <option value="PM" {{ $filter == 'PM' ? 'selected' : '' }}>PM - Pengabdian Masyarakat</option>
+                <option value="PI" {{ $filter == 'PI' ? 'selected' : '' }}>PI - Penerapan IPTEK</option>
+                <option value="K" {{ $filter == 'K' ? 'selected' : '' }}>K - Karsa Cipta</option>
+                <option value="KI" {{ $filter == 'KI' ? 'selected' : '' }}>KI - Karya Inovatif</option>
+                <option value="VGK" {{ $filter == 'VGK' ? 'selected' : '' }}>VGK - Video Gagasan Konkret</option>
+                <option value="AI" {{ $filter == 'AI' ? 'selected' : '' }}>AI - Artikel Ilmiah</option>
+                <option value="GFT" {{ $filter == 'GFT' ? 'selected' : '' }}>GFT - Gagasan Futuristik Tertulis</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchInput" placeholder="Cari judul proposal">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Proposals Table -->
+    <div class="card card-custom">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>
+                Daftar Proposal yang Perlu Reviewer Seleksi
+            </h5>
+            <span class="badge bg-secondary">Mode Monitoring (Read-Only)</span>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="proposalsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>No</th>
+                            <th>Judul</th>
+                            <th>Skim</th>
+                            <th>Ketua</th>
+                            <th>Reviewer Seleksi 1</th>
+                            <th>Reviewer Seleksi 2</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($proposals as $index => $proposal)
+                        <tr data-proposal-id="{{ $proposal->id_proposal }}">
+                            <td>{{ $index + 1 }}</td>
+                            <td>
+                                <strong>{{ $proposal->judul_proposal ?? 'Judul proposal..' }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ $proposal->skim ?? 'N/A' }}</span>
+                            </td>
+                            <td>{{ $proposal->mahasiswa->nama_mhs ?? 'Nama ketua..' }}</td>
+                            <td>
+                                <div class="input-group reviewer-input-group">
+                                    <select class="form-select reviewer-select" 
+                                           data-type="substantif_seleksi_1"
+                                           data-proposal-id="{{ $proposal->id_proposal }}"
+                                           disabled>
+                                        <option value="">{{ $proposal->reviewerSubstantifSeleksi1->nama_reviewer ?? $proposal->reviewerSubstantifSeleksi1->name ?? 'Belum dipilih' }}</option>
+                                        @foreach($reviewers as $reviewer)
+                                            <option value="{{ $reviewer->id ?? $reviewer->id_reviewer }}" 
+                                                    {{ ($reviewer->id ?? $reviewer->id_reviewer) == $proposal->id_reviewer_substantif_seleksi_1 ? 'selected' : '' }}>
+                                                {{ $reviewer->name ?? $reviewer->nama_reviewer ?? 'N/A' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </td>
                             <td>
                                 <div class="input-group reviewer-input-group">
-                                    <span class="badge bg-secondary">Mode Read-Only</span>
+                                    <select class="form-select reviewer-select" 
+                                           data-type="substantif_seleksi_2"
+                                           data-proposal-id="{{ $proposal->id_proposal }}"
+                                           disabled>
+                                        <option value="">{{ $proposal->reviewerSubstantifSeleksi2->nama_reviewer ?? $proposal->reviewerSubstantifSeleksi2->name ?? 'Belum dipilih' }}</option>
+                                        @foreach($reviewers as $reviewer)
+                                            <option value="{{ $reviewer->id ?? $reviewer->id_reviewer }}" 
+                                                    {{ ($reviewer->id ?? $reviewer->id_reviewer) == $proposal->id_reviewer_substantif_seleksi_2 ? 'selected' : '' }}>
+                                                {{ $reviewer->name ?? $reviewer->nama_reviewer ?? 'N/A' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </td>
                             <td>
                                 <button class="btn btn-secondary btn-sm submit-reviewer" 
                                         data-proposal-id="{{ $proposal->id_proposal }}"
                                         disabled>
-                                    <i class="fas fa-paper-plane me-1"></i>
-                                    Submit
+                                    <i class="fas fa-lock me-1"></i>
+                                    Read Only
                                 </button>
                             </td>
                         </tr>

@@ -166,7 +166,13 @@ class ReviewerAssignmentController extends Controller
             ])
                 ->whereNotNull('id_reviewer_substantif_seleksi_1')
                 ->whereNotNull('id_reviewer_substantif_seleksi_2')
-                ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+                ->where(function ($q) use ($tahun) {
+                    $q->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+                      ->orWhere(function ($sub) use ($tahun) {
+                          $sub->whereNull('tanggal_pengajuan')
+                              ->whereYear('created_at', $tahun);
+                      });
+                })
                 ->when($filter !== 'all', function ($query) use ($filter) {
                     $query->where('skim', $filter);
                 })
@@ -192,12 +198,24 @@ class ReviewerAssignmentController extends Controller
         $filter = $request->get('filter', 'all');
 
         $proposals = Proposal::with(['mahasiswa', 'dokumen', 'nilaiAdministratif', 'nilaiSubstantif'])
-            ->whereIn('status', ['revisi', 'revisi_submitted', 'review_substantif_seleksi'])
+            ->where(function ($query) {
+                $query->whereIn('status', ['validasi_2_valid', 'review_substantif_seleksi'])
+                    ->orWhere(function ($q) {
+                        $q->whereIn('status', ['revisi', 'revisi_submitted'])
+                          ->where('status_validasi_2', 'valid');
+                    });
+            })
             ->where(function ($query) {
                 $query->whereNull('id_reviewer_substantif_seleksi_1')
                     ->orWhereNull('id_reviewer_substantif_seleksi_2');
             })
-            ->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+            ->where(function ($q) use ($tahun) {
+                $q->whereRaw("EXTRACT(YEAR FROM tanggal_pengajuan) = ?", [$tahun])
+                  ->orWhere(function ($sub) use ($tahun) {
+                      $sub->whereNull('tanggal_pengajuan')
+                          ->whereYear('created_at', $tahun);
+                  });
+            })
             ->when($filter !== 'all', function ($q) use ($filter) {
                 $q->where('skim', $filter);
             })

@@ -9,10 +9,10 @@
  * Struktur:
  * - Setiap skim memiliki array kriteria
  * - Setiap kriteria memiliki: nama, bobot (dalam %)
- * - Skor: 0-10 (input oleh reviewer)
+ * - Skor: 1, 2, 3, 5, 6, 7 (input oleh reviewer sesuai panduan Belmawa)
  * - Nilai: Bobot × Skor
- * - Total maksimal: 1000 (jika semua skor = 10)
- * - Konversi ke decimal: Total / 10 (contoh: 789 → 78.9)
+ * - Total maksimal: 700 (jika semua skor = 7)
+ * - Konversi ke decimal: Total / 7 (skala 100, contoh: 525 → 75.0)
  * 
  * @author Pramajaya
  * @version 1.0.0

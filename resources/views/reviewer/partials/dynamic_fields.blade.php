@@ -42,7 +42,7 @@
                 @if($fieldType === 'integer_scale')
                     {{-- Integer scale 1-7 --}}
                     <div class="d-flex flex-wrap gap-2 mt-1" id="{{ $inputId }}_btns">
-                        @for($n = 1; $n <= 7; $n++)
+                        @foreach([1, 2, 3, 5, 6, 7] as $n)
                             <button type="button"
                                     class="scale-btn btn btn-sm fw-bold"
                                     data-value="{{ $n }}"
@@ -55,10 +55,10 @@
                                            transition:all 0.15s;">
                                 {{ $n }}
                             </button>
-                        @endfor
+                        @endforeach
                     </div>
                     <div style="font-size:0.72rem;color:var(--text-400);margin-top:5px;">
-                        1 = Sangat Kurang &nbsp;·&nbsp; 7 = Sangat Baik
+                        1 = Buruk &nbsp;·&nbsp; 2 = Sangat Kurang &nbsp;·&nbsp; 3 = Kurang &nbsp;·&nbsp; 5 = Cukup &nbsp;·&nbsp; 6 = Baik &nbsp;·&nbsp; 7 = Sangat Baik
                     </div>
                     <input type="hidden"
                            id="{{ $inputId }}"

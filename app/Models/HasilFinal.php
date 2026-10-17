@@ -17,8 +17,12 @@ class HasilFinal extends Model
         'status_pimnas', // Untuk Pimpinan PT
         'status_pendanaan', // Untuk Pimpinan PT
         'dana_yang_didapatkan', // Untuk Pimpinan PT
-        'status_final', // Untuk Operator (lolos, tidak_lolos)
+        'dana_didapatkan_belmawa',
+        'dana_didapatkan_operator',
+        'status_final', // Untuk Operator / Pimpinan PT (lolos, tidak_lolos)
         'dana_yang_dapat_diberikan', // Untuk Operator
+        'dana_disetujui_belmawa',
+        'dana_disetujui_operator',
         'catatan_final',
         'nilai',
         'skor_per_kriteria',
@@ -31,6 +35,10 @@ class HasilFinal extends Model
         'nilai' => 'decimal:2',
         'dana_yang_didapatkan' => 'decimal:2',
         'dana_yang_dapat_diberikan' => 'decimal:2',
+        'dana_didapatkan_belmawa' => 'decimal:2',
+        'dana_didapatkan_operator' => 'decimal:2',
+        'dana_disetujui_belmawa' => 'decimal:2',
+        'dana_disetujui_operator' => 'decimal:2',
         'skor_per_kriteria' => 'array'
     ];
 

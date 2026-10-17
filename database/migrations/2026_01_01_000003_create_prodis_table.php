@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id('id_prodi');
             $table->string('nama_prodi');
             $table->string('kode_prodi')->unique();
-            $table->bigInteger('id_fakultas');
+            $table->unsignedBigInteger('id_fakultas');
             $table->timestamps();
 
             $table->foreign('id_fakultas')->references('id_fakultas')->on('fakultas')->onDelete('cascade');

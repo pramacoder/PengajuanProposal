@@ -378,7 +378,7 @@
                             </div>
                             <div>
                                 <button class="btn btn-sm btn-outline-info me-2 view-pdf-btn" 
-                                        data-pdf-url="{{ route('pimpinan_pt.revisi.download', $revisi->id_revisi) }}"
+                                        data-pdf-url="{{ route('pimpinan_pt.revisi.view', $revisi->id_revisi) }}"
                                         data-pdf-name="{{ $revisi->nama_file }}">
                                     <i class="fas fa-eye me-1"></i>Lihat
                                 </button>
@@ -442,14 +442,15 @@
                         </h6>
                         <div class="row">
                             <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <div class="display-4 text-primary fw-bold">@formatId($nilaiSubstantifSeleksi1->total_nilai)</div>
-                                <div class="text-muted small">Total Nilai</div>
+                                <div class="display-5 text-primary fw-bold">@formatId($nilaiSubstantifSeleksi1->nilai_akhir ?? ($nilaiSubstantifSeleksi1->total_nilai / 7), 2)</div>
+                                <div class="text-muted small fw-semibold">Nilai Akhir (Skala 100)</div>
+                                <div class="badge bg-light text-secondary border mt-1">Total Nilai: @formatId($nilaiSubstantifSeleksi1->total_nilai, 2)</div>
                             </div>
                             <div class="col-md-9">
-                                @if($nilaiSubstantifSeleksi1->catatan)
+                                @if($nilaiSubstantifSeleksi1->note_substantif ?? $nilaiSubstantifSeleksi1->catatan)
                                 <div class="bg-white p-3 rounded border">
                                     <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
-                                    {{ $nilaiSubstantifSeleksi1->catatan }}
+                                    {{ $nilaiSubstantifSeleksi1->note_substantif ?? $nilaiSubstantifSeleksi1->catatan }}
                                 </div>
                                 @else
                                 <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
@@ -474,14 +475,15 @@
                         </h6>
                         <div class="row">
                             <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <div class="display-4 text-success fw-bold">@formatId($nilaiSubstantifSeleksi2->total_nilai)</div>
-                                <div class="text-muted small">Total Nilai</div>
+                                <div class="display-5 text-success fw-bold">@formatId($nilaiSubstantifSeleksi2->nilai_akhir ?? ($nilaiSubstantifSeleksi2->total_nilai / 7), 2)</div>
+                                <div class="text-muted small fw-semibold">Nilai Akhir (Skala 100)</div>
+                                <div class="badge bg-light text-secondary border mt-1">Total Nilai: @formatId($nilaiSubstantifSeleksi2->total_nilai, 2)</div>
                             </div>
                             <div class="col-md-9">
-                                @if($nilaiSubstantifSeleksi2->catatan)
+                                @if($nilaiSubstantifSeleksi2->note_substantif ?? $nilaiSubstantifSeleksi2->catatan)
                                 <div class="bg-white p-3 rounded border">
                                     <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
-                                    {{ $nilaiSubstantifSeleksi2->catatan }}
+                                    {{ $nilaiSubstantifSeleksi2->note_substantif ?? $nilaiSubstantifSeleksi2->catatan }}
                                 </div>
                                 @else
                                 <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
@@ -641,8 +643,8 @@
                                             <td class="text-center fw-bold">@formatId($nilaiSubstantif1->total_nilai ?? 0, 2)</td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
-                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif1->nilai_akhir ?? 0, 2)</td>
+                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
+                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif1->nilai_akhir ?? (($nilaiSubstantif1->total_nilai ?? 0) / 7), 2)</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -791,8 +793,8 @@
                                             <td class="text-center fw-bold">@formatId($nilaiSubstantif2->total_nilai ?? 0, 2)</td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
-                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif2->nilai_akhir ?? 0, 2)</td>
+                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
+                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif2->nilai_akhir ?? (($nilaiSubstantif2->total_nilai ?? 0) / 7), 2)</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -950,14 +952,24 @@
                                     <table class="table table-bordered table-hover">
                                         <thead class="table-primary">
                                             <tr>
-                                                <th width="5%">No</th>
-                                                <th width="50%">Kriteria Penilaian</th>
+                                                <th width="5%" class="text-center">No</th>
+                                                <th width="45%">Kriteria Penilaian</th>
                                                 <th width="10%" class="text-center">Bobot (%)</th>
-                                                <th width="15%" class="text-center">Skor (0-10)</th>
+                                                <th width="25%" class="text-center">Skor (1–7)</th>
                                                 <th width="15%" class="text-center">Nilai</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php
+                                                $belmawaOptions = [
+                                                    1 => '1 - Buruk',
+                                                    2 => '2 - Sangat Kurang',
+                                                    3 => '3 - Kurang',
+                                                    5 => '5 - Cukup',
+                                                    6 => '6 - Baik',
+                                                    7 => '7 - Sangat Baik',
+                                                ];
+                                            @endphp
                                             @foreach($flattenedCriteria as $item)
                                                 @php
                                                     // Untuk header, tidak ada skor (index = -1)
@@ -1001,16 +1013,18 @@
                                                         @if($item['is_header'])
                                                             <span class="text-muted">-</span>
                                                         @else
-                                                            <input type="number" 
-                                                                   class="form-control form-control-sm skor-final-input text-center" 
-                                                                   name="skor[{{ $item['index'] }}]" 
-                                                                   value="{{ $skorValue }}"
-                                                                   min="0" 
-                                                                   max="10" 
-                                                                   step="0.1"
-                                                                   data-index="{{ $item['index'] }}"
-                                                                   data-bobot="{{ $item['bobot'] }}"
-                                                                   required>
+                                                            <select class="form-select form-select-sm skor-final-input" 
+                                                                    name="skor[{{ $item['index'] }}]" 
+                                                                    data-index="{{ $item['index'] }}"
+                                                                    data-bobot="{{ $item['bobot'] }}"
+                                                                    required>
+                                                                <option value="">-- Pilih Skor --</option>
+                                                                @foreach($belmawaOptions as $bVal => $bLabel)
+                                                                    <option value="{{ $bVal }}" {{ (string)(int)$skorValue === (string)$bVal && $skorValue !== '' ? 'selected' : '' }}>
+                                                                        {{ $bLabel }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
                                                         @endif
                                                     </td>
                                                     <td class="text-center">
@@ -1037,7 +1051,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
+                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
                                                 <td class="text-center">
                                                     <span class="nilai-akhir-final-display fw-bold text-primary" style="font-size: 1.2em;">0.00</span>
                                                 </td>
@@ -1115,7 +1129,7 @@
 @php
     $hasRevisi = $proposal->proposalRevisi->count() > 0;
     $firstRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
-    $firstRevisiUrl = $firstRevisi ? route('pimpinan_pt.revisi.download', $firstRevisi->id_revisi) : null;
+    $firstRevisiUrl = $firstRevisi ? route('pimpinan_pt.revisi.view', $firstRevisi->id_revisi) : null;
     
     // Prepare JSON strings
     $pageDataJson = json_encode([
@@ -1213,8 +1227,8 @@
             totalSkorDisplay.textContent = count > 0 ? (totalSkor / count).toFixed(2) : '0.00';
         }
         
-        // Hitung nilai akhir: Total Nilai / 10
-        const nilaiAkhir = totalNilai / 10;
+        // Hitung nilai akhir: Total Nilai / 7 (skala 100 standar Belmawa)
+        const nilaiAkhir = totalNilai > 0 ? (totalNilai / 7) : 0;
         const nilaiAkhirDisplay = document.querySelector('.nilai-akhir-final-display');
         if (nilaiAkhirDisplay) {
             nilaiAkhirDisplay.textContent = nilaiAkhir.toFixed(2);
@@ -1554,7 +1568,13 @@
     });
 
     function showToast(message, type = 'info', duration = 3000) {
-        window.AppUI?.showToast?.(message, type, duration);
+        if (window.AppUI?.showToast) {
+            window.AppUI.showToast(message, type, duration);
+        } else if (type === 'error') {
+            alert(message);
+        } else {
+            console.log(`[Toast ${type}] ${message}`);
+        }
     }
 </script>
 @endsection

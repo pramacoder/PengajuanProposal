@@ -118,7 +118,7 @@ class SubstantifController extends Controller
                 $validationRules = [
                     'catatan' => 'required|string|min:50|max:1000',
                     'skor' => 'required|array',
-                    'skor.*' => 'required|numeric|min:0|max:10'
+                    'skor.*' => 'required|numeric|in:1,2,3,5,6,7'
                 ];
 
                 $request->validate($validationRules);
@@ -183,10 +183,10 @@ class SubstantifController extends Controller
                     $index = (int) $key;
                     $skorValue = (float) $value;
                     
-                    if ($skorValue < 0) {
-                        $skorValue = 0;
-                    } elseif ($skorValue > 10) {
-                        $skorValue = 10;
+                    if ($skorValue < 1) {
+                        $skorValue = 1;
+                    } elseif ($skorValue > 7) {
+                        $skorValue = 7;
                     }
                     
                     $skorPerKriteria[$index] = $skorValue;
@@ -351,7 +351,7 @@ class SubstantifController extends Controller
                 $validationRules = [
                     'catatan' => 'required|string|min:50|max:1000',
                     'skor' => 'required|array',
-                    'skor.*' => 'required|numeric|min:0|max:10'
+                    'skor.*' => 'required|numeric|in:1,2,3,5,6,7'
                 ];
                 $request->validate($validationRules);
                 if (empty($criteria)) {
@@ -415,10 +415,10 @@ class SubstantifController extends Controller
                 }
                 $index = (int) $key;
                 $skorValue = (float) $value;
-                if ($skorValue < 0) {
-                    $skorValue = 0;
-                } elseif ($skorValue > 10) {
-                    $skorValue = 10;
+                if ($skorValue < 1) {
+                    $skorValue = 1;
+                } elseif ($skorValue > 7) {
+                    $skorValue = 7;
                 }
                 $skorPerKriteria[$index] = $skorValue;
             }
@@ -478,6 +478,8 @@ class SubstantifController extends Controller
             }
 
             DB::commit();
+
+            \Illuminate\Support\Facades\Cache::forget("operator_detail_hasil_semi_final_{$id}");
 
             return response()->json([
                 'success' => true,

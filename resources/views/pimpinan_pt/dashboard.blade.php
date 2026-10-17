@@ -32,6 +32,116 @@
         </div>
     </div>
     
+    <!-- Menu & Status Penilaian Final Section (Fase 4) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-custom border-start border-4 border-warning shadow-sm">
+                <div class="card-header card-header-custom d-flex justify-content-between align-items-center bg-white py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning text-dark rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="fas fa-trophy fa-lg"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-bold text-dark">Menu Penilaian Final (Fase 4)</h5>
+                            <small class="text-muted">Tentukan kelolosan akhir, rekomendasi PIMNAS, dan alokasi pendanaan proposal</small>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{{ route('pimpinan_pt.penilaian.final') }}" class="btn btn-primary btn-sm px-3">
+                            <i class="fas fa-external-link-alt me-1"></i> Buka Halaman Penilaian Final
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border text-center">
+                                <div class="text-muted small fw-semibold">Total Proposal Masuk Final</div>
+                                <div class="h3 fw-bold text-dark mb-0">@formatId($proposals->count())</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border text-center">
+                                <div class="text-muted small fw-semibold">Belum Dinilai Final</div>
+                                <div class="h3 fw-bold text-warning mb-0">@formatId($proposalsBelumDinilai->count())</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded border text-center">
+                                <div class="text-muted small fw-semibold">Sudah Dinilai Final</div>
+                                <div class="h3 fw-bold text-success mb-0">@formatId($proposalsSudahDinilai->count())</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($proposalsBelumDinilai->count() > 0)
+                        <h6 class="fw-bold mb-2 text-dark"><i class="fas fa-clock text-warning me-2"></i>Daftar Proposal Menunggu Penilaian Final</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">No</th>
+                                        <th>Judul Proposal</th>
+                                        <th width="10%">Skim</th>
+                                        <th width="20%">Ketua Tim</th>
+                                        <th width="15%">Nilai Semi Final</th>
+                                        <th width="15%">Status</th>
+                                        <th width="15%">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($proposalsBelumDinilai->take(5) as $idx => $p)
+                                    <tr>
+                                        <td>{{ $idx + 1 }}</td>
+                                        <td>
+                                            <strong>{{ Str::limit($p->judul_proposal, 50) }}</strong>
+                                        </td>
+                                        <td><span class="badge bg-primary">{{ $p->skim }}</span></td>
+                                        <td>{{ $p->mahasiswa->nama_mhs ?? '-' }}</td>
+                                        <td>
+                                            @if($p->hasilSemiFinal)
+                                                <span class="badge bg-info fs-6">@formatId($p->hasilSemiFinal->nilai, 2)</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($p->status === 'pimpinan_pt')
+                                                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i>Siap Dinilai Final</span>
+                                            @elseif($p->status === 'revisi_akhir')
+                                                <span class="badge bg-info"><i class="fas fa-sync-alt me-1"></i>Revisi Akhir Mahasiswa</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ $p->status }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('pimpinan_pt.detail.hasil.final', $p->id_proposal) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-gavel me-1"></i>Nilai Final
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($proposalsBelumDinilai->count() > 5)
+                            <div class="text-end mt-2">
+                                <a href="{{ route('pimpinan_pt.penilaian.final') }}" class="small fw-semibold text-primary">
+                                    Lihat {{ $proposalsBelumDinilai->count() - 5 }} proposal lainnya <i class="fas fa-arrow-right ms-1"></i>
+                                </a>
+                            </div>
+                        @endif
+                    @else
+                        <div class="alert alert-light text-center mb-0 py-3 border">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Tidak ada proposal yang menunggu penilaian final saat ini.
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Top Proposals Ranking -->
     <div class="row mb-4">
         <div class="col-12">

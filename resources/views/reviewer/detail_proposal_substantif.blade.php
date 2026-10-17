@@ -544,7 +544,7 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form id="formReviewSubstantif" method="POST" action="{{ request('seleksi') ? route('reviewer.submit.review.substantif.seleksi', $proposal->id_proposal) : route('reviewer.submit.review.substantif', $proposal->id_proposal) }}">
+                    <form id="formReviewSubstantif" method="POST" action="{{ request('seleksi') ? route('reviewer.submit.review.substantif.seleksi', $proposal->id_proposal) : route('reviewer.submit.review.substantif', $proposal->id_proposal) }}" data-no-loading="true">
                         @csrf
                         <input type="hidden" name="skim" value="{{ $proposal->skim }}">
                         
@@ -693,20 +693,40 @@
                                         }
                                     @endphp
                                     
+                                    <div class="alert alert-light border d-flex align-items-start gap-2 mb-3 py-2 px-3" style="background-color: #f8fafc; border-color: #e2e8f0 !important; border-radius: 8px;">
+                                        <i class="fas fa-info-circle text-primary mt-1"></i>
+                                        <div style="font-size: 0.875rem;">
+                                            <strong>Panduan Penilaian Substantif (Standar Belmawa):</strong>
+                                            <div class="mt-1 text-muted">
+                                                • Skor per kriteria: <strong>1</strong> (Buruk), <strong>2</strong> (Sangat Kurang), <strong>3</strong> (Kurang), <strong>5</strong> (Cukup), <strong>6</strong> (Baik), <strong>7</strong> (Sangat Baik). <em>Catatan: Nilai 4 ditiadakan sesuai pedoman resmi Belmawa.</em><br>
+                                                • Nilai Kriteria = <strong>Bobot (%) × Skor</strong> | Total Nilai = rentang 100 s.d. 700.<br>
+                                                • Nilai Akhir (Skala 100) = <strong>Total Nilai / 7</strong>.
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="table-responsive">
-                                        <table class="table table-bordered table-hover">
+                                        <table class="table table-bordered table-hover align-middle">
                                             <thead class="table-success">
                                                 <tr>
-                                                    <th width="5%">No</th>
-                                                    <th width="50%">Kriteria Penilaian</th>
+                                                    <th width="5%" class="text-center">No</th>
+                                                    <th width="45%">Kriteria Penilaian</th>
                                                     <th width="10%" class="text-center">Bobot (%)</th>
-                                                    <th width="15%" class="text-center">Skor (0-10)</th>
+                                                    <th width="25%" class="text-center">Skor (1–7)</th>
                                                     <th width="15%" class="text-center">Nilai</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @php
                                                     $currentMainNumber = 0;
+                                                    $belmawaOptions = [
+                                                        1 => '1 - Buruk',
+                                                        2 => '2 - Sangat Kurang',
+                                                        3 => '3 - Kurang',
+                                                        5 => '5 - Cukup',
+                                                        6 => '6 - Baik',
+                                                        7 => '7 - Sangat Baik',
+                                                    ];
                                                 @endphp
                                                 @foreach($flattenedCriteria as $item)
                                                     @php
@@ -752,16 +772,19 @@
                                                             @if($item['is_header'])
                                                                 <span class="text-muted">-</span>
                                                             @else
-                                                                <input type="number" 
-                                                                       class="form-control form-control-sm skor-input text-center" 
-                                                                       name="skor[{{ $item['index'] }}]" 
-                                                                       value="{{ $skorValue }}"
-                                                                       min="0" 
-                                                                       max="10" 
-                                                                       step="0.1"
-                                                                       data-index="{{ $item['index'] }}"
-                                                                       data-bobot="{{ $item['bobot'] }}"
-                                                                       required>
+                                                                <select class="form-select form-select-sm skor-input" 
+                                                                        name="skor[{{ $item['index'] }}]" 
+                                                                        data-index="{{ $item['index'] }}"
+                                                                        data-bobot="{{ $item['bobot'] }}"
+                                                                        onchange="calculateNilai()"
+                                                                        required>
+                                                                    <option value="">-- Pilih Skor --</option>
+                                                                    @foreach($belmawaOptions as $bVal => $bLabel)
+                                                                        <option value="{{ $bVal }}" {{ (string)(int)$skorValue === (string)$bVal && $skorValue !== '' ? 'selected' : '' }}>
+                                                                            {{ $bLabel }}
+                                                                        </option>
+                                                                    @endforeach
+                                                                </select>
                                                             @endif
                                                         </td>
                                                         <td class="text-center">
@@ -788,9 +811,11 @@
                                                     </td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
+                                                    <td colspan="4" class="text-end fw-bold">
+                                                        Nilai Akhir <span class="text-muted fw-normal">(Total Nilai / 7) — Skala 100</span>
+                                                    </td>
                                                     <td class="text-center">
-                                                        <span class="nilai-akhir-display fw-bold text-primary" style="font-size: 1.2em;">@if($existingNilaiAkhir > 0)@formatId($existingNilaiAkhir, 2)@else 0,00 @endif</span>
+                                                        <span class="nilai-akhir-display fw-bold text-primary" style="font-size: 1.25em;">@if($existingNilaiAkhir > 0)@formatId($existingNilaiAkhir, 2)@else 0,00 @endif</span>
                                                     </td>
                                                 </tr>
                                             </tfoot>
@@ -1077,13 +1102,13 @@
                         
                         validIndex++;
                         const skor = parseFloat(input.value);
-                        if (isNaN(skor) || skor < 0 || skor > 10) {
+                        if (isNaN(skor) || skor < 1 || skor > 7) {
                             missingSkor.push(validIndex);
                         }
                     });
                     
                     if (missingSkor.length > 0) {
-                        errorMessage = `Mohon isi semua skor dengan nilai 0-10. Kriteria yang belum diisi: ${missingSkor.join(', ')}`;
+                        errorMessage = `Mohon pilih skor untuk semua kriteria (skala 1, 2, 3, 5, 6, 7). Kriteria yang belum diisi: ${missingSkor.join(', ')}`;
                         isValid = false;
                     }
                 }
@@ -1116,14 +1141,24 @@
                     
                     // Re-enable submit button agar user bisa coba lagi
                     submitBtn.disabled = false;
-                    submitText.innerHTML = 'Simpan Review Substantif';
+                    if (submitText) {
+                        submitText.innerHTML = 'Simpan Review Substantif';
+                    } else {
+                        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i><span id="submitText">Simpan Review Substantif</span>';
+                    }
+                    form.style.opacity = '';
+                    form.style.pointerEvents = '';
                     
                     return;
                 }
                 
                 // Disable submit button untuk mencegah double submission
                 submitBtn.disabled = true;
-                submitText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+                if (submitText) {
+                    submitText.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+                } else {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Menyimpan...';
+                }
                 
                 // Kumpulkan data skor secara manual untuk memastikan format benar
                 const skorData = {};
@@ -1137,8 +1172,8 @@
                     const index = parseInt(input.dataset.index);
                     const value = parseFloat(input.value);
                     
-                    // Validasi skor 0-10
-                    if (isNaN(value) || value < 0 || value > 10) {
+                    // Validasi skor 1-7
+                    if (isNaN(value) || value < 1 || value > 7) {
                         console.error(`Invalid skor at index ${index}: ${input.value}`);
                         return;
                     }
@@ -1248,13 +1283,19 @@
                 .finally(() => {
                     // Re-enable submit button
                     submitBtn.disabled = false;
-                    submitText.innerHTML = 'Simpan Review Substantif';
+                    if (submitText) {
+                        submitText.innerHTML = 'Simpan Review Substantif';
+                    } else {
+                        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i><span id="submitText">Simpan Review Substantif</span>';
+                    }
+                    form.style.opacity = '';
+                    form.style.pointerEvents = '';
                 });
             });
         }
     });
     
-    // Validasi input skor 0-10 (dipindahkan keluar dari DOMContentLoaded agar bisa diakses global)
+    // Validasi input skor 1-7
     function validateSkorInput(input) {
         const value = parseFloat(input.value);
         if (isNaN(value)) {
@@ -1262,11 +1303,11 @@
             return;
         }
         
-        if (value < 0) {
-            input.value = 0;
+        if (value < 1) {
+            input.value = 1;
             input.setCustomValidity('');
-        } else if (value > 10) {
-            input.value = 10;
+        } else if (value > 7) {
+            input.value = 7;
             input.setCustomValidity('');
         } else {
             input.setCustomValidity('');
@@ -1365,8 +1406,8 @@
             console.warn('total-skor-display element not found!');
         }
         
-        // Hitung nilai akhir: Total Nilai / 10
-        const nilaiAkhir = totalNilai / 10;
+        // Hitung nilai akhir: Total Nilai / 7 (skala 100 standar Belmawa)
+        const nilaiAkhir = totalNilai > 0 ? (totalNilai / 7) : 0;
         const nilaiAkhirDisplay = document.querySelector('.nilai-akhir-display');
         if (nilaiAkhirDisplay) {
             nilaiAkhirDisplay.textContent = nilaiAkhir.toFixed(2);

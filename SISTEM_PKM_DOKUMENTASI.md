@@ -1,6 +1,6 @@
-﻿# Dokumentasi Sistem PKM Proposal — Cara Kerja Lengkap
+# Dokumentasi Sistem PKM Proposal — Cara Kerja Lengkap
 
-> **Versi:** 2025/2026 · **Framework:** Laravel 12 · **Database:** Supabase PostgreSQL · **Storage:** Supabase Storage (S3)
+> **Versi:** 2025/2026 · **Framework:** Laravel 12 · **Database:** MySQL · **Storage:** Local Disk
 
 ---
 
@@ -36,9 +36,9 @@ Mahasiswa → Dosen Pembimbing → Operator → Reviewer → Operator (Semi-Fina
 | Komponen | Teknologi |
 |---|---|
 | Framework | Laravel 12 (PHP 8.2+) |
-| Database | Supabase PostgreSQL |
+| Database | MySQL |
 | Frontend | Blade + Vanilla CSS + Vanilla JS |
-| File Storage | Supabase Storage (S3-compatible) / Local disk fallback |
+| File Storage | Local disk |
 | Build Tool | Vite |
 | Notifikasi | Database Channel (tabel `notifications`) |
 
@@ -71,7 +71,7 @@ app/
     NumberFormatHelper.php    — Format angka (titik sebagai pemisah ribuan)
     ProposalHelper.php        — Konfigurasi kriteria penilaian per skim
     RuangKontrolHelper.php    — Pengecekan fase ruang kontrol
-    StorageHelper.php         — Abstraksi file storage (Supabase/Local)
+    StorageHelper.php         — Abstraksi file storage (Local)
     TahunAjaranHelper.php     — Tahun ajaran aktif
     UserHelper.php            — Utilitas terkait user
 routes/web.php                — Semua route berbasis role
@@ -426,7 +426,7 @@ Route::post('/mahasiswa/proposal/{id}/revisi', ...)->middleware('check.phase:per
 | Revisi akhir | `proposals/revisi_akhir/` |
 | File review dari Dosen Univ | `proposals/review_akhir/` |
 
-Semua file diakses melalui `StorageHelper` yang secara otomatis memilih antara Supabase Storage atau Local Disk.
+Semua file diakses melalui `StorageHelper` yang menyimpan file ke Local Disk (public).
 
 ### Akses File
 
@@ -509,18 +509,13 @@ Via `/operator/akun` (Operator) atau `/pimpinan-pt/akun` (Pimpinan PT):
 APP_NAME=PengajuanProposal
 APP_URL=http://localhost
 
-# Database (Supabase PostgreSQL)
-DB_CONNECTION=pgsql
+# Database (MySQL)
+DB_CONNECTION=mysql
 DB_HOST=...
 DB_DATABASE=...
 
-# Storage (Supabase S3-compatible)
-FILESYSTEM_DISK=supabase
-SUPABASE_URL=...
-SUPABASE_KEY=...
-SUPABASE_STORAGE_BUCKET=proposals
-SUPABASE_STORAGE_ENDPOINT=...
-SUPABASE_STORAGE_REGION=...
+# Storage (Local)
+FILESYSTEM_DISK=public
 
 # Email (untuk OTP aktivasi akun)
 MAIL_MAILER=smtp

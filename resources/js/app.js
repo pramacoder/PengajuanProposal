@@ -38,11 +38,26 @@ function applyIndonesianNumberFormatting(root = document) {
     });
 }
 
+function resetFormLoading(form) {
+    if (!form) return;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn && submitBtn.dataset.originalText) {
+        submitBtn.innerHTML = submitBtn.dataset.originalText;
+        delete submitBtn.dataset.originalText;
+        submitBtn.disabled = false;
+    }
+    form.style.opacity = '';
+    form.style.pointerEvents = '';
+}
+
 function initGlobalFormLoading(root = document) {
     root.querySelectorAll('form').forEach((form) => {
         if (form.dataset.loadingBound === '1') return;
+        // Skip forms that handle their own loading / AJAX submission
+        if (form.dataset.noLoading === 'true' || form.hasAttribute('data-no-loading') || form.classList.contains('no-global-loading')) return;
         form.dataset.loadingBound = '1';
         form.addEventListener('submit', function (e) {
+            if (e.defaultPrevented) return;
             // Prevent if form is invalid (HTML5 validation)
             if (!this.checkValidity()) return;
             
@@ -165,6 +180,7 @@ window.AppUI = {
     formatAngkaIndonesia,
     applyIndonesianNumberFormatting,
     initGlobalFormLoading,
+    resetFormLoading,
     showToast,
     initSidebarInteractions,
 };
@@ -173,4 +189,5 @@ window.parseAngkaIndonesia = parseAngkaIndonesia;
 window.formatAngkaIndonesia = formatAngkaIndonesia;
 window.applyIndonesianNumberFormatting = applyIndonesianNumberFormatting;
 window.initGlobalFormLoading = initGlobalFormLoading;
+window.resetFormLoading = resetFormLoading;
 window.showToast = showToast;

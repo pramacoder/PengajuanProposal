@@ -144,6 +144,14 @@ class ReviewerAssignmentService
             }
 
             $proposal->save();
+            $proposal->refresh();
+
+            // Siapkan record NilaiSubstantif untuk reviewer seleksi jika belum ada
+            NilaiSubstantif::firstOrCreate([
+                'id_proposal' => $proposal->id_proposal,
+                'id_reviewer' => $reviewerId,
+                'jenis_review' => 'seleksi'
+            ]);
 
             if ($proposal->id_reviewer_substantif_seleksi_1 && $proposal->id_reviewer_substantif_seleksi_2) {
                 $proposal->update(['status' => 'review_substantif_seleksi']);

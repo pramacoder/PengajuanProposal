@@ -1,17 +1,17 @@
 @extends('mainlayout.app')
 
-@section('title', 'Hasil Final - Pimpinan PT')
+@section('title', 'Penilaian Final - Pimpinan PT')
 
 @section('content')
 <div class="container-fluid">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
-        ['label' => 'Hasil Final', 'active' => true],
+        ['label' => 'Penilaian Final', 'active' => true],
     ]" />
 
     <!-- Header Section -->
     <x-page-header 
-        title="HASIL FINAL" 
+        title="PENILAIAN FINAL" 
         subtitle="UNIVERSITAS UDAYANA" />
     
     <!-- Filter and Search Section -->
@@ -45,7 +45,7 @@
                 <option value="belum" {{ $statusRevisi == 'belum' ? 'selected' : '' }}>Belum Direvisi</option>
                 <option value="tidak_revisi" {{ $statusRevisi == 'tidak_revisi' ? 'selected' : '' }}>Tidak Melakukan Revisi</option>
                 <option value="sudah" {{ $statusRevisi == 'sudah' ? 'selected' : '' }}>Sudah Direvisi</option>
-                <option value="menunggu_review" {{ $statusRevisi == 'menunggu_review' ? 'selected' : '' }}>Menunggu Review</option>
+                <option value="menunggu_review" {{ $statusRevisi == 'menunggu_review' ? 'selected' : '' }}>Menunggu Review / Validasi</option>
                 <option value="selesai" {{ $statusRevisi == 'selesai' ? 'selected' : '' }}>Selesai</option>
             </select>
         </div>
@@ -64,7 +64,7 @@
         <div class="card-header card-header-custom">
             <h5 class="mb-0">
                 <i class="fas fa-trophy me-2"></i>
-                Hasil Final
+                Daftar Penilaian Final
             </h5>
         </div>
         <div class="card-body">
@@ -99,15 +99,17 @@
                                 <br><small class="text-muted">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</small>
                             </td>
                             <td>
-                                @if($proposal->status == 'revisi')
+                                @if($proposal->status == 'revisi' || $proposal->status == 'revisi_akhir')
                                     @if($proposal->proposalRevisi->count() > 0)
                                         <span class="badge bg-success">Sudah Direvisi</span>
                                         <br><small class="text-muted">@formatId($proposal->proposalRevisi->count()) file</small>
                                     @else
                                         <span class="badge bg-warning">Belum Direvisi</span>
                                     @endif
-                                @elseif($proposal->status == 'revisi_submitted')
-                                    <span class="badge bg-info">Menunggu Review</span>
+                                @elseif($proposal->status == 'revisi_submitted' || $proposal->status == 'validasi_akhir_dosen_univ')
+                                    <span class="badge bg-info">Menunggu Validasi</span>
+                                @elseif($proposal->status == 'pimpinan_pt')
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-circle me-1"></i>Siap Dinilai Final</span>
                                 @else
                                     <span class="badge bg-secondary">Selesai</span>
                                 @endif

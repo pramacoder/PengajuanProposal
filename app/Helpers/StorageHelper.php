@@ -7,17 +7,10 @@ use Illuminate\Support\Facades\Log;
 
 class StorageHelper
 {
-    protected static string $disk = 'supabase';
+    protected static string $disk = 'public';
 
     public static function getDisk(): string
     {
-        // If the configured key is a JWT (starts with 'ey'), it's invalid for S3 and will timeout.
-        // Fallback to 'public' to prevent slow loading times.
-        $key = config('filesystems.disks.supabase.key', '');
-        if (str_starts_with($key, 'ey')) {
-            return 'public';
-        }
-        
         return static::$disk;
     }
 
@@ -28,78 +21,51 @@ class StorageHelper
 
             $result = $filename ? $disk->putFileAs($path, $file, $filename) : $disk->putFile($path, $file);
 
-            if ($result === false) {
-                throw new \Exception("Supabase storage returned false.");
-            }
-
-            return $result;
+            return $result === false ? null : $result;
         } catch (\Throwable $e) {
-            Log::error("Supabase Storage upload failed, falling back to public disk: {$e->getMessage()}");
-            $fallbackResult = Storage::disk('public')->putFile($path, $file);
-            return $fallbackResult === false ? null : $fallbackResult;
+            Log::error("Storage upload failed: {$e->getMessage()}");
+            return null;
         }
     }
 
     public static function url(string $path): string
     {
-        try {
-            $disk = Storage::disk(static::getDisk());
-            return $disk->temporaryUrl($path, now()->addMinutes(60));
-        } catch (\Throwable $e) {
-            Log::warning("Supabase temporary URL failed, trying public disk: {$e->getMessage()}");
-            return Storage::disk('public')->url($path);
-        }
+        return Storage::disk(static::getDisk())->url($path);
     }
 
     public static function download(string $path): mixed
     {
-        try {
-            $disk = Storage::disk(static::getDisk());
-            if ($disk->exists($path)) {
-                return $disk->download($path);
-            }
-        } catch (\Throwable $e) {
-            Log::warning("Supabase download failed, trying public disk: {$e->getMessage()}");
-        }
-
-        return Storage::disk('public')->download($path);
+        return Storage::disk(static::getDisk())->download($path);
     }
 
     public static function get(string $path): ?string
     {
         try {
             $disk = Storage::disk(static::getDisk());
-            if ($disk->exists($path)) {
-                return $disk->get($path);
-            }
+            return $disk->exists($path) ? $disk->get($path) : null;
         } catch (\Throwable $e) {
-            Log::warning("Supabase get failed, trying public disk: {$e->getMessage()}");
+            Log::warning("Storage get failed: {$e->getMessage()}");
+            return null;
         }
-
-        return Storage::disk('public')->get($path);
     }
 
     public static function exists(string $path): bool
     {
         try {
-            if (Storage::disk(static::getDisk())->exists($path)) {
-                return true;
-            }
+            return Storage::disk(static::getDisk())->exists($path);
         } catch (\Throwable $e) {
-            Log::warning("Supabase exists check failed: {$e->getMessage()}");
+            Log::warning("Storage exists check failed: {$e->getMessage()}");
+            return false;
         }
-
-        return Storage::disk('public')->exists($path);
     }
 
     public static function delete(string $path): bool
     {
         try {
-            Storage::disk(static::getDisk())->delete($path);
-            return true;
+            return Storage::disk(static::getDisk())->delete($path);
         } catch (\Throwable $e) {
-            Log::warning("Supabase delete failed: {$e->getMessage()}");
-            return Storage::disk('public')->delete($path);
+            Log::warning("Storage delete failed: {$e->getMessage()}");
+            return false;
         }
     }
 

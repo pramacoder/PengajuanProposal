@@ -533,8 +533,8 @@
                                             <td class="text-center fw-bold">@formatId($nilaiSubstantif1->total_nilai ?? 0, 2)</td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
-                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif1->nilai_akhir ?? 0, 2)</td>
+                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
+                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif1->nilai_akhir ?? (($nilaiSubstantif1->total_nilai ?? 0) / 7), 2)</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -683,8 +683,8 @@
                                             <td class="text-center fw-bold">@formatId($nilaiSubstantif2->total_nilai ?? 0, 2)</td>
                                         </tr>
                                         <tr>
-                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir</td>
-                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif2->nilai_akhir ?? 0, 2)</td>
+                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
+                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif2->nilai_akhir ?? (($nilaiSubstantif2->total_nilai ?? 0) / 7), 2)</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -844,14 +844,24 @@
                                     <table class="table table-bordered table-hover">
                                         <thead class="table-primary">
                                             <tr>
-                                                <th width="5%">No</th>
-                                                <th width="50%">Kriteria Penilaian</th>
+                                                <th width="5%" class="text-center">No</th>
+                                                <th width="45%">Kriteria Penilaian</th>
                                                 <th width="10%" class="text-center">Bobot (%)</th>
-                                                <th width="15%" class="text-center">Skor (0-10)</th>
+                                                <th width="25%" class="text-center">Skor (1–7)</th>
                                                 <th width="15%" class="text-center">Nilai</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php
+                                                $belmawaOptions = [
+                                                    1 => '1 - Buruk',
+                                                    2 => '2 - Sangat Kurang',
+                                                    3 => '3 - Kurang',
+                                                    5 => '5 - Cukup',
+                                                    6 => '6 - Baik',
+                                                    7 => '7 - Sangat Baik',
+                                                ];
+                                            @endphp
                                             @foreach($flattenedCriteria as $item)
                                                 @php
                                                     // Untuk header, tidak ada skor (index = -1)
@@ -895,16 +905,18 @@
                                                         @if($item['is_header'])
                                                             <span class="text-muted">-</span>
                                                         @else
-                                                            <input type="number" 
-                                                                   class="form-control form-control-sm skor-final-input text-center" 
-                                                                   name="skor[{{ $item['index'] }}]" 
-                                                                   value="{{ $skorValue }}"
-                                                                   min="0" 
-                                                                   max="10" 
-                                                                   step="0.1"
-                                                                   data-index="{{ $item['index'] }}"
-                                                                   data-bobot="{{ $item['bobot'] }}"
-                                                                   required>
+                                                            <select class="form-select form-select-sm skor-final-input" 
+                                                                    name="skor[{{ $item['index'] }}]" 
+                                                                    data-index="{{ $item['index'] }}"
+                                                                    data-bobot="{{ $item['bobot'] }}"
+                                                                    required>
+                                                                <option value="">-- Pilih Skor --</option>
+                                                                @foreach($belmawaOptions as $bVal => $bLabel)
+                                                                    <option value="{{ $bVal }}" {{ (string)(int)$skorValue === (string)$bVal && $skorValue !== '' ? 'selected' : '' }}>
+                                                                        {{ $bLabel }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
                                                         @endif
                                                     </td>
                                                     <td class="text-center">
@@ -931,7 +943,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total / 10)</td>
+                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
                                                 <td class="text-center">
                                                     <span class="nilai-akhir-final-display fw-bold text-primary" style="font-size: 1.2em;">0.00</span>
                                                 </td>
@@ -1088,8 +1100,8 @@
             totalSkorDisplay.textContent = count > 0 ? (totalSkor / count).toFixed(2) : '0.00';
         }
         
-        // Hitung nilai akhir: Total Nilai / 10
-        const nilaiAkhir = totalNilai / 10;
+        // Hitung nilai akhir: Total Nilai / 7 (skala 100 standar Belmawa)
+        const nilaiAkhir = totalNilai > 0 ? (totalNilai / 7) : 0;
         const nilaiAkhirDisplay = document.querySelector('.nilai-akhir-final-display');
         if (nilaiAkhirDisplay) {
             nilaiAkhirDisplay.textContent = nilaiAkhir.toFixed(2);
@@ -1364,7 +1376,7 @@
         });
         
         if (hasEmptySkor) {
-            showToast('Semua skor penilaian wajib diisi (0-10)', 'error');
+            showToast('Semua skor penilaian wajib diisi (skala 1-7)', 'error');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             return;
@@ -1376,8 +1388,8 @@
             const index = parseInt(input.dataset.index);
             if (index >= 0 && input.value !== '') {
                 const skorValue = parseFloat(input.value);
-                // Validate skor range (0-10)
-                if (skorValue >= 0 && skorValue <= 10) {
+                // Validate skor range (1-7)
+                if (skorValue >= 1 && skorValue <= 7) {
                     skorData[index] = skorValue;
                 }
             }

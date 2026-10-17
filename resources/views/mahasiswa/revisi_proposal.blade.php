@@ -591,18 +591,22 @@
         @php
             $substantifReviews = collect();
             if ($proposal->id_reviewer_substantif_1) {
-                $review1 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
-                if ($review1 && $review1->note_substantif && 
-                    $review1->note_substantif !== 'Review substantif dimulai' &&
-                    !empty(trim($review1->note_substantif))) {
+                $review1 = $proposal->nilaiSubstantif
+                    ->where('id_reviewer', $proposal->id_reviewer_substantif_1)
+                    ->where('jenis_review', 'pertama')
+                    ->first() ?? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_1)->first();
+                $note1 = $review1->note_substantif ?? $review1?->catatan;
+                if ($review1 && $note1 && $note1 !== 'Review substantif dimulai' && !empty(trim($note1))) {
                     $substantifReviews->push($review1);
                 }
             }
             if ($proposal->id_reviewer_substantif_2) {
-                $review2 = $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
-                if ($review2 && $review2->note_substantif && 
-                    $review2->note_substantif !== 'Review substantif dimulai' &&
-                    !empty(trim($review2->note_substantif))) {
+                $review2 = $proposal->nilaiSubstantif
+                    ->where('id_reviewer', $proposal->id_reviewer_substantif_2)
+                    ->where('jenis_review', 'pertama')
+                    ->first() ?? $proposal->nilaiSubstantif->where('id_reviewer', $proposal->id_reviewer_substantif_2)->first();
+                $note2 = $review2->note_substantif ?? $review2?->catatan;
+                if ($review2 && $note2 && $note2 !== 'Review substantif dimulai' && !empty(trim($note2))) {
                     $substantifReviews->push($review2);
                 }
             }
@@ -629,7 +633,7 @@
                             <i class="fas fa-sticky-note me-2"></i>Catatan Reviewer:
                         </h6>
                         <div class="note-content">
-                            <p class="mb-0">{{ $review->note_substantif }}</p>
+                            <p class="mb-0">{{ $review->note_substantif ?? $review->catatan }}</p>
                         </div>
                     </div>
                 </div>
