@@ -5,27 +5,29 @@
 @section('styles')
 <style>
     .pdf-viewer-container {
-        background: white;
+        background: #ffffff;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border: 1px solid #e2e8f0;
         overflow: hidden;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
     
     .pdf-header {
-        background: #f8f9fa;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid #e9ecef;
+        background: #f8fafc;
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
     
     .pdf-title {
         font-weight: 600;
-        color: #333;
+        font-size: 0.95rem;
+        color: #1e293b;
         margin: 0;
-        margin-right: 2rem;
     }
     
     .pdf-controls {
@@ -35,44 +37,31 @@
     
     .pdf-viewer {
         width: 100%;
-        height: 700px;
+        height: 650px;
         border: none;
     }
     
     .pdf-iframe {
         width: 100%;
-        height: 700px;
+        height: 650px;
         border: none;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         background: white;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 1;
     }
     
     .pdf-loading {
         position: relative;
-        min-height: 700px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        overflow: hidden;
+        min-height: 650px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .pdf-loading .spinner {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-    }
-    
     .spinner {
         width: 40px;
         height: 40px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #8B0000;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid var(--primary-700, #8B0000);
         border-radius: 50%;
         animation: spin 1s linear infinite;
         transition: opacity 0.3s ease;
@@ -83,64 +72,29 @@
         100% { transform: rotate(360deg); }
     }
 
-    .pdf-iframe {
-        transition: opacity 0.3s ease;
-    }
-
     .empty-state {
         text-align: center;
-        padding: 4rem 2rem;
-        color: #6c757d;
+        padding: 3rem 1.5rem;
+        color: #64748b;
     }
     
     .empty-state i {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        color: #dee2e6;
-    }
-    
-    .empty-state h4 {
+        font-size: 3rem;
         margin-bottom: 1rem;
-        color: #495057;
-    }
-    
-    .empty-state p {
-        margin-bottom: 2rem;
-        font-size: 1.1rem;
+        color: #cbd5e1;
     }
 
-    /* Fullscreen styles */
-    .pdf-viewer-container:fullscreen {
-        background: white;
-        padding: 20px;
-    }
-    
-    .pdf-viewer-container:fullscreen .pdf-iframe {
-        height: calc(100vh - 100px);
-    }
-    
-    .pdf-viewer-container:-webkit-full-screen {
-        background: white;
-        padding: 20px;
-    }
-    
-    .pdf-viewer-container:-webkit-full-screen .pdf-iframe {
-        height: calc(100vh - 100px);
-    }
-    
-    .pdf-viewer-container:-ms-fullscreen {
-        background: white;
-        padding: 20px;
-    }
-    
-    .pdf-viewer-container:-ms-fullscreen .pdf-iframe {
-        height: calc(100vh - 100px);
+    .review-score-hero {
+        background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.9) 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.25rem;
     }
 </style>
 @endsection
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid px-4 py-3">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
         ['label' => 'Hasil Semi Final', 'url' => route('pimpinan_pt.hasil.semi.final')],
@@ -149,122 +103,95 @@
 
     <!-- Header Section -->
     <x-page-header 
-        title="DETAIL HASIL SEMI FINAL" 
-        subtitle="UNIVERSITAS UDAYANA" />
-    
-    <!-- Back Button -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <a href="{{ route('pimpinan_pt.hasil.semi.final') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Kembali ke Hasil Semi Final
-            </a>
-        </div>
-    </div>
+        title="Detail Hasil Semi Final" 
+        subtitle="Evaluasi substantif seleksi dan penetapan status kelulusan tingkat universitas" 
+        badge="Pimpinan PT Workspace"
+        icon="fa-award"
+    >
+        <x-slot:actions>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('pimpinan_pt.hasil.semi.final') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 fw-semibold">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Kembali ke Hasil Semi Final</span>
+                </a>
+            </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <!-- Proposal Information -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-file-alt me-2"></i>
-                        Informasi Proposal
-                    </h5>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="ui-card h-100">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-file-alt text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Informasi Proposal</h6>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">
+                        Skim: {{ $proposal->skim }}
+                    </span>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h4 class="text-primary">{{ $proposal->judul_proposal }}</h4>
-                            <div class="row mt-3">
-                                <div class="col-md-6">
-                                    <p><strong>Skim:</strong> <span class="badge bg-primary">{{ $proposal->skim }}</span></p>
-                                    <p><strong>Dana Belmawa:</strong> <span class="text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span></p>
-                                    <p><strong>Dana Univ:</strong> <span class="text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span></p>
-                                    <p><strong>Tahun Ajaran:</strong> {{ $proposal->tahun_ajaran }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <p><strong>Status:</strong> 
-                                        <span class="badge bg-{{ $proposal->status == 'revisi' ? 'warning' : ($proposal->status == 'lolos' ? 'success' : 'danger') }}">
-                                            {{ ucfirst($proposal->status) }}
-                                        </span>
-                                    </p>
-                                    <p><strong>Tanggal Pengajuan:</strong> {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d M Y H:i') }}</p>
-                                </div>
-                            </div>
+                <div class="ui-card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3" style="line-height: 1.4;">
+                        {{ $proposal->judul_proposal }}
+                    </h5>
+                    <div class="row g-3 pt-2 border-top">
+                        <div class="col-sm-6 col-md-3">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Skim Program</label>
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill fw-semibold">{{ $proposal->skim }}</span>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Dana Belmawa</label>
+                            <span class="text-primary fw-bold">@rupiahId($proposal->dana_diajukan_belmawa ?? 0)</span>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Dana Universitas</label>
+                            <span class="text-success fw-bold">@rupiahId($proposal->dana_diajukan_operator ?? 0)</span>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Tahun Ajaran</label>
+                            <span class="fw-semibold text-dark">{{ $proposal->tahun_ajaran ?? 'N/A' }}</span>
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Status Verifikasi</label>
+                            <x-status-badge :status="$proposal->status" :label="ucfirst($proposal->status)" />
+                        </div>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Tanggal Pengajuan</label>
+                            <span class="text-secondary small"><i class="far fa-calendar-alt me-1"></i>{{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d M Y H:i') }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Mahasiswa Information -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-user me-2"></i>
-                        Informasi Mahasiswa
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Ketua Tim</h6>
-                            <p><strong>Nama:</strong> {{ $proposal->ketua_nama }}</p>
-                            <p><strong>NIM:</strong> {{ $proposal->ketua_nim }}</p>
-                            <p><strong>Prodi:</strong> {{ $proposal->ketua_prodi }}</p>
-                            <p><strong>Fakultas:</strong> {{ $proposal->ketua_fakultas }}</p>
-                            <p><strong>Email:</strong> {{ $proposal->ketua_email }}</p>
-                            <p><strong>No. HP:</strong> {{ $proposal->ketua_no_hp }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Dosen Pendamping</h6>
-                            <p><strong>Nama:</strong> {{ $proposal->dosen_pembimbing }}</p>
-                        </div>
+        <!-- Tim & Pembimbing -->
+        <div class="col-lg-4">
+            <div class="ui-card h-100">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-users text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Ketua & Pembimbing</h6>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history me-2"></i>
-                        Proposal Terbaru Mahasiswa
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($latestProposals->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach($latestProposals as $latest)
-                                <div class="list-group-item px-0 py-2 border-bottom">
-                                    <h6 class="mb-1" style="font-size: 0.9rem;">
-                                        <a href="{{ route('pimpinan_pt.detail.hasil.semi.final', $latest->id_proposal) }}" class="text-decoration-none">
-                                            {{ Str::limit($latest->judul_proposal, 50) }}
-                                        </a>
-                                    </h6>
-                                    <div class="d-flex justify-content-between align-items-center mt-2">
-                                        <small class="text-muted">
-                                            <span class="badge bg-secondary">{{ $latest->skim }}</span>
-                                            <span class="badge bg-{{ $latest->status == 'lolos' ? 'success' : ($latest->status == 'revisi' ? 'warning' : 'danger') }}">
-                                                {{ ucfirst($latest->status) }}
-                                            </span>
-                                        </small>
-                                        <small class="text-muted">
-                                            {{ \Carbon\Carbon::parse($latest->tanggal_pengajuan)->format('d M Y') }}
-                                        </small>
-                                    </div>
-                                </div>
-                            @endforeach
+                <div class="ui-card-body p-4">
+                    <div class="mb-3 pb-3 border-bottom">
+                        <span class="badge bg-primary-subtle text-primary mb-1 small fw-bold">Ketua Tim</span>
+                        <div class="fw-bold text-dark">{{ $proposal->ketua_nama }}</div>
+                        <div class="text-muted small">NIM: {{ $proposal->ketua_nim }} | {{ $proposal->ketua_prodi }}</div>
+                        <div class="text-muted small">{{ $proposal->ketua_fakultas }}</div>
+                        <div class="text-muted small mt-1">
+                            <i class="fas fa-envelope me-1"></i>{{ $proposal->ketua_email }} 
+                            @if($proposal->ketua_no_hp)| <i class="fas fa-phone me-1"></i>{{ $proposal->ketua_no_hp }}@endif
                         </div>
-                    @else
-                        <p class="text-muted mb-0">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Tidak ada proposal lain dari mahasiswa ini.
-                        </p>
-                    @endif
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary-subtle text-secondary mb-1 small fw-bold">Dosen Pendamping</span>
+                        <div class="fw-bold text-dark">{{ $proposal->dosen_pembimbing ?? '-' }}</div>
+                        @if($proposal->dosen)
+                            <div class="text-muted small">{{ $proposal->dosen->email_dosen }}</div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -272,854 +199,532 @@
 
     <!-- PDF Proposal Viewer Section -->
     @php
-        // Ambil revisi terakhir (jenis_revisi = 'revisi_biasa') untuk hasil semi final
         $latestRevisi = $proposal->proposalRevisi->where('jenis_revisi', 'revisi_biasa')->first();
         $hasRevisi = $latestRevisi !== null;
         $displayDocument = $hasRevisi ? $latestRevisi : ($proposal->dokumen ?? null);
     @endphp
     
     @if($displayDocument)
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-file-pdf me-2"></i>
+    <div class="ui-card mb-4">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-file-pdf text-danger"></i>
+                <h6 class="mb-0 fw-bold fs-6">
+                    @if($hasRevisi)
+                        Dokumen Berkas Revisi Terakhir
+                    @else
+                        Dokumen Berkas Proposal
+                    @endif
+                </h6>
+            </div>
+            @if($hasRevisi)
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill small">
+                    <i class="fas fa-history me-1"></i>Revisi
+                </span>
+            @endif
+        </div>
+        <div class="ui-card-body p-0">
+            <div class="pdf-viewer-container border-0 rounded-0 mb-0">
+                <div class="pdf-header">
+                    <h5 class="pdf-title">
+                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                        <span id="pdfProposalTitle">
+                            @if($hasRevisi)
+                                {{ $latestRevisi->nama_file }}
+                            @else
+                                {{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}
+                            @endif
+                        </span>
                         @if($hasRevisi)
-                            Dokumen Revisi Terakhir
-                        @else
-                        Dokumen Proposal
+                            <span class="badge bg-light text-secondary border ms-2 fw-normal small">
+                                <i class="fas fa-clock me-1"></i>
+                                Diupload: {{ \Carbon\Carbon::parse($latestRevisi->tanggal_submit)->format('d M Y H:i') }}
+                            </span>
                         @endif
                     </h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="pdf-viewer-container">
-                        <div class="pdf-header">
-                            <h5 class="pdf-title">
-                                <i class="fas fa-file-pdf me-2"></i>
-                                <span id="pdfProposalTitle">
-                                    @if($hasRevisi)
-                                        {{ $latestRevisi->nama_file }}
-                                    @else
-                                        {{ $proposal->dokumen->nama_file ?? 'Proposal PDF' }}
-                                    @endif
-                                </span>
-                                @if($hasRevisi)
-                                    <br><small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Diupload: {{ \Carbon\Carbon::parse($latestRevisi->tanggal_submit)->format('d M Y H:i') }}
-                                    </small>
-                                @endif
-                            </h5>
-                            <div class="pdf-controls">
-                                <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm me-2">
-                                    <i class="fas fa-expand me-1"></i>Fullscreen
-                                </button>
-                                @if($hasRevisi)
-                                    <a href="{{ route('pimpinan_pt.revisi.download', $latestRevisi->id_revisi) }}" 
-                                       class="btn btn-outline-primary btn-sm" 
-                                       target="_blank">
-                                        <i class="fas fa-download me-1"></i>Download
-                                    </a>
-                                @else
-                                <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
-                                   class="btn btn-outline-primary btn-sm" 
-                                   target="_blank">
-                                    <i class="fas fa-download me-1"></i>Download
-                                </a>
-                                @endif
-                            </div>
-                        </div>
-                        <div id="pdfProposalViewer" class="pdf-loading">
-                            <div class="spinner"></div>
-                            <iframe id="proposalPdfIframe" 
-                                    src="{{ $hasRevisi ? route('pimpinan_pt.revisi.view', $latestRevisi->id_revisi) : route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
-                                    class="pdf-iframe" 
-                                    style="display: none;">
-                            </iframe>
-                        </div>
+                    <div class="pdf-controls">
+                        <button id="fullscreenProposalBtn" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                            <i class="fas fa-expand me-1"></i>Fullscreen
+                        </button>
+                        @if($hasRevisi)
+                            <a href="{{ route('pimpinan_pt.revisi.download', $latestRevisi->id_revisi) }}" 
+                               class="btn btn-outline-primary btn-sm rounded-pill px-3" 
+                               target="_blank">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                        @else
+                            <a href="{{ route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
+                               class="btn btn-outline-primary btn-sm rounded-pill px-3" 
+                               target="_blank">
+                                <i class="fas fa-download me-1"></i>Download
+                            </a>
+                        @endif
                     </div>
+                </div>
+                <div id="pdfProposalViewer" class="pdf-loading">
+                    <div class="spinner"></div>
+                    <iframe id="proposalPdfIframe" 
+                            src="{{ $hasRevisi ? route('pimpinan_pt.revisi.view', $latestRevisi->id_revisi) : route('pimpinan_pt.proposal.view.pdf', $proposal->id_proposal) }}" 
+                            class="pdf-iframe" 
+                            style="display: none;">
+                    </iframe>
                 </div>
             </div>
         </div>
     </div>
     @else
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Dokumen proposal tidak tersedia.</strong>
-            </div>
-        </div>
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4 rounded-3 border-0 shadow-sm">
+        <i class="fas fa-exclamation-triangle fs-5"></i>
+        <div><strong>Dokumen proposal tidak tersedia atau belum diupload.</strong></div>
     </div>
     @endif
 
-    <!-- File Revisi Section -->
+    <!-- File Revisi Section (Jika Ada Riwayat Lainnya) -->
     @if($proposal->proposalRevisi->count() > 0)
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-file-pdf me-2"></i>
-                        File Revisi yang Dikumpulkan
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        @foreach($proposal->proposalRevisi as $revisi)
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-file-pdf text-danger me-2"></i>
-                                <strong>{{ $revisi->nama_file }}</strong>
-                                <br><small class="text-muted">
-                                    Diupload: {{ \Carbon\Carbon::parse($revisi->tanggal_submit)->format('d M Y H:i') }}
-                                </small>
-                            </div>
-                            <div>
-                                <button class="btn btn-sm btn-outline-info me-2 view-pdf-btn" 
-                                        data-pdf-url="{{ route('pimpinan_pt.revisi.view', $revisi->id_revisi) }}"
-                                        data-pdf-name="{{ $revisi->nama_file }}">
-                                    <i class="fas fa-eye me-1"></i>Lihat
-                                </button>
-                                <a href="{{ route('pimpinan_pt.revisi.download', $revisi->id_revisi) }}" 
-                                   class="btn btn-sm btn-outline-primary" 
-                                   target="_blank">
-                                    <i class="fas fa-download me-1"></i>Download
-                                </a>
-                            </div>
+    <div class="ui-card mb-4">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-layer-group text-primary"></i>
+                <h6 class="mb-0 fw-bold fs-6">Riwayat File Revisi yang Dikumpulkan</h6>
+            </div>
+            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill small">
+                {{ $proposal->proposalRevisi->count() }} Berkas
+            </span>
+        </div>
+        <div class="ui-card-body p-3">
+            <div class="list-group list-group-flush">
+                @foreach($proposal->proposalRevisi as $revisi)
+                <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-bottom px-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="p-2.5 rounded-3 bg-danger-subtle text-danger">
+                            <i class="fas fa-file-pdf fs-5"></i>
                         </div>
-                        @endforeach
+                        <div>
+                            <div class="fw-bold text-dark">{{ $revisi->nama_file }}</div>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>Diupload: {{ \Carbon\Carbon::parse($revisi->tanggal_submit)->format('d M Y H:i') }}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-info rounded-pill px-3 view-pdf-btn" 
+                                data-pdf-url="{{ route('pimpinan_pt.revisi.download', $revisi->id_revisi) }}"
+                                data-pdf-name="{{ $revisi->nama_file }}">
+                            <i class="fas fa-eye me-1"></i>Lihat
+                        </button>
+                        <a href="{{ route('pimpinan_pt.revisi.download', $revisi->id_revisi) }}" 
+                           class="btn btn-sm btn-outline-primary rounded-pill px-3" 
+                           target="_blank">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
                     </div>
                 </div>
+                @endforeach
             </div>
         </div>
     </div>
 
-    <!-- PDF Viewer Section untuk Revisi -->
+    <!-- PDF Viewer Section untuk Revisi Popup/Inline -->
     <div class="pdf-viewer-container" id="revisiPdfViewer" style="display: none;">
         <div class="pdf-header">
             <h5 class="pdf-title">
-                <i class="fas fa-file-pdf me-2"></i>
+                <i class="fas fa-file-pdf text-danger me-2"></i>
                 <span id="pdfViewerTitle">Pilih file untuk dilihat</span>
             </h5>
             <div class="pdf-controls">
-                <button id="fullscreenBtn" class="btn btn-outline-secondary btn-sm me-2" style="display: none;">
+                <button id="fullscreenBtn" class="btn btn-outline-secondary btn-sm rounded-pill px-3" style="display: none;">
                     <i class="fas fa-expand me-1"></i>Fullscreen
                 </button>
-                <button id="downloadBtn" class="btn btn-outline-primary btn-sm" style="display: none;">
+                <button id="downloadBtn" class="btn btn-outline-primary btn-sm rounded-pill px-3" style="display: none;">
                     <i class="fas fa-download me-1"></i>Download
                 </button>
             </div>
         </div>
         <div id="pdfViewer" class="pdf-loading">
             <div class="spinner"></div>
-            <!-- PDF iframe will be inserted here -->
         </div>
     </div>
     @endif
 
-    <!-- Tabel Penilaian Substantif Seleksi dari 2 Reviewer (Jika Ada) -->
+    <!-- Penilaian Substantif Seleksi dari 2 Reviewer -->
     @if($nilaiSubstantifSeleksi1 || $nilaiSubstantifSeleksi2)
-    <div class="card card-custom mt-4 mb-4">
-        <div class="card-header card-header-custom bg-info text-white">
-            <h5 class="mb-0">
-                <i class="fas fa-award me-2"></i>
-                Referensi Penilaian Substantif Seleksi dari Reviewer
-            </h5>
+    <div class="ui-card mb-4">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-award text-primary"></i>
+                <h6 class="mb-0 fw-bold fs-6">Referensi Penilaian Substantif Seleksi dari Reviewer</h6>
+            </div>
+            <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill small">
+                Tahap Seleksi
+            </span>
         </div>
-        <div class="card-body">
-            @if($nilaiSubstantifSeleksi1)
-            <div class="mb-4">
-                <div class="card bg-light border-0">
-                    <div class="card-body">
-                        <h6 class="text-primary mb-3">
-                            <i class="fas fa-user-check me-2"></i>
-                            Reviewer Seleksi 1
+        <div class="ui-card-body p-4">
+            <div class="row g-4">
+                @if($nilaiSubstantifSeleksi1)
+                <div class="col-md-6">
+                    <div class="review-score-hero h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-primary mb-0">
+                                <i class="fas fa-user-check me-2"></i>Reviewer Seleksi 1
+                            </h6>
                             @if($nilaiSubstantifSeleksi1->reviewer)
-                                - {{ $nilaiSubstantifSeleksi1->reviewer->nama_reviewer }}
+                                <span class="badge bg-light text-secondary border small">{{ $nilaiSubstantifSeleksi1->reviewer->nama_reviewer }}</span>
                             @endif
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <div class="display-5 text-primary fw-bold">@formatId($nilaiSubstantifSeleksi1->nilai_akhir ?? ($nilaiSubstantifSeleksi1->total_nilai / 7), 2)</div>
-                                <div class="text-muted small fw-semibold">Nilai Akhir (Skala 100)</div>
-                                <div class="badge bg-light text-secondary border mt-1">Total Nilai: @formatId($nilaiSubstantifSeleksi1->total_nilai, 2)</div>
+                        </div>
+                        <div class="row align-items-center g-3">
+                            <div class="col-auto text-center border-end pe-4">
+                                <div class="display-6 fw-bold text-primary">@formatId($nilaiSubstantifSeleksi1->nilai_akhir ?? ($nilaiSubstantifSeleksi1->total_nilai / 7), 2)</div>
+                                <div class="text-secondary small fw-semibold">Nilai Akhir (Skala 100)</div>
+                                <span class="badge bg-white text-secondary border mt-1">Total: @formatId($nilaiSubstantifSeleksi1->total_nilai, 2)</span>
                             </div>
-                            <div class="col-md-9">
-                                @if($nilaiSubstantifSeleksi1->note_substantif ?? $nilaiSubstantifSeleksi1->catatan)
-                                <div class="bg-white p-3 rounded border">
-                                    <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
-                                    {{ $nilaiSubstantifSeleksi1->note_substantif ?? $nilaiSubstantifSeleksi1->catatan }}
+                            <div class="col">
+                                <label class="small text-secondary fw-semibold d-block mb-1"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</label>
+                                <div class="p-3 bg-white rounded-3 border small text-dark" style="min-height: 70px;">
+                                    {{ $nilaiSubstantifSeleksi1->note_substantif ?? $nilaiSubstantifSeleksi1->catatan ?? 'Tidak ada catatan khusus.' }}
                                 </div>
-                                @else
-                                <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
-                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            @endif
+                @endif
 
-            @if($nilaiSubstantifSeleksi2)
-            <div>
-                <div class="card bg-light border-0">
-                    <div class="card-body">
-                        <h6 class="text-success mb-3">
-                            <i class="fas fa-user-check me-2"></i>
-                            Reviewer Seleksi 2
+                @if($nilaiSubstantifSeleksi2)
+                <div class="col-md-6">
+                    <div class="review-score-hero h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold text-success mb-0">
+                                <i class="fas fa-user-check me-2"></i>Reviewer Seleksi 2
+                            </h6>
                             @if($nilaiSubstantifSeleksi2->reviewer)
-                                - {{ $nilaiSubstantifSeleksi2->reviewer->nama_reviewer }}
+                                <span class="badge bg-light text-secondary border small">{{ $nilaiSubstantifSeleksi2->reviewer->nama_reviewer }}</span>
                             @endif
-                        </h6>
-                        <div class="row">
-                            <div class="col-md-3 text-center mb-3 mb-md-0">
-                                <div class="display-5 text-success fw-bold">@formatId($nilaiSubstantifSeleksi2->nilai_akhir ?? ($nilaiSubstantifSeleksi2->total_nilai / 7), 2)</div>
-                                <div class="text-muted small fw-semibold">Nilai Akhir (Skala 100)</div>
-                                <div class="badge bg-light text-secondary border mt-1">Total Nilai: @formatId($nilaiSubstantifSeleksi2->total_nilai, 2)</div>
+                        </div>
+                        <div class="row align-items-center g-3">
+                            <div class="col-auto text-center border-end pe-4">
+                                <div class="display-6 fw-bold text-success">@formatId($nilaiSubstantifSeleksi2->nilai_akhir ?? ($nilaiSubstantifSeleksi2->total_nilai / 7), 2)</div>
+                                <div class="text-secondary small fw-semibold">Nilai Akhir (Skala 100)</div>
+                                <span class="badge bg-white text-secondary border mt-1">Total: @formatId($nilaiSubstantifSeleksi2->total_nilai, 2)</span>
                             </div>
-                            <div class="col-md-9">
-                                @if($nilaiSubstantifSeleksi2->note_substantif ?? $nilaiSubstantifSeleksi2->catatan)
-                                <div class="bg-white p-3 rounded border">
-                                    <strong class="d-block mb-1 text-muted"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</strong>
-                                    {{ $nilaiSubstantifSeleksi2->note_substantif ?? $nilaiSubstantifSeleksi2->catatan }}
+                            <div class="col">
+                                <label class="small text-secondary fw-semibold d-block mb-1"><i class="fas fa-comment-alt me-1"></i>Catatan Reviewer:</label>
+                                <div class="p-3 bg-white rounded-3 border small text-dark" style="min-height: 70px;">
+                                    {{ $nilaiSubstantifSeleksi2->note_substantif ?? $nilaiSubstantifSeleksi2->catatan ?? 'Tidak ada catatan khusus.' }}
                                 </div>
-                                @else
-                                <div class="text-muted fst-italic">Tidak ada catatan dari reviewer.</div>
-                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
-            @endif
         </div>
     </div>
     @endif
 
-    <!-- Form Hasil Final -->
-    <!-- Tabel Penilaian Substantif dari 2 Reviewer -->
-    @if($nilaiSubstantif1 || $nilaiSubstantif2)
-        <div class="row mb-4">
-            <div class="col-12">
-                <h5 class="mb-3">
-                    <i class="fas fa-clipboard-list me-2"></i>
-                    Referensi Penilaian Substantif dari Reviewer
-                </h5>
+    <!-- Formulir Penilaian Hasil Semi Final -->
+    <div class="ui-card mb-4">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-gavel text-primary"></i>
+                <h6 class="mb-0 fw-bold fs-6">Penetapan Nilai & Hasil Semi Final</h6>
             </div>
-            
-            @if($nilaiSubstantif1)
-                <div class="col-md-6 mb-4">
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="mb-0">
-                                <i class="fas fa-user-check me-2"></i>
-                                Reviewer Substantif 1
-                                @if($nilaiSubstantif1->reviewer)
-                                    - {{ $nilaiSubstantif1->reviewer->nama_reviewer }}
-                                @endif
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            @php
-                                $skor1 = $nilaiSubstantif1->skor_per_kriteria ?? [];
-                                
-                                // Flatten struktur kriteria untuk menampilkan dengan benar
-                                $flattenedCriteria1 = [];
-                                $criteriaIndex1 = 0;
-                                $mainCriteriaNumber1 = 0;
-                                
-                                foreach($criteria as $mainItem) {
-                                    if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
-                                        // Kriteria utama dengan sub-kriteria
-                                        $mainCriteriaNumber1++;
-                                        
-                                        // Tambahkan header kriteria utama
-                                        $flattenedCriteria1[] = [
-                                            'main_number' => $mainCriteriaNumber1,
-                                            'is_sub' => false,
-                                            'is_header' => true,
-                                            'kriteria' => $mainItem['kriteria'],
-                                            'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')),
-                                            'index' => -1,
-                                            'has_sub' => true
-                                        ];
-                                        
-                                        // Tambahkan sub-kriteria
-                                        foreach($mainItem['sub_kriteria'] as $subItem) {
-                                            $flattenedCriteria1[] = [
-                                                'main_number' => $mainCriteriaNumber1,
-                                                'is_sub' => true,
-                                                'is_header' => false,
-                                                'kriteria' => $subItem['kriteria'],
-                                                'bobot' => $subItem['bobot'],
-                                                'index' => $criteriaIndex1++,
-                                                'has_sub' => false
-                                            ];
-                                        }
-                                    } else {
-                                        // Kriteria utama tanpa sub-kriteria
-                                        $mainCriteriaNumber1++;
-                                        $flattenedCriteria1[] = [
-                                            'main_number' => $mainCriteriaNumber1,
-                                            'is_sub' => false,
-                                            'is_header' => false,
-                                            'kriteria' => $mainItem['kriteria'],
-                                            'bobot' => $mainItem['bobot'],
-                                            'index' => $criteriaIndex1++,
-                                            'has_sub' => false
-                                        ];
-                                    }
-                                }
-                            @endphp
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th width="5%">No</th>
-                                            <th width="50%">Kriteria</th>
-                                            <th width="15%" class="text-center">Bobot</th>
-                                            <th width="15%" class="text-center">Skor</th>
-                                            <th width="15%" class="text-center">Nilai</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($flattenedCriteria1 as $item)
-                                            @php
-                                                if ($item['index'] >= 0) {
-                                                    $skorValue = isset($skor1[$item['index']]) ? $skor1[$item['index']] : 0;
-                                                $nilai = $item['bobot'] * $skorValue;
-                                                } else {
-                                                    $skorValue = '-';
-                                                    $nilai = '-';
-                                                }
-                                            @endphp
-                                            <tr>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <strong>{{ $item['main_number'] }}</strong>
-                                                    @elseif($item['is_sub'])
-                                                        <span class="text-muted" style="font-size: 0.85em;">└─</span>
-                                                    @else
-                                                        {{ $item['main_number'] }}
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($item['is_sub'])
-                                                        <small style="padding-left: 1.5rem; color: #6c757d;">{{ $item['kriteria'] }}</small>
-                                                    @else
-                                                        <small><strong>{{ $item['kriteria'] }}</strong></small>
-                                                    @endif
-                                                </td>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <span class="text-muted">-</span>
-                                                    @else
-                                                        @formatId($item['bobot'], 2)
-                                                    @endif
-                                                </td>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <span class="text-muted">-</span>
-                                                    @else
-                                                        @if(is_numeric($skorValue))@formatId($skorValue, 1)@else{{ $skorValue }}@endif
-                                                    @endif
-                                                </td>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <span class="text-muted">-</span>
-                                                    @else
-                                                        @if(is_numeric($nilai))@formatId($nilai, 2)@else{{ $nilai }}@endif
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                    <tfoot class="table-secondary">
-                                        <tr>
-                                            <td colspan="3" class="text-end fw-bold">Total</td>
-                                            <td class="text-center fw-bold">-</td>
-                                            <td class="text-center fw-bold">@formatId($nilaiSubstantif1->total_nilai ?? 0, 2)</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
-                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif1->nilai_akhir ?? (($nilaiSubstantif1->total_nilai ?? 0) / 7), 2)</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            @if($nilaiSubstantif1->note_substantif)
-                                <div class="mt-2">
-                                    <small><strong>Catatan:</strong> {{ Str::limit($nilaiSubstantif1->note_substantif, 100) }}</small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endif
-            
-            @if($nilaiSubstantif2)
-                <div class="col-md-6 mb-4">
-                    <div class="card">
-                        <div class="card-header bg-info text-white">
-                            <h6 class="mb-0">
-                                <i class="fas fa-user-check me-2"></i>
-                                Reviewer Substantif 2
-                                @if($nilaiSubstantif2->reviewer)
-                                    - {{ $nilaiSubstantif2->reviewer->nama_reviewer }}
-                                @endif
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            @php
-                                $skor2 = $nilaiSubstantif2->skor_per_kriteria ?? [];
-                                
-                                // Flatten struktur kriteria untuk menampilkan dengan benar
-                                $flattenedCriteria2 = [];
-                                $criteriaIndex2 = 0;
-                                $mainCriteriaNumber2 = 0;
-                                
-                                foreach($criteria as $mainItem) {
-                                    if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
-                                        // Kriteria utama dengan sub-kriteria
-                                        $mainCriteriaNumber2++;
-                                        
-                                        // Tambahkan header kriteria utama
-                                        $flattenedCriteria2[] = [
-                                            'main_number' => $mainCriteriaNumber2,
-                                            'is_sub' => false,
-                                            'is_header' => true,
-                                            'kriteria' => $mainItem['kriteria'],
-                                            'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')),
-                                            'index' => -1,
-                                            'has_sub' => true
-                                        ];
-                                        
-                                        // Tambahkan sub-kriteria
-                                        foreach($mainItem['sub_kriteria'] as $subItem) {
-                                            $flattenedCriteria2[] = [
-                                                'main_number' => $mainCriteriaNumber2,
-                                                'is_sub' => true,
-                                                'is_header' => false,
-                                                'kriteria' => $subItem['kriteria'],
-                                                'bobot' => $subItem['bobot'],
-                                                'index' => $criteriaIndex2++,
-                                                'has_sub' => false
-                                            ];
-                                        }
-                                    } else {
-                                        // Kriteria utama tanpa sub-kriteria
-                                        $mainCriteriaNumber2++;
-                                        $flattenedCriteria2[] = [
-                                            'main_number' => $mainCriteriaNumber2,
-                                            'is_sub' => false,
-                                            'is_header' => false,
-                                            'kriteria' => $mainItem['kriteria'],
-                                            'bobot' => $mainItem['bobot'],
-                                            'index' => $criteriaIndex2++,
-                                            'has_sub' => false
-                                        ];
-                                    }
-                                }
-                            @endphp
-                            <div class="table-responsive">
-                                <table class="table table-sm table-bordered">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th width="5%">No</th>
-                                            <th width="50%">Kriteria</th>
-                                            <th width="15%" class="text-center">Bobot</th>
-                                            <th width="15%" class="text-center">Skor</th>
-                                            <th width="15%" class="text-center">Nilai</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($flattenedCriteria2 as $item)
-                                            @php
-                                                if ($item['index'] >= 0) {
-                                                    $skorValue = isset($skor2[$item['index']]) ? $skor2[$item['index']] : 0;
-                                                $nilai = $item['bobot'] * $skorValue;
-                                                } else {
-                                                    $skorValue = '-';
-                                                    $nilai = '-';
-                                                }
-                                            @endphp
-                                            <tr>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <strong>{{ $item['main_number'] }}</strong>
-                                                    @elseif($item['is_sub'])
-                                                        <span class="text-muted" style="font-size: 0.85em;">└─</span>
-                                                    @else
-                                                        {{ $item['main_number'] }}
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($item['is_sub'])
-                                                        <small style="padding-left: 1.5rem; color: #6c757d;">{{ $item['kriteria'] }}</small>
-                                                    @else
-                                                        <small><strong>{{ $item['kriteria'] }}</strong></small>
-                                                    @endif
-                                                </td>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <span class="text-muted">-</span>
-                                                    @else
-                                                        @formatId($item['bobot'], 2)
-                                                    @endif
-                                                </td>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <span class="text-muted">-</span>
-                                                    @else
-                                                        @if(is_numeric($skorValue))@formatId($skorValue, 1)@else{{ $skorValue }}@endif
-                                                    @endif
-                                                </td>
-                                                <td class="text-center">
-                                                    @if($item['is_header'])
-                                                        <span class="text-muted">-</span>
-                                                    @else
-                                                        @if(is_numeric($nilai))@formatId($nilai, 2)@else{{ $nilai }}@endif
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                    <tfoot class="table-secondary">
-                                        <tr>
-                                            <td colspan="3" class="text-end fw-bold">Total</td>
-                                            <td class="text-center fw-bold">-</td>
-                                            <td class="text-center fw-bold">@formatId($nilaiSubstantif2->total_nilai ?? 0, 2)</td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
-                                            <td class="text-center fw-bold text-primary">@formatId($nilaiSubstantif2->nilai_akhir ?? (($nilaiSubstantif2->total_nilai ?? 0) / 7), 2)</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            @if($nilaiSubstantif2->note_substantif)
-                                <div class="mt-2">
-                                    <small><strong>Catatan:</strong> {{ Str::limit($nilaiSubstantif2->note_substantif, 100) }}</small>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
+            @if($proposal->hasilSemiFinal)
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">
+                    <i class="fas fa-check-circle me-1"></i>Hasil Sudah Ditentukan
+                </span>
             @endif
         </div>
-    @endif
-
-    <div class="row">
-        <div class="col-12">
-            <div class="card card-custom">
-                <div class="card-header card-header-custom">
-                    <h5 class="mb-0">
-                        <i class="fas fa-gavel me-2"></i>
-                        Penilaian Hasil Semi Final
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if($proposal->hasilSemiFinal)
-                        <!-- Display existing result -->
-                        <div class="alert alert-info mb-3">
-                            <h6><i class="fas fa-info-circle me-2"></i>Hasil Semi Final Sudah Ditentukan</h6>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <p><strong>Status:</strong> 
-                                        <span class="badge bg-{{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'success' : 'danger' }}">
-                                            {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'Lolos Tingkat Universitas' : 'Tidak Lolos Tingkat Universitas' }}
-                                        </span>
-                                    </p>
-                                    <p><strong>Nilai:</strong> 
-                                        <span class="badge bg-primary fs-6">@formatId($proposal->hasilSemiFinal->nilai, 2)</span>
-                                    </p>
+        <div class="ui-card-body p-4">
+            @if($proposal->hasilSemiFinal)
+                <!-- Existing Result Banner -->
+                <div class="alert {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'alert-success border-success-subtle' : 'alert-danger border-danger-subtle' }} p-4 rounded-3 mb-4">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="fas {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'fa-check-circle text-success' : 'fa-times-circle text-danger' }} fs-4"></i>
+                                <h5 class="mb-0 fw-bold">
+                                    {{ $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'Lolos Tingkat Universitas' : 'Tidak Lolos Tingkat Universitas' }}
+                                </h5>
+                            </div>
+                            <div class="d-flex flex-wrap gap-4 mt-3">
+                                <div>
+                                    <div class="small text-secondary fw-semibold">Nilai Semi Final</div>
+                                    <div class="fs-4 fw-bold text-primary">@formatId($proposal->hasilSemiFinal->nilai, 2)</div>
                                 </div>
-                                <div class="col-md-4">
-                                    @if($proposal->dosenPendampingUniversitas)
-                                        <p><strong>Dosen Pendamping Universitas:</strong> 
-                                            <span class="badge bg-info">{{ $proposal->dosenPendampingUniversitas->nama_dosen }}</span>
-                                            <br><small class="text-muted">{{ $proposal->dosenPendampingUniversitas->email_dosen }}</small>
-                                        </p>
-                                    @endif
-                                    <p><strong>Ditentukan pada:</strong> {{ \Carbon\Carbon::parse($proposal->hasilSemiFinal->created_at)->format('d M Y H:i') }}</p>
+                                @if($proposal->dosenPendampingUniversitas)
+                                <div>
+                                    <div class="small text-secondary fw-semibold">Dosen Pendamping Universitas</div>
+                                    <div class="fw-bold text-dark">{{ $proposal->dosenPendampingUniversitas->nama_dosen }}</div>
+                                    <small class="text-muted">{{ $proposal->dosenPendampingUniversitas->email_dosen }}</small>
                                 </div>
-                                <div class="col-md-4">
-                                    @if($proposal->hasilSemiFinal->catatan_final)
-                                        <p><strong>Catatan:</strong> {{ Str::limit($proposal->hasilSemiFinal->catatan_final, 100) }}</p>
-                                    @endif
+                                @endif
+                                <div>
+                                    <div class="small text-secondary fw-semibold">Waktu Penetapan</div>
+                                    <div class="text-dark">{{ \Carbon\Carbon::parse($proposal->hasilSemiFinal->created_at)->format('d M Y H:i') }}</div>
                                 </div>
                             </div>
-                            @if($proposal->hasilSemiFinal->catatan_final && strlen($proposal->hasilSemiFinal->catatan_final) > 100)
-                                <p><strong>Catatan Lengkap:</strong> {{ $proposal->hasilSemiFinal->catatan_final }}</p>
+                            @if($proposal->hasilSemiFinal->catatan_final)
+                            <div class="mt-3 pt-3 border-top">
+                                <div class="small text-secondary fw-semibold mb-1">Catatan Keputusan:</div>
+                                <div class="text-dark bg-white p-2.5 rounded-2 border small">{{ $proposal->hasilSemiFinal->catatan_final }}</div>
+                            </div>
                             @endif
                         </div>
-                        
-                        <!-- Edit button -->
-                        <button type="button" class="btn btn-warning mb-3" onclick="toggleEditForm()">
-                            <i class="fas fa-edit me-2"></i>Edit Hasil Semi Final
+                        <button type="button" class="btn btn-warning rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2" onclick="toggleEditForm()">
+                            <i class="fas fa-edit"></i>
+                            <span>Edit Hasil Semi Final</span>
+                        </button>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Form for input/update -->
+            <form id="hasilSemiFinalForm" action="{{ route('pimpinan_pt.update.hasil.semi.final') }}" method="POST" 
+                  @if($proposal->hasilSemiFinal) style="display: none;" @endif>
+                @csrf
+                <input type="hidden" name="proposal_id" value="{{ $proposal->id_proposal }}">
+                <input type="hidden" name="skim" value="{{ $proposal->skim }}">
+                
+                @php
+                    $criteriaItems = $criteria ?? [];
+                    $existingHasilSemiFinal = $proposal->hasilSemiFinal;
+                    $existingSkorFinalRaw = $existingHasilSemiFinal ? ($existingHasilSemiFinal->skor_per_kriteria ?? []) : [];
+                    
+                    $existingSkorFinal = [];
+                    if (!empty($existingSkorFinalRaw) && is_array($existingSkorFinalRaw)) {
+                        foreach ($existingSkorFinalRaw as $key => $value) {
+                            $index = (int) $key;
+                            $existingSkorFinal[$index] = (float) $value;
+                        }
+                        ksort($existingSkorFinal);
+                    }
+                    
+                    if (empty($criteriaItems)) {
+                        $criteriaItems = \App\Helpers\ProposalHelper::getSubstantifCriteria('default');
+                    }
+                    
+                    $flattenedCriteria = [];
+                    $criteriaIndex = 0;
+                    $mainCriteriaNumber = 0;
+                    
+                    foreach($criteriaItems as $mainItem) {
+                        if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
+                            $mainCriteriaNumber++;
+                            $flattenedCriteria[] = [
+                                'main_number' => $mainCriteriaNumber,
+                                'is_sub' => false,
+                                'is_header' => true,
+                                'kriteria' => $mainItem['kriteria'],
+                                'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')),
+                                'index' => -1,
+                                'has_sub' => true
+                            ];
+                            foreach($mainItem['sub_kriteria'] as $subItem) {
+                                $flattenedCriteria[] = [
+                                    'main_number' => $mainCriteriaNumber,
+                                    'is_sub' => true,
+                                    'is_header' => false,
+                                    'kriteria' => $subItem['kriteria'],
+                                    'bobot' => $subItem['bobot'],
+                                    'index' => $criteriaIndex++,
+                                    'has_sub' => false
+                                ];
+                            }
+                        } else {
+                            $mainCriteriaNumber++;
+                            $flattenedCriteria[] = [
+                                'main_number' => $mainCriteriaNumber,
+                                'is_sub' => false,
+                                'is_header' => false,
+                                'kriteria' => $mainItem['kriteria'],
+                                'bobot' => $mainItem['bobot'],
+                                'index' => $criteriaIndex++,
+                                'has_sub' => false
+                            ];
+                        }
+                    }
+                @endphp
+
+                <!-- Form Penilaian Rubrik -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <label class="form-label fw-bold mb-0 fs-6">
+                            <i class="fas fa-list-check text-primary me-2"></i>Rubrik Penilaian Substantif (Standar Belmawa) <span class="text-danger">*</span>
+                        </label>
+                        <span class="badge bg-light text-secondary border small">Skala 1, 2, 3, 5, 6, 7</span>
+                    </div>
+                    
+                    @if(empty($criteriaItems))
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Kriteria penilaian untuk skim {{ $proposal->skim }} belum tersedia.
+                        </div>
+                    @else
+                        <div class="table-responsive rounded-3 border">
+                            <table class="table table-modern table-bordered align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th width="5%" class="text-center">No</th>
+                                        <th width="45%">Kriteria Penilaian</th>
+                                        <th width="12%" class="text-center">Bobot (%)</th>
+                                        <th width="23%" class="text-center">Skor (1–7)</th>
+                                        <th width="15%" class="text-center">Nilai</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $belmawaOptions = [
+                                            1 => '1 - Buruk',
+                                            2 => '2 - Sangat Kurang',
+                                            3 => '3 - Kurang',
+                                            5 => '5 - Cukup',
+                                            6 => '6 - Baik',
+                                            7 => '7 - Sangat Baik',
+                                        ];
+                                    @endphp
+                                    @foreach($flattenedCriteria as $item)
+                                        @php
+                                            if ($item['index'] >= 0) {
+                                                $skorValue = isset($existingSkorFinal[$item['index']]) ? $existingSkorFinal[$item['index']] : '';
+                                                $nilai = $skorValue ? ($item['bobot'] * $skorValue) : 0;
+                                            } else {
+                                                $skorValue = '';
+                                                $nilai = 0;
+                                            }
+                                            $showNumber = !$item['is_sub'];
+                                        @endphp
+                                        <tr class="{{ $item['is_header'] ? 'bg-light fw-bold' : '' }}">
+                                            <td class="text-center text-secondary">
+                                                @if($showNumber)
+                                                    {{ $item['main_number'] }}
+                                                @elseif($item['is_sub'])
+                                                    <span class="text-muted small">└─</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($item['is_sub'])
+                                                    <span class="ps-3 text-secondary small">{{ $item['kriteria'] }}</span>
+                                                @else
+                                                    <span class="fw-semibold text-dark">{{ $item['kriteria'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center fw-semibold text-secondary">
+                                                @if($item['is_header'])
+                                                    <span class="text-muted">-</span>
+                                                @else
+                                                    @formatId($item['bobot'], 2)
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($item['is_header'])
+                                                    <span class="text-muted">-</span>
+                                                @else
+                                                    <select class="form-select form-select-sm skor-final-input rounded-2" 
+                                                            name="skor[{{ $item['index'] }}]" 
+                                                            data-index="{{ $item['index'] }}"
+                                                            data-bobot="{{ $item['bobot'] }}"
+                                                            required>
+                                                        <option value="">-- Pilih Skor --</option>
+                                                        @foreach($belmawaOptions as $bVal => $bLabel)
+                                                            <option value="{{ $bVal }}" {{ (string)(int)$skorValue === (string)$bVal && $skorValue !== '' ? 'selected' : '' }}>
+                                                                {{ $bLabel }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                @if($item['is_header'])
+                                                    <span class="text-muted">-</span>
+                                                @else
+                                                    <span class="nilai-final-display fw-bold text-dark" data-index="{{ $item['index'] }}">
+                                                        @if($nilai > 0)@formatId($nilai, 2)@else 0,00 @endif
+                                                    </span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="2" class="text-end fw-bold">Total Bobot & Nilai</td>
+                                        <td class="text-center fw-bold">100.00</td>
+                                        <td class="text-center">
+                                            <small class="text-muted me-1">Rata Skor:</small>
+                                            <span class="total-skor-final-display fw-bold text-dark">0.00</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="total-nilai-final-display fw-bold text-dark">0.00</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="bg-primary-subtle">
+                                        <td colspan="4" class="text-end fw-bold text-primary">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
+                                        <td class="text-center">
+                                            <span class="nilai-akhir-final-display fw-bold text-primary fs-5">0.00</span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+                
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status Semi Final <span class="text-danger">*</span></label>
+                            <select class="form-select rounded-3" name="status_final" id="statusSemiFinalSelect" required>
+                                <option value="">Pilih status semi final</option>
+                                <option value="lolos_tingkat_universitas" {{ $proposal->hasilSemiFinal && $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'selected' : '' }}>Lolos Tingkat Universitas</option>
+                                <option value="tidak_lolos_tingkat_universitas" {{ $proposal->hasilSemiFinal && $proposal->hasilSemiFinal->status_final == 'tidak_lolos_tingkat_universitas' ? 'selected' : '' }}>Tidak Lolos Tingkat Universitas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nilai Semi Final (Terhitung Otomatis)</label>
+                            <input type="number" class="form-control rounded-3 bg-light" name="nilai" id="nilaiSemiFinalInput"
+                                   value="{{ $proposal->hasilSemiFinal ? $proposal->hasilSemiFinal->nilai : '' }}"
+                                   min="0" max="100" step="0.01" required
+                                   placeholder="Akan terisi otomatis"
+                                   readonly>
+                            <div class="form-text small">Dihitung otomatis dari rubrik di atas (Total Nilai / 7)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4" id="dosenUniversitasField" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dosen Pendamping Universitas <span class="text-danger">*</span></label>
+                            <select class="form-select rounded-3" name="id_dosen_pendamping_universitas" id="dosenUniversitasSelect">
+                                <option value="">Pilih Dosen Pendamping Universitas</option>
+                                @foreach($dosens as $dosen)
+                                    <option value="{{ $dosen->id_dosen }}" 
+                                            {{ $proposal->id_dosen_pendamping_universitas == $dosen->id_dosen ? 'selected' : '' }}>
+                                        {{ $dosen->nama_dosen }} ({{ $dosen->email_dosen }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="form-text small text-danger">Wajib dipilih jika status "Lolos Tingkat Universitas"</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Catatan Semi Final</label>
+                    <textarea class="form-control rounded-3" name="catatan_final" rows="3" 
+                              placeholder="Berikan catatan perbaikan atau rekomendasi untuk mahasiswa...">{{ $proposal->hasilSemiFinal ? $proposal->hasilSemiFinal->catatan_final : '' }}</textarea>
+                </div>
+                
+                <div class="d-flex align-items-center gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm">
+                        <i class="fas fa-save"></i>
+                        <span>{{ $proposal->hasilSemiFinal ? 'Update Hasil Semi Final' : 'Simpan Hasil Semi Final' }}</span>
+                    </button>
+                    @if($proposal->hasilSemiFinal)
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold" onclick="toggleEditForm()">
+                            <i class="fas fa-times me-1"></i>Batal
                         </button>
                     @endif
-
-                    <!-- Form for input/update -->
-                    <form id="hasilSemiFinalForm" action="{{ route('pimpinan_pt.update.hasil.semi.final') }}" method="POST" 
-                          @if($proposal->hasilSemiFinal) style="display: none;" @endif>
-                        @csrf
-                        <input type="hidden" name="proposal_id" value="{{ $proposal->id_proposal }}">
-                        <input type="hidden" name="skim" value="{{ $proposal->skim }}">
-                        
-                        @php
-                            $criteriaItems = $criteria ?? [];
-                            $existingHasilSemiFinal = $proposal->hasilSemiFinal;
-                            $existingSkorFinalRaw = $existingHasilSemiFinal ? ($existingHasilSemiFinal->skor_per_kriteria ?? []) : [];
-                            
-                            // Normalize existing skor untuk memastikan index numerik
-                            $existingSkorFinal = [];
-                            if (!empty($existingSkorFinalRaw) && is_array($existingSkorFinalRaw)) {
-                                foreach ($existingSkorFinalRaw as $key => $value) {
-                                    $index = (int) $key;
-                                    $existingSkorFinal[$index] = (float) $value;
-                                }
-                                ksort($existingSkorFinal);
-                            }
-                            
-                            // Jika kriteria kosong, gunakan default
-                            if (empty($criteriaItems)) {
-                                $criteriaItems = \App\Helpers\ProposalHelper::getSubstantifCriteria('default');
-                            }
-                            
-                            // Flatten struktur untuk perhitungan dan input
-                            $flattenedCriteria = [];
-                            $criteriaIndex = 0;
-                            $mainCriteriaNumber = 0;
-                            
-                            foreach($criteriaItems as $mainItem) {
-                                if (isset($mainItem['sub_kriteria']) && !empty($mainItem['sub_kriteria'])) {
-                                    // Kriteria utama dengan sub-kriteria
-                                    $mainCriteriaNumber++;
-                                    
-                                    // Tambahkan header kriteria utama
-                                    $flattenedCriteria[] = [
-                                        'main_number' => $mainCriteriaNumber,
-                                        'is_sub' => false,
-                                        'is_header' => true,
-                                        'kriteria' => $mainItem['kriteria'],
-                                        'bobot' => array_sum(array_column($mainItem['sub_kriteria'], 'bobot')),
-                                        'index' => -1,
-                                        'has_sub' => true
-                                    ];
-                                    
-                                    // Tambahkan sub-kriteria
-                                    foreach($mainItem['sub_kriteria'] as $subItem) {
-                                        $flattenedCriteria[] = [
-                                            'main_number' => $mainCriteriaNumber,
-                                            'is_sub' => true,
-                                            'is_header' => false,
-                                            'kriteria' => $subItem['kriteria'],
-                                            'bobot' => $subItem['bobot'],
-                                            'index' => $criteriaIndex++,
-                                            'has_sub' => false
-                                        ];
-                                    }
-                                } else {
-                                    // Kriteria utama tanpa sub-kriteria
-                                    $mainCriteriaNumber++;
-                                    $flattenedCriteria[] = [
-                                        'main_number' => $mainCriteriaNumber,
-                                        'is_sub' => false,
-                                        'is_header' => false,
-                                        'kriteria' => $mainItem['kriteria'],
-                                        'bobot' => $mainItem['bobot'],
-                                        'index' => $criteriaIndex++,
-                                        'has_sub' => false
-                                    ];
-                                }
-                            }
-                        @endphp
-
-                        <!-- Form Penilaian Hasil Final -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold mb-3">Penilaian Hasil Final <span class="text-danger">*</span></label>
-                            
-                            @if(empty($criteriaItems))
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Kriteria penilaian untuk skim {{ $proposal->skim }} belum tersedia.
-                                </div>
-                            @else
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-hover">
-                                        <thead class="table-primary">
-                                            <tr>
-                                                <th width="5%" class="text-center">No</th>
-                                                <th width="45%">Kriteria Penilaian</th>
-                                                <th width="10%" class="text-center">Bobot (%)</th>
-                                                <th width="25%" class="text-center">Skor (1–7)</th>
-                                                <th width="15%" class="text-center">Nilai</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @php
-                                                $belmawaOptions = [
-                                                    1 => '1 - Buruk',
-                                                    2 => '2 - Sangat Kurang',
-                                                    3 => '3 - Kurang',
-                                                    5 => '5 - Cukup',
-                                                    6 => '6 - Baik',
-                                                    7 => '7 - Sangat Baik',
-                                                ];
-                                            @endphp
-                                            @foreach($flattenedCriteria as $item)
-                                                @php
-                                                    // Untuk header, tidak ada skor (index = -1)
-                                                    if ($item['index'] >= 0) {
-                                                        $skorValue = isset($existingSkorFinal[$item['index']]) ? $existingSkorFinal[$item['index']] : '';
-                                                        $nilai = $skorValue ? ($item['bobot'] * $skorValue) : 0;
-                                                    } else {
-                                                        $skorValue = '';
-                                                        $nilai = 0;
-                                                    }
-                                                    
-                                                    // Tampilkan nomor untuk kriteria utama
-                                                    $showNumber = false;
-                                                    if (!$item['is_sub']) {
-                                                        $showNumber = true;
-                                                    }
-                                                @endphp
-                                                <tr>
-                                                    <td class="text-center">
-                                                        @if($showNumber)
-                                                            {{ $item['main_number'] }}
-                                                        @elseif($item['is_sub'])
-                                                            <span class="text-muted" style="font-size: 0.85em;">└─</span>
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        @if($item['is_sub'])
-                                                            <span style="padding-left: 1.5rem; color: #6c757d; font-size: 0.95em;">{{ $item['kriteria'] }}</span>
-                                                        @else
-                                                            <strong>{{ $item['kriteria'] }}</strong>
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center fw-bold">
-                                                        @if($item['is_header'])
-                                                            <span class="text-muted">-</span>
-                                                        @else
-                                                            @formatId($item['bobot'], 2)
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        @if($item['is_header'])
-                                                            <span class="text-muted">-</span>
-                                                        @else
-                                                            <select class="form-select form-select-sm skor-final-input" 
-                                                                    name="skor[{{ $item['index'] }}]" 
-                                                                    data-index="{{ $item['index'] }}"
-                                                                    data-bobot="{{ $item['bobot'] }}"
-                                                                    required>
-                                                                <option value="">-- Pilih Skor --</option>
-                                                                @foreach($belmawaOptions as $bVal => $bLabel)
-                                                                    <option value="{{ $bVal }}" {{ (string)(int)$skorValue === (string)$bVal && $skorValue !== '' ? 'selected' : '' }}>
-                                                                        {{ $bLabel }}
-                                                                    </option>
-                                                                @endforeach
-                                                            </select>
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center">
-                                                        @if($item['is_header'])
-                                                            <span class="text-muted">-</span>
-                                                        @else
-                                                            <span class="nilai-final-display fw-bold" data-index="{{ $item['index'] }}">
-                                                                @if($nilai > 0)@formatId($nilai, 2)@else 0,00 @endif
-                                                            </span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                        <tfoot class="table-secondary">
-                                            <tr>
-                                                <td colspan="2" class="text-end fw-bold">Total</td>
-                                                <td class="text-center fw-bold">100.00</td>
-                                                <td class="text-center">
-                                                    <span class="total-skor-final-display fw-bold">0.00</span>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="total-nilai-final-display fw-bold">0.00</span>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="4" class="text-end fw-bold">Nilai Akhir (Total Nilai / 7) — Skala 100</td>
-                                                <td class="text-center">
-                                                    <span class="nilai-akhir-final-display fw-bold text-primary" style="font-size: 1.2em;">0.00</span>
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            @endif
-                        </div>
-                        
-                        <div class="row mt-4">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label required-field">Status Semi Final</label>
-                                    <select class="form-select" name="status_final" id="statusSemiFinalSelect" required>
-                                        <option value="">Pilih status semi final</option>
-                                        <option value="lolos_tingkat_universitas" {{ $proposal->hasilSemiFinal && $proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas' ? 'selected' : '' }}>Lolos Tingkat Universitas</option>
-                                        <option value="tidak_lolos_tingkat_universitas" {{ $proposal->hasilSemiFinal && $proposal->hasilSemiFinal->status_final == 'tidak_lolos_tingkat_universitas' ? 'selected' : '' }}>Tidak Lolos Tingkat Universitas</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label class="form-label required-field">Nilai Semi Final (Otomatis dari Penilaian)</label>
-                                    <input type="number" class="form-control" name="nilai" id="nilaiSemiFinalInput"
-                                           value="{{ $proposal->hasilSemiFinal ? $proposal->hasilSemiFinal->nilai : '' }}"
-                                           min="0" max="100" step="0.01" required
-                                           placeholder="Akan terisi otomatis"
-                                           readonly>
-                                    <div class="form-text">Nilai akan terisi otomatis berdasarkan penilaian di atas</div>
-                                </div>
-                            </div>
-                            <div class="col-md-4" id="dosenUniversitasField" style="display: none;">
-                                <div class="mb-3">
-                                    <label class="form-label required-field">Dosen Pendamping Universitas <span class="text-danger">*</span></label>
-                                    <select class="form-select" name="id_dosen_pendamping_universitas" id="dosenUniversitasSelect">
-                                        <option value="">Pilih Dosen Pendamping Universitas</option>
-                                        @foreach($dosens as $dosen)
-                                            <option value="{{ $dosen->id_dosen }}" 
-                                                    {{ $proposal->id_dosen_pendamping_universitas == $dosen->id_dosen ? 'selected' : '' }}>
-                                                {{ $dosen->nama_dosen }} ({{ $dosen->email_dosen }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="form-text">Wajib dipilih jika status "Lolos Tingkat Universitas"</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Catatan Semi Final</label>
-                            <textarea class="form-control" name="catatan_final" rows="4" 
-                                      placeholder="Berikan catatan untuk mahasiswa...">{{ $proposal->hasilSemiFinal ? $proposal->hasilSemiFinal->catatan_final : '' }}</textarea>
-                        </div>
-                        
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>{{ $proposal->hasilSemiFinal ? 'Update Hasil Semi Final' : 'Simpan Hasil Semi Final' }}
-                            </button>
-                            @if($proposal->hasilSemiFinal)
-                                <button type="button" class="btn btn-secondary" onclick="toggleEditForm()">
-                                    <i class="fas fa-times me-2"></i>Batal
-                                </button>
-                            @endif
-                        </div>
-                    </form>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>
@@ -1129,9 +734,8 @@
 @php
     $hasRevisi = $proposal->proposalRevisi->count() > 0;
     $firstRevisi = $hasRevisi ? $proposal->proposalRevisi->first() : null;
-    $firstRevisiUrl = $firstRevisi ? route('pimpinan_pt.revisi.view', $firstRevisi->id_revisi) : null;
+    $firstRevisiUrl = $firstRevisi ? route('pimpinan_pt.revisi.download', $firstRevisi->id_revisi) : null;
     
-    // Prepare JSON strings
     $pageDataJson = json_encode([
         'hasRevisi' => $hasRevisi,
         'firstRevisi' => $firstRevisi,
@@ -1139,11 +743,8 @@
     ]);
 @endphp
 <script>
-    // PDF viewer variables
     let currentPdfUrl = null;
     let currentFileName = null;
-    
-    // Blade data converted to JavaScript
     const pageData = JSON.parse('{!! addslashes($pageDataJson) !!}');
 
     function toggleEditForm() {
@@ -1152,14 +753,13 @@
         
         if (form.style.display === 'none') {
             form.style.display = 'block';
-            editBtn.innerHTML = '<i class="fas fa-times me-2"></i>Batal';
+            if (editBtn) editBtn.innerHTML = '<i class="fas fa-times me-2"></i>Batal';
         } else {
             form.style.display = 'none';
-            editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Semi Final';
+            if (editBtn) editBtn.innerHTML = '<i class="fas fa-edit me-2"></i>Edit Hasil Semi Final';
         }
     }
     
-    // Handle dropdown dosen universitas (show/hide berdasarkan status)
     function toggleDosenUniversitasField() {
         const statusSelect = document.getElementById('statusSemiFinalSelect');
         const dosenField = document.getElementById('dosenUniversitasField');
@@ -1177,17 +777,14 @@
         }
     }
     
-    // Initialize dosen universitas field visibility
     document.addEventListener('DOMContentLoaded', function() {
         toggleDosenUniversitasField();
-        
         const statusSelect = document.getElementById('statusSemiFinalSelect');
         if (statusSelect) {
             statusSelect.addEventListener('change', toggleDosenUniversitasField);
         }
     });
 
-    // Calculate nilai final real-time
     function calculateNilaiFinal() {
         const skorInputs = document.querySelectorAll('.skor-final-input');
         let totalNilai = 0;
@@ -1195,135 +792,106 @@
         let count = 0;
         
         skorInputs.forEach(input => {
-            // Skip header rows (index < 0)
             const index = parseInt(input.dataset.index);
             if (index < 0) return;
             
             const skor = parseFloat(input.value) || 0;
             const bobot = parseFloat(input.dataset.bobot) || 0;
             
-            // Hitung nilai per kriteria: Nilai = Bobot × Skor
             const nilai = bobot * skor;
             totalNilai += nilai;
             totalSkor += skor;
             count++;
             
-            // Update nilai display per kriteria
             const nilaiDisplay = document.querySelector(`.nilai-final-display[data-index="${index}"]`);
             if (nilaiDisplay) {
                 nilaiDisplay.textContent = nilai.toFixed(2);
             }
         });
         
-        // Update total nilai
         const totalNilaiDisplay = document.querySelector('.total-nilai-final-display');
         if (totalNilaiDisplay) {
             totalNilaiDisplay.textContent = totalNilai.toFixed(2);
         }
         
-        // Update total skor (rata-rata)
         const totalSkorDisplay = document.querySelector('.total-skor-final-display');
         if (totalSkorDisplay) {
             totalSkorDisplay.textContent = count > 0 ? (totalSkor / count).toFixed(2) : '0.00';
         }
         
-        // Hitung nilai akhir: Total Nilai / 7 (skala 100 standar Belmawa)
         const nilaiAkhir = totalNilai > 0 ? (totalNilai / 7) : 0;
         const nilaiAkhirDisplay = document.querySelector('.nilai-akhir-final-display');
         if (nilaiAkhirDisplay) {
             nilaiAkhirDisplay.textContent = nilaiAkhir.toFixed(2);
         }
         
-        // Update input nilai semi final (readonly)
         const nilaiSemiFinalInput = document.getElementById('nilaiSemiFinalInput');
         if (nilaiSemiFinalInput) {
             nilaiSemiFinalInput.value = nilaiAkhir.toFixed(2);
         }
     }
     
-    // Event listener untuk input skor final
     document.addEventListener('DOMContentLoaded', function() {
         const skorInputs = document.querySelectorAll('.skor-final-input');
-        
-        // Hitung nilai awal jika ada data existing
         calculateNilaiFinal();
-        
-        // Hitung nilai setiap kali skor berubah
         skorInputs.forEach(input => {
             input.addEventListener('input', calculateNilaiFinal);
             input.addEventListener('change', calculateNilaiFinal);
         });
     });
 
-    // PDF Viewer Functions
     function viewPDF(pdfUrl, fileName) {
         currentPdfUrl = pdfUrl;
         currentFileName = fileName;
         
-        document.getElementById('pdfViewerTitle').textContent = fileName;
+        const titleEl = document.getElementById('pdfViewerTitle');
+        if (titleEl) titleEl.textContent = fileName;
         
-        // Show loading
         const viewer = document.getElementById('pdfViewer');
-        viewer.innerHTML = '<div class="spinner"></div>';
+        if (viewer) viewer.innerHTML = '<div class="spinner"></div>';
         
-        // Show controls
-        document.getElementById('fullscreenBtn').style.display = 'inline-block';
-        document.getElementById('downloadBtn').style.display = 'inline-block';
+        const fsBtn = document.getElementById('fullscreenBtn');
+        const dlBtn = document.getElementById('downloadBtn');
+        if (fsBtn) fsBtn.style.display = 'inline-block';
+        if (dlBtn) dlBtn.style.display = 'inline-block';
         
-        // Load PDF using iframe
-        loadPDFDocument(pdfUrl, viewer);
+        if (viewer) loadPDFDocument(pdfUrl, viewer);
     }
 
     function loadPDFDocument(pdfUrl, pdfViewer) {
-        console.log('Loading PDF from URL:', pdfUrl);
-        
         if (!pdfUrl) {
             pdfViewer.innerHTML = '<div class="empty-state"><i class="fas fa-file-pdf"></i><h4>Dokumen Tidak Tersedia</h4><p>Dokumen tidak ditemukan.</p></div>';
             return;
         }
 
-        // Create iframe
         const iframe = document.createElement('iframe');
         iframe.src = pdfUrl;
         iframe.className = 'pdf-iframe';
         iframe.style.width = '100%';
-        iframe.style.height = '700px';
+        iframe.style.height = '650px';
         iframe.style.border = 'none';
-        iframe.style.borderRadius = '8px';
-        iframe.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
         iframe.style.opacity = '0';
         iframe.style.transition = 'opacity 0.3s ease';
         
-        // Pre-load iframe before showing
         iframe.onload = function() {
-            console.log('Iframe loaded successfully');
             setTimeout(() => {
                 iframe.style.opacity = '1';
                 const spinner = pdfViewer.querySelector('.spinner');
-                if (spinner) {
-                    spinner.style.opacity = '0';
-                    setTimeout(() => {
-                        if (spinner.parentNode) {
-                            spinner.parentNode.removeChild(spinner);
-                        }
-                    }, 300);
+                if (spinner && spinner.parentNode) {
+                    spinner.parentNode.removeChild(spinner);
                 }
             }, 100);
         };
 
-        // Error handler
         iframe.onerror = function() {
-            console.log('Iframe failed, showing download option');
             showDownloadOption(pdfViewer);
         };
 
         pdfViewer.appendChild(iframe);
         
-        // Set timeout for iframe
         setTimeout(() => {
             const spinner = pdfViewer.querySelector('.spinner');
             if (spinner && iframe.style.opacity === '0') {
-                console.log('Iframe timeout, showing download option');
                 showDownloadOption(pdfViewer);
             }
         }, 5000);
@@ -1333,14 +901,11 @@
         pdfViewer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-file-pdf"></i>
-                <h4>PDF Tidak Dapat Ditampilkan</h4>
-                <p>Browser Anda tidak dapat menampilkan PDF secara langsung.</p>
-                <p>Silakan download file untuk melihat dokumen:</p>
-                <div style="margin-top: 1rem;">
-                    <a href="${currentPdfUrl}" 
-                       class="btn btn-primary" 
-                       download="${currentFileName}">
-                        <i class="fas fa-download me-1"></i>Download PDF
+                <h5 class="fw-bold text-dark">PDF Tidak Dapat Ditampilkan Langsung</h5>
+                <p class="text-secondary small">Silakan unduh berkas untuk membaca isi dokumen secara lengkap.</p>
+                <div class="mt-3">
+                    <a href="${currentPdfUrl}" class="btn btn-primary rounded-pill px-4" download="${currentFileName}">
+                        <i class="fas fa-download me-2"></i>Download PDF
                     </a>
                 </div>
             </div>
@@ -1354,30 +919,16 @@
         if (fullscreenBtn && pdfViewer) {
             fullscreenBtn.addEventListener('click', function() {
                 const iframe = pdfViewer.querySelector('.pdf-iframe');
-                if (iframe) {
-                    if (iframe.requestFullscreen) {
-                        iframe.requestFullscreen();
-                    } else if (iframe.webkitRequestFullscreen) {
-                        iframe.webkitRequestFullscreen();
-                    } else if (iframe.msRequestFullscreen) {
-                        iframe.msRequestFullscreen();
-                    }
-                } else {
-                    if (pdfViewer.requestFullscreen) {
-                        pdfViewer.requestFullscreen();
-                    } else if (pdfViewer.webkitRequestFullscreen) {
-                        pdfViewer.webkitRequestFullscreen();
-                    } else if (pdfViewer.msRequestFullscreen) {
-                        pdfViewer.msRequestFullscreen();
-                    }
-                }
+                const target = iframe || pdfViewer;
+                if (target.requestFullscreen) target.requestFullscreen();
+                else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+                else if (target.msRequestFullscreen) target.msRequestFullscreen();
             });
         }
     }
 
     function initializeDownload() {
         const downloadBtn = document.getElementById('downloadBtn');
-        
         if (downloadBtn) {
             downloadBtn.addEventListener('click', function() {
                 if (currentPdfUrl) {
@@ -1392,7 +943,6 @@
         }
     }
 
-    // Initialize PDF proposal viewer
     function initializeProposalPdfViewer() {
         const proposalIframe = document.getElementById('proposalPdfIframe');
         if (proposalIframe) {
@@ -1401,104 +951,73 @@
                 if (spinner) {
                     spinner.style.opacity = '0';
                     setTimeout(() => {
-                        if (spinner.parentNode) {
-                            spinner.parentNode.removeChild(spinner);
-                        }
+                        if (spinner.parentNode) spinner.parentNode.removeChild(spinner);
                         proposalIframe.style.display = 'block';
                     }, 300);
                 }
             };
             
-            // Show iframe after a short delay
             setTimeout(() => {
                 proposalIframe.style.display = 'block';
             }, 500);
         }
         
-        // Initialize fullscreen for proposal PDF
         const fullscreenProposalBtn = document.getElementById('fullscreenProposalBtn');
         if (fullscreenProposalBtn && proposalIframe) {
             fullscreenProposalBtn.addEventListener('click', function() {
-                if (proposalIframe.requestFullscreen) {
-                    proposalIframe.requestFullscreen();
-                } else if (proposalIframe.webkitRequestFullscreen) {
-                    proposalIframe.webkitRequestFullscreen();
-                } else if (proposalIframe.msRequestFullscreen) {
-                    proposalIframe.msRequestFullscreen();
-                }
+                if (proposalIframe.requestFullscreen) proposalIframe.requestFullscreen();
+                else if (proposalIframe.webkitRequestFullscreen) proposalIframe.webkitRequestFullscreen();
+                else if (proposalIframe.msRequestFullscreen) proposalIframe.msRequestFullscreen();
             });
         }
     }
 
-    // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Detail hasil final page loaded');
-        
-        // Initialize PDF proposal viewer
         initializeProposalPdfViewer();
         
-        // Initialize PDF view buttons for revisi
         document.querySelectorAll('.view-pdf-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const pdfUrl = this.getAttribute('data-pdf-url');
                 const pdfName = this.getAttribute('data-pdf-name');
                 viewPDF(pdfUrl, pdfName);
                 
-                // Show revisi PDF viewer
                 const revisiViewer = document.getElementById('revisiPdfViewer');
                 if (revisiViewer) {
                     revisiViewer.style.display = 'block';
+                    revisiViewer.scrollIntoView({ behavior: 'smooth' });
                 }
             });
         });
         
-        // Initialize fullscreen functionality for revisi
         initializeFullscreen();
-        
-        // Initialize download functionality for revisi
         initializeDownload();
-        
-        // Pre-load first revision PDF if available
-        if (pageData.hasRevisi && pageData.firstRevisi) {
-            console.log('Pre-loading first revision PDF:', pageData.firstRevisi.nama_file);
-            // Pre-load the PDF URL for faster display
-            const link = document.createElement('link');
-            link.rel = 'prefetch';
-            link.href = pageData.firstRevisiUrl;
-            document.head.appendChild(link);
-        }
-        
     });
 
-    // Form submission
     document.getElementById('hasilSemiFinalForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const submitBtn = document.querySelector('button[type="submit"]');
+        const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         
-        // Show loading state
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
         submitBtn.disabled = true;
         
         const formData = new FormData(this);
-        
-        // Hapus field dosen universitas jika status tidak lolos
         const statusFinal = formData.get('status_final');
         if (statusFinal === 'tidak_lolos_tingkat_universitas') {
             formData.delete('id_dosen_pendamping_universitas');
         }
         
-        // Validasi client-side
-        const catatanFinal = formData.get('catatan_final');
-        if (catatanFinal && catatanFinal.trim().length > 0 && catatanFinal.trim().length < 50) {
-            showToast('Catatan final minimal 50 karakter jika diisi', 'error');
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            return;
+        if (statusFinal === 'lolos_tingkat_universitas') {
+            const dosenId = formData.get('id_dosen_pendamping_universitas');
+            if (!dosenId) {
+                showToast('Dosen Pendamping Universitas wajib dipilih jika status Lolos Tingkat Universitas', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
         }
         
-        // Validasi skor
         const skorInputs = document.querySelectorAll('.skor-final-input');
         let allSkorFilled = true;
         skorInputs.forEach(input => {
@@ -1509,7 +1028,7 @@
         });
         
         if (!allSkorFilled) {
-            showToast('Semua skor harus diisi', 'error');
+            showToast('Semua skor rubrik penilaian harus diisi', 'error');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
             return;
@@ -1525,9 +1044,7 @@
         })
         .then(async response => {
             const data = await response.json();
-            
             if (!response.ok) {
-                // Handle validation errors
                 if (response.status === 422 && data.errors) {
                     const errorMessages = [];
                     Object.keys(data.errors).forEach(key => {
@@ -1539,29 +1056,25 @@
                 }
                 throw new Error(data.message || 'Validation failed');
             }
-            
             return data;
         })
         .then(data => {
             if (data.success) {
-                showToast('Hasil semi final berhasil diperbarui!', 'success');
-                // Optionally reload the page or update the UI
+                showToast('Hasil semi final berhasil disimpan!', 'success');
                 setTimeout(() => {
                     location.reload();
-                }, 1500);
+                }, 1200);
             } else {
                 showToast('Gagal memperbarui hasil semi final: ' + (data.message || 'Terjadi kesalahan'), 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            // Error sudah ditangani di .then() sebelumnya
             if (!error.message.includes('Validation failed')) {
-                showToast('Terjadi kesalahan saat menyimpan hasil semi final: ' + error.message, 'error');
+                showToast('Terjadi kesalahan saat menyimpan: ' + error.message, 'error');
             }
         })
         .finally(() => {
-            // Reset button state
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });

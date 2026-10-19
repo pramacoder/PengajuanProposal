@@ -1,243 +1,117 @@
-@extends('dosen.layout')
+@extends('mainlayout.app')
 
-@section('page_title', 'Detail Hasil Final - Proposal')
+@section('title', 'Detail Hasil Final - Proposal')
 
-@section('dosen_content')
-<div class="row">
-    <div class="col-12">
-        <x-breadcrumb :items="[
-            ['label' => 'Dashboard Dosen', 'url' => route('dosen.dashboard')],
-            ['label' => 'Hasil Final', 'url' => route('dosen.hasil.final')],
-            ['label' => 'Detail Hasil Final', 'active' => true],
-        ]" />
+@section('content')
+<div class="container-fluid px-4 py-3">
+    <x-breadcrumb :items="[
+        ['label' => 'Dashboard Dosen', 'url' => route('dosen.pendamping.dashboard')],
+        ['label' => 'Hasil Final', 'url' => route('dosen.hasil.final')],
+        ['label' => 'Detail Keputusan Final', 'active' => true],
+    ]" />
 
-        <div class="card card-custom">
-            <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-trophy me-2"></i>
-                    Detail Hasil Final
-                </h5>
-                <a href="{{ route('dosen.hasil.final') }}" class="btn btn-outline-light btn-sm">
-                    <i class="fas fa-arrow-left me-2"></i>Kembali
+    <!-- Page Header -->
+    <x-page-header 
+        title="Detail Hasil Keputusan Final" 
+        subtitle="Rincian akumulasi penilaian, status kelolosan akhir, dan riwayat evaluasi proposal" 
+        badge="Dosen Pendamping"
+        icon="fa-trophy"
+    >
+        <x-slot:actions>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('dosen.hasil.final') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 fw-semibold">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Kembali</span>
                 </a>
             </div>
-            <div class="card-body">
-                <!-- Informasi Proposal -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-primary mb-3">Informasi Proposal</h6>
-                        <table class="table table-borderless">
-                            <tr>
-                                <td width="30%"><strong>Judul:</strong></td>
-                                <td>{{ $proposal->judul_proposal }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Skim:</strong></td>
-                                <td>{{ $proposal->skim }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Ketua:</strong></td>
-                                <td>{{ $proposal->mahasiswa->nama_mahasiswa }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Prodi:</strong></td>
-                                <td>{{ $proposal->mahasiswa->prodi->nama_prodi ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Fakultas:</strong></td>
-                                <td>{{ $proposal->mahasiswa->fakultas->nama_fakultas ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Status Final:</strong></td>
-                                <td>
-                                    @if($proposal->status_final === 'lolos')
-                                        <span class="badge bg-success">LOLOS</span>
-                                    @else
-                                        <span class="badge bg-danger">TIDAK LOLOS</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @if($proposal->hasilFinal)
-                            <tr>
-                                <td><strong>Nilai Final:</strong></td>
-                                <td>
-                                    <span class="badge bg-primary fs-6">@formatId($proposal->hasilFinal->nilai, 2)</span>
-                                </td>
-                            </tr>
-                            @endif
-                        </table>
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="row g-4 mb-4">
+        <!-- Informasi Proposal -->
+        <div class="col-lg-7">
+            <div class="ui-card h-100 shadow-sm">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-file-alt text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Informasi Proposal Mahasiswa</h6>
                     </div>
-                    <div class="col-md-6">
-                        <h6 class="fw-bold text-primary mb-3">Dokumen</h6>
-                        <div class="d-grid gap-2">
-                            @if($proposal->dokumen && $proposal->dokumen->file_proposal)
-                                <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
-                                   class="btn btn-outline-primary">
-                                    <i class="fas fa-download me-2"></i>Download Proposal
-                                </a>
-                            @endif
-                            @if($proposal->dokumen && $proposal->dokumen->file_lampiran)
-                                <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'lampiran']) }}" 
-                                   class="btn btn-outline-secondary">
-                                    <i class="fas fa-download me-2"></i>Download Lampiran
-                                </a>
-                            @endif
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">{{ $proposal->skim }}</span>
+                </div>
+                <div class="ui-card-body p-4">
+                    <div class="mb-3">
+                        <small class="text-secondary fw-semibold d-block">Judul Usulan</small>
+                        <h6 class="fw-bold text-dark mb-0">{{ $proposal->judul_proposal }}</h6>
+                    </div>
+
+                    <div class="row g-3 pt-3 border-top">
+                        <div class="col-sm-6">
+                            <small class="text-secondary fw-semibold d-block">Ketua Mahasiswa</small>
+                            <span class="fw-semibold text-dark small">{{ $proposal->mahasiswa->nama_mahasiswa ?? $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</span>
+                            <small class="text-muted d-block">NIM: {{ $proposal->mahasiswa->nim ?? 'N/A' }}</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-secondary fw-semibold d-block">Program Studi & Fakultas</small>
+                            <span class="text-dark small">{{ $proposal->mahasiswa->prodi->nama_prodi ?? 'N/A' }}</span>
+                            <small class="text-muted d-block">{{ $proposal->mahasiswa->fakultas->nama_fakultas ?? 'N/A' }}</small>
                         </div>
                     </div>
-                </div>
 
-                <!-- Hasil Review Administratif -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h6 class="fw-bold text-primary mb-3">
-                            <i class="fas fa-clipboard-check me-2"></i>
-                            Hasil Review Administratif
-                        </h6>
-                        @if($proposal->nilaiAdministratif)
-                            <div class="card">
-                                <div class="card-header bg-primary text-white">
-                                    <i class="fas fa-clipboard-check me-2"></i>
-                                    <strong>Review Administratif</strong>
-                                </div>
-                                <div class="card-body">
-                                    @if($proposal->nilaiAdministratif && $proposal->nilaiAdministratif->count() > 0)
-                                        @php
-                                            $adminRecord = $proposal->nilaiAdministratif->first();
-                                        @endphp
-                                        <div class="mb-3">
-                                            <i class="fas fa-edit text-info me-2"></i>
-                                            <strong>Catatan:</strong><br>
-                                            {{ $adminRecord->note_administratif ?? 'Tidak ada catatan khusus.' }}
-                                        </div>
-                                        @if($adminRecord->checklist)
-                                            <div class="mb-3">
-                                                <i class="fas fa-list-check text-warning me-2"></i>
-                                                <strong>Checklist Administratif:</strong><br>
-                                                <div class="row mt-2">
-                                                    @foreach($adminRecord->checklist as $item => $status)
-                                                        <div class="col-md-6 mb-2">
-                                                            <span class="badge bg-{{ $status ? 'success' : 'danger' }} me-2">
-                                                                {{ $status ? '✓' : '✗' }}
-                                                            </span>
-                                                            {{ ucwords(str_replace('_', ' ', $item)) }}
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
-                                    @else
-                                        <div class="alert alert-info">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            <strong>Info:</strong> Belum ada hasil review administratif untuk proposal ini.
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        @else
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Info:</strong> Belum ada hasil review administratif untuk proposal ini.
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- Hasil Review Substantif -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h6 class="fw-bold text-primary mb-3">
-                            <i class="fas fa-user-check me-2"></i>
-                            Hasil Review Substantif
-                        </h6>
-                        @if($proposal->nilaiSubstantif && $proposal->nilaiSubstantif->count() > 0)
-                            @foreach($proposal->nilaiSubstantif as $index => $review)
-                                <div class="card {{ $index > 0 ? 'mt-3' : '' }}">
-                                    <div class="card-header bg-info text-white">
-                                        <i class="fas fa-user me-2"></i>
-                                        <strong>Reviewer {{ $index + 1 }} - {{ $review->reviewer ? $review->reviewer->nama_reviewer : 'N/A' }}</strong>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="mb-3">
-                                            <i class="fas fa-edit text-warning me-2"></i>
-                                            <strong>Catatan:</strong><br>
-                                            {{ $review->note_substantif ?? 'Tidak ada catatan khusus.' }}
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Info:</strong> Belum ada hasil review substantif untuk proposal ini.
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- Hasil Final -->
-                <div class="row">
-                    <div class="col-12">
-                        <h6 class="fw-bold text-primary mb-3">
-                            <i class="fas fa-trophy me-2"></i>
-                            Hasil Final
-                        </h6>
-                        @if($proposal->hasilFinal)
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <div class="alert alert-{{ $proposal->status_final === 'lolos' ? 'success' : 'danger' }}">
-                                        <i class="fas fa-{{ $proposal->status_final === 'lolos' ? 'check-circle' : 'times-circle' }} me-2"></i>
-                                        <strong>Status: {{ $proposal->status_final === 'lolos' ? 'LOLOS' : 'TIDAK LOLOS' }}</strong>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="alert alert-primary">
-                                        <i class="fas fa-star me-2"></i>
-                                        <strong>Nilai: @formatId($proposal->hasilFinal->nilai, 2)</strong>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            @if($proposal->hasilFinal->catatan_final)
-                            <div class="alert alert-info">
-                                <i class="fas fa-comment me-2"></i>
-                                <strong>Catatan Final:</strong><br>
-                                {{ $proposal->hasilFinal->catatan_final }}
-                            </div>
-                            @endif
-                            
+                    <div class="row g-2 pt-3 border-top mt-3 align-items-center">
+                        <div class="col-sm-6">
+                            <small class="text-secondary fw-semibold d-block">Status Final</small>
                             @if($proposal->status_final === 'lolos')
-                                <div class="alert alert-success">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    <strong>Selamat! Proposal LOLOS</strong><br>
-                                    Proposal ini telah lolos seleksi dan akan dikirim ke tingkat nasional. 
-                                    Tim mahasiswa dapat melanjutkan ke tahap implementasi sesuai dengan rencana yang telah dibuat.
-                                </div>
-                                <div class="card bg-success text-white">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-trophy fa-3x mb-3"></i>
-                                        <h4>PROPOSAL LOLOS</h4>
-                                        <p class="mb-0">Proposal akan dikirim ke tingkat nasional untuk seleksi selanjutnya.</p>
-                                    </div>
-                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold">LOLOS FINAL</span>
                             @else
-                                <div class="alert alert-danger">
-                                    <i class="fas fa-times-circle me-2"></i>
-                                    <strong>Proposal TIDAK LOLOS</strong><br>
-                                    Proposal ini tidak lolos seleksi. Tim mahasiswa dapat melakukan perbaikan dan mengajukan kembali pada periode berikutnya.
-                                </div>
-                                <div class="card bg-danger text-white">
-                                    <div class="card-body text-center">
-                                        <i class="fas fa-times-circle fa-3x mb-3"></i>
-                                        <h4>PROPOSAL TIDAK LOLOS</h4>
-                                        <p class="mb-0">Proposal tidak lolos seleksi. Silakan lakukan perbaikan untuk pengajuan selanjutnya.</p>
-                                    </div>
-                                </div>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-bold">TIDAK LOLOS</span>
                             @endif
-                        @else
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Belum ada hasil final</strong><br>
-                                Hasil final akan muncul di sini setelah operator menentukan penilaian final.
+                        </div>
+                        @if($proposal->hasilFinal)
+                        <div class="col-sm-6">
+                            <small class="text-secondary fw-semibold d-block">Nilai Akhir</small>
+                            <span class="fw-bold fs-5 text-primary">@formatId($proposal->hasilFinal->nilai, 2)</span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Berkas Dokumen -->
+        <div class="col-lg-5">
+            <div class="ui-card h-100 shadow-sm">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-folder text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Dokumen Pendukung</h6>
+                    </div>
+                </div>
+                <div class="ui-card-body p-4">
+                    <div class="d-flex flex-column gap-2">
+                        @if($proposal->dokumen && $proposal->dokumen->file_proposal)
+                            <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'proposal']) }}" 
+                               class="btn btn-outline-primary rounded-3 py-2 px-3 d-flex align-items-center justify-content-between fw-semibold" target="_blank">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-file-pdf text-danger fs-5"></i>
+                                    <span>Unduh Naskah Proposal</span>
+                                </span>
+                                <i class="fas fa-download"></i>
+                            </a>
+                        @endif
+                        @if($proposal->dokumen && $proposal->dokumen->file_lampiran)
+                            <a href="{{ route('dosen.proposal.download', ['id' => $proposal->id_proposal, 'jenis' => 'lampiran']) }}" 
+                               class="btn btn-outline-secondary rounded-3 py-2 px-3 d-flex align-items-center justify-content-between fw-semibold" target="_blank">
+                                <span class="d-flex align-items-center gap-2">
+                                    <i class="fas fa-paperclip text-secondary fs-5"></i>
+                                    <span>Unduh Berkas Lampiran</span>
+                                </span>
+                                <i class="fas fa-download"></i>
+                            </a>
+                        @endif
+                        @if(!$proposal->dokumen || (!$proposal->dokumen->file_proposal && !$proposal->dokumen->file_lampiran))
+                            <div class="empty-state-box py-4">
+                                <i class="fas fa-file-alt text-muted mb-2 fs-1"></i>
+                                <p class="text-secondary small mb-0">Tidak ada berkas terlampir.</p>
                             </div>
                         @endif
                     </div>
@@ -245,14 +119,106 @@
             </div>
         </div>
     </div>
-</div>
-@endsection
 
-@section('dosen_scripts')
-<script>
-    // Auto refresh setiap 60 detik untuk update status final
-    setInterval(function() {
-        location.reload();
-    }, 60000);
-</script>
+    <!-- Hasil Keputusan Final Hero Card -->
+    <div class="ui-card shadow-sm mb-4">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-trophy text-warning"></i>
+                <h6 class="mb-0 fw-bold fs-6">Keputusan & Rekomendasi Hasil Akhir</h6>
+            </div>
+        </div>
+        <div class="ui-card-body p-4">
+            @if($proposal->hasilFinal)
+                <div class="p-4 rounded-3 {{ $proposal->status_final === 'lolos' ? 'bg-success-subtle border border-success-subtle' : 'bg-danger-subtle border border-danger-subtle' }} mb-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="rounded-circle p-3 {{ $proposal->status_final === 'lolos' ? 'bg-success text-white' : 'bg-danger text-white' }}">
+                            <i class="fas {{ $proposal->status_final === 'lolos' ? 'fa-award' : 'fa-times-circle' }} fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold {{ $proposal->status_final === 'lolos' ? 'text-success' : 'text-danger' }} mb-1">
+                                {{ $proposal->status_final === 'lolos' ? 'PROPOSAL LOLOS SELEKSI FINAL' : 'PROPOSAL BELUM BERHASIL LOLOS SELEKSI' }}
+                            </h5>
+                            <p class="text-dark small mb-0">
+                                {{ $proposal->status_final === 'lolos' ? 'Selamat! Proposal telah memenuhi standar substantif dan ditetapkan lolos untuk tahap pengusulan nasional Belmawa.' : 'Proposal belum memenuhi ambang batas passing grade seleksi final periode ini. Jadikan catatan evaluasi reviewer sebagai acuan perbaikan periode mendatang.' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                @if($proposal->hasilFinal->catatan_final)
+                    <div class="p-3 bg-light rounded-3 border">
+                        <strong class="small text-dark d-block mb-1"><i class="fas fa-comment text-primary me-1"></i>Catatan Keputusan Final:</strong>
+                        <div class="small text-secondary">{{ $proposal->hasilFinal->catatan_final }}</div>
+                    </div>
+                @endif
+            @else
+                <div class="empty-state-box py-4">
+                    <i class="fas fa-clock text-warning mb-2 fs-1"></i>
+                    <h6 class="fw-bold text-dark mb-1">Belum Ada Keputusan Final</h6>
+                    <p class="text-secondary small mb-0">Penetapan hasil akhir akan diumumkan setelah seluruh rangkaian penilaian diselesaikan oleh pengelola program.</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Evaluasi Administratif & Substantif -->
+    <div class="row g-4 mb-4">
+        <!-- Review Administratif -->
+        <div class="col-md-6">
+            <div class="ui-card h-100 shadow-sm">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-clipboard-check text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Review Administratif</h6>
+                    </div>
+                </div>
+                <div class="ui-card-body p-4">
+                    @if($proposal->nilaiAdministratif && $proposal->nilaiAdministratif->count() > 0)
+                        @php $adminRecord = $proposal->nilaiAdministratif->first(); @endphp
+                        <div class="p-3 rounded-3 bg-light border mb-3">
+                            <strong class="small text-dark d-block mb-1">Catatan Evaluator:</strong>
+                            <div class="small text-secondary">{{ $adminRecord->note_administratif ?? 'Tidak ada catatan tertulis.' }}</div>
+                        </div>
+                    @else
+                        <div class="empty-state-box py-3">
+                            <p class="text-secondary small mb-0">Belum ada evaluasi administratif tercatat.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Substantif -->
+        <div class="col-md-6">
+            <div class="ui-card h-100 shadow-sm">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-user-check text-info"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Review Substantif</h6>
+                    </div>
+                </div>
+                <div class="ui-card-body p-4">
+                    @if($proposal->nilaiSubstantif && $proposal->nilaiSubstantif->count() > 0)
+                        <div class="d-flex flex-column gap-2">
+                            @foreach($proposal->nilaiSubstantif as $index => $review)
+                                <div class="p-3 rounded-3 bg-light border">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="badge bg-primary-subtle text-primary border">Reviewer {{ $index + 1 }}</span>
+                                        <small class="text-muted">{{ $review->reviewer ? ($review->reviewer->nama_reviewer ?? $review->reviewer->name) : 'Reviewer' }}</small>
+                                    </div>
+                                    <div class="small text-secondary mt-1">{{ $review->note_substantif ?? $review->catatan ?? 'Tidak ada catatan khusus.' }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="empty-state-box py-3">
+                            <p class="text-secondary small mb-0">Belum ada evaluasi substantif tercatat.</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection

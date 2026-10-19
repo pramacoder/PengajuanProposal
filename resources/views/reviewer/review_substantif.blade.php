@@ -1,36 +1,49 @@
 @extends('mainlayout.app')
 
-@section('title', 'Review Substantif')
+@section('title', 'Review Substantif - Reviewer')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid px-4 py-3">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'url' => route('reviewer.dashboard')],
         ['label' => 'Review Substantif', 'active' => true],
     ]" />
 
-    {{-- Header + Filter --}}
-    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
-        <div>
-            <h1 class="h4 fw-bold mb-1" style="color: var(--text-900);">Review Substantif</h1>
-            <p class="mb-0" style="color: var(--text-600); font-size: 0.9rem;">Nilai kualitas konten dan substansi proposal yang ditugaskan</p>
-        </div>
-        <form method="GET" action="{{ route('reviewer.review.substantif') }}">
-            <div class="d-flex align-items-center gap-2">
-                <label class="form-label mb-0 fw-semibold" style="font-size:0.8rem;color:var(--text-600);">Tahun Ajaran</label>
-                <select name="tahun_ajaran" id="tahun_ajaran" class="form-select form-select-sm" onchange="this.form.submit()"
-                        style="border-color:var(--border);border-radius:8px;min-width:130px;font-size:0.85rem;">
-                    @foreach($tahunAjaranList as $tahunAjaran)
-                        <option value="{{ $tahunAjaran }}" {{ $tahunAjaranTerpilih == $tahunAjaran ? 'selected' : '' }}>
-                            {{ $tahunAjaran }}
-                        </option>
-                    @endforeach
-                </select>
+    <!-- Header Section -->
+    <x-page-header 
+        title="Review Substantif" 
+        subtitle="Penilaian kualitas konten, keilmiahan, dan substansi proposal PKM yang ditugaskan" 
+        badge="Reviewer Portal"
+        icon="fa-star-half-stroke"
+    />
+
+    <!-- Filter Card -->
+    <div class="filter-card mb-4">
+        <form method="GET" action="{{ route('reviewer.review.substantif') }}" class="row g-3 align-items-center">
+            <div class="col-md-4 col-lg-3">
+                <label class="form-label small fw-semibold text-secondary mb-1">Tahun Ajaran</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="fas fa-calendar-alt"></i>
+                    </span>
+                    <select name="tahun_ajaran" id="tahun_ajaran" class="form-select border-start-0 rounded-end-3" onchange="this.form.submit()">
+                        @foreach($tahunAjaranList as $tahunAjaran)
+                            <option value="{{ $tahunAjaran }}" {{ $tahunAjaranTerpilih == $tahunAjaran ? 'selected' : '' }}>
+                                {{ $tahunAjaran }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8 col-lg-9 text-md-end pt-md-3">
+                <span class="text-secondary small">
+                    <i class="fas fa-info-circle text-primary me-1"></i>Hanya proposal yang telah lolos review administratif yang dapat dinilai pada tahap ini.
+                </span>
             </div>
         </form>
     </div>
 
-    {{-- Stat mini-cards --}}
+    <!-- Stat mini-cards -->
     @php
         $totalAssigned   = $proposals->count();
         $completedReview = $proposals->filter(function($p) {
@@ -48,63 +61,87 @@
 
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon maroon"><i class="fas fa-file-alt"></i></div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Total Ditugaskan</div>
-                    <div class="stat-value">{{ $totalAssigned }}</div>
+            <div class="ui-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase tracking-wider">Total Ditugaskan</div>
+                        <div class="display-6 fw-bold text-primary mt-1">{{ $totalAssigned }}</div>
+                        <small class="text-muted">Proposal substantif</small>
+                    </div>
+                    <div class="p-3 bg-primary-subtle text-primary rounded-3">
+                        <i class="fas fa-file-alt fs-3"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-xl-3 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon green"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Selesai</div>
-                    <div class="stat-value">{{ $completedReview }}</div>
+            <div class="ui-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase tracking-wider">Review Selesai</div>
+                        <div class="display-6 fw-bold text-success mt-1">{{ $completedReview }}</div>
+                        <small class="text-muted">Telah dinilai</small>
+                    </div>
+                    <div class="p-3 bg-success-subtle text-success rounded-3">
+                        <i class="fas fa-check-circle fs-3"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-xl-3 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon teal"><i class="fas fa-play-circle"></i></div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Siap Review</div>
-                    <div class="stat-value">{{ $readyForReview }}</div>
+            <div class="ui-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase tracking-wider">Siap Direview</div>
+                        <div class="display-6 fw-bold text-info mt-1">{{ $readyForReview }}</div>
+                        <small class="text-muted">Admin selesai</small>
+                    </div>
+                    <div class="p-3 bg-info-subtle text-info rounded-3">
+                        <i class="fas fa-play-circle fs-3"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-xl-3 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon orange"><i class="fas fa-hourglass-half"></i></div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Menunggu Admin</div>
-                    <div class="stat-value">{{ $pendingReview }}</div>
+            <div class="ui-card p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase tracking-wider">Menunggu Admin</div>
+                        <div class="display-6 fw-bold text-warning mt-1">{{ $pendingReview }}</div>
+                        <small class="text-muted">Belum siap</small>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning rounded-3">
+                        <i class="fas fa-hourglass-half fs-3"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Proposal Table --}}
-    <div class="card card-custom mb-4">
-        <div class="card-header card-header-custom">
-            <i class="fas fa-star-half-alt"></i>
-            <span>Daftar Proposal — Review Substantif {{ $tahunAjaranTerpilih }}</span>
+    <!-- Proposal Table -->
+    <div class="ui-card mb-4">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-star-half-alt text-primary"></i>
+                <h6 class="mb-0 fw-bold fs-6">Daftar Usulan — Review Substantif ({{ $tahunAjaranTerpilih }})</h6>
+            </div>
+            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill small">
+                {{ $proposals->count() }} Usulan
+            </span>
         </div>
-        <div class="card-body p-0">
+        <div class="ui-card-body p-0">
             @if($proposals->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="dataTable" style="font-size:0.875rem;">
-                        <thead style="background:var(--surface-2);border-bottom:1px solid var(--border);">
+                    <table class="table table-modern align-middle mb-0" id="dataTable">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">No</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Judul Proposal</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Mahasiswa</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Dosen Pendamping</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Skim</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Status Review</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Ditugaskan</th>
-                                <th class="py-3 fw-semibold text-center" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Aksi</th>
+                                <th width="4%" class="text-center">No</th>
+                                <th width="30%">Judul Proposal</th>
+                                <th width="18%">Mahasiswa Pengaju</th>
+                                <th width="18%">Dosen Pendamping</th>
+                                <th width="8%" class="text-center">Skim</th>
+                                <th width="10%" class="text-center">Status Review</th>
+                                <th width="8%" class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -121,60 +158,48 @@
                                     } else {
                                         $reviewStatus = 'menunggu';
                                     }
-
-                                    $assignedDate = $substantifReview ? $substantifReview->created_at : $proposal->updated_at;
                                 @endphp
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td class="px-4 py-3" style="color:var(--text-400);">{{ $index + 1 }}</td>
-                                    <td class="py-3">
-                                        <div class="fw-semibold text-truncate" style="max-width:220px;color:var(--text-900);" title="{{ $proposal->judul_proposal }}">
+                                <tr>
+                                    <td class="text-center text-secondary small">{{ $index + 1 }}</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark text-truncate" style="max-width: 320px;" title="{{ $proposal->judul_proposal }}">
                                             {{ $proposal->judul_proposal }}
                                         </div>
+                                        <small class="text-muted"><i class="far fa-clock me-1"></i>{{ $proposal->updated_at->format('d/m/Y') }}</small>
                                     </td>
-                                    <td class="py-3">
-                                        <div class="fw-medium" style="color:var(--text-900);">{{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</div>
-                                        <div style="font-size:0.78rem;color:var(--text-400);">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</div>
+                                    <td>
+                                        <div class="fw-medium text-dark">{{ $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</div>
+                                        <small class="text-muted">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</small>
                                     </td>
-                                    <td class="py-3">
-                                        <div style="color:var(--text-700);">{{ $proposal->dosen->nama_dosen ?? 'N/A' }}</div>
-                                        <div style="font-size:0.78rem;color:var(--text-400);">{{ $proposal->dosen->nuptk ?? '' }}</div>
+                                    <td>
+                                        <div class="text-dark">{{ $proposal->dosen->nama_dosen ?? 'N/A' }}</div>
+                                        <small class="text-muted">{{ $proposal->dosen->nuptk ?? '' }}</small>
                                     </td>
-                                    <td class="py-3">
-                                        <span class="badge rounded-pill" style="background:rgba(8,145,178,0.1);color:#0891B2;font-size:0.72rem;padding:0.3rem 0.65rem;">
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill small fw-semibold">
                                             {{ $proposal->skim }}
                                         </span>
                                     </td>
-                                    <td class="py-3">
+                                    <td class="text-center">
                                         @if($reviewStatus === 'selesai')
-                                            <span class="badge rounded-pill" style="background:rgba(5,150,105,0.1);color:#059669;font-size:0.72rem;padding:0.3rem 0.65rem;">
-                                                <i class="fas fa-check me-1" style="font-size:0.6rem;"></i>Selesai
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">
+                                                <i class="fas fa-check me-1"></i>Selesai
                                             </span>
                                         @elseif($reviewStatus === 'siap')
-                                            <span class="badge rounded-pill" style="background:rgba(8,145,178,0.1);color:#0891B2;font-size:0.72rem;padding:0.3rem 0.65rem;">
-                                                <i class="fas fa-play me-1" style="font-size:0.6rem;"></i>Siap Review
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2.5 py-1 rounded-pill small">
+                                                <i class="fas fa-play me-1"></i>Siap Review
                                             </span>
                                         @else
-                                            <span class="badge rounded-pill" style="background:rgba(245,158,11,0.12);color:#D97706;font-size:0.72rem;padding:0.3rem 0.65rem;">
-                                                <i class="fas fa-hourglass-half me-1" style="font-size:0.6rem;"></i>Menunggu Admin
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1 rounded-pill small">
+                                                <i class="fas fa-clock me-1"></i>Menunggu Admin
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="py-3" style="color:var(--text-600);font-size:0.82rem;">
-                                        {{ $assignedDate ? $assignedDate->format('d/m/Y') : 'N/A' }}
-                                    </td>
-                                    <td class="py-3 text-center">
-                                        @if($adminReviewDone && $isAssignedSubstantif)
-                                            <a href="{{ route('reviewer.detail.proposal.substantif', $proposal->id_proposal) }}"
-                                               class="btn btn-sm fw-semibold"
-                                               style="background:var(--primary-100);color:var(--primary-700);border-radius:8px;padding:0.3rem 0.85rem;font-size:0.8rem;">
-                                                <i class="fas fa-eye me-1"></i>Review
-                                            </a>
-                                        @else
-                                            <button class="btn btn-sm fw-semibold" disabled
-                                                    style="background:var(--surface-2);color:var(--text-400);border-radius:8px;padding:0.3rem 0.85rem;font-size:0.8rem;">
-                                                <i class="fas fa-clock me-1"></i>Menunggu
-                                            </button>
-                                        @endif
+                                    <td class="text-center">
+                                        <a href="{{ route('reviewer.detail.proposal', $proposal->id_proposal) }}"
+                                           class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-semibold">
+                                            <i class="fas fa-eye me-1"></i>Review
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -182,101 +207,29 @@
                     </table>
                 </div>
             @else
-                <div class="text-center py-5">
-                    <div style="width:64px;height:64px;border-radius:16px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-                        <i class="fas fa-search" style="font-size:1.5rem;color:var(--text-400);"></i>
-                    </div>
-                    <h6 class="fw-semibold mb-1" style="color:var(--text-900);">Belum Ada Proposal</h6>
-                    <p style="color:var(--text-600);font-size:0.875rem;">Proposal akan muncul setelah operator menugaskan Anda sebagai reviewer substantif.</p>
+                <div class="empty-state-box">
+                    <i class="fas fa-inbox"></i>
+                    <h5 class="fw-bold text-dark">Tidak Ada Usulan Ditugaskan</h5>
+                    <p class="text-muted small">Belum ada usulan proposal yang ditugaskan untuk review substantif pada tahun ajaran ini.</p>
                 </div>
             @endif
         </div>
     </div>
-
-    {{-- Bottom info cards --}}
-    <div class="row g-3">
-        {{-- Panduan --}}
-        <div class="col-lg-6">
-            <div class="card card-custom h-100">
-                <div class="card-header card-header-custom">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Panduan Review Substantif</span>
-                </div>
-                <div class="card-body">
-                    <p class="mb-3" style="font-size:0.875rem;color:var(--text-600);">Review substantif meliputi penilaian kualitas konten dan substansi proposal:</p>
-                    <div class="d-flex flex-column gap-2">
-                        @foreach(['Kualitas dan orisinalitas ide', 'Metodologi penelitian', 'Kelayakan teknis dan ekonomis', 'Dampak dan manfaat', 'Kemampuan tim pelaksana', 'Kesinambungan program'] as $item)
-                            <div class="d-flex align-items-center gap-2" style="font-size:0.85rem;color:var(--text-700);">
-                                <div style="width:20px;height:20px;border-radius:6px;background:rgba(5,150,105,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                    <i class="fas fa-check" style="font-size:0.65rem;color:#059669;"></i>
-                                </div>
-                                {{ $item }}
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Kriteria Bobot + Progress --}}
-        <div class="col-lg-6">
-            <div class="card card-custom h-100">
-                <div class="card-header card-header-custom">
-                    <i class="fas fa-star"></i>
-                    <span>Kriteria Penilaian &amp; Progres</span>
-                </div>
-                <div class="card-body">
-                    {{-- Kriteria --}}
-                    <div class="mb-4">
-                        @foreach([['Kreativitas dan orisinalitas ide','25%','maroon'],['Kelayakan program','25%','maroon'],['Dampak dan manfaat','20%','maroon'],['Kemampuan tim pelaksana','15%','teal'],['Kesinambungan program','15%','teal']] as $k)
-                            <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--border);">
-                                <span style="font-size:0.83rem;color:var(--text-700);">{{ $k[0] }}</span>
-                                <span class="badge rounded-pill fw-bold" style="background:rgba(143,11,19,0.1);color:var(--primary-700);font-size:0.72rem;">{{ $k[1] }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    {{-- Progress --}}
-                    <div class="row text-center g-0 mb-3">
-                        <div class="col-4" style="border-right:1px solid var(--border);">
-                            <div class="fw-bold" style="font-size:1.5rem;color:#059669;">{{ $completedReview }}</div>
-                            <div style="font-size:0.75rem;color:var(--text-400);">Selesai</div>
-                        </div>
-                        <div class="col-4" style="border-right:1px solid var(--border);">
-                            <div class="fw-bold" style="font-size:1.5rem;color:#0891B2;">{{ $readyForReview }}</div>
-                            <div style="font-size:0.75rem;color:var(--text-400);">Siap</div>
-                        </div>
-                        <div class="col-4">
-                            <div class="fw-bold" style="font-size:1.5rem;color:#D97706;">{{ $pendingReview }}</div>
-                            <div style="font-size:0.75rem;color:var(--text-400);">Menunggu</div>
-                        </div>
-                    </div>
-                    @if($totalAssigned > 0)
-                        <div style="background:var(--surface-2);border-radius:100px;height:8px;overflow:hidden;">
-                            <div style="height:100%;width:{{ $progress }}%;background:linear-gradient(90deg,#059669,#34D399);border-radius:100px;transition:width 0.5s ease;"></div>
-                        </div>
-                        <div class="text-end mt-1" style="font-size:0.78rem;color:var(--text-400);">{{ $progress }}% selesai</div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
-
-<style>
-.stat-card-icon.orange { background: rgba(245,158,11,0.1); color: #D97706; }
-.stat-card-icon.teal   { background: rgba(8,145,178,0.1);  color: #0891B2; }
-</style>
+@endsection
 
 @push('scripts')
 <script>
     $(document).ready(function() {
-        $('#dataTable').DataTable({
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json' },
-            pageLength: 10,
-            order: [[0, 'asc']]
-        });
+        if ($('#dataTable tbody tr').length > 0) {
+            $('#dataTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json'
+                },
+                pageLength: 10,
+                order: [[0, 'asc']]
+            });
+        }
     });
 </script>
 @endpush
-@endsection

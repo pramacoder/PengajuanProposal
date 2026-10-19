@@ -11,101 +11,132 @@
 
     <!-- Header Section -->
     <x-page-header 
-        title="HASIL SEMI FINAL" 
-        subtitle="UNIVERSITAS UDAYANA" />
+        variant="enterprise"
+        badge="Monitoring Semi Final"
+        icon="fas fa-clipboard-check"
+        title="Hasil Penilaian Semi Final" 
+        subtitle="Monitoring evaluasi dan penetapan status kelolosan tingkat universitas untuk proposal PKM" />
     
     <!-- Filter and Search Section -->
-    <div class="row mb-4">
-        <div class="col-md-2">
-            <select class="form-select" id="yearSelector">
-                @php $currentYear = date('Y'); @endphp
-                @for($i = $currentYear; $i >= 2023; $i--)
-                    <option value="{{ $i }}" {{ $tahun == $i ? 'selected' : '' }}>{{ $i }}</option>
-                @endfor
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" id="filterSelector">
-                <option value="all" {{ $filter == 'all' ? 'selected' : '' }}>Filter by</option>
-                <option value="RE" {{ $filter == 'RE' ? 'selected' : '' }}>RE - Riset Eksakta</option>
-                <option value="RSH" {{ $filter == 'RSH' ? 'selected' : '' }}>RSH - Riset Sosial Humaniora</option>
-                <option value="KC" {{ $filter == 'KC' ? 'selected' : '' }}>KC - Kewirausahaan</option>
-                <option value="PM" {{ $filter == 'PM' ? 'selected' : '' }}>PM - Pengabdian Masyarakat</option>
-                <option value="PI" {{ $filter == 'PI' ? 'selected' : '' }}>PI - Penerapan IPTEK</option>
-                <option value="K" {{ $filter == 'K' ? 'selected' : '' }}>K - Karsa Cipta</option>
-                <option value="KI" {{ $filter == 'KI' ? 'selected' : '' }}>KI - Karya Inovatif</option>
-                <option value="VGK" {{ $filter == 'VGK' ? 'selected' : '' }}>VGK - Video Gagasan Konkret</option>
-                <option value="AI" {{ $filter == 'AI' ? 'selected' : '' }}>AI - Artikel Ilmiah</option>
-                <option value="GFT" {{ $filter == 'GFT' ? 'selected' : '' }}>GFT - Gagasan Futuristik Tertulis</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" id="statusRevisiSelector">
-                <option value="all" {{ $statusRevisi == 'all' ? 'selected' : '' }}>Status Revisi</option>
-                <option value="belum" {{ $statusRevisi == 'belum' ? 'selected' : '' }}>Belum Direvisi</option>
-                <option value="sudah" {{ $statusRevisi == 'sudah' ? 'selected' : '' }}>Sudah Direvisi</option>
-            </select>
-        </div>
-        <div class="col-md-6">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Cari judul proposal">
+    <div class="filter-card mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-sm-6 col-md-2">
+                <label for="yearSelector" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="fas fa-calendar-alt me-1 text-primary"></i> Tahun
+                </label>
+                <select class="form-select" id="yearSelector">
+                    @php $currentYear = date('Y'); @endphp
+                    @for($i = $currentYear; $i >= 2023; $i--)
+                        <option value="{{ $i }}" {{ $tahun == $i ? 'selected' : '' }}>{{ $i }}</option>
+                    @endfor
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-2">
+                <label for="filterSelector" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="fas fa-filter me-1 text-primary"></i> Skim PKM
+                </label>
+                <select class="form-select" id="filterSelector">
+                    <option value="all" {{ $filter == 'all' ? 'selected' : '' }}>Semua Skim</option>
+                    <option value="RE" {{ $filter == 'RE' ? 'selected' : '' }}>RE - Riset Eksakta</option>
+                    <option value="RSH" {{ $filter == 'RSH' ? 'selected' : '' }}>RSH - Riset Sosial Humaniora</option>
+                    <option value="KC" {{ $filter == 'KC' ? 'selected' : '' }}>KC - Kewirausahaan</option>
+                    <option value="PM" {{ $filter == 'PM' ? 'selected' : '' }}>PM - Pengabdian Masyarakat</option>
+                    <option value="PI" {{ $filter == 'PI' ? 'selected' : '' }}>PI - Penerapan IPTEK</option>
+                    <option value="K" {{ $filter == 'K' ? 'selected' : '' }}>K - Karsa Cipta</option>
+                    <option value="KI" {{ $filter == 'KI' ? 'selected' : '' }}>KI - Karya Inovatif</option>
+                    <option value="VGK" {{ $filter == 'VGK' ? 'selected' : '' }}>VGK - Video Gagasan Konkret</option>
+                    <option value="AI" {{ $filter == 'AI' ? 'selected' : '' }}>AI - Artikel Ilmiah</option>
+                    <option value="GFT" {{ $filter == 'GFT' ? 'selected' : '' }}>GFT - Gagasan Futuristik Tertulis</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <label for="statusRevisiSelector" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="fas fa-edit me-1 text-primary"></i> Status Revisi
+                </label>
+                <select class="form-select" id="statusRevisiSelector">
+                    <option value="all" {{ $statusRevisi == 'all' ? 'selected' : '' }}>Semua Status Revisi</option>
+                    <option value="belum" {{ $statusRevisi == 'belum' ? 'selected' : '' }}>Belum Direvisi</option>
+                    <option value="sudah" {{ $statusRevisi == 'sudah' ? 'selected' : '' }}>Sudah Direvisi</option>
+                </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-5">
+                <label for="searchInput" class="form-label small fw-semibold text-secondary mb-1">
+                    <i class="fas fa-search me-1 text-primary"></i> Pencarian
+                </label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0 text-muted">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Cari judul proposal...">
+                </div>
             </div>
         </div>
     </div>
     
     <!-- Results Table -->
-    <div class="card card-custom">
-        <div class="card-header card-header-custom">
-            <h5 class="mb-0">
-                <i class="fas fa-clipboard-check me-2"></i>
-                Hasil Semi Final
+    <div class="card card-custom shadow-sm border-0 mb-4">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold text-dark">
+                <i class="fas fa-clipboard-check me-2 text-primary"></i>
+                Daftar Penilaian Semi Final
             </h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1">
+                {{ count($proposals) }} Proposal
+            </span>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover" id="resultsTable">
-                    <thead class="table-dark">
+                <table class="table table-hover table-modern mb-0" id="resultsTable">
+                    <thead>
                         <tr>
-                            <th>No</th>
-                            <th>Judul</th>
-                            <th>Skim</th>
-                            <th>Mahasiswa</th>
-                            <th>Status Revisi</th>
-                            <th>Tanggal Revisi</th>
-                            <th>Hasil Semi Final</th>
-                            <th>Nilai</th>
-                            <th>Aksi</th>
+                            <th style="width: 50px;">No</th>
+                            <th style="min-width: 250px;">Judul Proposal</th>
+                            <th style="width: 90px;">Skim</th>
+                            <th style="min-width: 170px;">Ketua Pengusul</th>
+                            <th style="min-width: 130px;">Status Revisi</th>
+                            <th style="min-width: 130px;">Tanggal Revisi</th>
+                            <th style="min-width: 170px;">Hasil Semi Final</th>
+                            <th style="width: 90px;" class="text-center">Nilai</th>
+                            <th style="width: 120px;" class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($proposals as $index => $proposal)
                         <tr data-proposal-id="{{ $proposal->id_proposal }}">
-                            <td>{{ $index + 1 }}</td>
+                            <td class="text-muted fw-semibold">{{ $index + 1 }}</td>
                             <td>
-                                <strong>{{ $proposal->judul_proposal ?? 'Judul proposal..' }}</strong>
-                                <br><small class="text-muted">{{ Str::limit($proposal->judul_proposal, 50) }}</small>
+                                <strong class="text-dark d-block mb-1">{{ $proposal->judul_proposal ?? 'Judul proposal..' }}</strong>
+                                <small class="text-muted d-block">{{ Str::limit($proposal->judul_proposal, 60) }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-primary">{{ $proposal->skim ?? 'N/A' }}</span>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold">{{ $proposal->skim ?? 'N/A' }}</span>
                             </td>
                             <td>
-                                <strong>{{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}</strong>
-                                <br><small class="text-muted">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-sm rounded-circle bg-light d-flex align-items-center justify-content-center text-primary fw-bold flex-shrink-0" style="width: 30px; height: 30px; font-size: 12px; border: 1px solid rgba(13, 110, 253, 0.2);">
+                                        {{ strtoupper(substr($proposal->mahasiswa->nama_mahasiswa ?? $proposal->mahasiswa->nama_mhs ?? 'M', 0, 1)) }}
+                                    </div>
+                                    <div class="text-truncate">
+                                        <div class="fw-medium text-dark text-truncate">{{ $proposal->mahasiswa->nama_mahasiswa ?? $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</div>
+                                        <small class="text-muted">{{ $proposal->mahasiswa->nim ?? $proposal->mahasiswa->nim_mhs ?? 'N/A' }}</small>
+                                    </div>
+                                </div>
                             </td>
                             <td>
                                 @if($proposal->proposalRevisi->count() > 0)
-                                    <span class="badge bg-success">Sudah Direvisi</span>
-                                    <br><small class="text-muted">@formatId($proposal->proposalRevisi->count()) file</small>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="fas fa-check-circle me-1"></i>Sudah Direvisi
+                                    </span>
+                                    <small class="text-muted d-block mt-1">@formatId($proposal->proposalRevisi->count()) berkas</small>
                                 @else
-                                    <span class="badge bg-warning">Belum Direvisi</span>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                                        <i class="fas fa-clock me-1"></i>Belum Direvisi
+                                    </span>
                                 @endif
                             </td>
                             <td>
                                 @if($proposal->proposalRevisi->count() > 0)
-                                    <small class="text-muted">
+                                    <small class="text-secondary fw-medium">
                                         {{ \Carbon\Carbon::parse($proposal->proposalRevisi->first()->tanggal_submit)->format('d M Y H:i') }}
                                     </small>
                                 @else
@@ -115,43 +146,52 @@
                             <td>
                                 @if($proposal->hasilSemiFinal)
                                     @if($proposal->hasilSemiFinal->status_final == 'lolos_tingkat_universitas')
-                                        <span class="badge bg-success">Lolos Tingkat Universitas</span>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                            <i class="fas fa-check-circle me-1"></i>Lolos Universitas
+                                        </span>
                                     @else
-                                        <span class="badge bg-danger">Tidak Lolos Tingkat Universitas</span>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                                            <i class="fas fa-times-circle me-1"></i>Tidak Lolos
+                                        </span>
                                     @endif
                                 @else
-                                    <span class="badge bg-secondary">Belum Dinilai</span>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                        <i class="fas fa-hourglass-half me-1"></i>Belum Dinilai
+                                    </span>
                                 @endif
                             </td>
-                            <td>
+                            <td class="text-center">
                                 @if($proposal->hasilSemiFinal)
-                                    <span class="badge bg-primary fs-6">@formatId($proposal->hasilSemiFinal->nilai, 2)</span>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-2 py-1">
+                                        @formatId($proposal->hasilSemiFinal->nilai, 2)
+                                    </span>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-                            <td>
+                            <td class="text-center align-middle">
                                 @if(!$proposal->hasilSemiFinal)
                                     <a href="{{ route('pimpinan_pt.detail.hasil.semi.final', $proposal->id_proposal) }}" 
-                                       class="btn btn-sm btn-primary" 
+                                       class="btn btn-sm btn-primary w-100" 
                                        title="Tentukan Hasil Semi Final">
-                                        <i class="fas fa-gavel me-1"></i>Hasil Semi Final
+                                        <i class="fas fa-gavel me-1"></i>Nilai
                                     </a>
                                 @else
                                     <a href="{{ route('pimpinan_pt.detail.hasil.semi.final', $proposal->id_proposal) }}" 
-                                       class="btn btn-sm btn-success" 
+                                       class="btn btn-sm btn-outline-primary w-100" 
                                        title="Lihat Hasil Semi Final">
-                                        <i class="fas fa-eye me-1"></i>Lihat Hasil
+                                        <i class="fas fa-eye me-1"></i>Detail
                                     </a>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-inbox fa-3x mb-3"></i>
-                                    <p>Tidak ada proposal yang perlu dinilai semi final</p>
+                            <td colspan="9" class="text-center py-5">
+                                <div class="empty-state-box text-center py-4">
+                                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3 opacity-50"></i>
+                                    <h6 class="fw-bold text-dark">Tidak ada proposal yang ditemukan</h6>
+                                    <p class="text-muted small mb-0">Tidak ada proposal yang sesuai dengan kriteria filter semi final saat ini.</p>
                                 </div>
                             </td>
                         </tr>

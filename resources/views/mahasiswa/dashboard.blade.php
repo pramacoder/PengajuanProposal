@@ -105,148 +105,175 @@
 
     <x-page-header 
         title="Dashboard Mahasiswa" 
-        subtitle="UNIVERSITAS UDAYANA" />
-
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
-        <div>
-            <h5 class="fw-bold mb-1" style="color: var(--text-900); font-family: 'Inter', sans-serif;">
-                Selamat Datang, {{ auth()->user()->name }} 👋
-            </h5>
-        </div>
-    </div>
+        subtitle="Selamat datang kembali, {{ auth()->user()->name }}! Pantau tahapan dan kemajuan proposal PKM Anda."
+        icon="fa-graduation-cap">
+        <x-slot name="actions">
+            @if($phase1State === 'current')
+                <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Ajukan Proposal
+                </a>
+            @endif
+            <a href="{{ route('mahasiswa.proposal.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-list me-1"></i>Proposal Saya
+            </a>
+        </x-slot>
+    </x-page-header>
 
     {{-- Alert blocking proposal --}}
     @if(isset($blockingProposal) && $blockingProposal)
         <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
             <div class="d-flex align-items-center gap-3">
-                <i class="fas fa-info-circle fa-lg flex-shrink-0"></i>
+                <i class="fas fa-exclamation-triangle fa-lg flex-shrink-0 text-warning"></i>
                 <div>
                     <strong>Anda sudah terdaftar dalam proposal "{{ $blockingProposal->judul_proposal }}"</strong><br>
-                    <span>Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.</span>
+                    <span class="text-muted" style="font-size: 0.875rem;">Satu mahasiswa hanya dapat terdaftar dalam satu proposal PKM per tahun akademik.</span>
                 </div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
-    {{-- PKM Cycle Timeline Component --}}
-    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
-        <div class="card-body p-4">
-            <h5 class="fw-bold mb-5" style="color: var(--text-900);">Alur Waktu Siklus PKM</h5>
-            
-            <div class="timeline-container d-flex position-relative align-items-center justify-content-between mb-3 mt-3">
-                {{-- Phase 1 --}}
-                <div class="timeline-step flex-fill d-flex align-items-center position-relative">
-                    @if($phase1State === 'current') <div class="text-center position-absolute w-100 text-danger fw-bold d-flex flex-column align-items-center" style="bottom: 100%; font-size: 0.8rem; z-index: 10; margin-bottom: 2px;"><span>saat ini</span><i class="fa-solid fa-caret-down" style="font-size: 1.2rem; line-height: 1; margin-top: -2px;"></i></div> @endif
-                    <div class="timeline-bar text-center fw-semibold d-flex align-items-center justify-content-center" style="{{ $getPhaseStyle($phase1State) }} height: 36px; width: 100%; position: relative; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%);">
-                        Fase 1 
-                        @if($phase1State === 'ended') <span class="ms-2" style="font-size: 0.75rem; letter-spacing: 1px; color: rgba(255,255,255,0.7);">SELESAI</span> @endif
-                    </div>
-                </div>
-                
-                {{-- Phase 2 --}}
-                <div class="timeline-step flex-fill d-flex align-items-center position-relative ms-n3">
-                    @if($phase2State === 'current') <div class="text-center position-absolute w-100 text-danger fw-bold d-flex flex-column align-items-center" style="bottom: 100%; font-size: 0.8rem; z-index: 10; margin-bottom: 2px;"><span>saat ini</span><i class="fa-solid fa-caret-down" style="font-size: 1.2rem; line-height: 1; margin-top: -2px;"></i></div> @endif
-                    <div class="timeline-bar text-center fw-semibold d-flex align-items-center justify-content-center" style="{{ $getPhaseStyle($phase2State) }} height: 36px; width: 100%; position: relative; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%); padding-left: 15px;">
-                        Fase 2
-                        @if($phase2State === 'ended') <span class="ms-2" style="font-size: 0.75rem; letter-spacing: 1px; color: rgba(255,255,255,0.7);">SELESAI</span> @endif
-                    </div>
-                </div>
-
-                {{-- Phase 3 --}}
-                <div class="timeline-step flex-fill d-flex align-items-center position-relative ms-n3">
-                    @if($phase3State === 'current') <div class="text-center position-absolute w-100 text-danger fw-bold d-flex flex-column align-items-center" style="bottom: 100%; font-size: 0.8rem; z-index: 10; margin-bottom: 2px;"><span>saat ini</span><i class="fa-solid fa-caret-down" style="font-size: 1.2rem; line-height: 1; margin-top: -2px;"></i></div> @endif
-                    <div class="timeline-bar text-center fw-semibold d-flex align-items-center justify-content-center" style="{{ $getPhaseStyle($phase3State) }} height: 36px; width: 100%; position: relative; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%, 15px 50%); padding-left: 15px;">
-                        Fase 3
-                        @if($phase3State === 'ended') <span class="ms-2" style="font-size: 0.75rem; letter-spacing: 1px; color: rgba(255,255,255,0.7);">SELESAI</span> @endif
-                    </div>
-                </div>
-
-                {{-- Phase 4 --}}
-                <div class="timeline-step flex-fill d-flex align-items-center position-relative ms-n3">
-                    @if($phase4State === 'current') <div class="text-center position-absolute w-100 text-danger fw-bold d-flex flex-column align-items-center" style="bottom: 100%; font-size: 0.8rem; z-index: 10; margin-bottom: 2px;"><span>saat ini</span><i class="fa-solid fa-caret-down" style="font-size: 1.2rem; line-height: 1; margin-top: -2px;"></i></div> @endif
-                    <div class="timeline-bar text-center fw-semibold d-flex align-items-center justify-content-center" style="{{ $getPhaseStyle($phase4State) }} height: 36px; width: 100%; border-radius: 0 6px 6px 0; position: relative; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15px 50%); padding-left: 15px;">
-                        Fase 4
-                        @if($phase4State === 'ended') <span class="ms-2" style="font-size: 0.75rem; letter-spacing: 1px; color: rgba(255,255,255,0.7);">SELESAI</span> @endif
-                    </div>
-                </div>
-            </div>
-
-            <p class="mb-0 text-muted" style="font-size: 0.9rem;">
-                Fase Saat Ini ({{ $currentPhaseDates }}): <span class="fw-bold {{ $currentPhaseStatus === 'DIBUKA' ? 'text-success' : 'text-danger' }}">{{ $currentPhaseStatus }}</span> - {{ $currentPhaseName }}
-            </p>
-        </div>
-    </div>
-
     {{-- Info Banner Alert --}}
     @if(isset($ruangKontrol) && $ruangKontrol)
-        <div class="alert mb-4 border" role="alert" style="background-color: #f7e6e8; border-color: #9e2a2b !important; color: #4a0002; border-radius: 8px;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 text-white" style="width: 32px; height: 32px; background-color: #70151f;">
-                    <i class="fas fa-info fa-sm"></i>
-                </div>
-                <div>
-                    <strong style="font-size: 0.95rem;">{{ $alertBannerText }}</strong><br>
-                    <span style="font-size: 0.9rem;">
-                        {{ $alertBannerSub }}
-                    </span>
-                </div>
+        <div class="alert alert-info d-flex align-items-center gap-3 mb-4" role="alert">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: rgba(59, 130, 246, 0.15); color: #1D4ED8;">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="flex-grow-1">
+                <strong style="font-size: 0.95rem;">{{ $alertBannerText }}</strong>
+                <div class="text-muted" style="font-size: 0.875rem;">{{ $alertBannerSub }}</div>
+            </div>
+            <div class="text-end d-none d-md-block">
+                <span class="badge {{ $currentPhaseStatus === 'DIBUKA' ? 'bg-success' : 'bg-secondary' }} px-3 py-2">
+                    {{ $currentPhaseStatus }}
+                </span>
             </div>
         </div>
     @endif
+
+    {{-- PKM Cycle Timeline Stepper Component --}}
+    <div class="card card-custom mb-4">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-stream text-primary me-1"></i>
+                <h6 class="mb-0 fw-bold">Alur Waktu Siklus PKM {{ $ruangKontrolExists ? $ruangKontrol->tahun_ajaran : '' }}</h6>
+            </div>
+            <span class="badge bg-light text-dark border">
+                Fase Aktif: <strong class="{{ $currentPhaseStatus === 'DIBUKA' ? 'text-success' : 'text-danger' }}">{{ $currentPhaseName }}</strong>
+                @if($currentPhaseDates) ({{ $currentPhaseDates }}) @endif
+            </span>
+        </div>
+        <div class="card-body p-4">
+            <div class="stepper-nav">
+                {{-- Fase 1 --}}
+                <div class="stepper-item {{ $phase1State === 'current' ? 'active' : ($phase1State === 'ended' ? 'completed' : '') }}">
+                    <div class="stepper-badge">
+                        @if($phase1State === 'ended') <i class="fas fa-check"></i> @else 1 @endif
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.875rem;">Fase 1: Pendaftaran</div>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            @if($phase1State === 'ended') Selesai @elseif($phase1State === 'current') Berlangsung @else Mendatang @endif
+                        </small>
+                    </div>
+                </div>
+
+                {{-- Fase 2 --}}
+                <div class="stepper-item {{ $phase2State === 'current' ? 'active' : ($phase2State === 'ended' ? 'completed' : '') }}">
+                    <div class="stepper-badge">
+                        @if($phase2State === 'ended') <i class="fas fa-check"></i> @else 2 @endif
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.875rem;">Fase 2: Review</div>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            @if($phase2State === 'ended') Selesai @elseif($phase2State === 'current') Berlangsung @else Mendatang @endif
+                        </small>
+                    </div>
+                </div>
+
+                {{-- Fase 3 --}}
+                <div class="stepper-item {{ $phase3State === 'current' ? 'active' : ($phase3State === 'ended' ? 'completed' : '') }}">
+                    <div class="stepper-badge">
+                        @if($phase3State === 'ended') <i class="fas fa-check"></i> @else 3 @endif
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.875rem;">Fase 3: Perbaikan</div>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            @if($phase3State === 'ended') Selesai @elseif($phase3State === 'current') Berlangsung @else Mendatang @endif
+                        </small>
+                    </div>
+                </div>
+
+                {{-- Fase 4 --}}
+                <div class="stepper-item {{ $phase4State === 'current' ? 'active' : ($phase4State === 'ended' ? 'completed' : '') }}">
+                    <div class="stepper-badge">
+                        @if($phase4State === 'ended') <i class="fas fa-check"></i> @else 4 @endif
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.875rem;">Fase 4: Penilaian Akhir</div>
+                        <small class="text-muted d-block" style="font-size: 0.75rem;">
+                            @if($phase4State === 'ended') Selesai @elseif($phase4State === 'current') Berlangsung @else Mendatang @endif
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{-- Main Content Grid --}}
     <div class="row g-4">
         {{-- Left Column: Submissions Overview --}}
         <div class="col-lg-5">
-            <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
-                <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0" style="color: var(--text-900);">Ringkasan Proposal Saya</h5>
-                    <i class="far fa-question-circle text-muted"></i>
+            <div class="card card-custom h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-chart-pie text-primary me-1"></i>
+                        <h6 class="mb-0 fw-bold">Ringkasan Proposal Saya</h6>
+                    </div>
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3">
                         <div class="col-6">
-                            <div class="stat-card-modern p-3 border rounded-3 d-flex align-items-center gap-3" style="background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div class="rounded p-2" style="background-color: #fee2e2; color: #b91c1c;">
-                                    <i class="fas fa-file-alt fa-lg"></i>
+                            <div class="stat-card p-3">
+                                <div class="stat-card-icon maroon">
+                                    <i class="fas fa-file-alt"></i>
                                 </div>
-                                <div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Total Proposal</div>
-                                    <div class="fw-bold fs-4 text-dark">{{ $totalProposals }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="stat-card-modern p-3 border rounded-3 d-flex align-items-center gap-3" style="background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div class="rounded p-2" style="background-color: #fce7f3; color: #be185d;">
-                                    <i class="fas fa-eye fa-lg"></i>
-                                </div>
-                                <div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Sedang Direview</div>
-                                    <div class="fw-bold fs-4 text-dark">{{ $underReview }}</div>
+                                <div class="stat-card-info">
+                                    <div class="stat-label">Total Proposal</div>
+                                    <div class="stat-value">{{ $totalProposals }}</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="stat-card-modern p-3 border rounded-3 d-flex align-items-center gap-3" style="background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div class="rounded p-2" style="background-color: #f3e8ff; color: #7e22ce;">
-                                    <i class="fas fa-clock fa-lg"></i>
+                            <div class="stat-card p-3">
+                                <div class="stat-card-icon purple">
+                                    <i class="fas fa-search"></i>
                                 </div>
-                                <div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Menunggu Validasi</div>
-                                    <div class="fw-bold fs-4 text-dark">{{ $waitingValidation }}</div>
+                                <div class="stat-card-info">
+                                    <div class="stat-label">Sedang Review</div>
+                                    <div class="stat-value">{{ $underReview }}</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-6">
-                            <div class="stat-card-modern p-3 border rounded-3 d-flex align-items-center gap-3" style="background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div class="rounded p-2" style="background-color: #dcfce7; color: #15803d;">
-                                    <i class="fas fa-check-circle fa-lg"></i>
+                            <div class="stat-card p-3">
+                                <div class="stat-card-icon amber">
+                                    <i class="fas fa-clock"></i>
                                 </div>
-                                <div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">Disetujui</div>
-                                    <div class="fw-bold fs-4 text-dark">{{ $approved }}</div>
+                                <div class="stat-card-info">
+                                    <div class="stat-label">Menunggu Validasi</div>
+                                    <div class="stat-value">{{ $waitingValidation }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card p-3">
+                                <div class="stat-card-icon green">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-card-info">
+                                    <div class="stat-label">Disetujui</div>
+                                    <div class="stat-value">{{ $approved }}</div>
                                 </div>
                             </div>
                         </div>
@@ -257,14 +284,22 @@
 
         {{-- Right Column: Submissions Saya --}}
         <div class="col-lg-7">
-            <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
-                <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h5 class="fw-bold mb-0" style="color: var(--text-900);">Proposal Saya</h5>
+            <div class="card card-custom h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-folder-open text-primary me-1"></i>
+                        <h6 class="mb-0 fw-bold">Daftar Proposal Terbaru</h6>
+                    </div>
+                    @if($proposals->count() > 0)
+                        <a href="{{ route('mahasiswa.proposal.index') }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.8rem;">
+                            Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    @endif
                 </div>
-                <div class="card-body p-4">
+                <div class="card-body p-0">
                     @if($proposals->count() > 0)
                         <div class="table-responsive">
-                            <table class="table mb-0" id="dataTable">
+                            <table class="table table-modern align-middle mb-0" id="dataTable">
                                 <thead>
                                     <tr>
                                         <th>Judul Proposal</th>
@@ -278,15 +313,23 @@
                                     @foreach($proposals as $proposal)
                                     <tr>
                                         <td>
-                                            <div class="fw-500 text-truncate" style="max-width: 200px; font-weight: 500; color: var(--text-900);" title="{{ $proposal->judul_proposal }}">
+                                            <div class="fw-semibold text-truncate" style="max-width: 240px; color: var(--text-900);" title="{{ $proposal->judul_proposal }}">
                                                 {{ $proposal->judul_proposal }}
                                             </div>
                                         </td>
-                                        <td><span class="badge" style="background: var(--primary-100); color: var(--primary-700);">{{ $proposal->skim }}</span></td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary-emphasis fw-bold">
+                                                {{ $proposal->skim }}
+                                            </span>
+                                        </td>
                                         <td><x-status-badge :status="$proposal->status" /></td>
-                                        <td style="white-space: nowrap; color: var(--text-600); font-size: 0.875rem;">{{ \Carbon\Carbon::parse($proposal->created_at)->format('d M Y') }}</td>
+                                        <td class="text-muted" style="white-space: nowrap; font-size: 0.85rem;">
+                                            {{ \Carbon\Carbon::parse($proposal->created_at)->format('d M Y') }}
+                                        </td>
                                         <td class="text-center">
-                                            <a href="{{ route('mahasiswa.proposal.show', $proposal->id_proposal) }}" class="btn btn-sm btn-info" title="Lihat Detail"><i class="fas fa-eye"></i></a>
+                                            <a href="{{ route('mahasiswa.proposal.show', $proposal->id_proposal) }}" class="btn btn-sm btn-outline-primary" title="Lihat Detail">
+                                                <i class="fas fa-eye me-1"></i>Detail
+                                            </a>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -295,34 +338,27 @@
                         </div>
                     @else
                         {{-- Empty State Design --}}
-                        <div class="d-flex align-items-center gap-4 py-3">
-                            <div class="flex-shrink-0 text-center ms-4">
-                                {{-- Placeholder for illustration, using an icon if image not available --}}
-                                <i class="fas fa-folder-open text-muted opacity-25" style="font-size: 8rem;"></i>
+                        <div class="empty-state-box">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-folder-open"></i>
                             </div>
-                            <div>
-                                <p class="text-dark mb-1" style="font-size: 0.95rem;">
-                                    Anda belum mengajukan proposal apapun. Meskipun Fase 1 ditutup, Anda tetap dapat menyiapkan draf proposal.
-                                </p>
-                                <p class="fw-bold mb-4" style="color: var(--text-900);">
-                                    Belum Ada Proposal Diajukan. Mulai siapkan draf Anda!
-                                </p>
-                                <div class="d-flex gap-2">
-                                    <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $phase1State === 'current' ? 'Ajukan Sekarang' : 'Akan Aktif Saat Fase Pendaftaran Dibuka' }}">
-                                        @if($phase1State === 'current')
-                                            <a href="{{ route('mahasiswa.proposal.create') }}" class="btn text-white fw-medium px-4" style="background-color: #70151f; border-radius: 6px;">
-                                                Buat Draf Proposal Baru
-                                            </a>
-                                        @else
-                                            <button class="btn text-white fw-medium px-4" style="background-color: #70151f; border-radius: 6px;" disabled>
-                                                Buat Draf Proposal Baru
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <button class="btn btn-outline-dark fw-medium px-4" style="border-radius: 6px; border-color: #cbd5e1;">
-                                        Lihat Panduan PKM
+                            <div class="empty-state-title">Belum Ada Proposal Diajukan</div>
+                            <p class="empty-state-text">
+                                Anda belum memiliki proposal aktif. @if($phase1State === 'current') Fase pendaftaran saat ini sedang dibuka, silakan ajukan proposal tim Anda. @else Anda tetap dapat menyiapkan berkas draf sebelum jadwal dibuka. @endif
+                            </p>
+                            <div class="d-flex justify-content-center gap-2">
+                                @if($phase1State === 'current')
+                                    <a href="{{ route('mahasiswa.proposal.create') }}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus me-1"></i>Buat Draf Proposal Baru
+                                    </a>
+                                @else
+                                    <button class="btn btn-secondary btn-sm" disabled title="Fase pendaftaran belum dibuka">
+                                        <i class="fas fa-lock me-1"></i>Pendaftaran Ditutup
                                     </button>
-                                </div>
+                                @endif
+                                <a href="https://simbelmawa.kemdikbud.go.id" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-book me-1"></i>Panduan PKM
+                                </a>
                             </div>
                         </div>
                     @endif

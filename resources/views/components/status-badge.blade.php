@@ -2,6 +2,8 @@
     'status' => null,
     'label' => null,
     'class' => '',
+    'showIcon' => true,
+    'icon' => null,
 ])
 
 @php
@@ -69,10 +71,42 @@
         'finalized'                          => 'badge-status-final',
     ];
 
+    $iconMap = [
+        'pending'                            => 'fa-clock',
+        'valid'                              => 'fa-check-circle',
+        'tidak_valid'                        => 'fa-times-circle',
+        'draft'                              => 'fa-file-alt',
+        'submitted'                          => 'fa-paper-plane',
+        'validated'                          => 'fa-check-circle',
+        'review_administratif'               => 'fa-clipboard-check',
+        'review_substantif'                  => 'fa-search',
+        'review_substantif_seleksi'          => 'fa-award',
+        'review_completed'                   => 'fa-check-double',
+        'revisi'                             => 'fa-edit',
+        'validasi_2_valid'                   => 'fa-check-circle',
+        'revisi_akhir'                       => 'fa-file-signature',
+        'hasil_semi_final'                   => 'fa-list-ol',
+        'validasi_akhir_dosen_univ'          => 'fa-user-check',
+        'pimpinan_pt'                        => 'fa-stamp',
+        'lolos_tingkat_universitas'          => 'fa-trophy',
+        'tidak_lolos_tingkat_universitas'    => 'fa-times-circle',
+        'lolos_pimnas_pendanaan'             => 'fa-medal',
+        'lolos'                              => 'fa-check-circle',
+        'tidak_lolos'                        => 'fa-times-circle',
+        'terbuka'                            => 'fa-door-open',
+        'tertutup'                           => 'fa-door-closed',
+        'diterima'                           => 'fa-check-circle',
+        'ditolak'                            => 'fa-times-circle',
+    ];
+
     $resolvedLabel = $label ?? ($labelMap[$statusKey] ?? ucfirst(str_replace('_', ' ', $statusKey)));
     $resolvedClass = $classMap[$statusKey] ?? 'badge-status-draft';
+    $resolvedIcon = $icon ?? ($iconMap[$statusKey] ?? null);
 @endphp
 
-<span {{ $attributes->merge(['class' => "badge {$resolvedClass} {$class}"]) }}>
-    {{ $resolvedLabel }}
+<span {{ $attributes->merge(['class' => "badge {$resolvedClass} {$class} d-inline-flex align-items-center gap-1"]) }}>
+    @if($showIcon && $resolvedIcon)
+        <i class="fas {{ $resolvedIcon }} fa-xs"></i>
+    @endif
+    <span>{{ $resolvedLabel }}</span>
 </span>

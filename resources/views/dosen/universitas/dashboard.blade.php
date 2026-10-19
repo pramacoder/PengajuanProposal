@@ -3,120 +3,140 @@
 @section('title', 'Dashboard Dosen Pendamping Universitas')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid px-4 py-3">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'active' => true],
     ]" />
 
-    {{-- Welcome Header --}}
-    <div class="mb-4">
-        <h1 class="h4 fw-bold mb-1" style="color: var(--text-900);">
-            Selamat datang, <span style="color: var(--primary-700);">{{ \App\Helpers\UserHelper::getCurrentUserName() }}</span> 👋
-        </h1>
-        <p class="mb-0" style="color: var(--text-600); font-size: 0.9rem;">Dashboard Dosen Pendamping Universitas — Validasi akhir proposal yang ditugaskan</p>
-    </div>
+    <!-- Page Header -->
+    <x-page-header 
+        title="Dashboard Pendamping Universitas" 
+        subtitle="Selamat datang, {{ \App\Helpers\UserHelper::getCurrentUserName() }}. Validasi akhir proposal mahasiswa binaan tingkat universitas sebelum penetapan kelolosan." 
+        badge="Pendamping Universitas"
+        icon="fa-university"
+    >
+        <x-slot:actions>
+            <a href="{{ route('dosen.universitas.validasi.akhir') }}" class="btn btn-warning d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 fw-semibold text-dark shadow-sm">
+                <i class="fas fa-check-double"></i>
+                <span>Antrean Validasi Akhir</span>
+            </a>
+        </x-slot:actions>
+    </x-page-header>
 
-    {{-- Stat Cards --}}
+    <!-- Stat Metric Cards -->
     <div class="row g-3 mb-4">
         <div class="col-xl-4 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon orange">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Perlu Validasi Akhir</div>
-                    <div class="stat-value">{{ $proposalsValidasi->count() }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon green">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Sudah Valid</div>
-                    <div class="stat-value">{{ $proposalsValid->count() }}</div>
+            <div class="metric-card p-3 rounded-3 bg-white border shadow-sm h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-warning-subtle text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-semibold">Perlu Validasi Akhir</div>
+                        <div class="fs-4 fw-bold text-dark">{{ $proposalsValidasi->count() }}</div>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-4 col-sm-6">
-            <div class="stat-card">
-                <div class="stat-card-icon maroon">
-                    <i class="fas fa-file-alt"></i>
+            <div class="metric-card p-3 rounded-3 bg-white border shadow-sm h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-success-subtle text-success">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-semibold">Sudah Divalidasi</div>
+                        <div class="fs-4 fw-bold text-dark">{{ $proposalsValid->count() }}</div>
+                    </div>
                 </div>
-                <div class="stat-card-info">
-                    <div class="stat-label">Total Proposal</div>
-                    <div class="stat-value">{{ $proposals->count() }}</div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-sm-6">
+            <div class="metric-card p-3 rounded-3 bg-white border shadow-sm h-100">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-primary-subtle text-primary">
+                        <i class="fas fa-file-alt fa-2x"></i>
+                    </div>
+                    <div>
+                        <div class="text-secondary small fw-semibold">Total Usulan Didampingi</div>
+                        <div class="fs-4 fw-bold text-dark">{{ $proposals->count() }}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Proposal Table --}}
-    <div class="card card-custom">
-        <div class="card-header card-header-custom">
-            <i class="fas fa-list"></i>
-            <span>Daftar Proposal yang Didampingi</span>
+    <!-- Proposal Table Card -->
+    <div class="ui-card shadow-sm">
+        <div class="ui-card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-list text-primary"></i>
+                <h6 class="mb-0 fw-bold fs-6">Daftar Usulan Tingkat Universitas</h6>
+            </div>
         </div>
-        <div class="card-body p-0">
+        <div class="ui-card-body p-0">
             @if($proposals->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" style="font-size:0.875rem;">
-                        <thead style="background:var(--surface-2);border-bottom:1px solid var(--border);">
+                    <table class="table table-hover align-middle mb-0 table-modern">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">No</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Judul Proposal</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Skim</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Mahasiswa</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Status</th>
-                                <th class="py-3 fw-semibold" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Tanggal</th>
-                                <th class="py-3 fw-semibold text-center" style="color:var(--text-600);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.04em;">Aksi</th>
+                                <th style="width: 5%;" class="text-center py-3">No</th>
+                                <th style="width: 35%;" class="py-3">Judul Usulan Proposal</th>
+                                <th style="width: 10%;" class="py-3">Skim</th>
+                                <th style="width: 23%;" class="py-3">Mahasiswa Pengusul</th>
+                                <th style="width: 14%;" class="py-3">Status</th>
+                                <th style="width: 13%;" class="text-center py-3">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($proposals as $index => $proposal)
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td class="px-4 py-3" style="color:var(--text-400);">{{ $index + 1 }}</td>
-                                    <td class="py-3">
-                                        <div class="fw-medium text-truncate" style="max-width:240px;color:var(--text-900);">
-                                            {{ Str::limit($proposal->judul_proposal, 50) }}
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">{{ $index + 1 }}</td>
+                                    <td>
+                                        <div class="fw-semibold text-dark small line-clamp-2" title="{{ $proposal->judul_proposal }}">
+                                            {{ $proposal->judul_proposal }}
                                         </div>
+                                        <small class="text-muted">
+                                            <i class="far fa-calendar-alt me-1"></i>{{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d M Y') }}
+                                        </small>
                                     </td>
-                                    <td class="py-3">
-                                        <span class="badge rounded-pill" style="background:rgba(8,145,178,0.1);color:#0891B2;font-size:0.72rem;padding:0.3rem 0.65rem;">
+                                    <td>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
                                             {{ $proposal->skim }}
                                         </span>
                                     </td>
-                                    <td class="py-3">
-                                        <div class="fw-medium" style="color:var(--text-900);">{{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}</div>
-                                        <div style="font-size:0.78rem;color:var(--text-400);">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</div>
+                                    <td>
+                                        <div class="fw-bold text-dark small">{{ $proposal->mahasiswa->nama_mahasiswa ?? $proposal->mahasiswa->nama_mhs ?? 'N/A' }}</div>
+                                        <small class="text-muted">NIM: {{ $proposal->mahasiswa->nim ?? 'N/A' }}</small>
                                     </td>
-                                    <td class="py-3">
+                                    <td>
                                         @if($proposal->status == 'validasi_akhir_dosen_univ')
-                                            <span class="badge rounded-pill" style="background:rgba(245,158,11,0.12);color:#D97706;font-size:0.72rem;padding:0.3rem 0.65rem;">Perlu Validasi</span>
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">
+                                                Perlu Validasi
+                                            </span>
                                         @elseif($proposal->status_validasi == 'valid')
-                                            <span class="badge rounded-pill" style="background:rgba(5,150,105,0.1);color:#059669;font-size:0.72rem;padding:0.3rem 0.65rem;">Valid</span>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                Valid
+                                            </span>
                                         @elseif($proposal->status_validasi == 'tidak_valid')
-                                            <span class="badge rounded-pill" style="background:rgba(220,38,38,0.1);color:#DC2626;font-size:0.72rem;padding:0.3rem 0.65rem;">Tidak Valid</span>
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">
+                                                Tidak Valid
+                                            </span>
                                         @else
-                                            <span class="badge rounded-pill" style="background:var(--surface-2);color:var(--text-600);font-size:0.72rem;padding:0.3rem 0.65rem;">{{ ucfirst(str_replace('_', ' ', $proposal->status)) }}</span>
+                                            <x-status-badge :status="$proposal->status" />
                                         @endif
                                     </td>
-                                    <td class="py-3" style="color:var(--text-600);font-size:0.82rem;">
-                                        {{ \Carbon\Carbon::parse($proposal->tanggal_pengajuan)->format('d M Y') }}
-                                    </td>
-                                    <td class="py-3 text-center">
+                                    <td class="text-center">
                                         @if($proposal->status == 'validasi_akhir_dosen_univ')
                                             <a href="{{ route('dosen.universitas.validasi.akhir.detail', $proposal->id_proposal) }}"
-                                               class="btn btn-sm"
-                                               style="background:rgba(245,158,11,0.12);color:#D97706;border-radius:7px;padding:0.3rem 0.75rem;font-size:0.8rem;font-weight:600;">
+                                               class="btn btn-sm btn-warning rounded-pill px-3 fw-semibold text-dark shadow-sm">
                                                 <i class="fas fa-check-double me-1"></i>Validasi
                                             </a>
                                         @else
                                             <a href="{{ route('dosen.universitas.validasi.akhir.detail', $proposal->id_proposal) }}"
-                                               class="btn btn-sm"
-                                               style="background:var(--primary-100);color:var(--primary-700);border-radius:7px;padding:0.3rem 0.75rem;font-size:0.8rem;font-weight:600;">
+                                               class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
                                                 <i class="fas fa-eye me-1"></i>Detail
                                             </a>
                                         @endif
@@ -127,19 +147,17 @@
                     </table>
                 </div>
             @else
-                <div class="text-center py-5">
-                    <div style="width:64px;height:64px;border-radius:16px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
-                        <i class="fas fa-file-alt" style="font-size:1.5rem;color:var(--text-400);"></i>
+                <div class="empty-state-box py-5">
+                    <div class="rounded-circle p-4 bg-light text-secondary d-inline-flex mb-3">
+                        <i class="fas fa-file-alt fa-3x"></i>
                     </div>
-                    <h6 class="fw-semibold mb-1" style="color:var(--text-900);">Belum Ada Proposal</h6>
-                    <p style="color:var(--text-600);font-size:0.875rem;">Proposal yang Anda dampingi sebagai Dosen Pendamping Universitas akan muncul di sini.</p>
+                    <h5 class="fw-bold text-dark mb-1">Belum Ada Proposal Masuk</h5>
+                    <p class="text-secondary small mb-0" style="max-width: 480px;">
+                        Proposal mahasiswa yang masuk ke tahap pendampingan universitas akan muncul di sini.
+                    </p>
                 </div>
             @endif
         </div>
     </div>
 </div>
-
-<style>
-.stat-card-icon.orange { background: rgba(245,158,11,0.1); color: #D97706; }
-</style>
 @endsection

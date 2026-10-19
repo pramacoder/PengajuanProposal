@@ -3,206 +3,173 @@
 @section('title', 'Detail Proposal - Operator')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid px-4 py-3">
     <x-breadcrumb :items="[
         ['label' => 'Beranda', 'url' => route('operator.dashboard')],
         ['label' => 'Hasil Final', 'url' => route('operator.hasil.final')],
         ['label' => 'Detail Proposal', 'active' => true],
     ]" />
 
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="d-flex align-items-center">
-            <a href="{{ route('operator.hasil.final') }}" class="btn btn-outline-secondary me-3">
-                <i class="fas fa-arrow-left me-2"></i>Kembali
-            </a>
-            <div>
-                <h2 class="mb-0 fw-bold">Detail Proposal</h2>
-                <p class="text-muted mb-0">Review lengkap proposal dan tentukan hasil final</p>
+    <!-- Page Header -->
+    <x-page-header 
+        title="Detail Proposal PKM" 
+        subtitle="Evaluasi menyeluruh data usulan, anggota tim, berkas proposal, dan catatan review"
+        badge="Operator Workspace"
+        icon="fa-file-lines"
+    >
+        <x-slot:actions>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('operator.hasil.final') }}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 fw-semibold">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Kembali ke Daftar</span>
+                </a>
+                @if(!$proposal->hasilFinal)
+                    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#hasilFinalModal">
+                        <i class="fas fa-gavel"></i>
+                        <span>Tentukan Hasil Final</span>
+                    </button>
+                @else
+                    <span class="badge {{ $proposal->hasilFinal->status_final == 'lolos' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' }} px-3 py-2 rounded-pill fs-6 fw-bold">
+                        <i class="fas {{ $proposal->hasilFinal->status_final == 'lolos' ? 'fa-check-circle' : 'fa-times-circle' }} me-1"></i>
+                        Hasil: {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos Final' : 'Tidak Lolos' }}
+                    </span>
+                @endif
             </div>
-        </div>
-        <div>
-            @if(!$proposal->hasilFinal)
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#hasilFinalModal">
-                    <i class="fas fa-gavel me-2"></i>Tentukan Hasil Final
-                </button>
-            @else
-                <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }} fs-6">
-                    {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
-                </span>
-            @endif
-        </div>
-    </div>
-    
-    <hr class="mb-4">
-    
-    <!-- Proposal Information -->
-    <div class="row">
-        <!-- Left Column - Proposal Details -->
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="row g-4">
+        <!-- Left Column - Main Details -->
         <div class="col-lg-8">
-            <!-- Basic Information -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>Informasi Dasar Proposal
-                    </h5>
+            <!-- Basic Information Card -->
+            <div class="ui-card mb-4">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Informasi Proposal</h6>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill small">
+                        Skim: {{ $proposal->skim }}
+                    </span>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Judul Proposal</label>
-                                <p class="form-control-plaintext">{{ $proposal->judul_proposal }}</p>
-                            </div>
+                <div class="ui-card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3" style="line-height: 1.4;">
+                        {{ $proposal->judul_proposal }}
+                    </h5>
+
+                    <div class="row g-3 pt-2 border-top">
+                        <div class="col-sm-6 col-md-4">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Skim Kegiatan</label>
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill fw-semibold">{{ $proposal->skim }}</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Skim</label>
-                                <p class="form-control-plaintext">
-                                    <span class="badge bg-primary">{{ $proposal->skim }}</span>
-                                </p>
-                            </div>
+                        <div class="col-sm-6 col-md-4">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Usulan Dana</label>
+                            <span class="fw-bold text-primary">{{ $proposal->dana_formatted }}</span>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Dana Diajukan</label>
-                                <p class="form-control-plaintext">{{ $proposal->dana_formatted }}</p>
-                            </div>
+                        <div class="col-sm-6 col-md-4">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Tahun Akademik</label>
+                            <span class="fw-semibold text-dark">{{ $proposal->tahun_ajaran ?? 'N/A' }}</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tahun Ajaran</label>
-                                <p class="form-control-plaintext">{{ $proposal->tahun_ajaran ?? 'N/A' }}</p>
-                            </div>
+                        <div class="col-sm-6 col-md-4">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Tanggal Pengajuan</label>
+                            <span class="text-secondary"><i class="far fa-calendar-alt me-1"></i>{{ $proposal->tanggal_pengajuan->format('d F Y') }}</span>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tanggal Pengajuan</label>
-                                <p class="form-control-plaintext">{{ $proposal->tanggal_pengajuan->format('d F Y') }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Status Saat Ini</label>
-                                <p class="form-control-plaintext">
-                                    <span class="badge bg-{{ $proposal->status == 'lolos' ? 'success' : ($proposal->status == 'tidak_lolos' ? 'danger' : 'warning') }}">
-                                        {{ $proposal->status_label }}
-                                    </span>
-                                </p>
-                            </div>
+                        <div class="col-sm-6 col-md-4">
+                            <label class="small text-secondary fw-semibold d-block mb-1">Status Verifikasi</label>
+                            <x-status-badge :status="$proposal->status" :label="$proposal->status_label" />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Team Information -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-users me-2"></i>Informasi Tim
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="fw-bold text-primary">Ketua Tim</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Nama</label>
-                                <p class="form-control-plaintext">{{ $proposal->ketua_nama ?? 'N/A' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">NIM</label>
-                                <p class="form-control-plaintext">{{ $proposal->ketua_nim ?? 'N/A' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Prodi</label>
-                                <p class="form-control-plaintext">{{ $proposal->ketua_prodi ?? 'N/A' }}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="fw-bold text-primary">Anggota 1</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Nama</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota1_nama ?? 'N/A' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">NIM</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota1_nim ?? 'N/A' }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Prodi</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota1_prodi ?? 'N/A' }}</p>
-                            </div>
-                        </div>
+            <!-- Team Information Card -->
+            <div class="ui-card mb-4">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-users text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Susunan Tim Mahasiswa</h6>
                     </div>
-                    
-                    @if($proposal->anggota2_nama)
-                    <div class="row">
+                    <span class="badge bg-light text-secondary border px-2 py-0.5 small">
+                        Ketua & Anggota
+                    </span>
+                </div>
+                <div class="ui-card-body p-4">
+                    <div class="row g-3">
+                        <!-- Ketua Tim -->
                         <div class="col-md-6">
-                            <h6 class="fw-bold text-primary">Anggota 2</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Nama</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota2_nama }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">NIM</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota2_nim }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Prodi</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota2_prodi }}</p>
+                            <div class="p-3 rounded-3 border bg-light h-100" style="border-left: 4px solid var(--primary-700) !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-primary text-white px-2 py-0.5 rounded-pill small fw-semibold">Ketua Tim</span>
+                                    <i class="fas fa-crown text-warning"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">{{ $proposal->ketua_nama ?? 'N/A' }}</h6>
+                                <div class="small text-secondary mb-0.5">NIM: <strong class="text-dark">{{ $proposal->ketua_nim ?? 'N/A' }}</strong></div>
+                                <div class="small text-secondary">Prodi: <strong class="text-dark">{{ $proposal->ketua_prodi ?? 'N/A' }}</strong></div>
                             </div>
                         </div>
+
+                        <!-- Anggota 1 -->
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 border bg-white h-100">
+                                <span class="badge bg-light text-secondary border px-2 py-0.5 rounded-pill small fw-semibold mb-2 d-inline-block">Anggota 1</span>
+                                <h6 class="fw-bold text-dark mb-1">{{ $proposal->anggota1_nama ?? 'N/A' }}</h6>
+                                <div class="small text-secondary mb-0.5">NIM: <strong class="text-dark">{{ $proposal->anggota1_nim ?? 'N/A' }}</strong></div>
+                                <div class="small text-secondary">Prodi: <strong class="text-dark">{{ $proposal->anggota1_prodi ?? 'N/A' }}</strong></div>
+                            </div>
+                        </div>
+
+                        @if($proposal->anggota2_nama)
+                        <div class="col-md-6">
+                            <div class="p-3 rounded-3 border bg-white h-100">
+                                <span class="badge bg-light text-secondary border px-2 py-0.5 rounded-pill small fw-semibold mb-2 d-inline-block">Anggota 2</span>
+                                <h6 class="fw-bold text-dark mb-1">{{ $proposal->anggota2_nama }}</h6>
+                                <div class="small text-secondary mb-0.5">NIM: <strong class="text-dark">{{ $proposal->anggota2_nim }}</strong></div>
+                                <div class="small text-secondary">Prodi: <strong class="text-dark">{{ $proposal->anggota2_prodi }}</strong></div>
+                            </div>
+                        </div>
+                        @endif
+
                         @if($proposal->anggota3_nama)
                         <div class="col-md-6">
-                            <h6 class="fw-bold text-primary">Anggota 3</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Nama</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota3_nama }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">NIM</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota3_nim }}</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Prodi</label>
-                                <p class="form-control-plaintext">{{ $proposal->anggota3_prodi }}</p>
+                            <div class="p-3 rounded-3 border bg-white h-100">
+                                <span class="badge bg-light text-secondary border px-2 py-0.5 rounded-pill small fw-semibold mb-2 d-inline-block">Anggota 3</span>
+                                <h6 class="fw-bold text-dark mb-1">{{ $proposal->anggota3_nama }}</h6>
+                                <div class="small text-secondary mb-0.5">NIM: <strong class="text-dark">{{ $proposal->anggota3_nim }}</strong></div>
+                                <div class="small text-secondary">Prodi: <strong class="text-dark">{{ $proposal->anggota3_prodi }}</strong></div>
                             </div>
                         </div>
                         @endif
                     </div>
-                    @endif
                 </div>
             </div>
 
-            <!-- Review Information -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-clipboard-check me-2"></i>Hasil Review
-                    </h5>
+            <!-- Review Information Card -->
+            <div class="ui-card mb-4">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-clipboard-check text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Hasil & Catatan Review</h6>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="ui-card-body p-4">
                     <!-- Review Administratif -->
                     <div class="mb-4">
-                        <h6 class="fw-bold text-primary">Review Administratif</h6>
+                        <h6 class="fw-bold text-secondary text-uppercase small mb-3">
+                            <i class="fas fa-check-double text-primary me-1"></i> Review Administratif
+                        </h6>
                         @if($proposal->nilaiAdministratif->count() > 0)
                             @foreach($proposal->nilaiAdministratif as $review)
-                                <div class="border rounded p-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <strong>Reviewer: {{ $review->reviewer->nama_reviewer ?? 'N/A' }}</strong>
+                                <div class="p-3 rounded-3 border bg-light mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="fw-semibold text-dark">
+                                            <i class="fas fa-user-tie text-muted me-1"></i>{{ $review->reviewer->nama_reviewer ?? 'Reviewer' }}
+                                        </div>
                                         <small class="text-muted">{{ $review->created_at->format('d/m/Y H:i') }}</small>
                                     </div>
                                     @if($review->checklist)
                                         <div class="mb-2">
-                                            <strong>Checklist Kesalahan:</strong>
-                                            <ul class="mb-0">
+                                            <span class="small fw-bold text-danger">Kekurangan Administratif:</span>
+                                            <ul class="mb-0 small text-danger ps-3 mt-1">
                                                 @foreach($review->checklist as $item)
                                                     <li>{{ $item }}</li>
                                                 @endforeach
@@ -210,94 +177,91 @@
                                         </div>
                                     @endif
                                     @if($review->note_administratif)
-                                        <div>
-                                            <strong>Catatan:</strong>
-                                            <p class="mb-0">{{ $review->note_administratif }}</p>
+                                        <div class="mt-2 pt-2 border-top small">
+                                            <strong class="text-secondary">Catatan:</strong>
+                                            <p class="mb-0 text-dark">{{ $review->note_administratif }}</p>
                                         </div>
                                     @endif
                                 </div>
                             @endforeach
                         @else
-                            <p class="text-muted">Belum ada review administratif</p>
+                            <p class="text-muted small fst-italic mb-0">Belum ada evaluasi administratif.</p>
                         @endif
                     </div>
 
                     <!-- Review Substantif -->
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-primary">Review Substantif</h6>
+                    <div>
+                        <h6 class="fw-bold text-secondary text-uppercase small mb-3">
+                            <i class="fas fa-search-plus text-info me-1"></i> Review Substantif
+                        </h6>
                         @if($proposal->nilaiSubstantif->count() > 0)
                             @foreach($proposal->nilaiSubstantif as $review)
-                                <div class="border rounded p-3 mb-3">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <strong>Reviewer: {{ $review->reviewer->nama_reviewer ?? 'N/A' }}</strong>
+                                <div class="p-3 rounded-3 border bg-light mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="fw-semibold text-dark">
+                                            <i class="fas fa-user-tie text-muted me-1"></i>{{ $review->reviewer->nama_reviewer ?? 'Reviewer' }}
+                                        </div>
                                         <small class="text-muted">{{ $review->created_at->format('d/m/Y H:i') }}</small>
                                     </div>
                                     @if($review->note_substantif)
-                                        <div>
-                                            <strong>Catatan:</strong>
-                                            <p class="mb-0">{{ $review->note_substantif }}</p>
+                                        <div class="small">
+                                            <strong class="text-secondary">Catatan:</strong>
+                                            <p class="mb-0 text-dark">{{ $review->note_substantif }}</p>
                                         </div>
                                     @endif
                                 </div>
                             @endforeach
                         @else
-                            <p class="text-muted">Belum ada review substantif</p>
+                            <p class="text-muted small fst-italic mb-0">Belum ada evaluasi substantif.</p>
                         @endif
                     </div>
                 </div>
             </div>
 
-            <!-- Revisi Information -->
+            <!-- Revisi Information Card -->
             @if($proposal->proposalRevisi->count() > 0)
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-edit me-2"></i>Riwayat Revisi
-                    </h5>
+            <div class="ui-card mb-4">
+                <div class="ui-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-history text-primary"></i>
+                        <h6 class="mb-0 fw-bold fs-6">Riwayat Berkas Revisi</h6>
+                    </div>
+                    <span class="badge bg-light text-secondary border px-2 py-0.5 small">
+                        Total: {{ $proposal->proposalRevisi->count() }} revisi
+                    </span>
                 </div>
-                <div class="card-body">
+                <div class="ui-card-body p-4">
                     @foreach($proposal->proposalRevisi as $index => $revisi)
-                        <div class="border rounded p-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <strong>Revisi #{{ $index + 1 }}</strong>
-                                <span class="badge bg-{{ $revisi->status_revisi == 'approved' ? 'success' : ($revisi->status_revisi == 'rejected' ? 'danger' : 'info') }}">
+                        <div class="p-3 rounded-3 border bg-light mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-dark">Revisi #{{ $index + 1 }}</span>
+                                <span class="badge {{ $revisi->status_revisi == 'approved' ? 'bg-success-subtle text-success border border-success-subtle' : ($revisi->status_revisi == 'rejected' ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info') }} px-2 py-0.5 rounded-pill small">
                                     {{ ucfirst(str_replace('_', ' ', $revisi->status_revisi)) }}
                                 </span>
                             </div>
                             
-                            <div class="row mb-2">
-                                <div class="col-md-6">
-                                    <small class="text-muted">Tanggal Submit: {{ $revisi->tanggal_submit ? $revisi->tanggal_submit->format('d/m/Y H:i') : 'N/A' }}</small>
+                            <div class="row g-2 mb-2 small text-secondary">
+                                <div class="col-sm-6">
+                                    <i class="far fa-calendar-alt me-1"></i> Submit: {{ $revisi->tanggal_submit ? $revisi->tanggal_submit->format('d/m/Y H:i') : '-' }}
                                 </div>
-                                <div class="col-md-6">
-                                    <small class="text-muted">Ukuran File: {{ $revisi->ukuran_file_readable }}</small>
+                                <div class="col-sm-6">
+                                    <i class="fas fa-file-pdf me-1"></i> Ukuran: {{ $revisi->ukuran_file_readable }}
                                 </div>
                             </div>
                             
                             @if($revisi->catatan_mahasiswa)
-                                <div class="mb-2">
-                                    <strong>Catatan Mahasiswa:</strong>
-                                    <p class="mb-0">{{ $revisi->catatan_mahasiswa }}</p>
-                                </div>
+                                <div class="small mb-1"><strong class="text-secondary">Catatan Mahasiswa:</strong> <span class="text-dark">{{ $revisi->catatan_mahasiswa }}</span></div>
                             @endif
-                            
                             @if($revisi->catatan_reviewer)
-                                <div class="mb-2">
-                                    <strong>Catatan Reviewer:</strong>
-                                    <p class="mb-0">{{ $revisi->catatan_reviewer }}</p>
-                                </div>
+                                <div class="small mb-1"><strong class="text-secondary">Catatan Reviewer:</strong> <span class="text-dark">{{ $revisi->catatan_reviewer }}</span></div>
                             @endif
-                            
                             @if($revisi->catatan_operator)
-                                <div class="mb-2">
-                                    <strong>Catatan Operator:</strong>
-                                    <p class="mb-0">{{ $revisi->catatan_operator }}</p>
-                                </div>
+                                <div class="small mb-2"><strong class="text-secondary">Catatan Operator:</strong> <span class="text-dark">{{ $revisi->catatan_operator }}</span></div>
                             @endif
                             
-                            <div class="mt-2">
-                                <a href="{{ $revisi->file_url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-download me-1"></i>Download File
+                            <div class="pt-2 border-top">
+                                <a href="{{ $revisi->file_url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-3 px-3">
+                                    <i class="fas fa-download me-1"></i> Unduh File Revisi
                                 </a>
                             </div>
                         </div>
@@ -307,126 +271,108 @@
             @endif
         </div>
 
-        <!-- Right Column - Actions and Status -->
+        <!-- Right Column - Sidebar Summary -->
         <div class="col-lg-4">
-            <!-- Status Summary -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-chart-pie me-2"></i>Status Summary
-                    </h5>
+            <!-- Status Summary Card -->
+            <div class="ui-card mb-4">
+                <div class="ui-card-header">
+                    <h6 class="mb-0 fw-bold fs-6"><i class="fas fa-chart-pie text-primary me-2"></i>Ringkasan Status</h6>
                 </div>
-                <div class="card-body">
+                <div class="ui-card-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Status Validasi</label>
-                        <p class="form-control-plaintext">
-                            <span class="badge bg-{{ $proposal->status_validasi == 'valid' ? 'success' : ($proposal->status_validasi == 'tidak_valid' ? 'danger' : 'warning') }}">
-                                {{ ucfirst(str_replace('_', ' ', $proposal->status_validasi)) }}
+                        <label class="small text-secondary fw-semibold d-block mb-1">Status Validasi Dosen</label>
+                        <span class="badge {{ $proposal->status_validasi == 'valid' ? 'bg-success-subtle text-success border border-success-subtle' : ($proposal->status_validasi == 'tidak_valid' ? 'bg-danger-subtle text-danger' : 'bg-warning-subtle text-warning') }} px-2.5 py-1 rounded-pill small">
+                            {{ ucfirst(str_replace('_', ' ', $proposal->status_validasi)) }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="small text-secondary fw-semibold d-block mb-1">Status Revisi</label>
+                        @if($proposal->proposalRevisi->count() > 0)
+                            @php
+                                $revisiTerbaru = $proposal->revisiTerbaru;
+                                $statusClass = $revisiTerbaru->status_revisi == 'approved' ? 'bg-success-subtle text-success' : ($revisiTerbaru->status_revisi == 'rejected' ? 'bg-danger-subtle text-danger' : 'bg-info-subtle text-info');
+                            @endphp
+                            <span class="badge {{ $statusClass }} px-2.5 py-1 rounded-pill small">
+                                {{ ucfirst(str_replace('_', ' ', $revisiTerbaru->status_revisi)) }}
                             </span>
-                        </p>
+                        @else
+                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1 rounded-pill small">Belum Direvisi</span>
+                        @endif
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Status Revisi</label>
-                        <p class="form-control-plaintext">
-                            @if($proposal->proposalRevisi->count() > 0)
-                                @php
-                                    $revisiTerbaru = $proposal->revisiTerbaru;
-                                    $statusClass = $revisiTerbaru->status_revisi == 'approved' ? 'success' : ($revisiTerbaru->status_revisi == 'rejected' ? 'danger' : 'info');
-                                @endphp
-                                <span class="badge bg-{{ $statusClass }}">
-                                    {{ ucfirst(str_replace('_', ' ', $revisiTerbaru->status_revisi)) }}
-                                </span>
-                            @else
-                                <span class="badge bg-secondary">Belum Direvisi</span>
-                            @endif
-                        </p>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Hasil Final</label>
-                        <p class="form-control-plaintext">
-                            @if($proposal->hasilFinal)
-                                <span class="badge bg-{{ $proposal->hasilFinal->status_final == 'lolos' ? 'success' : 'danger' }}">
-                                    {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
-                                </span>
-                            @else
-                                <span class="badge bg-secondary">Belum Dinilai</span>
-                            @endif
-                        </p>
+                    <div>
+                        <label class="small text-secondary fw-semibold d-block mb-1">Hasil Final Pimpinan PT</label>
+                        @if($proposal->hasilFinal)
+                            <span class="badge {{ $proposal->hasilFinal->status_final == 'lolos' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger' }} px-2.5 py-1 rounded-pill small">
+                                {{ $proposal->hasilFinal->status_final == 'lolos' ? 'Lolos' : 'Tidak Lolos' }}
+                            </span>
+                        @else
+                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1 rounded-pill small">Belum Dinilai</span>
+                        @endif
                     </div>
                 </div>
             </div>
 
-            <!-- Dosen Pendamping -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-user-tie me-2"></i>Dosen Pendamping
-                    </h5>
+            <!-- Dosen Pendamping Card -->
+            <div class="ui-card mb-4">
+                <div class="ui-card-header">
+                    <h6 class="mb-0 fw-bold fs-6"><i class="fas fa-user-tie text-primary me-2"></i>Dosen Pendamping</h6>
                 </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nama</label>
-                        <p class="form-control-plaintext">{{ $proposal->dosen->nama_dosen ?? 'N/A' }}</p>
+                <div class="ui-card-body p-4 small">
+                    <div class="mb-2">
+                        <span class="text-secondary d-block mb-0.5">Nama Lengkap</span>
+                        <strong class="text-dark">{{ $proposal->dosen->nama_dosen ?? 'N/A' }}</strong>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">NIDN</label>
-                        <p class="form-control-plaintext">{{ $proposal->dosen->nidn ?? 'N/A' }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Email</label>
-                        <p class="form-control-plaintext">{{ $proposal->dosen->email_dosen ?? 'N/A' }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Mahasiswa Pengaju -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-user-graduate me-2"></i>Mahasiswa Pengaju
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nama</label>
-                        <p class="form-control-plaintext">{{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">NIM</label>
-                        <p class="form-control-plaintext">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Email</label>
-                        <p class="form-control-plaintext">{{ $proposal->mahasiswa->email_mahasiswa ?? 'N/A' }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Document Download -->
-            @if($proposal->dokumen)
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-file-pdf me-2"></i>Dokumen Proposal
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">File Original</label>
-                        <p class="form-control-plaintext">{{ $proposal->dokumen->nama_file ?? 'N/A' }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Ukuran</label>
-                        <p class="form-control-plaintext">@formatId($proposal->dokumen->ukuran_file / 1024, 2) KB</p>
+                    <div class="mb-2">
+                        <span class="text-secondary d-block mb-0.5">NIDN</span>
+                        <strong class="text-dark">{{ $proposal->dosen->nidn ?? 'N/A' }}</strong>
                     </div>
                     <div>
-                        <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" 
-                           target="_blank" class="btn btn-primary w-100">
-                            <i class="fas fa-download me-2"></i>Download PDF
-                        </a>
+                        <span class="text-secondary d-block mb-0.5">Email</span>
+                        <strong class="text-dark">{{ $proposal->dosen->email_dosen ?? 'N/A' }}</strong>
                     </div>
+                </div>
+            </div>
+
+            <!-- Mahasiswa Pengaju Card -->
+            <div class="ui-card mb-4">
+                <div class="ui-card-header">
+                    <h6 class="mb-0 fw-bold fs-6"><i class="fas fa-user-graduate text-primary me-2"></i>Mahasiswa Pengaju</h6>
+                </div>
+                <div class="ui-card-body p-4 small">
+                    <div class="mb-2">
+                        <span class="text-secondary d-block mb-0.5">Nama Lengkap</span>
+                        <strong class="text-dark">{{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}</strong>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-secondary d-block mb-0.5">NIM</span>
+                        <strong class="text-dark">{{ $proposal->mahasiswa->nim ?? 'N/A' }}</strong>
+                    </div>
+                    <div>
+                        <span class="text-secondary d-block mb-0.5">Email</span>
+                        <strong class="text-dark">{{ $proposal->mahasiswa->email_mahasiswa ?? 'N/A' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dokumen Proposal Card -->
+            @if($proposal->dokumen)
+            <div class="ui-card mb-4">
+                <div class="ui-card-header">
+                    <h6 class="mb-0 fw-bold fs-6"><i class="fas fa-file-pdf text-danger me-2"></i>Berkas Proposal</h6>
+                </div>
+                <div class="ui-card-body p-4">
+                    <div class="small text-secondary mb-1">Nama Berkas:</div>
+                    <div class="fw-bold text-dark text-truncate mb-2" title="{{ $proposal->dokumen->nama_file ?? 'Proposal.pdf' }}">
+                        {{ $proposal->dokumen->nama_file ?? 'Proposal.pdf' }}
+                    </div>
+                    <div class="small text-muted mb-3">
+                        Ukuran: @formatId($proposal->dokumen->ukuran_file / 1024, 2) KB
+                    </div>
+                    <a href="{{ route('file.serve', ['path' => $proposal->dokumen->path_file]) }}" target="_blank" class="btn btn-primary w-100 rounded-3 py-2 fw-semibold">
+                        <i class="fas fa-download me-1"></i> Unduh File PDF
+                    </a>
                 </div>
             </div>
             @endif
@@ -437,60 +383,60 @@
 <!-- Modal Hasil Final -->
 @if(!$proposal->hasilFinal)
 <div class="modal fade" id="hasilFinalModal" tabindex="-1" aria-labelledby="hasilFinalModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="hasilFinalModalLabel">
-                    <i class="fas fa-gavel me-2"></i>Tentukan Hasil Final
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fs-6 fw-bold" id="hasilFinalModalLabel">
+                    <i class="fas fa-gavel me-2"></i>Tentukan Hasil Penilaian Final
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="hasilFinalForm">
                     <input type="hidden" id="proposalId" name="proposal_id" value="{{ $proposal->id_proposal }}">
                     
-                    <div class="row mb-3">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Judul Proposal</label>
-                            <input type="text" class="form-control" value="{{ $proposal->judul_proposal }}" readonly>
+                            <label class="form-label small fw-semibold text-secondary">Judul Proposal</label>
+                            <input type="text" class="form-control form-control-sm rounded-3 bg-light" value="{{ $proposal->judul_proposal }}" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Mahasiswa</label>
-                            <input type="text" class="form-control" value="{{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}" readonly>
+                            <label class="form-label small fw-semibold text-secondary">Pengaju</label>
+                            <input type="text" class="form-control form-control-sm rounded-3 bg-light" value="{{ $proposal->mahasiswa->nama_mahasiswa ?? 'N/A' }}" readonly>
                         </div>
                     </div>
                     
-                    <div class="row mb-3">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Skim</label>
-                            <input type="text" class="form-control" value="{{ $proposal->skim }}" readonly>
+                            <label class="form-label small fw-semibold text-secondary">Skim PKM</label>
+                            <input type="text" class="form-control form-control-sm rounded-3 bg-light" value="{{ $proposal->skim }}" readonly>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Status Revisi</label>
-                            <input type="text" class="form-control" value="{{ $proposal->getRevisiStatus() ? ucfirst(str_replace('_', ' ', $proposal->getRevisiStatus())) : 'Belum Direvisi' }}" readonly>
+                            <label class="form-label small fw-semibold text-secondary">Status Revisi Saat Ini</label>
+                            <input type="text" class="form-control form-control-sm rounded-3 bg-light" value="{{ $proposal->getRevisiStatus() ? ucfirst(str_replace('_', ' ', $proposal->getRevisiStatus())) : 'Belum Direvisi' }}" readonly>
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label required-field">Hasil Final</label>
-                        <select class="form-select" id="statusFinal" name="status_final" required>
-                            <option value="">Pilih hasil final</option>
-                            <option value="lolos">Lolos</option>
+                        <label class="form-label small fw-bold text-dark">Keputusan Hasil Final <span class="text-danger">*</span></label>
+                        <select class="form-select rounded-3" id="statusFinal" name="status_final" required>
+                            <option value="">-- Pilih Hasil Final --</option>
+                            <option value="lolos">Lolos Final (Didanai / Lanjut PIMNAS)</option>
                             <option value="tidak_lolos">Tidak Lolos</option>
                         </select>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Catatan Final</label>
-                        <textarea class="form-control" id="catatanFinal" name="catatan_final" rows="4" 
-                                  placeholder="Berikan catatan untuk mahasiswa..."></textarea>
+                        <label class="form-label small fw-semibold text-secondary">Catatan Evaluasi Final</label>
+                        <textarea class="form-control rounded-3" id="catatanFinal" name="catatan_final" rows="4" 
+                                  placeholder="Berikan umpan balik atau catatan resmi bagi tim mahasiswa..."></textarea>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" id="submitHasilFinal">
-                    <i class="fas fa-save me-2"></i>Simpan Hasil Final
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-sm btn-secondary rounded-3 px-3" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-sm btn-primary rounded-3 px-3 fw-semibold" id="submitHasilFinal">
+                    <i class="fas fa-save me-1"></i> Simpan Hasil Final
                 </button>
             </div>
         </div>
@@ -500,16 +446,14 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle submit hasil final
     document.getElementById('submitHasilFinal')?.addEventListener('click', function() {
         const proposalId = document.getElementById('proposalId').value;
         const statusFinal = document.getElementById('statusFinal').value;
         const catatanFinal = document.getElementById('catatanFinal').value;
         
-        // Validate
         if (!statusFinal) {
             alert('Mohon pilih hasil final terlebih dahulu');
             return;
@@ -521,13 +465,11 @@ document.addEventListener('DOMContentLoaded', function() {
             catatan_final: catatanFinal
         };
         
-        // Show loading state
         const submitBtn = this;
         const originalText = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
         submitBtn.disabled = true;
         
-        // Make API call
         fetch('{{ route("operator.update.hasil.final") }}', {
             method: 'POST',
             headers: {
@@ -539,42 +481,28 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showToast(data.message, 'success');
+                if (window.AppUI && typeof window.AppUI.showToast === 'function') {
+                    window.AppUI.showToast(data.message, 'success');
+                } else {
+                    alert(data.message);
+                }
                 
-                // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('hasilFinalModal'));
-                modal.hide();
-                
-                // Reload page to show updated data
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-                
+                if (modal) modal.hide();
+                setTimeout(() => window.location.reload(), 1000);
             } else {
-                showToast(data.message, 'error');
+                alert(data.message || 'Gagal menyimpan hasil final');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Terjadi kesalahan saat menyimpan hasil final', 'error');
+            alert('Terjadi kesalahan saat menyimpan hasil final');
         })
         .finally(() => {
-            // Reset button state
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         });
     });
 });
-
-function showToast(message, type) {
-    // Use the existing toast function from the layout
-    if (typeof showToast === 'function') {
-        showToast(message, type);
-    } else {
-        // Fallback alert
-        alert(message);
-    }
-}
 </script>
-@endsection
-
+@endpush

@@ -1,6 +1,6 @@
 @extends('mainlayout.app')
 
-@section('title', 'Ruang Kontrol - Pimpinan PT')
+@section('title', 'Ruang Kontrol & Jadwal - Pimpinan PT')
 
 @section('content')
     @php
@@ -72,122 +72,157 @@
         }
     @endphp
 
-    <div class="container-fluid">
+    <div class="container-fluid px-4 py-3">
         <x-breadcrumb :items="[
             ['label' => 'Beranda', 'url' => route('pimpinan_pt.dashboard')],
-            ['label' => 'Ruang Kontrol', 'active' => true],
+            ['label' => 'Ruang Kontrol & Jadwal', 'active' => true],
         ]" />
 
-        <x-page-header title="RUANG KONTROL" subtitle="UNIVERSITAS UDAYANA" />
+        <x-page-header 
+            title="Ruang Kontrol & Jadwal" 
+            subtitle="Pemantauan linimasa tahapan seleksi PKM dan kalender akademik aktif Universitas Udayana"
+            badge="Monitoring Pimpinan PT"
+            icon="fa-sliders-h"
+        >
+            <x-slot:actions>
+                <div class="d-inline-flex align-items-center gap-2 bg-light px-3 py-2 rounded-pill border">
+                    <i class="fas fa-eye text-primary"></i>
+                    <span class="small fw-semibold text-secondary">Mode Pemantauan (Read-Only)</span>
+                </div>
+                {{-- Hidden trigger kept for JS compatibility --}}
+                <button type="button" class="btn btn-primary d-none" id="btnTriggerBuatJadwal" data-bs-toggle="modal" data-bs-target="#modalBuatJadwal"></button>
+            </x-slot:actions>
+        </x-page-header>
 
-        {{-- Year Selector --}}
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <label class="form-label fw-bold mb-2">
-                    <i class="fas fa-calendar-alt me-2"></i>Pilih Tahun Ajaran
-                </label>
-                <select class="form-select" id="tahunSelector" onchange="window.location.href='?tahun=' + this.value">
-                    @php
-                        $tahunAjaranTerpilih = $tahunAjaranTerpilih ?? \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
-                        $tahunArray = [];
-                        if (isset($histories) && $histories->count() > 0) {
-                            foreach ($histories as $tahunAk => $items) {
-                                if (strpos($tahunAk, '/') !== false && count(explode('/', $tahunAk)) === 2) {
-                                    $tahunArray[] = $tahunAk;
+        {{-- Filter & Academic Year Selector --}}
+        <div class="filter-card mb-4">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4 col-lg-3">
+                    <label class="form-label fw-bold mb-1 small text-secondary">
+                        <i class="fas fa-calendar-alt text-primary me-1"></i> Tahun Akademik
+                    </label>
+                    <select class="form-select form-select-sm" id="tahunSelector" onchange="window.location.href='?tahun=' + this.value">
+                        @php
+                            $tahunAjaranTerpilih = $tahunAjaranTerpilih ?? \App\Helpers\TahunAjaranHelper::getTahunAjaranTerbaru();
+                            $tahunArray = [];
+                            if (isset($histories) && $histories->count() > 0) {
+                                foreach ($histories as $tahunAk => $items) {
+                                    if (strpos($tahunAk, '/') !== false && count(explode('/', $tahunAk)) === 2) {
+                                        $tahunArray[] = $tahunAk;
+                                    }
                                 }
                             }
-                        }
-                        $currentYear = (int) date('Y');
-                        $currentMonth = (int) date('n');
-                        $tahunAkademikSekarang = $currentMonth >= 7
-                            ? $currentYear . '/' . ($currentYear + 1)
-                            : ($currentYear - 1) . '/' . $currentYear;
-                        $tahunAkademikDepan = $currentMonth >= 7
-                            ? ($currentYear + 1) . '/' . ($currentYear + 2)
-                            : $currentYear . '/' . ($currentYear + 1);
-                        if (!in_array($tahunAkademikSekarang, $tahunArray))
-                            $tahunArray[] = $tahunAkademikSekarang;
-                        if (!in_array($tahunAkademikDepan, $tahunArray))
-                            $tahunArray[] = $tahunAkademikDepan;
-                        usort($tahunArray, fn($a, $b) => (int) explode('/', $b)[0] - (int) explode('/', $a)[0]);
-                    @endphp
-                    @foreach($tahunArray as $ta)
-                        <option value="{{ $ta }}" @selected($ta === $tahunAjaranTerpilih)>
-                            {{ $ta }} @if($ta === $tahunAkademikSekarang) (Sekarang) @endif
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-9 d-flex align-items-end justify-content-end gap-2">
-                <button class="btn btn-primary d-none" data-bs-toggle="modal" data-bs-target="#modalBuatJadwal">
-                    <i class="fas fa-plus me-1"></i>Buat Jadwal Baru
-                </button>
+                            $currentYear = (int) date('Y');
+                            $currentMonth = (int) date('n');
+                            $tahunAkademikSekarang = $currentMonth >= 7
+                                ? $currentYear . '/' . ($currentYear + 1)
+                                : ($currentYear - 1) . '/' . $currentYear;
+                            $tahunAkademikDepan = $currentMonth >= 7
+                                ? ($currentYear + 1) . '/' . ($currentYear + 2)
+                                : $currentYear . '/' . ($currentYear + 1);
+                            if (!in_array($tahunAkademikSekarang, $tahunArray))
+                                $tahunArray[] = $tahunAkademikSekarang;
+                            if (!in_array($tahunAkademikDepan, $tahunArray))
+                                $tahunArray[] = $tahunAkademikDepan;
+                            usort($tahunArray, fn($a, $b) => (int) explode('/', $b)[0] - (int) explode('/', $a)[0]);
+                        @endphp
+                        @foreach($tahunArray as $ta)
+                            <option value="{{ $ta }}" @selected($ta === $tahunAjaranTerpilih)>
+                                {{ $ta }} @if($ta === $tahunAkademikSekarang) (Tahun Berjalan) @endif
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-8 col-lg-9 d-flex flex-wrap justify-content-md-end align-items-center gap-3">
+                    <div class="d-inline-flex align-items-center gap-2 bg-light px-3 py-2 rounded-3 border">
+                        <span class="small text-muted">Jadwal Aktif Terpasang:</span>
+                        <strong class="text-dark small">{{ $ruangKontrolAktif->nama_history ?? 'Belum ada' }}</strong>
+                        @if($ruangKontrolAktif && is_object($ruangKontrolAktif) && isset($ruangKontrolAktif->is_active) && $ruangKontrolAktif->is_active)
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
+                                <i class="fas fa-check-circle me-1"></i>Aktif
+                            </span>
+                        @else
+                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1 rounded-pill small">
+                                Non-aktif
+                            </span>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
 
         {{-- Phase Timeline --}}
-        <div class="card card-custom mb-4">
-            <div class="card-header card-header-custom">
-                <h5 class="mb-0"><i class="fas fa-stream me-2"></i>Timeline Fase — {{ $tahunAjaranTerpilih }}</h5>
+        <div class="ui-card mb-4">
+            <div class="ui-card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-stream text-primary"></i>
+                    <h5 class="mb-0 fw-bold fs-6">Timeline Linimasa Fase — {{ $tahunAjaranTerpilih }}</h5>
+                </div>
+                <span class="small text-muted">Status Berjalan</span>
             </div>
-            <div class="card-body">
+            <div class="ui-card-body">
                 <div class="row g-3">
                     @foreach($phaseConfig as $phaseKey => $cfg)
                         @php
                             $status = data_get($ruangKontrolAktif, $cfg['status_field'], 'tertutup');
                             $startDate = data_get($ruangKontrolAktif, $cfg['start_field']);
                             $endDate = data_get($ruangKontrolAktif, $cfg['end_field']);
-                            // Override: jika tanggal selesai sudah lewat, paksa tertutup di tampilan
                             $endDatePassed = $endDate && \Carbon\Carbon::parse($endDate)->endOfDay()->isPast();
                             $isOpen = $status === 'terbuka' && !$endDatePassed;
                             $isPast = $endDate && ($endDatePassed || (\Carbon\Carbon::parse($endDate)->endOfDay()->isPast() && !$isOpen));
                             $isFuture = $startDate && \Carbon\Carbon::parse($startDate)->startOfDay()->isFuture() && !$isOpen;
                         @endphp
-                        <div class="col-md-3">
-                            <div
-                                class="card h-100 border-{{ $isOpen ? $cfg['color'] : ($isPast ? 'secondary' : 'light') }} {{ $isOpen ? 'shadow' : '' }}">
-                                <div class="card-body text-center p-3">
-                                    <div class="mb-2">
-                                        <span
-                                            class="badge bg-{{ $isOpen ? $cfg['color'] : ($isPast ? 'secondary' : 'light text-dark') }} rounded-pill px-3 py-2">
-                                            <i class="fas {{ $cfg['icon'] }} me-1"></i>
-                                            {{ $isOpen ? 'AKTIF' : ($isPast ? 'SELESAI' : 'BELUM DIMULAI') }}
-                                        </span>
-                                    </div>
-                                    <h6 class="fw-bold mb-1">{{ $cfg['label'] }}</h6>
-                                    <small class="text-muted d-block mb-2">{{ $cfg['desc'] }}</small>
-                                    @if($startDate && $endDate)
-                                        <div class="small">
-                                            <i class="far fa-calendar me-1"></i>
-                                            {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} —
-                                            {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
-                                        </div>
-                                        @if($isOpen && $endDate)
-                                            @php
-                                                $targetDate = \Carbon\Carbon::parse($endDate)->endOfDay();
-                                                $diffInHours = (int) now()->diffInHours($targetDate, false);
-                                                $diffInDays = (int) now()->diffInDays($targetDate, false);
-                                                
-                                                if ($diffInHours >= 24) {
-                                                    $timeLeftText = $diffInDays . ' hari tersisa';
-                                                    $badgeClass = $diffInDays <= 3 ? 'danger' : ($diffInDays <= 7 ? 'warning' : $cfg['color']);
-                                                } elseif ($diffInHours >= 0 && $diffInHours < 24) {
-                                                    $timeLeftText = $diffInHours . ' jam tersisa';
-                                                    $badgeClass = 'danger';
-                                                } else {
-                                                    $timeLeftText = 'Melewati deadline';
-                                                    $badgeClass = 'secondary';
-                                                }
-                                            @endphp
-                                            <div class="mt-1">
-                                                <span class="badge bg-{{ $badgeClass }}">
-                                                    {{ $timeLeftText }}
-                                                </span>
+                        <div class="col-md-6 col-xl-3">
+                            <div class="card h-100 border transition-all rounded-3 {{ $isOpen ? 'border-primary shadow-sm ring-1 ring-primary' : 'border-light-subtle bg-light-subtle' }}" style="{{ $isOpen ? 'border-color: var(--primary-500) !important;' : '' }}">
+                                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge rounded-pill px-2.5 py-1 small fw-semibold {{ $isOpen ? 'bg-success text-white' : ($isPast ? 'bg-secondary text-white' : 'bg-light text-muted border') }}">
+                                                <i class="fas {{ $isOpen ? 'fa-circle-play' : ($isPast ? 'fa-check' : 'fa-clock') }} me-1"></i>
+                                                {{ $isOpen ? 'AKTIF' : ($isPast ? 'SELESAI' : 'BELUM DIMULAI') }}
+                                            </span>
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: {{ $isOpen ? 'rgba(143,11,19,0.1)' : 'rgba(0,0,0,0.05)' }}; color: {{ $isOpen ? 'var(--primary-700)' : 'var(--text-400)' }};">
+                                                <i class="fas {{ $cfg['icon'] }} small"></i>
                                             </div>
+                                        </div>
+                                        <h6 class="fw-bold mb-1 fs-6 text-dark">{{ $cfg['label'] }}</h6>
+                                        <p class="text-muted small mb-3" style="font-size: 0.78rem; line-height: 1.4;">{{ $cfg['desc'] }}</p>
+                                    </div>
+                                    <div class="pt-2 border-top">
+                                        @if($startDate && $endDate)
+                                            <div class="small text-secondary mb-1" style="font-size: 0.78rem;">
+                                                <i class="far fa-calendar-alt text-muted me-1"></i>
+                                                <span>{{ \Carbon\Carbon::parse($startDate)->format('d M Y') }}</span>
+                                                <span class="mx-1 text-muted">—</span>
+                                                <span>{{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</span>
+                                            </div>
+                                            @if($isOpen && $endDate)
+                                                @php
+                                                    $targetDate = \Carbon\Carbon::parse($endDate)->endOfDay();
+                                                    $diffInHours = (int) now()->diffInHours($targetDate, false);
+                                                    $diffInDays = (int) now()->diffInDays($targetDate, false);
+                                                    
+                                                    if ($diffInHours >= 24) {
+                                                        $timeLeftText = $diffInDays . ' hari tersisa';
+                                                        $badgeClass = $diffInDays <= 3 ? 'bg-danger text-white' : ($diffInDays <= 7 ? 'bg-warning text-dark' : 'bg-primary-subtle text-primary border border-primary-subtle');
+                                                    } elseif ($diffInHours >= 0 && $diffInHours < 24) {
+                                                        $timeLeftText = $diffInHours . ' jam tersisa';
+                                                        $badgeClass = 'bg-danger text-white';
+                                                    } else {
+                                                        $timeLeftText = 'Melewati batas waktu';
+                                                        $badgeClass = 'bg-secondary text-white';
+                                                    }
+                                                @endphp
+                                                <div>
+                                                    <span class="badge {{ $badgeClass }} small px-2 py-0.5">
+                                                        <i class="fas fa-stopwatch me-1"></i>{{ $timeLeftText }}
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span class="small text-muted fst-italic"><i class="fas fa-info-circle me-1"></i>Tanggal belum diatur</span>
                                         @endif
-                                    @else
-                                        <small class="text-muted"><i>Tanggal belum diatur</i></small>
-                                    @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -196,21 +231,25 @@
             </div>
         </div>
 
-        {{-- Active Schedule Editor --}}
-        <div class="card card-custom mb-4">
-            <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        {{-- Active Schedule Preview (Read-Only) --}}
+        <div class="ui-card mb-4">
+            <div class="ui-card-header d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="fas fa-sliders-h" style="color: var(--primary-700);"></i>
-                    <span class="fw-bold" style="font-size:0.95rem;">Pengaturan Jadwal Aktif</span>
+                    <i class="fas fa-sliders-h text-primary"></i>
+                    <h5 class="mb-0 fw-bold fs-6">Detail Konfigurasi Jadwal Aktif</h5>
                 </div>
-                @if($ruangKontrolAktif && is_object($ruangKontrolAktif) && isset($ruangKontrolAktif->is_active) && $ruangKontrolAktif->is_active)
-                    <span class="badge"
-                        style="background:rgba(5,150,105,0.12);color:#059669;border:1px solid rgba(5,150,105,0.25);font-size:0.75rem;padding:0.35rem 0.75rem;border-radius:20px;">
-                        <i class="fas fa-circle" style="font-size:0.5rem;vertical-align:middle;margin-right:4px;"></i>Aktif
+                <div class="d-flex align-items-center gap-2">
+                    @if($ruangKontrolAktif && is_object($ruangKontrolAktif) && isset($ruangKontrolAktif->is_active) && $ruangKontrolAktif->is_active)
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">
+                            <i class="fas fa-circle me-1" style="font-size:0.5rem;vertical-align:middle;"></i>Status: Aktif Berjalan
+                        </span>
+                    @endif
+                    <span class="badge bg-light text-muted border px-2 py-1 small">
+                        <i class="fas fa-lock me-1"></i>Terkunci
                     </span>
-                @endif
+                </div>
             </div>
-            <div class="card-body p-0">
+            <div class="ui-card-body p-0">
                 <form id="formUpdateRuangKontrol">
                     @csrf
                     @if(isset($ruangKontrolAktif->id_ruang_kontrol))
@@ -218,14 +257,14 @@
                     @endif
 
                     {{-- Top meta row: fase aktif & nama jadwal --}}
-                    <div class="px-4 py-3" style="border-bottom: 1px solid var(--border); background: var(--surface-2);">
+                    <div class="p-4 border-bottom bg-light">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1"
-                                    style="font-size:0.8rem;color:var(--text-600);">FASE AKTIF SAAT INI</label>
-                                <select name="active_phase" id="activePhasePicker" class="form-select form-select-sm"
-                                    style="border-color:var(--border);border-radius:8px;" disabled>
-                                    <option value="" @selected(!$activePhase)>— Tidak ada fase aktif —</option>
+                                <label class="form-label fw-bold small text-secondary mb-1">
+                                    <i class="fas fa-bolt text-warning me-1"></i> FASE AKTIF SAAT INI
+                                </label>
+                                <select name="active_phase" id="activePhasePicker" class="form-select form-select-sm rounded-3" disabled>
+                                    <option value="" @selected(!$activePhase)>— Tidak ada fase aktif (Tertutup) —</option>
                                     @foreach($phaseConfig as $phaseKey => $cfg)
                                         <option value="{{ $phaseKey }}" @selected($activePhase === $phaseKey)>
                                             {{ $cfg['label'] }}
@@ -234,150 +273,138 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-1"
-                                    style="font-size:0.8rem;color:var(--text-600);">NAMA JADWAL</label>
-                                <input type="text" name="nama_history" class="form-control form-control-sm"
+                                <label class="form-label fw-bold small text-secondary mb-1">
+                                    <i class="fas fa-heading text-primary me-1"></i> NAMA JADWAL / SESI
+                                </label>
+                                <input type="text" name="nama_history" class="form-control form-control-sm rounded-3 bg-white"
                                     value="{{ $ruangKontrolAktif->nama_history ?? '' }}"
-                                    placeholder="Contoh: Jadwal PKM 2025/2026"
-                                    style="border-color:var(--border);border-radius:8px;">
+                                    readonly>
                             </div>
                         </div>
                     </div>
 
                     {{-- Phase rows --}}
-                    <div class="phase-list">
+                    <div class="phase-list p-0">
                         @foreach($phaseConfig as $phaseKey => $cfg)
                             @php
                                 $phaseNum = $loop->iteration;
-                                $phaseColors = ['maroon', 'teal', 'purple', 'green'];
-                                $dotColors = [
-                                    'maroon' => ['bg' => 'rgba(143,11,19,0.1)', 'text' => '#8F0B13', 'border' => 'rgba(143,11,19,0.2)'],
-                                    'teal' => ['bg' => 'rgba(8,145,178,0.1)', 'text' => '#0891B2', 'border' => 'rgba(8,145,178,0.2)'],
-                                    'purple' => ['bg' => 'rgba(124,58,237,0.1)', 'text' => '#7C3AED', 'border' => 'rgba(124,58,237,0.2)'],
-                                    'green' => ['bg' => 'rgba(5,150,105,0.1)', 'text' => '#059669', 'border' => 'rgba(5,150,105,0.2)'],
+                                $accentColors = [
+                                    ['bg' => 'rgba(143,11,19,0.08)', 'text' => '#8F0B13', 'border' => 'rgba(143,11,19,0.2)'],
+                                    ['bg' => 'rgba(8,145,178,0.08)', 'text' => '#0891B2', 'border' => 'rgba(8,145,178,0.2)'],
+                                    ['bg' => 'rgba(217,119,6,0.08)', 'text' => '#D97706', 'border' => 'rgba(217,119,6,0.2)'],
+                                    ['bg' => 'rgba(5,150,105,0.08)', 'text' => '#059669', 'border' => 'rgba(5,150,105,0.2)'],
                                 ];
-                                $pc = $dotColors[$phaseColors[$loop->index]];
+                                $pc = $accentColors[$loop->index];
                             @endphp
-                            <div class="phase-row px-4 py-3 {{ !$loop->last ? 'border-bottom' : '' }}"
-                                style="border-color: var(--border) !important;">
+                            <div class="p-3 px-4 {{ !$loop->last ? 'border-bottom' : '' }}" style="background: white;">
                                 <div class="row align-items-center g-3">
                                     {{-- Step number + label --}}
-                                    <div class="col-md-4 d-flex align-items-center gap-3">
-                                        <div class="phase-step-num" style="
-                                                width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-                                                background: {{ $pc['bg'] }}; border: 1px solid {{ $pc['border'] }};
-                                                display: flex; align-items: center; justify-content: center;
-                                                font-weight: 800; font-size: 0.85rem; color: {{ $pc['text'] }};
-                                            ">{{ $phaseNum }}</div>
+                                    <div class="col-lg-5 d-flex align-items-center gap-3">
+                                        <div style="width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; background: {{ $pc['bg'] }}; border: 1px solid {{ $pc['border'] }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; color: {{ $pc['text'] }};">
+                                            {{ $phaseNum }}
+                                        </div>
                                         <div>
-                                            <div class="fw-semibold"
-                                                style="font-size:0.875rem;color:var(--text-900);line-height:1.3;">
-                                                <i class="fas {{ $cfg['icon'] }} me-1"
-                                                    style="color:{{ $pc['text'] }};font-size:0.8rem;"></i>
-                                                {{ $cfg['label'] }}
+                                            <div class="fw-bold text-dark fs-6 d-flex align-items-center gap-1.5">
+                                                <i class="fas {{ $cfg['icon'] }} small" style="color: {{ $pc['text'] }};"></i>
+                                                <span>{{ $cfg['label'] }}</span>
                                             </div>
-                                            <div style="font-size:0.72rem;color:var(--text-400);margin-top:1px;">
-                                                {{ $cfg['desc'] }}</div>
+                                            <div class="text-muted small" style="font-size: 0.78rem;">{{ $cfg['desc'] }}</div>
                                         </div>
                                     </div>
                                     {{-- Date fields --}}
-                                    <div class="col-md-4">
-                                        <label class="form-label mb-1"
-                                            style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal
-                                            Mulai</label>
-                                        <input type="date" name="{{ $cfg['start_field'] }}" class="form-control form-control-sm"
-                                            value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))->format('Y-m-d') : '' }}"
-                                            style="border-color:var(--border);border-radius:8px;">
+                                    <div class="col-sm-6 col-lg-3">
+                                        <label class="form-label mb-1 small fw-semibold text-secondary">Tanggal Mulai</label>
+                                        <input type="date" name="{{ $cfg['start_field'] }}" class="form-control form-control-sm rounded-3 bg-light"
+                                            value="{{ data_get($ruangKontrolAktif, $cfg['start_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['start_field']))->format('Y-m-d') : '' }}" readonly disabled>
                                     </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label mb-1"
-                                            style="font-size:0.72rem;color:var(--text-600);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">Tanggal
-                                            Selesai</label>
-                                        <input type="date" name="{{ $cfg['end_field'] }}" class="form-control form-control-sm"
-                                            value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))->format('Y-m-d') : '' }}"
-                                            style="border-color:var(--border);border-radius:8px;">
+                                    <div class="col-sm-6 col-lg-4">
+                                        <label class="form-label mb-1 small fw-semibold text-secondary">Tanggal Selesai (Batas Akhir)</label>
+                                        <input type="date" name="{{ $cfg['end_field'] }}" class="form-control form-control-sm rounded-3 bg-light"
+                                            value="{{ data_get($ruangKontrolAktif, $cfg['end_field']) ? \Carbon\Carbon::parse(data_get($ruangKontrolAktif, $cfg['end_field']))->format('Y-m-d') : '' }}" readonly disabled>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
 
-                    {{-- Footer / Action --}}
-                    <div class="px-4 py-3 d-flex justify-content-end"
-                        style="border-top: 1px solid var(--border); background: var(--surface-2);">
-                        <button type="submit" class="btn btn-sm fw-semibold d-flex align-items-center gap-2" id="btnSimpan"
-                            style="background:var(--primary-700);color:white;border-radius:8px;padding:0.5rem 1.25rem;border:none;box-shadow:0 2px 8px rgba(143,11,19,0.25);transition:all 0.2s ease;"
-                            onmouseover="this.style.background='var(--primary-900)'"
-                            onmouseout="this.style.background='var(--primary-700)'">
-                            <i class="fas fa-save" style="font-size:0.85rem;"></i>
-                            Simpan Pengaturan
-                        </button>
+                    {{-- Footer Action Notice --}}
+                    <div class="p-3 px-4 bg-light border-top d-flex justify-content-between align-items-center">
+                        <span class="small text-muted"><i class="fas fa-info-circle me-1 text-primary"></i> Pengaturan jadwal ini hanya dapat diubah melalui portal Operator.</span>
+                        <button type="submit" class="btn btn-sm btn-secondary d-none" id="btnSimpan" disabled>Simpan Pengaturan</button>
                     </div>
                 </form>
             </div>
         </div>
 
-
-        {{-- Schedule List --}}
-        <div class="card card-custom mb-4">
-            <div class="card-header card-header-custom">
-                <h5 class="mb-0"><i class="fas fa-list me-2"></i>Daftar Jadwal | {{ $tahunAjaranTerpilih }}</h5>
+        {{-- Schedule History Table --}}
+        <div class="ui-card mb-4">
+            <div class="ui-card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-list text-primary"></i>
+                    <h5 class="mb-0 fw-bold fs-6">Daftar Arsip Jadwal — {{ $tahunAjaranTerpilih }}</h5>
+                </div>
+                <span class="badge bg-light text-secondary border px-2.5 py-1 small">
+                    Total: {{ isset($jadwalTahun) ? $jadwalTahun->count() : 0 }} Jadwal
+                </span>
             </div>
-            <div class="card-body">
+            <div class="ui-card-body p-0">
                 @if(isset($jadwalTahun) && $jadwalTahun->count() > 0)
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-dark">
+                        <table class="table-modern">
+                            <thead>
                                 <tr>
-                                    <th>Nama Jadwal</th>
-                                    <th>Fase 1</th>
-                                    <th>Fase 2</th>
-                                    <th>Fase 3</th>
-                                    <th>Fase 4</th>
-                                    <th>Status</th>
-                                    <th class="text-center">Aksi</th>
+                                    <th style="min-width: 180px;">Nama Jadwal</th>
+                                    <th>Fase 1 (Pendaftaran)</th>
+                                    <th>Fase 2 (Review)</th>
+                                    <th>Fase 3 (Revisi/Seleksi)</th>
+                                    <th>Fase 4 (Penilaian Akhir)</th>
+                                    <th class="text-center" style="width: 110px;">Status</th>
+                                    <th class="text-center" style="width: 90px;">Detail</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($jadwalTahun as $jadwal)
                                     @php
                                         $isActive = $jadwal->is_active;
-                                        $fmtDate = fn($d) => $d ? \Carbon\Carbon::parse($d)->format('d/m/y') : '-';
+                                        $fmtDate = fn($d) => $d ? \Carbon\Carbon::parse($d)->format('d/m/Y') : '-';
                                     @endphp
-                                    <tr class="{{ $isActive ? 'table-success' : '' }}">
-                                        <td class="fw-bold">{{ $jadwal->nama_history ?? '-' }}</td>
-                                        <td class="small">{{ $fmtDate($jadwal->tanggal_pendaftaran_mulai) }} —
-                                            {{ $fmtDate($jadwal->tanggal_pendaftaran_selesai) }}</td>
-                                        <td class="small">{{ $fmtDate($jadwal->tanggal_review_mulai) }} —
-                                            {{ $fmtDate($jadwal->tanggal_review_selesai) }}</td>
-                                        <td class="small">{{ $fmtDate($jadwal->tanggal_perbaikan_mulai) }} —
-                                            {{ $fmtDate($jadwal->tanggal_perbaikan_selesai) }}</td>
-                                        <td class="small">{{ $fmtDate($jadwal->tanggal_penilaian_akhir_mulai) }} —
-                                            {{ $fmtDate($jadwal->tanggal_penilaian_akhir_selesai) }}</td>
+                                    <tr class="{{ $isActive ? 'bg-success-subtle bg-opacity-10' : '' }}">
                                         <td>
+                                            <div class="fw-bold text-dark">{{ $jadwal->nama_history ?? '-' }}</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">Dibuat: {{ $jadwal->created_at ? $jadwal->created_at->format('d M Y') : '-' }}</small>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold text-secondary">{{ $fmtDate($jadwal->tanggal_pendaftaran_mulai) }}</div>
+                                            <div class="small text-muted">s/d {{ $fmtDate($jadwal->tanggal_pendaftaran_selesai) }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold text-secondary">{{ $fmtDate($jadwal->tanggal_review_mulai) }}</div>
+                                            <div class="small text-muted">s/d {{ $fmtDate($jadwal->tanggal_review_selesai) }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold text-secondary">{{ $fmtDate($jadwal->tanggal_perbaikan_mulai) }}</div>
+                                            <div class="small text-muted">s/d {{ $fmtDate($jadwal->tanggal_perbaikan_selesai) }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="small fw-semibold text-secondary">{{ $fmtDate($jadwal->tanggal_penilaian_akhir_mulai) }}</div>
+                                            <div class="small text-muted">s/d {{ $fmtDate($jadwal->tanggal_penilaian_akhir_selesai) }}</div>
+                                        </td>
+                                        <td class="text-center">
                                             @if($isActive)
-                                                <span class="badge bg-success">Aktif</span>
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small">
+                                                    <i class="fas fa-check-circle me-1"></i>Aktif
+                                                </span>
                                             @else
-                                                <span class="badge bg-secondary">Non-aktif</span>
+                                                <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1 rounded-pill small">
+                                                    Non-aktif
+                                                </span>
                                             @endif
                                         </td>
                                         <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
-                                                @if(!$isActive)
-                                                    <button class="btn btn-outline-success btn-activate-jadwal"
-                                                        data-id="{{ $jadwal->id_ruang_kontrol }}" title="Aktifkan">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                @endif
-                                                <button class="btn btn-outline-primary btn-edit-jadwal"
-                                                    data-id="{{ $jadwal->id_ruang_kontrol }}" title="Edit">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button class="btn btn-outline-danger btn-delete-jadwal"
-                                                    data-id="{{ $jadwal->id_ruang_kontrol }}" title="Hapus">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary btn-edit-jadwal rounded-pill px-2.5"
+                                                data-id="{{ $jadwal->id_ruang_kontrol }}" title="Lihat Detail Tanggal">
+                                                <i class="fas fa-eye me-1"></i>Lihat
+                                            </button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -385,217 +412,72 @@
                         </table>
                     </div>
                 @else
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
-                        <p>Belum ada jadwal untuk tahun ajaran {{ $tahunAjaranTerpilih }}</p>
+                    <div class="empty-state-box text-center py-5">
+                        <div class="empty-state-icon mb-3">
+                            <i class="fas fa-calendar-times fa-3x text-muted opacity-50"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark">Belum Ada Jadwal</h6>
+                        <p class="text-muted small mb-0">Belum ada jadwal yang dikonfigurasi untuk tahun ajaran {{ $tahunAjaranTerpilih }}.</p>
                     </div>
                 @endif
             </div>
         </div>
     </div>
 
-    {{-- Modal: Buat Jadwal Baru --}}
-    <div class="modal fade" id="modalBuatJadwal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
+    {{-- Modal: Detail Jadwal (Read-Only) --}}
+    <div class="modal fade" id="modalEditJadwal" tabindex="-1" aria-labelledby="modalEditJadwalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Buat Jadwal Baru</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="formBuatJadwal">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nama Jadwal <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_history" class="form-control" required
-                                placeholder="Contoh: Jadwal Utama 2025/2026" disabled>
-                        </div>
-
-                        @foreach($phaseConfig as $phaseKey => $cfg)
-                            <div class="card mb-3 border-start border-4 border-{{ $cfg['color'] }}">
-                                <div class="card-body py-3">
-                                    <h6 class="fw-bold text-{{ $cfg['color'] }}">
-                                        <i class="fas {{ $cfg['icon'] }} me-2"></i>{{ $cfg['label'] }}
-                                    </h6>
-                                    <small class="text-muted d-block mb-2">{{ $cfg['desc'] }}</small>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label small">Tanggal Mulai <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="date" name="{{ $cfg['start_field'] }}" class="form-control" required disabled>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small">Tanggal Selesai <span
-                                                    class="text-danger">*</span></label>
-                                            <input type="date" name="{{ $cfg['end_field'] }}" class="form-control" required disabled>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary" id="btnBuatJadwal">
-                            <i class="fas fa-save me-2"></i>Buat Jadwal
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    {{-- Modal: Edit Jadwal --}}
-    <div class="modal fade" id="modalEditJadwal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Jadwal</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title fs-6 fw-bold" id="modalEditJadwalLabel">
+                        <i class="fas fa-calendar-check me-2"></i>Detail Jadwal Sesi (Monitoring)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="formEditJadwal">
                     @csrf
                     <input type="hidden" name="jadwal_id" id="editJadwalId" disabled>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Nama Jadwal <span class="text-danger">*</span></label>
-                            <input type="text" name="nama_history" id="editNamaHistory" class="form-control" required disabled>
+                    <div class="modal-body p-4">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-secondary">Nama Jadwal / Sesi</label>
+                            <input type="text" name="nama_history" id="editNamaHistory" class="form-control rounded-3 bg-light" readonly>
                         </div>
-                        @foreach($phaseConfig as $phaseKey => $cfg)
-                            <div class="card mb-3 border-start border-4 border-{{ $cfg['color'] }}">
-                                <div class="card-body py-3">
-                                    <h6 class="fw-bold text-{{ $cfg['color'] }}">
-                                        <i class="fas {{ $cfg['icon'] }} me-2"></i>{{ $cfg['label'] }}
-                                    </h6>
+                        <div class="vstack gap-3">
+                            @foreach($phaseConfig as $phaseKey => $cfg)
+                                <div class="card border rounded-3 p-3 bg-light-subtle">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="fas {{ $cfg['icon'] }} text-primary"></i>
+                                        <h6 class="fw-bold mb-0 text-dark small">{{ $cfg['label'] }}</h6>
+                                    </div>
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label class="form-label small">Tanggal Mulai</label>
+                                            <label class="form-label small fw-semibold text-secondary">Tanggal Mulai</label>
                                             <input type="date" name="{{ $cfg['start_field'] }}"
-                                                id="edit_{{ $cfg['start_field'] }}" class="form-control" disabled>
+                                                id="edit_{{ $cfg['start_field'] }}" class="form-control form-control-sm rounded-3 bg-white" readonly>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label small">Tanggal Selesai</label>
+                                            <label class="form-label small fw-semibold text-secondary">Tanggal Selesai</label>
                                             <input type="date" name="{{ $cfg['end_field'] }}" id="edit_{{ $cfg['end_field'] }}"
-                                                class="form-control" disabled>
+                                                class="form-control form-control-sm rounded-3 bg-white" readonly>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-info text-white" id="btnEditJadwal">
-                            <i class="fas fa-save me-2"></i>Simpan Perubahan
-                        </button>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-sm btn-secondary rounded-3 px-3" data-bs-dismiss="modal">Tutup</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-
 @endsection
 
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                || document.querySelector('input[name="_token"]')?.value;
-
-            function showAlert(type, message) {
-                const container = document.querySelector('.container-fluid');
-                const existing = container.querySelector('.alert-dynamic');
-                if (existing) existing.remove();
-                const alert = document.createElement('div');
-                alert.className = `alert alert-${type} alert-dismissible fade show alert-dynamic`;
-                alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
-                container.insertBefore(alert, container.children[1]);
-                setTimeout(() => alert.remove(), 5000);
-            }
-
-            function validateDateRanges(formEl) {
-                const phasePairs = [
-                    ['tanggal_pendaftaran_mulai', 'tanggal_pendaftaran_selesai', 'Fase 1'],
-                    ['tanggal_review_mulai', 'tanggal_review_selesai', 'Fase 2'],
-                    ['tanggal_perbaikan_mulai', 'tanggal_perbaikan_selesai', 'Fase 3'],
-                    ['tanggal_penilaian_akhir_mulai', 'tanggal_penilaian_akhir_selesai', 'Fase 4'],
-                ];
-
-                for (const [startName, endName, phaseLabel] of phasePairs) {
-                    const startInput = formEl.querySelector(`[name="${startName}"]`);
-                    const endInput = formEl.querySelector(`[name="${endName}"]`);
-                    if (!startInput || !endInput || !startInput.value || !endInput.value) continue;
-
-                    if (startInput.value > endInput.value) {
-                        showAlert('danger', `${phaseLabel}: tanggal mulai tidak boleh lebih besar dari tanggal selesai.`);
-                        startInput.focus();
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            // Update ruang kontrol (active schedule)
-            document.getElementById('formUpdateRuangKontrol')?.addEventListener('submit', function (e) {
-                e.preventDefault();
-                if (!validateDateRanges(this)) return;
-                const btn = document.getElementById('btnSimpan');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
-
-                const formData = new FormData(this);
-                fetch('{{ route("operator.update.ruang.kontrol") }}', {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                    body: formData
-                })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            showAlert('success', data.message);
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            showAlert('danger', data.message || 'Gagal menyimpan.');
-                        }
-                    })
-                    .catch(() => showAlert('danger', 'Terjadi kesalahan jaringan.'))
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-save me-2"></i>Simpan Pengaturan';
-                    });
-            });
-
-            // Create jadwal
-            document.getElementById('formBuatJadwal')?.addEventListener('submit', function (e) {
-                e.preventDefault();
-                if (!validateDateRanges(this)) return;
-                const btn = document.getElementById('btnBuatJadwal');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Membuat...';
-
-                fetch('{{ route("operator.create.jadwal") }}', {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                    body: new FormData(this)
-                })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            showAlert('success', data.message);
-                            bootstrap.Modal.getInstance(document.getElementById('modalBuatJadwal')).hide();
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            showAlert('danger', data.message || 'Gagal membuat jadwal.');
-                        }
-                    })
-                    .catch(() => showAlert('danger', 'Terjadi kesalahan jaringan.'))
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-save me-2"></i>Buat Jadwal';
-                    });
-            });
-
-            // Edit jadwal — load data
+            // Load jadwal detail modal (Read-Only)
             document.querySelectorAll('.btn-edit-jadwal').forEach(btn => {
                 btn.addEventListener('click', function () {
                     const id = this.dataset.id;
@@ -604,8 +486,11 @@
                         .then(data => {
                             if (data.success) {
                                 const j = data.data;
-                                document.getElementById('editJadwalId').value = j.id_ruang_kontrol;
-                                document.getElementById('editNamaHistory').value = j.nama_history || '';
+                                const editJadwalId = document.getElementById('editJadwalId');
+                                if (editJadwalId) editJadwalId.value = j.id_ruang_kontrol;
+                                const editNamaHistory = document.getElementById('editNamaHistory');
+                                if (editNamaHistory) editNamaHistory.value = j.nama_history || '';
+                                
                                 const dateFields = [
                                     'tanggal_pendaftaran_mulai', 'tanggal_pendaftaran_selesai',
                                     'tanggal_review_mulai', 'tanggal_review_selesai',
@@ -619,78 +504,10 @@
                                 });
                                 new bootstrap.Modal(document.getElementById('modalEditJadwal')).show();
                             }
+                        })
+                        .catch(err => {
+                            console.error('Error fetching jadwal details:', err);
                         });
-                });
-            });
-
-            // Edit jadwal — submit
-            document.getElementById('formEditJadwal')?.addEventListener('submit', function (e) {
-                e.preventDefault();
-                if (!validateDateRanges(this)) return;
-                const id = document.getElementById('editJadwalId').value;
-                const btn = document.getElementById('btnEditJadwal');
-                btn.disabled = true;
-
-                fetch(`/operator/update-jadwal/${id}`, {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                    body: new FormData(this)
-                })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            showAlert('success', data.message);
-                            bootstrap.Modal.getInstance(document.getElementById('modalEditJadwal')).hide();
-                            setTimeout(() => location.reload(), 1000);
-                        } else {
-                            showAlert('danger', data.message || 'Gagal mengupdate jadwal.');
-                        }
-                    })
-                    .catch(() => showAlert('danger', 'Terjadi kesalahan jaringan.'))
-                    .finally(() => { btn.disabled = false; });
-            });
-
-            // Activate jadwal
-            document.querySelectorAll('.btn-activate-jadwal').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    if (!confirm('Aktifkan jadwal ini? Jadwal lain untuk tahun ajaran yang sama akan dinonaktifkan.')) return;
-                    const id = this.dataset.id;
-                    fetch(`/operator/activate-jadwal/${id}`, {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
-                    })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                showAlert('success', data.message);
-                                setTimeout(() => location.reload(), 1000);
-                            } else {
-                                showAlert('danger', data.message);
-                            }
-                        })
-                        .catch(() => showAlert('danger', 'Terjadi kesalahan.'));
-                });
-            });
-
-            // Delete jadwal
-            document.querySelectorAll('.btn-delete-jadwal').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    if (!confirm('Hapus jadwal ini? Tindakan ini tidak dapat dibatalkan.')) return;
-                    const id = this.dataset.id;
-                    fetch(`/operator/delete-jadwal/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
-                    })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                showAlert('success', data.message);
-                                setTimeout(() => location.reload(), 1000);
-                            } else {
-                                showAlert('danger', data.message);
-                            }
-                        })
-                        .catch(() => showAlert('danger', 'Terjadi kesalahan.'));
                 });
             });
         });
