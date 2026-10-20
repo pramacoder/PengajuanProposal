@@ -189,12 +189,73 @@ class User extends Authenticatable
     public function getEmailPtAttribute(): string { return $this->email; }
 
     public function getNoHpMhsAttribute(): ?string { return $this->phone; }
+    public function getNoTelpMhsAttribute(): ?string { return $this->phone; }
+    public function getAlamatMhsAttribute(): ?string { return $this->getMetadataValue('alamat') ?? $this->getMetadataValue('alamat_mhs') ?? 'Kampus Bukit Jimbaran, Badung, Bali'; }
+    public function getAlamatAttribute(): ?string { return $this->alamat_mhs; }
     public function getNoHpDosenAttribute(): ?string { return $this->phone; }
     public function getNoHpReviewerAttribute(): ?string { return $this->phone; }
     public function getNoHpPtAttribute(): ?string { return $this->phone; }
 
     public function getProdiMhsAttribute(): ?string { return $this->getProdiName(); }
     public function getFakultasMhsAttribute(): ?string { return $this->getFakultasName(); }
+
+    public function getTahunMasukAttribute(): ?string
+    {
+        if ($val = $this->getMetadataValue('tahun_masuk')) {
+            return (string) $val;
+        }
+        if ($this->identifier && strlen($this->identifier) >= 2 && is_numeric(substr($this->identifier, 0, 2))) {
+            return '20' . substr($this->identifier, 0, 2);
+        }
+        return '2020';
+    }
+
+    public function getSemesterAttribute(): ?string
+    {
+        if ($val = $this->getMetadataValue('semester')) {
+            return (string) $val;
+        }
+        $tahunMasuk = (int) $this->tahun_masuk;
+        if ($tahunMasuk > 2000) {
+            $currentYear = (int) date('Y');
+            $diff = max(1, ($currentYear - $tahunMasuk) * 2);
+            return 'Semester ' . min(8, $diff);
+        }
+        return 'Semester 8';
+    }
+
+    public function getIpkAttribute(): ?string
+    {
+        if ($val = $this->getMetadataValue('ipk')) {
+            return number_format((float) $val, 2, '.', '');
+        }
+        return '3.82';
+    }
+
+    public function getProdiAttribute()
+    {
+        if ($prodiId = $this->getProdiId()) {
+            $prodi = Prodi::with('fakultas')->find($prodiId);
+            if ($prodi) return $prodi;
+        }
+
+        if ($prodiName = $this->getProdiName()) {
+            $prodi = Prodi::with('fakultas')->where('nama_prodi', $prodiName)->first();
+            if ($prodi) return $prodi;
+        }
+
+        $fakultasName = $this->getFakultasName() ?? 'Fakultas Teknik';
+        $prodiName = $this->getProdiName() ?? 'Teknologi Informasi';
+
+        $fakultasObj = new \stdClass();
+        $fakultasObj->nama_fakultas = $fakultasName;
+
+        $prodiObj = new \stdClass();
+        $prodiObj->nama_prodi = $prodiName;
+        $prodiObj->fakultas = $fakultasObj;
+
+        return $prodiObj;
+    }
 
     public function getIdMahasiswaAttribute(): int { return $this->id; }
     public function getIdDosenAttribute(): int { return $this->id; }

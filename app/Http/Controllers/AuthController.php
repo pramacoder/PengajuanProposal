@@ -135,6 +135,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
+            'alamat' => 'nullable|string|max:255',
             'current_password' => 'nullable|required_with:new_password',
             'new_password' => 'nullable|min:8|confirmed',
         ]);
@@ -147,6 +148,10 @@ class AuthController extends Controller
 
         $user->name = $request->name;
         $user->phone = $request->phone;
+
+        if ($request->has('alamat')) {
+            $user->setMetadataValue('alamat', $request->alamat);
+        }
 
         if ($request->filled('current_password') && $request->filled('new_password')) {
             if (!Hash::check($request->current_password, $user->password)) {

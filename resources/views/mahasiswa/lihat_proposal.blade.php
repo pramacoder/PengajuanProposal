@@ -252,8 +252,31 @@
                                 
                                 {{-- Status Badge --}}
                                 @php
-                                    $computedStatus = $proposal->status_final === 'revisi' ? 'revisi' : ($proposal->status_final === 'lolos' ? 'lolos' : ($proposal->status_final === 'tidak_lolos' ? 'tidak_lolos' : $proposal->status_validasi));
-                                    $computedLabel = $proposal->status_final === 'revisi' ? 'Perlu Revisi' : ($proposal->status_final === 'lolos' ? 'Lolos' : ($proposal->status_final === 'tidak_lolos' ? 'Tidak Lolos' : ($proposal->status === 'revisi_submitted' ? 'Menunggu Validasi Revisi' : ($proposal->status_validasi == 'pending' ? 'Menunggu Validasi' : ($proposal->status_validasi == 'valid' ? 'Valid (Terverifikasi)' : ($proposal->status_validasi == 'tidak_valid' ? 'Ditolak' : ucfirst(str_replace('_', ' ', $proposal->status_validasi)))))));
+                                    if ($proposal->status_final === 'revisi') {
+                                        $computedStatus = 'revisi';
+                                        $computedLabel = 'Perlu Revisi';
+                                    } elseif ($proposal->status_final === 'lolos') {
+                                        $computedStatus = 'lolos';
+                                        $computedLabel = 'Lolos';
+                                    } elseif ($proposal->status_final === 'tidak_lolos') {
+                                        $computedStatus = 'tidak_lolos';
+                                        $computedLabel = 'Tidak Lolos';
+                                    } elseif ($proposal->status === 'revisi_submitted') {
+                                        $computedStatus = 'review';
+                                        $computedLabel = 'Menunggu Validasi Revisi';
+                                    } elseif ($proposal->status_validasi === 'pending') {
+                                        $computedStatus = 'pending';
+                                        $computedLabel = 'Menunggu Validasi';
+                                    } elseif ($proposal->status_validasi === 'valid') {
+                                        $computedStatus = 'valid';
+                                        $computedLabel = 'Valid (Terverifikasi)';
+                                    } elseif ($proposal->status_validasi === 'tidak_valid') {
+                                        $computedStatus = 'tidak_valid';
+                                        $computedLabel = 'Ditolak';
+                                    } else {
+                                        $computedStatus = $proposal->status_validasi ?? $proposal->status ?? 'pending';
+                                        $computedLabel = ucfirst(str_replace('_', ' ', $computedStatus));
+                                    }
                                 @endphp
                                 <x-status-badge :status="$computedStatus" :label="$computedLabel" />
                             </div>
