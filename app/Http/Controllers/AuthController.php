@@ -11,11 +11,31 @@ use App\Models\Proposal;
 use App\Models\Fakultas;
 use App\Models\Prodi;
 
+use App\Models\RuangKontrol;
+use App\Helpers\TahunAjaranHelper;
+
 class AuthController extends Controller
 {
     public function showLoginForm()
     {
-        return view('auth.login');
+        $tahunAjaranTerbaru = TahunAjaranHelper::getTahunAjaranTerbaru();
+        $ruangKontrol = RuangKontrol::where('tahun_ajaran', $tahunAjaranTerbaru)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$ruangKontrol) {
+            $ruangKontrol = RuangKontrol::where('is_active', true)->first()
+                ?? RuangKontrol::latest()->first();
+        }
+
+        $stats = [
+            'total_proposal' => Proposal::count(),
+            'total_mahasiswa' => User::where('role', 'mahasiswa')->count(),
+            'total_dosen' => User::where('role', 'dosen')->count(),
+            'total_fakultas' => Fakultas::count(),
+        ];
+
+        return view('auth.login', compact('ruangKontrol', 'stats'));
     }
 
     public function showForgotPasswordForm()
